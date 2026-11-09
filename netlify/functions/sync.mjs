@@ -6,7 +6,7 @@ import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual, createHash } from
 import webpush from "web-push";
 
 const W = "w/";
-const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done"];
+const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done", "focus"];
 const LETTER_USERS = ["mitchell", "mel"];
 const MAX = 3 * 1024 * 1024;
 const USER_RE = /^[a-z0-9]{3,20}$/;
@@ -302,8 +302,8 @@ export default async (req, context) => {
         const clean = { ...it, by: auth[as].name, byId: prev?.byId || as, at: +it.at || Date.now(), u: Date.now() };
         for (const k of ["title", "desc", "text", "subject", "link", "tag", "owner", "name"]) if (k in clean) clean[k] = clip(clean[k], k === "desc" || k === "text" ? 4000 : 300);
         await store.setJSON(key, clean);
-        if (!prev && !clean.deleted && ["task", "team", "idea"].includes(clean.type)) {
-          const what = clean.type === "task" ? "subió una tarea" : clean.type === "team" ? "creó un trabajo en equipo" : "compartió una idea";
+        if ((!prev || (clean.type === "focus" && !clean.joined && (prev.deleted || prev.start !== clean.start))) && !clean.deleted && !(clean.type === "focus" && clean.joined) && ["task", "team", "idea", "focus"].includes(clean.type) && !(clean.type === "focus" && clean.ghost)) {
+          const what = clean.type === "task" ? "subió una tarea" : clean.type === "focus" ? "empezó a concentrarse: ¡únete a la sala de enfoque!" : clean.type === "team" ? "creó un trabajo en equipo" : "compartió una idea";
           const payload = { title: `${f.emoji || "🌳"} ${f.name} · ${clean.by} ${what}`, body: clip(clean.title || clean.text, 140), url: "#/grupo", tag: `g-${clean.id}` };
           const job = pushTo(store, f.members.filter((m) => m !== as), url.origin, payload, clip(body.device, 40));
           if (context?.waitUntil) context.waitUntil(job); else await job;

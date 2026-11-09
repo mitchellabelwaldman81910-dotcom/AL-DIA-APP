@@ -367,3 +367,146 @@ Object.assign(VIDA_ACTS, {
 });
 
 const gDoneBy = (id) => gAll('done').filter((x) => x.task === id && !x.deleted);
+
+/* =========================================================
+   6. Efectos llamativos: confeti, puntos flotantes, podio, tarjeta de Hoy
+   ========================================================= */
+const CONF_COLORS = ['#2F8A5B', '#7CC07A', '#F2C94C', '#F2994A', '#EB5757', '#56CCF2', '#BB6BD9', '#FF8FB1'];
+function confetti(x, y, n = 28) {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  n = Math.min(n, 90);
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('span'); d.className = 'confetti';
+    const c = CONF_COLORS[i % CONF_COLORS.length]; const w = 6 + Math.random() * 6;
+    d.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${w * (Math.random() < .5 ? 1 : 1.8)}px;background:${c};border-radius:${Math.random() < .35 ? '50%' : '2px'}`;
+    document.body.appendChild(d);
+    const a = Math.random() * Math.PI * 2, dist = 70 + Math.random() * 190;
+    const dx = Math.cos(a) * dist, dy = Math.sin(a) * dist - 90;
+    d.animate([
+      { transform: 'translate(-50%,-50%) rotate(0deg)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${Math.random() * 540}deg)`, opacity: 1, offset: .45 },
+      { transform: `translate(calc(-50% + ${dx * 1.15}px), calc(-50% + ${dy + 260}px)) rotate(${Math.random() * 900}deg)`, opacity: 0 },
+    ], { duration: 1500 + Math.random() * 900, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => d.remove();
+  }
+}
+function floatText(el, text, cls = '') {
+  if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const r = el.getBoundingClientRect(); const d = document.createElement('span');
+  d.className = 'float-pts ' + cls; d.textContent = text; d.style.left = (r.left + r.width / 2) + 'px'; d.style.top = (r.top + r.height / 2) + 'px';
+  document.body.appendChild(d); setTimeout(() => d.remove(), 1700);
+}
+function podiumHTML(items) {
+  if (!items || items.length < 1) return '';
+  const order = [1, 0, 2].filter((i) => items[i]);
+  const medals = ['🥇', '🥈', '🥉'];
+  return `<div class="podium" aria-label="Los tres primeros lugares">${order.map((i) => {
+    const it = items[i];
+    return `<div class="pod pod-${i + 1}"><span class="pod-crown">${i === 0 ? '👑' : ''}</span><span class="pod-av" style="--pc:${it.color || '#2F8A5B'}">${it.icon}</span><b class="pod-name">${esc(it.name)}${it.me ? ' (tú)' : ''}</b><span class="pod-lv">Nivel <b>${it.level}</b></span><span class="pod-step"><span>${medals[i]}</span></span></div>`;
+  }).join('')}</div>`;
+}
+function homeTreeHTML() {
+  if (isGroup() || !REG.me || !profile()) return '';
+  let c; try { c = treeNow(dataOwner()); } catch { return ''; }
+  const pct = c.need > c.cur ? Math.max(0, Math.min(100, Math.round(((c.pts - c.cur) / (c.need - c.cur)) * 100))) : 100;
+  const bal = seedsOf(c); const qs = questsToday(); const ready = qs.filter((q) => q.ok && !q.claimed).length;
+  return `<a class="home-tree ${c.wet ? '' : 'thirsty'}" href="#/vida" aria-label="Tu árbol, nivel ${c.level}. Abrir Vida">
+    <span class="ht-ico">${treeIcon(c.level)}<span class="ht-lv">${c.level}</span></span>
+    <span class="ht-main"><b>${esc(stageName(c.level))}${c.streak ? ` · 🔥 ${c.streak}` : ''}</b>
+      <span class="ht-bar"><i style="width:${pct}%"></i></span>
+      <span class="small">${c.wet ? '💧 Regado hoy' : '🥀 Tiene sed: súbele algo hoy'} · 🌰 ${bal}${ready ? ` · <b class="ht-ready">${plural(ready, 'misión lista', 'misiones listas')}</b>` : ''}</span></span>${icon('chev', 'chev')}</a>`;
+}
+
+/* =========================================================
+   7. Sala de enfoque (Pomodoro social / Modo fantasma)
+   ========================================================= */
+const FOCUS_MINS = [15, 25, 45, 60];
+const focusEnd = (x) => (+x.start || 0) + (+x.mins || 0) * 60000;
+const focusList = () => gAll('focus').filter((x) => Date.now() < focusEnd(x) && x.start <= Date.now() + 60000);
+const focusMine = () => focusList().find((x) => x.byId === REG.me || x.id === focusId());
+const focusId = () => `fs-${REG.me}`.replace(/[^a-z0-9-]/gi, '').slice(0, 60);
+const mmss = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+let focusUI = { ghost: false, mins: 25, topic: '' };
+
+function focusCardHTML() {
+  if (focusMine()) focusWatch();
+  const n = focusList().length;
+  return `<button type="button" class="focus-card ${n ? 'live' : ''}" data-act="focus-open"><span class="fc-ico">${n ? '🎧' : '🕯️'}</span>
+    <span class="fc-t"><b>Sala de enfoque</b><span class="small">${n ? `${plural(n, 'persona concentrada', 'personas concentradas')} ahora. ¡Únete en silencio!` : 'Estudien juntos en silencio, solo viéndose concentrados.'}</span></span>${icon('chev', 'chev')}</button>`;
+}
+function focusSheetBody() {
+  const list = focusList(); const mine = focusMine(); const now = Date.now();
+  const others = list.filter((x) => x !== mine);
+  let top = '';
+  if (mine) {
+    const total = mine.mins * 60000; const left = focusEnd(mine) - now; const pct = Math.max(0, Math.min(1, left / total)); const C = 2 * Math.PI * 70;
+    top = `<div class="focus-me"><div class="focus-ring"><svg viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r="70" class="fr-bg"/><circle cx="80" cy="80" r="70" class="fr-fg" id="frFg" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/></svg>
+      <div class="fr-mid"><b id="focusClock">${mmss(left)}</b><span class="small">${mine.ghost ? '👻 Modo fantasma' : 'Concentrado'}</span></div></div>
+      <p class="muted" style="text-align:center;margin:6px 0 12px">${mine.title ? esc(mine.title) : 'Sin hablar. Solo tú y lo que estás haciendo.'}</p>
+      <div class="btn-row" style="justify-content:center"><button class="btn" data-act="focus-stop">Terminar ahora</button></div></div>`;
+  } else {
+    top = `<div class="focus-new"><p class="muted" style="margin:0 0 10px">Elige cuánto tiempo y empieza. Tus compañeros ven que estás concentrado, sin chat ni distracciones.</p>
+      <div class="seg full" role="group" aria-label="Duración">${FOCUS_MINS.map((m) => `<button type="button" data-act="focus-mins" data-v="${m}" aria-pressed="${focusUI.mins === m}">${m} min</button>`).join('')}</div>
+      <div class="field" style="margin-top:12px"><label for="focusTopic" class="sr">¿En qué trabajas?</label><input id="focusTopic" class="input" maxlength="80" placeholder="¿En qué vas a trabajar? (opcional)" value="${esc(focusUI.topic)}"></div>
+      <label class="toggle ghost-tg"><span class="t">👻 Modo fantasma <span class="small muted" style="display:block">Los demás ven que alguien se concentra, pero no quién.</span></span><span class="switch"><input type="checkbox" id="focusGhost" ${focusUI.ghost ? 'checked' : ''} aria-label="Modo fantasma"><span></span></span></label>
+      <div class="btn-row" style="margin-top:14px"><button class="btn primary block" data-act="focus-start">🎧 Empezar a concentrarme</button></div></div>`;
+  }
+  const room = others.length ? `<h3 class="sec" style="margin-top:18px">Concentrados ahora <small>${others.length}</small></h3><div class="focus-room">${others.map((x) => {
+    const name = x.ghost ? 'Fantasma' : x.by;
+    return `<div class="focus-p ${x.ghost ? 'ghost' : ''}"><span class="fp-av" style="--pc:${x.ghost ? '#8A97A8' : nameColor(x.by)}">${x.ghost ? '👻' : esc(initials(x.by))}<i class="fp-dot"></i></span>
+      <span class="fp-t"><b>${esc(name)}</b><span class="small muted">${x.title && !x.ghost ? esc(x.title) : 'Concentrado'}</span></span><span class="fp-time" data-end="${focusEnd(x)}">${mmss(focusEnd(x) - now)}</span>
+      ${mine ? '' : `<button class="btn" data-act="focus-join" data-id="${x.id}">Unirme</button>`}</div>`;
+  }).join('')}</div>` : (mine ? '<p class="small muted" style="text-align:center;margin-top:14px">Eres la única persona concentrada ahora. Invita a alguien a unirse.</p>' : '');
+  return `${top}${room}<div class="btn-row" style="margin-top:16px;justify-content:center"><button class="btn quiet" data-act="forest-invite">${icon('plus')}Invitar a alguien a este Salón</button></div>
+    <p class="small muted" style="text-align:center;margin:10px 0 0">Al terminar ganas 🌰 semillas y tu árbol se riega.</p>`;
+}
+let focusTimer = null;
+function paintFocusSheet() { const b = document.getElementById('focusBox'); if (b) b.innerHTML = focusSheetBody(); }
+function openFocusSheet() {
+  if (!curFid()) return;
+  openSheet(`${sheetHead('🎧 Sala de enfoque')}<div class="sheet-body"><div id="focusBox"></div></div>`, () => { clearInterval(focusTimer); focusTimer = null; });
+  paintFocusSheet();
+  let k = 0; clearInterval(focusTimer);
+  focusTimer = setInterval(() => {
+    if (!document.getElementById('focusBox')) { clearInterval(focusTimer); focusTimer = null; return; }
+    k++;
+    const mine = focusMine(); const clock = document.getElementById('focusClock');
+    if (mine && clock) {
+      const left = focusEnd(mine) - Date.now(); clock.textContent = mmss(left);
+      const fg = document.getElementById('frFg'); if (fg) fg.setAttribute('stroke-dashoffset', (2 * Math.PI * 70 * (1 - Math.max(0, left / (mine.mins * 60000)))).toFixed(1));
+    }
+    document.querySelectorAll('.fp-time').forEach((el) => { el.textContent = mmss(+el.dataset.end - Date.now()); });
+    if (k % 8 === 0) { cloudSync().then?.(() => paintFocusSheet()); }
+    if (k % 8 === 1 && (!mine) && document.getElementById('focusBox')) { /* refresco ligero de la lista */ }
+    if (!focusMine() && document.getElementById('focusClock')) paintFocusSheet();
+  }, 1000);
+}
+async function focusStart(base) {
+  const mins = base ? base.mins : focusUI.mins; const start = base ? base.start : Date.now();
+  const item = { id: focusId(), type: 'focus', start, mins, title: base ? (base.title || '') : focusUI.topic.slice(0, 80), ghost: !!focusUI.ghost, joined: !!base, deleted: false };
+  await gput(item); Snd.chime(); focusWatch(); paintFocusSheet();
+}
+const focusRewarded = () => ((vidaData().focusDone ||= {}));
+function focusWatch() {
+  clearInterval(focusWatch.t);
+  focusWatch.t = setInterval(() => {
+    const it = gGet(focusId()); if (!it || it.deleted) { if (!focusMine()) clearInterval(focusWatch.t); return; }
+    if (Date.now() >= focusEnd(it)) {
+      clearInterval(focusWatch.t);
+      const key = `${it.id}:${it.start}`; const R = focusRewarded();
+      if (!R[key]) {
+        R[key] = 1; const reward = Math.max(3, Math.round(it.mins / 5)); const v = vidaData(); v.bonus = (v.bonus || 0) + reward; v.focusMin = (v.focusMin || 0) + it.mins;
+        for (const k of Object.keys(R)) if (R[k] && Object.keys(R).length > 30) delete R[k];
+        save(); waterToday(); Snd.chime(); confetti(innerWidth / 2, innerHeight / 3, 60); toast(`🎉 ¡Sesión completada! +${reward} 🌰 y tu árbol se regó.`, { ms: 6000 });
+        gput({ ...it, deleted: true, start: it.start }).catch(() => {});
+      }
+      paintFocusSheet();
+    }
+  }, 1000);
+}
+Object.assign(VIDA_ACTS, {
+  'focus-open': () => openFocusSheet(),
+  'focus-mins': (el) => { focusUI.mins = +el.dataset.v; focusUI.topic = $('#focusTopic')?.value || ''; focusUI.ghost = !!$('#focusGhost')?.checked; paintFocusSheet(); },
+  'focus-start': () => { focusUI.topic = $('#focusTopic')?.value.trim() || ''; focusUI.ghost = !!$('#focusGhost')?.checked; focusStart(); },
+  'focus-join': (el) => { const h = gGet(el.dataset.id); if (!h) return; focusUI.ghost = !!$('#focusGhost')?.checked || focusUI.ghost; focusStart({ start: h.start, mins: h.mins, title: h.ghost ? '' : (h.title || '') }); },
+  'focus-stop': async () => { const it = gGet(focusId()); if (!it) return; const ok = await ask({ title: '¿Terminar la sesión?', text: 'Si sales antes de tiempo no ganas semillas.', ok: 'Terminar', danger: true }); if (!ok) return; await gput({ ...it, deleted: true }); toast('Sesión terminada.'); paintFocusSheet(); },
+});

@@ -734,6 +734,7 @@ function viewHoy() {
       <p class="phrase">${leafSVG('#7DBE7A')}<span>${esc(phraseOfDay())}</span></p>
     </div></section>
     ${inviteBannerHTML()}
+    ${homeTreeHTML()}
     ${lettersHTML()}
     ${!isGroup() && otherProfile() ? `<button type="button" class="letter-write" data-act="letter-write">${icon('heart', 'sm')}<span>Escribirle a ${esc(otherProfile().name)}</span>${(REG.letters || []).some((l) => l.from === REG.current && l.to === otherProfile().id && !l.read) ? `<span class="tiny faint">· tu mensaje aún no lo abre</span>` : ''}</button>` : ''}
     <form class="quick" id="quickForm" autocomplete="off">
@@ -1449,6 +1450,7 @@ function leafBurst(el) {
       { transform: `translate(calc(-50% + ${Math.cos(a) * dist * 1.2}px), calc(-50% + ${Math.sin(a) * dist + 60}px)) scale(.8) rotate(${Math.random() * 720}deg)`, opacity: 0 },
     ], { duration: 1400 + Math.random() * 500, easing: 'cubic-bezier(.2,.8,.3,1)' }).onfinish = () => d.remove();
   }
+  if (typeof confetti === 'function') confetti(cx, cy, 22);
 }
 let lastRenderRoute = null, enterT = null;
 function harmonize(main) {
@@ -1922,6 +1924,7 @@ function viewGrupo() {
       <input id="gTaskIn" placeholder="Ej. Tarea de hoy: ensayo de historia"><button class="quick-go">${icon('plus', 'sm')}Subir</button></div>
       <div class="quick-preview" id="gTaskPrev"></div></form>
     <p style="margin:-4px 0 12px"><button type="button" class="btn" data-act="g-new">${icon('cam')}Subir con foto o instrucciones</button></p>
+    ${focusCardHTML()}
     ${pushBanner()}
     ${pend.length ? BUCKETS.filter(([k]) => by[k]).map(([k, l]) => `<div class="group-h ${k === 'late' ? 'late' : ''}">${l}<span class="count">${by[k].length}</span></div><ul class="tasks">${by[k].map(groupTaskRow).join('')}</ul>`).join('')
       : `<div class="empty" style="margin-top:18px"><h3>Sin pendientes del grupo</h3><p>Cuando alguien suba una tarea, aparece aquí para todos y les llega un aviso.</p></div>`}
@@ -2381,7 +2384,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.1. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.2. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -2724,6 +2727,7 @@ function toggleTask(id, rowEl) {
   if (!t.done) {
     t.done = true; t.made = true; t.doneAt = Date.now();
     save(); Snd.chime();
+    if (rowEl) { floatText(rowEl, `+${t.priority === 3 ? 14 : 10} ✨`); leafBurst(rowEl); }
     if (rowEl && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
       rowEl.classList.add('done', 'leaving');
       rowEl.insertAdjacentHTML('beforeend', '<span class="stamp" aria-hidden="true">Entregado</span>');

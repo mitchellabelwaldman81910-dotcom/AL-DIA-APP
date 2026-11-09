@@ -113,6 +113,7 @@ function levelUp(level) {
   Snd.chime();
   if (route().name === 'vida') { VUI.pour = Date.now() + 5000; render(); }
   const sc = $('.vscene'); if (sc) leafBurst(sc);
+  confetti(innerWidth / 2, innerHeight / 3, level % 10 === 0 ? 80 : 40);
   if (ms || level % 10 === 0) {
     const d = $('#ask');
     d.innerHTML = `<form method="dialog" class="levelup"><div class="lu-tree">${treeScene({ level, wet: true, id: 'lu', seed: REG.me })}</div>
@@ -573,8 +574,11 @@ function rankingHTML() {
   } else {
     list = R.forests.map((f, i) => `<li class="rk ${FOR.f[f.id]?.meta.members.includes(REG.me) ? 'me' : ''}"><span class="rk-pos">${medal(i)}</span><span class="rk-emoji" style="--pc:${f.color || '#2F8A5B'}">${esc(f.emoji || '🌳')}</span><span class="rk-name"><b>${esc(f.name)}</b><span class="tiny faint">${plural(f.members, 'integrante', 'integrantes')}</span></span><span class="rk-lv">Nivel <b>${f.level}</b></span></li>`).join('');
   }
+  const top3 = VUI.rank === 'personas' ? R.people.slice(0, 3).map((u) => ({ name: u.name, level: u.level, color: u.color, icon: esc(initials(u.name)), me: u.id === REG.me })) : R.forests.slice(0, 3).map((f) => ({ name: f.name, level: f.level, color: f.color, icon: esc(f.emoji || '🌳'), me: !!FOR.f[f.id]?.meta.members.includes(REG.me) }));
+  const podium = podiumHTML(top3);
   const mine = VUI.rank === 'personas' ? R.people.findIndex((u) => u.id === REG.me) : -1;
   return `${seg}<p class="small muted" style="margin:0 0 10px">${note}${mine >= 0 ? ` Vas en el lugar <b>${mine + 1}</b>.` : ''}</p>
+    ${podium}
     ${list ? `<ol class="ranking">${list}</ol>` : '<div class="empty"><h3>Aún no hay nadie aquí</h3><p>Sé la primera persona en regar su árbol.</p></div>'}
     <p style="margin-top:12px"><button class="btn quiet" data-act="rank-refresh">${icon('reset', 'sm')}Actualizar</button></p>`;
 }
