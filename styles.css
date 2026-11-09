@@ -993,3 +993,8 @@ input::placeholder, textarea::placeholder { color: var(--ink-3); }
 .letter-write { display: inline-flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px 14px; border-radius: 999px; border: 1px solid rgba(240,138,166,.35);
   background: linear-gradient(135deg, rgba(240,138,166,.14), var(--glass)); color: var(--ink); font-weight: 600; font-size: 14.5px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .letter-write .i { color: #E0607E; fill: rgba(224,96,126,.25); }
+
+.gstat { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; border: 1px solid var(--line); background: var(--glass); color: var(--ink-2); }
+.gstat.ok { color: var(--ok); }
+.gstat.warn { color: var(--red); border-color: color-mix(in srgb, var(--red) 35%, transparent); background: var(--red-soft); }
+button.gstat { cursor: pointer; }
