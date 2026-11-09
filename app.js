@@ -168,7 +168,7 @@ try {
   }
 } catch { /* sin acceso a almacenamiento */ }
 if (!profile()) REG.current = null;
-let choosing = !REG.current || REG.ask;
+let choosing = !REG.current || REG.ask || (REG.current === 'g512' && (!REG.cloud || !((REG.tokens || {})[REG.cloud] || {}).g512)) || (!!REG.cloud && !!REG.me && REG.current !== REG.me && REG.current !== 'g512' && !!(REG.hasPw && REG.hasPw[REG.current]));
 KEY = keyFor(REG.current || 'mitchell');
 function pendingCountFor(id) {
   if (id === 'g512') { try { return gAll('task').filter((t) => !gDone()[t.id] && (!t.due || t.due >= today())).length; } catch { return 0; } }
@@ -1831,7 +1831,7 @@ async function enterProfile(id) {
     if (!meOk) { toast('Para crear el Grupo 512, primero pon contraseña a tu usuario en Ajustes.'); return; }
     const ok = await ask({ title: 'Crear el Grupo 512', text: 'Elige una contraseña para el grupo. Se la darás a tus compañeros para que entren. Ellos solo verán el grupo, nunca tu sección ni la de Mel.', ok: 'Elegir contraseña' });
     if (!ok || !(await setPassword('g512'))) return;
-  } else if (locked(id) && !(await loginProfile(id))) return;
+  } else if ((locked(id) || (cloudOn() && !isGroup(id) && hasPw(id) && REG.me && id !== REG.me)) && !(await loginProfile(id))) return;
   if (!REG.me && !isGroup(id)) { REG.me = id; saveReg(); }
   switchProfile(id);
   if (isGroup(id) && !REG.memberName) setTimeout(askMemberName, 500);
@@ -1894,13 +1894,35 @@ async function gput(item) {
   if (i >= 0) G.items[i] = { ...G.items[i], ...item }; else G.items.push(item);
   saveG(); render();
   try { await cloudFetch('POST', { kind: 'gitem', item: i >= 0 ? G.items[i] : item, device: CLOUD.device }); }
-  catch { (REG.gout ||= []).push(item); saveReg(); toast('Sin conexión: se enviará en cuanto vuelva el internet.'); }
+  catch (e) {
+    (REG.gout ||= []).push(item); saveReg();
+    if (/sesi[oó]n|grupo/i.test(e.message)) groupAuthLost(); else toast('Sin conexión: se enviará en cuanto vuelva el internet.');
+  }
 }
 async function flushGroupOutbox() {
   const out = REG.gout || []; if (!out.length) return;
   REG.gout = [];
-  for (const it of out) { try { await cloudFetch('POST', { kind: 'gitem', item: it, device: CLOUD.device }); } catch { REG.gout.push(it); } }
+  let authLost = false;
+  for (const it of out) { try { await cloudFetch('POST', { kind: 'gitem', item: it, device: CLOUD.device }); } catch (e) { REG.gout.push(it); if (/sesi[oó]n|grupo/i.test(e.message)) authLost = true; } }
   saveReg();
+  if (authLost) groupAuthLost(); else if (out.length && !REG.gout.length) { toast('Todo lo pendiente del grupo ya se guardó en la nube.'); render(); }
+}
+let authPrompting = false;
+async function groupAuthLost() {
+  delete tokens().g512; saveReg();
+  if (authPrompting || !isGroup()) return;
+  authPrompting = true;
+  const ok = await ask({ title: 'Vuelve a entrar al grupo', text: 'La sesión del Grupo 512 se cerró (quizá cambió la contraseña). Escríbela de nuevo para guardar tus cambios; no se pierde nada.', ok: 'Escribir contraseña' });
+  if (ok && (await loginProfile('g512'))) { await flushGroupOutbox(); cloudSync(); }
+  authPrompting = false; render();
+}
+function groupStatus() {
+  const pend = (REG.gout || []).length;
+  if (!cloudOn()) return `<span class="gstat warn">${icon('bell', 'sm')}Sin nube: activa la Nube compartida en Más</span>`;
+  if (!tokens().g512) return `<button class="gstat warn" data-act="g-relogin">${icon('lock', 'sm')}Sesión cerrada: toca para entrar</button>`;
+  if (pend) return `<button class="gstat warn" data-act="g-retry">${icon('reset', 'sm')}${plural(pend, 'cambio sin guardar', 'cambios sin guardar')}: toca para reintentar</button>`;
+  if (CLOUD.error) return `<span class="gstat warn">${icon('bell', 'sm')}${esc(CLOUD.error)}</span>`;
+  return `<span class="gstat ok">${icon('check', 'sm')}Guardado en la nube${CLOUD.last ? ` · ${new Date(CLOUD.last).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` : ''}</span>`;
 }
 const gid = () => uid() + Math.random().toString(36).slice(2, 5);
 const gDone = () => (REG.gdone ||= {});
@@ -1925,7 +1947,7 @@ function pushBanner() {
 function groupHead(title, sub) {
   return `<section class="group-head"><div class="today-top"><div class="g-badge">${avatar(profile('g512'), 'lg')}</div>
       <div class="head-actions"><button type="button" class="who-chip" data-act="profile-sheet">${mini(me(), 'xs')}<span>${esc(me())}</span></button></div></div>
-    <h1 class="page-title" style="margin-top:12px">${title}</h1><p class="page-sub">${sub}</p></section>`;
+    <h1 class="page-title" style="margin-top:12px">${title}</h1><p class="page-sub">${sub}</p>${groupStatus()}</section>`;
 }
 function viewGrupo() {
   const tasks = gAll('task').sort((a, b) => dueKey(a).localeCompare(dueKey(b)));
@@ -2023,14 +2045,24 @@ function viewIdeas() {
       : `<div class="empty"><h3>Sin ideas todavía</h3><p>La primera idea puede ser la que les ayude a todos.</p></div>`}</div>`;
 }
 function viewMasGrupo() {
-  const p = profile('g512');
+  const p = profile('g512'); const st = S.settings;
   return `<h1 class="page-title">Más</h1>
-    <ul class="rows"><li><button type="button" class="rowbtn" data-act="profile-sheet">${avatar(p, 'sm')}<span class="txt"><b>Estás en el Grupo 512</b><span>Toca para cambiar de usuario</span></span>${icon('chev', 'chev')}</button></li>
+    <p class="page-sub">Ajustes del Grupo 512 en este dispositivo.</p>
+    ${groupStatus()}
+    <ul class="rows" style="margin-top:14px"><li><button type="button" class="rowbtn" data-act="profile-sheet">${avatar(p, 'sm')}<span class="txt"><b>Estás en el Grupo 512</b><span>Toca para cambiar de usuario</span></span>${icon('chev', 'chev')}</button></li>
       <li><button type="button" class="rowbtn" data-act="g-name"><span class="ico">${icon('edit')}</span><span class="txt"><b>Mi nombre en el grupo</b><span>${esc(me())}</span></span>${icon('chev', 'chev')}</button></li>
       <li><button type="button" class="rowbtn" data-act="g-invite"><span class="ico">${icon('share')}</span><span class="txt"><b>Invitar compañeros</b><span>Comparte el código para que se unan</span></span>${icon('chev', 'chev')}</button></li>
       <li><button type="button" class="rowbtn" data-act="g-push"><span class="ico">${icon('bell')}</span><span class="txt"><b>Avisos del grupo</b><span>${REG.gpush ? 'Activados en este dispositivo' : 'Recibe una notificación cuando alguien suba algo'}</span></span>${icon('chev', 'chev')}</button></li>
-      ${PERSONAL.some((x) => tokens()[x.id]) ? `<li><button type="button" class="rowbtn" data-act="g-pw"><span class="ico">${icon('gear')}</span><span class="txt"><b>Contraseña del grupo</b><span>Cámbiala si alguien que no debe la conoce</span></span>${icon('chev', 'chev')}</button></li>` : ''}
-      <li><a href="#/instalar"><span class="ico">${icon('phone')}</span><span class="txt"><b>Instalar la app</b><span>Para recibir avisos en iPhone y iPad</span></span>${icon('chev', 'chev')}</a></li></ul>`;
+      <li><a href="#/instalar"><span class="ico">${icon('phone')}</span><span class="txt"><b>Instalar la app</b><span>Necesario para avisos en iPhone y iPad</span></span>${icon('chev', 'chev')}</a></li></ul>
+    ${cloudHTML()}
+    ${PERSONAL.some((x) => tokens()[x.id]) ? `<h2 class="sec">Contraseña del grupo</h2><div class="card"><p style="margin:0 0 10px">Solo Mitchell o Mel pueden cambiarla. Al cambiarla, todos tendrán que escribir la nueva.</p><button class="btn" data-act="g-pw">${icon('lock')}Cambiar contraseña del grupo</button></div>` : ''}
+    <h2 class="sec">Apariencia y sonido</h2>
+    <div class="card" style="padding-top:6px;padding-bottom:6px">
+      <div class="toggle"><span class="t">Tema</span><div class="seg">${[['light', 'Día'], ['dark', 'Noche']].map(([k, l]) => `<button type="button" data-act="theme" data-v="${k}" aria-pressed="${(st.theme === 'dark' ? 'dark' : 'light') === k}">${l}</button>`).join('')}</div></div>
+      <div class="toggle"><span class="t">Hojas cayendo</span><label class="switch"><input type="checkbox" data-set="leaves" data-bool ${st.leaves !== false ? 'checked' : ''} aria-label="Hojas cayendo"><span></span></label></div>
+      <div class="toggle"><span class="t">Sonidos suaves</span><label class="switch"><input type="checkbox" data-set="sounds" data-bool ${st.sounds !== false ? 'checked' : ''} aria-label="Sonidos suaves"><span></span></label></div>
+    </div>
+    <p style="margin-top:18px"><button class="btn danger" data-act="g-logout">${icon('x')}Salir del grupo en este dispositivo</button></p>`;
 }
 function urlB64(s) { const p = '='.repeat((4 - (s.length % 4)) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...b].map((c) => c.charCodeAt(0))); }
 async function enableGroupPush() {
@@ -2379,7 +2411,7 @@ function viewAjustes() {
     ${cloudHTML()}
     ${cloudOn() ? `<h2 class="sec">Contraseñas</h2><div class="card" style="padding-top:6px;padding-bottom:6px">
       ${PERSONAL.map((pp) => `<div class="toggle"><span style="display:flex;gap:12px;align-items:center">${avatar(pp, 'sm')}<span><span class="t">${esc(pp.name)}</span><span class="d" style="display:block">${hasPw(pp.id) ? 'Protegido con contraseña' : 'Sin contraseña: cualquiera con el código puede entrar'}</span></span></span>
-        ${hasPw(pp.id) && !tokens()[pp.id] ? `<span class="lock">${icon('lock')}</span>` : `<button class="btn" data-act="set-pw" data-id="${pp.id}">${hasPw(pp.id) ? 'Cambiar' : 'Poner'}</button>`}</div>`).join('')}
+        ${pp.id === REG.me ? `<button class="btn" data-act="set-pw" data-id="${pp.id}">${hasPw(pp.id) ? 'Cambiar' : 'Poner'}</button>` : `<span class="small muted" style="text-align:right;max-width:130px">${hasPw(pp.id) ? icon('lock', 'sm') : `La pone ${esc(pp.name)} desde su dispositivo`}</span>`}</div>`).join('')}
       <div class="toggle"><span><span class="t">Este dispositivo es de</span><span class="d" style="display:block">Para el ojito: así la app sabe quién está mirando.</span></span>
         <div class="seg">${PERSONAL.map((pp) => `<button type="button" data-act="set-me" data-v="${pp.id}" aria-pressed="${REG.me === pp.id}">${esc(pp.name)}</button>`).join('')}</div></div>
     </div>` : ''}
@@ -2413,7 +2445,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 6.0. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 6.2. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -3103,6 +3135,9 @@ const ACTIONS = {
   'g-like': (el) => { const id = `${el.dataset.id}-${slug(me())}`; const l = gGet(id); if (l && !l.deleted) gput({ ...l, deleted: true }); else { gput({ id, type: 'like', idea: el.dataset.id, deleted: false }); Snd.drop(); } },
   'idea-tag': (el) => { ideaTag = el.dataset.v; el.parentElement.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b === el)); },
   'g-name': () => askMemberName(),
+  'g-relogin': async () => { if (await loginProfile('g512')) { await flushGroupOutbox(); cloudSync(); render(); } },
+  'g-retry': async () => { await flushGroupOutbox(); cloudSync(); render(); },
+  'g-logout': async () => { const ok = await ask({ title: '¿Salir del grupo aquí?', text: 'Para volver a entrar necesitarás la contraseña del grupo.', ok: 'Salir', danger: true }); if (!ok) return; delete tokens().g512; saveReg(); choosing = true; render(); },
   'g-push': () => enableGroupPush(),
   'g-pw': async () => { await setPassword('g512'); },
   'g-invite': () => shareText('Únete al Grupo 512', `¡Únete al Grupo 512 en Al Día!\n\n1. Abre ${location.origin} en Safari (iPhone/iPad) o Chrome e instálala en tu pantalla de inicio.\n2. Ábrela desde el ícono y toca "¿Ya tienen una nube? Unirme con código".\n3. Código: ${REG.cloud}\n4. Elige "Grupo 512" y escribe la contraseña del grupo (pídemela).`),
@@ -3611,8 +3646,10 @@ function applyTheme() {
    ========================================================= */
 window.addEventListener('hashchange', () => { if (sheet().open) closeSheet(true); render(); window.scrollTo(0, 0); $('#view').focus({ preventScroll: true }); });
 document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') window.__hiddenAt = Date.now();
   if (document.visibilityState === 'visible') {
     if (S.timer?.running && timerRemaining() <= 0) timerComplete();
+    if (REG.cloud && REG.me && REG.current !== REG.me && !isGroup() && hasPw(REG.current) && Date.now() - (window.__hiddenAt || 0) > 120000) { choosing = true; render(); }
     dailyDigest(); scheduleReminders(); checkDueReminders(); autoBackup(); cloudSync(); if (!sheet().open) render();
   }
 });
