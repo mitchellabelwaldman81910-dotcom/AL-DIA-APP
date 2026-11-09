@@ -168,7 +168,7 @@ try {
   }
 } catch { /* sin acceso a almacenamiento */ }
 if (!profile()) REG.current = null;
-let choosing = !REG.current || REG.ask;
+let choosing = !REG.current || REG.ask || (!!REG.cloud && !!REG.me && REG.current !== REG.me && REG.current !== 'g512' && !!(REG.hasPw && REG.hasPw[REG.current]));
 KEY = keyFor(REG.current || 'mitchell');
 function pendingCountFor(id) {
   if (id === 'g512') { try { return gAll('task').filter((t) => !gDone()[t.id] && (!t.due || t.due >= today())).length; } catch { return 0; } }
@@ -1831,7 +1831,7 @@ async function enterProfile(id) {
     if (!meOk) { toast('Para crear el Grupo 512, primero pon contraseña a tu usuario en Ajustes.'); return; }
     const ok = await ask({ title: 'Crear el Grupo 512', text: 'Elige una contraseña para el grupo. Se la darás a tus compañeros para que entren. Ellos solo verán el grupo, nunca tu sección ni la de Mel.', ok: 'Elegir contraseña' });
     if (!ok || !(await setPassword('g512'))) return;
-  } else if (locked(id) && !(await loginProfile(id))) return;
+  } else if ((locked(id) || (cloudOn() && !isGroup(id) && hasPw(id) && REG.me && id !== REG.me)) && !(await loginProfile(id))) return;
   if (!REG.me && !isGroup(id)) { REG.me = id; saveReg(); }
   switchProfile(id);
   if (isGroup(id) && !REG.memberName) setTimeout(askMemberName, 500);
@@ -2379,7 +2379,7 @@ function viewAjustes() {
     ${cloudHTML()}
     ${cloudOn() ? `<h2 class="sec">Contraseñas</h2><div class="card" style="padding-top:6px;padding-bottom:6px">
       ${PERSONAL.map((pp) => `<div class="toggle"><span style="display:flex;gap:12px;align-items:center">${avatar(pp, 'sm')}<span><span class="t">${esc(pp.name)}</span><span class="d" style="display:block">${hasPw(pp.id) ? 'Protegido con contraseña' : 'Sin contraseña: cualquiera con el código puede entrar'}</span></span></span>
-        ${hasPw(pp.id) && !tokens()[pp.id] ? `<span class="lock">${icon('lock')}</span>` : `<button class="btn" data-act="set-pw" data-id="${pp.id}">${hasPw(pp.id) ? 'Cambiar' : 'Poner'}</button>`}</div>`).join('')}
+        ${pp.id === REG.me ? `<button class="btn" data-act="set-pw" data-id="${pp.id}">${hasPw(pp.id) ? 'Cambiar' : 'Poner'}</button>` : `<span class="small muted" style="text-align:right;max-width:130px">${hasPw(pp.id) ? icon('lock', 'sm') : `La pone ${esc(pp.name)} desde su dispositivo`}</span>`}</div>`).join('')}
       <div class="toggle"><span><span class="t">Este dispositivo es de</span><span class="d" style="display:block">Para el ojito: así la app sabe quién está mirando.</span></span>
         <div class="seg">${PERSONAL.map((pp) => `<button type="button" data-act="set-me" data-v="${pp.id}" aria-pressed="${REG.me === pp.id}">${esc(pp.name)}</button>`).join('')}</div></div>
     </div>` : ''}
@@ -2413,7 +2413,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 6.0. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 6.1. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -3611,8 +3611,10 @@ function applyTheme() {
    ========================================================= */
 window.addEventListener('hashchange', () => { if (sheet().open) closeSheet(true); render(); window.scrollTo(0, 0); $('#view').focus({ preventScroll: true }); });
 document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') window.__hiddenAt = Date.now();
   if (document.visibilityState === 'visible') {
     if (S.timer?.running && timerRemaining() <= 0) timerComplete();
+    if (REG.cloud && REG.me && REG.current !== REG.me && !isGroup() && hasPw(REG.current) && Date.now() - (window.__hiddenAt || 0) > 120000) { choosing = true; render(); }
     dailyDigest(); scheduleReminders(); checkDueReminders(); autoBackup(); cloudSync(); if (!sheet().open) render();
   }
 });
