@@ -143,12 +143,8 @@ function load(key = KEY) {
   catch { return defaults(); }
 }
 
-/* ---------- Usuarios: cada quien con sus propias tareas, materias y ajustes ---------- */
-const PROFILES = [
-  { id: 'mitchell', name: 'Mitchell', initials: 'Mi', color: '#2F8A5B' },
-  { id: 'mel', name: 'Mel', initials: 'Me', color: '#3E9A93' },
-  { id: 'g512', name: 'Grupo 512', initials: '512', color: '#5B7FD1', group: true },
-];
+/* ---------- Usuarios: cada quien con su propia cuenta (nombre + contraseña) ---------- */
+const SPACE = 'BOSQUE-ALDIA-NUBE-GLOBAL';
 const REG_KEY = 'aldia:usuarios';
 const keyFor = (id) => `aldia:v1:${id}`;
 function loadReg() {
@@ -156,29 +152,55 @@ function loadReg() {
   catch { return { current: null, ask: false }; }
 }
 let REG = loadReg();
-if (REG.apiKey) { delete REG.apiKey; try { localStorage.setItem(REG_KEY, JSON.stringify(REG)); } catch { /* */ } }
 function saveReg() { try { localStorage.setItem(REG_KEY, JSON.stringify(REG)); } catch { /* sin espacio */ } }
-const profile = (id = REG.current) => PROFILES.find((p) => p.id === id) || null;
+if (REG.apiKey) delete REG.apiKey;
+// versión 7: la nube es una sola para todos; las sesiones viejas con código ya no sirven
+if (REG.cloud !== SPACE) { REG.cloud = SPACE; REG.tokens = {}; delete REG.gout; delete REG.hasPw; }
 // lo que se guardó antes de que existieran los usuarios pasa a Mitchell
 try {
   const legacy = localStorage.getItem(KEY);
   if (legacy) {
-    if (!localStorage.getItem(keyFor('mitchell'))) { localStorage.setItem(keyFor('mitchell'), legacy); REG.current = REG.current || 'mitchell'; saveReg(); }
+    if (!localStorage.getItem(keyFor('mitchell'))) { localStorage.setItem(keyFor('mitchell'), legacy); REG.current = REG.current || 'mitchell'; }
     localStorage.removeItem(KEY);
   }
 } catch { /* sin acceso a almacenamiento */ }
+// usuarios que ya existían en este dispositivo (antes de las cuentas) quedan como "por reclamar"
+if (!Array.isArray(REG.users)) {
+  REG.users = [];
+  for (const [id, name, color] of [['mitchell', 'Mitchell', '#2F8A5B'], ['mel', 'Mel', '#3E9A93']]) {
+    try { if (localStorage.getItem(keyFor(id))) REG.users.push({ id, name, color, legacy: true }); } catch { /* */ }
+  }
+}
+saveReg();
+/* Bosques (grupos colaborativos): copia local de lo que hay en la nube */
+const FOR_KEY = 'aldia:bosques7';
+let FOR = { f: {}, members: {}, invites: [], trees: {} };
+try { FOR = { ...FOR, ...JSON.parse(localStorage.getItem(FOR_KEY) || '{}') }; } catch { /* */ }
+function saveFOR() { try { localStorage.setItem(FOR_KEY, JSON.stringify(FOR)); } catch { /* */ } }
+const isForestId = (id) => String(id || '').startsWith('f:');
+const initials2 = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const profile = (id = REG.current) => {
+  if (!id) return null;
+  if (isForestId(id)) { const f = FOR.f[id.slice(2)]?.meta; return f ? { id, fid: f.id, name: f.name, initials: f.emoji || '🌳', color: f.color || '#2F8A5B', group: true } : null; }
+  const u = (REG.users || []).find((x) => x.id === id);
+  return u ? { ...u, initials: initials2(u.name) } : null;
+};
+const PERSONAL_LIST = () => (REG.users || []).map((u) => profile(u.id));
 if (!profile()) REG.current = null;
-let choosing = !REG.current || REG.ask || (REG.current === 'g512' && (!REG.cloud || !((REG.tokens || {})[REG.cloud] || {}).g512)) || (!!REG.cloud && !!REG.me && REG.current !== REG.me && REG.current !== 'g512' && !!(REG.hasPw && REG.hasPw[REG.current]));
-KEY = keyFor(REG.current || 'mitchell');
+const tokensNow = () => ((REG.tokens || {})[REG.cloud] || {});
+const sessionOk = () => !!(REG.current && (isForestId(REG.current) ? (REG.me && tokensNow()[REG.me]) : tokensNow()[REG.current]));
+let choosing = !REG.current || REG.ask || !sessionOk() || (!!REG.me && !isForestId(REG.current) && REG.current !== REG.me);
+const dataOwner = () => (isForestId(REG.current) ? REG.me : REG.current);
+KEY = keyFor(dataOwner() || (REG.users[0] && REG.users[0].id) || 'nuevo');
 function pendingCountFor(id) {
-  if (id === 'g512') { try { return gAll('task').filter((t) => !gDone()[t.id] && (!t.due || t.due >= today())).length; } catch { return 0; } }
+  if (isForestId(id)) { try { const fid = id.slice(2); return (FOR.f[fid]?.items || []).filter((t) => t.type === 'task' && !t.deleted && !(REG.gdone || {})[t.id] && (!t.due || t.due >= today())).length; } catch { return 0; } }
   if (id === REG.current) return S.tasks.filter((t) => !t.done).length;
   return load(keyFor(id)).tasks.filter((t) => !t.done).length;
 }
 function avatar(p, cls = '') { return `<span class="avatar ${cls}" style="--pc:${p.color}" aria-hidden="true">${esc(p.initials || p.name[0])}</span>`; }
 
 let S = load();
-if (REG.current && !S.settings.name) S.settings.name = profile().name;
+if (REG.current && !S.settings.name && profile()) S.settings.name = profile().name;
 let saveFailed = false;
 /* Base de datos del dispositivo (IndexedDB): fotos y copias diarias */
 const DB = {
@@ -225,6 +247,7 @@ function save() {
   catch (e) { if (!saveFailed) toast('No se pudo guardar en este dispositivo. Libera espacio y vuelve a intentar.'); saveFailed = true; }
   queueSync();
   if (typeof queueCloud === 'function') queueCloud();
+  treeSoon();
 }
 function commit(fn) { fn && fn(S); save(); render(); }
 
@@ -710,6 +733,7 @@ function viewHoy() {
       ${suggestion() ? `<p class="smart">${icon('spark', 'sm')}<span>${esc(suggestion())}</span></p>` : ''}
       <p class="phrase">${leafSVG('#7DBE7A')}<span>${esc(phraseOfDay())}</span></p>
     </div></section>
+    ${inviteBannerHTML()}
     ${lettersHTML()}
     ${!isGroup() && otherProfile() ? `<button type="button" class="letter-write" data-act="letter-write">${icon('heart', 'sm')}<span>Escribirle a ${esc(otherProfile().name)}</span>${(REG.letters || []).some((l) => l.from === REG.current && l.to === otherProfile().id && !l.read) ? `<span class="tiny faint">· tu mensaje aún no lo abre</span>` : ''}</button>` : ''}
     <form class="quick" id="quickForm" autocomplete="off">
@@ -1123,6 +1147,7 @@ function viewMateria(id) {
 /* ---------- Más ---------- */
 function viewMas() {
   const items = [
+    ['#/materias', 'book', 'Materias', 'Tus materias, horarios y calificaciones'],
     ['#/escanear', 'cam', 'Escanear foto', 'Saca pendientes y fechas de una foto o resuelve ejercicios de mate'],
     ['#/enfoque', 'timer', 'Modo enfoque', 'Temporizador para estudiar por bloques y llevar tu racha'],
     ['#/herramientas', 'tools', 'Herramientas', 'Calificación que necesitas, referencias APA y checklist de entrega'],
@@ -1593,11 +1618,12 @@ function plantHTML() {
 
 /* Mensajes entre Mitchell y Mel (en este mismo dispositivo) */
 const letters = () => (REG.letters ||= []);
-const otherProfile = () => (isGroup() ? null : PERSONAL.find((p) => p.id !== REG.current));
+const LETTER_PAIR = { mitchell: 'mel', mel: 'mitchell' };
+const otherProfile = () => { const o = !isGroup() && LETTER_PAIR[REG.current]; return o ? { id: o, name: profile(o)?.name || cap(o) } : null; };
 function lettersHTML() {
   const mine = letters().filter((l) => l.to === REG.current && !l.read);
   if (!mine.length) return '';
-  const l = mine[mine.length - 1]; const from = profile(l.from);
+  const l = mine[mine.length - 1]; const from = { name: profile(l.from)?.name || cap(l.from) };
   return `<button type="button" class="letter-card" data-act="letter-open" data-id="${l.id}">
     <span class="env" aria-hidden="true"><svg viewBox="0 0 48 36"><rect x="2" y="4" width="44" height="30" rx="5" fill="#fff" stroke="var(--pen)" stroke-width="2"/><path d="M4 7 L24 22 L44 7" fill="none" stroke="var(--pen)" stroke-width="2"/><path class="heart" d="M24 30 C16 24 14 19 18 17 C21 15.5 23 17 24 18.5 C25 17 27 15.5 30 17 C34 19 32 24 24 30Z" fill="#F08AA6"/></svg></span>
     <span><b>${mine.length > 1 ? `${mine.length} mensajes` : 'Un mensaje'} de ${esc(from?.name || '')}</b><span class="small muted">Toca para abrirlo</span></span></button>`;
@@ -1607,7 +1633,7 @@ function openLetter(id) {
   l.read = true; saveReg(); cloudSync();
   const d = $('#ask');
   d.innerHTML = `<form method="dialog" class="letter-open"><div class="paper"><span class="tiny faint">${fmtStamp(l.at)}</span>
-    <p class="letter-text">${esc(l.text)}</p><p class="letter-sign">— ${esc(profile(l.from)?.name || '')}</p></div>
+    <p class="letter-text">${esc(l.text)}</p><p class="letter-sign">— ${esc(profile(l.from)?.name || cap(l.from))}</p></div>
     <div class="btn-row" style="justify-content:space-between;margin-top:14px"><button type="button" class="btn" data-act="letter-reply">Responder</button><button class="btn primary" value="cancel">Guardar en mi corazón</button></div></form>`;
   d.showModal(); Snd.chime();
   setTimeout(() => leafBurst(d.querySelector('.paper')), 250);
@@ -1641,7 +1667,7 @@ function intro() {
    Si dos dispositivos cambian cosas al mismo tiempo, se combinan sin perder nada. */
 const CLOUD = { busy: false, last: null, error: '', timer: null, device: null };
 try { CLOUD.device = localStorage.getItem('aldia:device') || ('d' + uid()); localStorage.setItem('aldia:device', CLOUD.device); } catch { CLOUD.device = 'd' + uid(); }
-const cloudOn = () => !!REG.cloud;
+const cloudOn = () => true;
 const COLLS = ['tasks', 'subjects', 'notes', 'thoughts', 'refs'];
 const hashStr = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
 const baseKey = (p) => keyFor(p) + ':base';
@@ -1684,41 +1710,35 @@ function mergeDocs(local, remote, base) {
   return out;
 }
 
-async function cloudFetch(method, body) {
-  const r = await fetch(`/api/sync?space=${encodeURIComponent(REG.cloud)}`, {
+async function cloudFetch(method, body, query = '') {
+  const r = await fetch(`/api/sync${query ? `?${query}` : ''}`, {
     method, headers: { ...(body ? { 'content-type': 'application/json' } : {}), 'x-aldia-tokens': JSON.stringify(tokens()) }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store',
   });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.error || `error ${r.status}`);
+  if (!r.ok) { const e = new Error(j.error || `error ${r.status}`); e.status = r.status; throw e; }
   return j;
 }
 
 async function cloudSync(opts = {}) {
-  if (!cloudOn() || CLOUD.busy || !navigator.onLine) return;
+  if (CLOUD.busy || !navigator.onLine || !Object.keys(tokens()).length) return;
   CLOUD.busy = true; CLOUD.error = '';
   try {
     const remote = await cloudFetch('GET');
     let changedCurrent = false;
-    REG.hasPw = remote.hasPw || {};
-    for (const id of Object.keys(tokens())) if (!(remote.authorized || []).includes(id)) delete tokens()[id];
+    const live = Object.keys(remote.users || {});
+    let lost = false;
+    for (const id of Object.keys(tokens())) if (!live.includes(id)) { delete tokens()[id]; lost = true; }
     saveReg();
-    if (remote.group) {
-      const before = JSON.stringify(G.items.map((x) => x.u || x.at));
-      const pendingIds = new Set((REG.gout || []).map((x) => x.id));
-      G.items = [...remote.group.items, ...G.items.filter((x) => pendingIds.has(x.id) && !remote.group.items.some((y) => y.id === x.id))];
-      saveG();
-      if (isGroup() && before !== JSON.stringify(G.items.map((x) => x.u || x.at)) && !sheet().open && !choosing && !['gTaskIn', 'gPostIn', 'gIdeaIn', 'gPartIn'].includes(document.activeElement?.id)) render();
-      flushGroupOutbox();
-    }
+    const forestChanged = applyForests(remote);
     showPresence(remote.presence);
-    for (const p of PERSONAL) {
-      if (!(remote.authorized || []).includes(p.id)) continue;
-      const isCur = p.id === REG.current;
-      let local = isCur ? S : load(keyFor(p.id));
-      const hasLocal = isCur ? true : !!localStorage.getItem(keyFor(p.id));
-      const rdoc = remote.profiles?.[p.id];
-      const base = getBase(p.id);
-      const dirty = isDirty(p.id) || (hasLocal && !base && (local.tasks.length || local.subjects.length || local.notes.length || local.thoughts.length));
+    for (const id of live) {
+      if (!profile(id)) continue;
+      const isCur = id === dataOwner();
+      let local = isCur ? S : load(keyFor(id));
+      const hasLocal = isCur ? true : !!localStorage.getItem(keyFor(id));
+      const rdoc = remote.profiles?.[id];
+      const base = getBase(id);
+      const dirty = isDirty(id) || (hasLocal && !base && (local.tasks.length || local.subjects.length || local.notes.length || local.thoughts.length));
       let next = local, push = false;
       if (rdoc && rdoc.at > (local.cloudAt || 0)) {
         if (dirty) { next = mergeDocs(local, migrate(rdoc.data), base); push = true; }
@@ -1728,14 +1748,14 @@ async function cloudSync(opts = {}) {
       } else if (dirty || (!rdoc && hasLocal && (local.tasks.length || local.subjects.length))) push = true;
       if (push) {
         const data = JSON.parse(JSON.stringify(next)); delete data.timer;
-        const res = await cloudFetch('PUT', { kind: 'profile', profile: p.id, device: CLOUD.device, data });
+        const res = await cloudFetch('PUT', { kind: 'profile', profile: id, device: CLOUD.device, data });
         next.cloudAt = res.at;
       }
       if (push || next !== local) {
         if (isCur) { S = next; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* */ } }
-        else { try { localStorage.setItem(keyFor(p.id), JSON.stringify(next)); } catch { /* */ } }
+        else { try { localStorage.setItem(keyFor(id), JSON.stringify(next)); } catch { /* */ } }
       }
-      setBase(p.id, next); setDirty(p.id, false);
+      setBase(id, next); setDirty(id, false);
     }
     // mensajes
     const mine = new Map(letters().map((l) => [l.id, l]));
@@ -1747,21 +1767,25 @@ async function cloudSync(opts = {}) {
       else if (rl.read && !ll.read) ll.read = true;
     }
     const remoteIds = new Set((remote.letters || []).map((l) => l.id));
-    for (const l of mine.values()) if (!remoteIds.has(l.id)) toPush.push(l);
+    for (const l of mine.values()) if (!remoteIds.has(l.id) && tokens()[l.from]) toPush.push(l);
     REG.letters = [...mine.values()].sort((a, b) => a.at - b.at); saveReg();
-    for (const l of toPush) await cloudFetch('POST', { kind: 'letter', letter: l });
+    for (const l of toPush) { try { await cloudFetch('POST', { kind: 'letter', letter: l }); } catch { /* se reintenta */ } }
+    await flushForestOutbox();
+    await postTrees(live);
     CLOUD.last = Date.now();
-    if (changedCurrent && !sheet().open && !choosing) { render(); applyTheme(); }
+    if (lost) { choosing = true; render(); toast('Tu contraseña cambió en otro dispositivo. Vuelve a entrar.'); }
+    else if (changedCurrent && !sheet().open && !choosing) { render(); applyTheme(); }
+    else if (forestChanged && !sheet().open && !choosing && !['gTaskIn', 'gPostIn', 'gIdeaIn', 'gPartIn'].includes(document.activeElement?.id)) render();
     else if (route().name === 'hoy' && !sheet().open && !choosing && (remote.letters || []).some((l) => l.to === REG.current && !l.read)) render();
     updateCloudBadge();
   } catch (e) {
-    CLOUD.error = /fetch|network|Failed/i.test(e.message) ? 'Sin conexión con la nube' : e.message;
+    CLOUD.error = /fetch|network|Failed|Load failed/i.test(e.message) ? 'Sin conexión con la nube' : e.message;
     updateCloudBadge();
   } finally { CLOUD.busy = false; }
 }
 function queueCloud() {
-  if (!cloudOn()) return;
-  setDirty(REG.current, true);
+  if (!dataOwner()) return;
+  setDirty(dataOwner(), true);
   clearTimeout(CLOUD.timer); CLOUD.timer = setTimeout(cloudSync, 1500);
 }
 function updateCloudBadge() {
@@ -1769,84 +1793,22 @@ function updateCloudBadge() {
   el.innerHTML = cloudStateText();
 }
 function cloudStateText() {
-  if (!cloudOn()) return 'Desactivada';
   if (CLOUD.error) return `<span style="color:var(--red)">${esc(CLOUD.error)}. Se reintentará sola.</span>`;
   if (CLOUD.busy) return 'Sincronizando…';
   return CLOUD.last ? `Todo guardado en la nube · ${new Date(CLOUD.last).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` : 'Conectando…';
 }
-function newSpaceCode() {
-  const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; const r = crypto.getRandomValues(new Uint8Array(15));
-  const s = [...r].map((x) => A[x % A.length]).join('');
-  return `BOSQUE-${s.slice(0, 5)}-${s.slice(5, 10)}-${s.slice(10)}`;
-}
-function cloudHTML() {
-  return `<h2 class="sec">Nube compartida</h2>
-    <div class="card">
-      ${cloudOn() ? `<p style="margin:0 0 8px"><b>Activada.</b> Todo lo de Mitchell y Mel se guarda solo en la nube y aparece en cualquier dispositivo conectado con este código.</p>
-        <div class="code-box"><span id="cloudCode">${esc(REG.cloud)}</span><button class="btn ico" data-act="cloud-copy" aria-label="Copiar código">${icon('copy')}</button></div>
-        <p class="small muted" style="margin:8px 0 12px" id="cloudState">${cloudStateText()}</p>
-        <div class="btn-row"><button class="btn" data-act="cloud-now">${icon('reset')}Sincronizar ahora</button><button class="btn quiet" data-act="cloud-off">Desconectar este dispositivo</button></div>
-        <p class="small muted" style="margin:12px 0 0">Para conectar otro iPhone o iPad: instala la app ahí, entra a Ajustes, Nube compartida, “Unirme con código” y escribe este código. Guárdalo en un lugar seguro: es la llave de sus datos.</p>`
-      : `<p style="margin:0 0 12px">Guarda todo en la nube para que Mitchell y Mel vean sus tareas, materias, pensamientos y mensajes en cualquier iPhone o iPad.</p>
-        <div class="btn-row"><button class="btn primary" data-act="cloud-create">${icon('spark')}Crear nube nueva</button><button class="btn" data-act="cloud-join">Unirme con código</button></div>
-        <p class="small muted" style="margin:12px 0 0">Crea la nube en un solo dispositivo. En los demás usa “Unirme con código”.</p>`}
-    </div>`;
-}
+function cloudHTML() { return accountCardHTML(); }
 
-/* ================= Contraseñas ================= */
-const PERSONAL = PROFILES.filter((p) => !p.group);
-const isGroup = (id = REG.current) => !!profile(id)?.group;
+/* Cuentas y contraseñas: ver vida.js */
+const isGroup = (id = REG.current) => isForestId(id);
 const tokens = () => { REG.tokens ||= {}; return (REG.tokens[REG.cloud] ||= {}); };
-const hasPw = (id) => !!(REG.hasPw && REG.hasPw[id]);
-const locked = (id) => cloudOn() && (id === 'g512' || hasPw(id)) && !tokens()[id];
-
-async function loginProfile(id) {
-  const p = profile(id);
-  const pw = await ask({ title: `Entrar como ${p.name}`, text: id === 'g512' ? 'Escribe la contraseña del grupo.' : `Escribe la contraseña de ${p.name}.`, input: { placeholder: 'Contraseña', type: 'password' }, ok: 'Entrar' });
-  if (!pw) return false;
-  try {
-    const r = await cloudFetch('POST', { kind: 'login', profile: id, password: pw });
-    tokens()[id] = r.token; saveReg();
-    Snd.drop(); return true;
-  } catch (e) { toast(e.message === 'Contraseña incorrecta' ? 'Contraseña incorrecta. Intenta de nuevo.' : `No se pudo entrar: ${e.message}`); return false; }
-}
-async function setPassword(id) {
-  const p = profile(id);
-  if (!cloudOn()) { toast('Primero activa la Nube compartida en Ajustes.'); return false; }
-  const pw = await ask({ title: hasPw(id) ? `Cambiar contraseña de ${p.name}` : `Contraseña para ${p.name}`, text: id === 'g512' ? 'Es la que compartirás con tus compañeros para que entren al grupo. Mínimo 4 caracteres.' : 'Mínimo 4 caracteres. La pedirá cuando alguien quiera entrar a esta sección en otro dispositivo.', input: { placeholder: 'Nueva contraseña', type: 'password' }, ok: 'Guardar' });
-  if (!pw) return false;
-  if (pw.length < 4) { toast('Usa al menos 4 caracteres.'); return false; }
-  const again = await ask({ title: 'Confírmala', input: { placeholder: 'Escríbela otra vez', type: 'password' }, ok: 'Confirmar' });
-  if (again !== pw) { toast('No coinciden. Intenta de nuevo.'); return false; }
-  try {
-    const r = await cloudFetch('POST', { kind: 'setpw', profile: id, password: pw });
-    tokens()[id] = r.token; REG.hasPw = { ...(REG.hasPw || {}), [id]: true }; saveReg();
-    toast(`Contraseña de ${p.name} guardada.`); Snd.chime(); return true;
-  } catch (e) { toast(e.message); return false; }
-}
-async function enterProfile(id) {
-  if (id === 'g512' && !cloudOn()) { toast('El Grupo 512 vive en la nube: primero activa la Nube compartida en Ajustes.'); return; }
-  if (id === 'g512' && cloudOn() && !hasPw('g512')) {
-    const meOk = PERSONAL.some((p) => hasPw(p.id) && tokens()[p.id]);
-    if (!meOk) { toast('Para crear el Grupo 512, primero pon contraseña a tu usuario en Ajustes.'); return; }
-    const ok = await ask({ title: 'Crear el Grupo 512', text: 'Elige una contraseña para el grupo. Se la darás a tus compañeros para que entren. Ellos solo verán el grupo, nunca tu sección ni la de Mel.', ok: 'Elegir contraseña' });
-    if (!ok || !(await setPassword('g512'))) return;
-  } else if ((locked(id) || (cloudOn() && !isGroup(id) && hasPw(id) && REG.me && id !== REG.me)) && !(await loginProfile(id))) return;
-  if (!REG.me && !isGroup(id)) { REG.me = id; saveReg(); }
-  switchProfile(id);
-  if (isGroup(id) && !REG.memberName) setTimeout(askMemberName, 500);
-}
-async function askMemberName() {
-  const n = await ask({ title: '¿Cómo te llamas?', text: 'Así tus compañeros sabrán quién subió cada tarea, idea o mensaje.', input: { placeholder: 'Tu nombre', value: REG.memberName || '' }, ok: 'Listo' });
-  if (n) { REG.memberName = n.slice(0, 30); saveReg(); render(); }
-}
 
 /* ================= Ojito: alguien está en tu sección ================= */
 let presenceT = null, presenceShown = null;
 function presenceTick() {
   clearTimeout(presenceT);
   if (!cloudOn() || document.visibilityState !== 'visible') { presenceT = setTimeout(presenceTick, 20000); return; }
-  if (REG.me && PERSONAL.some((p) => p.id === REG.current) && REG.current !== REG.me && !choosing) {
+  if (REG.me && !isForestId(REG.current) && REG.current !== REG.me && !choosing) {
     cloudFetch('POST', { kind: 'presence', viewer: REG.me, viewing: REG.current }).catch(() => {});
   }
   presenceT = setTimeout(presenceTick, 20000);
@@ -1855,7 +1817,7 @@ function showPresence(list) {
   const mine = (list || []).filter((v) => v.viewing === REG.current && REG.current === REG.me && v.viewer !== REG.me);
   const el = $('#eye');
   if (!mine.length) { if (el) { el.classList.add('out'); setTimeout(() => el.remove(), 600); } presenceShown = null; return; }
-  const who = profile(mine[0].viewer)?.name || 'Alguien';
+  const who = profile(mine[0].viewer)?.name || cap(mine[0].viewer || 'alguien');
   if (el && presenceShown === who) return;
   el?.remove();
   const d = document.createElement('button');
@@ -1873,53 +1835,47 @@ function showPresence(list) {
   if (Snd.on()) Snd.bell(880, 0, 1.2, 0.04);
 }
 
-/* ================= Grupo 512 ================= */
-const gKey = () => `aldia:g512cache:${REG.cloud || ''}`;
-let G = { items: [] };
-function loadG() { try { G = JSON.parse(localStorage.getItem(gKey()) || '{"items":[]}'); } catch { G = { items: [] }; } }
-function saveG() { try { localStorage.setItem(gKey(), JSON.stringify(G)); } catch { /* */ } }
-loadG();
-const gAll = (type) => G.items.filter((x) => x.type === type && !x.deleted);
-const gGet = (id) => G.items.find((x) => x.id === id);
-const me = () => REG.memberName || profile(REG.me)?.name || 'Yo';
+/* ================= Bosques (grupos colaborativos) ================= */
+const curFid = () => (isForestId(REG.current) ? REG.current.slice(2) : null);
+const gItems = () => (FOR.f[curFid()]?.items) || [];
+const gAll = (type) => gItems().filter((x) => x.type === type && !x.deleted);
+const gGet = (id) => gItems().find((x) => x.id === id);
+const me = () => profile(REG.me)?.name || 'Yo';
+const forestMeta = () => FOR.f[curFid()]?.meta || null;
 const initials = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
-const nameColor = (n) => { const c = ['#2F8A5B', '#3E9A93', '#5B7FD1', '#B07AC8', '#D27C5E', '#C9A55C', '#4F9A63', '#7A8CA8']; let h = 0; for (const ch of String(n)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return c[h % c.length]; };
+const memberColor = (n) => { const m = Object.values(FOR.members || {}).find((x) => x.name === n); return m?.color; };
+const nameColor = (n) => { if (memberColor(n)) return memberColor(n); const c = ['#2F8A5B', '#3E9A93', '#5B7FD1', '#B07AC8', '#D27C5E', '#C9A55C', '#4F9A63', '#7A8CA8']; let h = 0; for (const ch of String(n)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return c[h % c.length]; };
 const mini = (n, cls = '') => `<span class="mini ${cls}" style="--pc:${nameColor(n)}" title="${esc(n)}">${esc(initials(n))}</span>`;
 const ago = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'ahora' : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.round(m / 60)} h` : relDay(toISO(new Date(ms))); };
 function linkify(t) { return esc(t).replace(/https?:\/\/[^\s<]+/g, (u) => { const s = safeURL(u.replace(/&amp;/g, '&')); return s ? `<a href="${esc(s)}" target="_blank" rel="noopener">${esc(new URL(s).hostname.replace(/^www\./, ''))}</a>` : u; }); }
 
 async function gput(item) {
+  const fid = curFid(); if (!fid) return;
   item.at ||= Date.now(); item.by ||= me();
-  const i = G.items.findIndex((x) => x.id === item.id);
-  if (i >= 0) G.items[i] = { ...G.items[i], ...item }; else G.items.push(item);
-  saveG(); render();
-  try { await cloudFetch('POST', { kind: 'gitem', item: i >= 0 ? G.items[i] : item, device: CLOUD.device }); }
+  const list = (FOR.f[fid].items ||= []);
+  const i = list.findIndex((x) => x.id === item.id);
+  if (i >= 0) list[i] = { ...list[i], ...item }; else list.push(item);
+  saveFOR(); waterToday(); render();
+  const sent = i >= 0 ? list[i] : item;
+  try { await cloudFetch('POST', { kind: 'gitem', as: REG.me, forest: fid, item: sent, device: CLOUD.device }); }
   catch (e) {
-    (REG.gout ||= []).push(item); saveReg();
-    if (/sesi[oó]n|grupo/i.test(e.message)) groupAuthLost(); else toast('Sin conexión: se enviará en cuanto vuelva el internet.');
+    (REG.gout ||= []).push({ fid, item: sent }); saveReg();
+    if (e.status === 401 || e.status === 403) forestAuthLost(e); else toast('Sin conexión: se enviará en cuanto vuelva el internet.');
   }
 }
-async function flushGroupOutbox() {
+async function flushForestOutbox() {
   const out = REG.gout || []; if (!out.length) return;
   REG.gout = [];
-  let authLost = false;
-  for (const it of out) { try { await cloudFetch('POST', { kind: 'gitem', item: it, device: CLOUD.device }); } catch (e) { REG.gout.push(it); if (/sesi[oó]n|grupo/i.test(e.message)) authLost = true; } }
+  for (const o of out) { if (!o || !o.fid) continue; try { await cloudFetch('POST', { kind: 'gitem', as: REG.me, forest: o.fid, item: o.item, device: CLOUD.device }); } catch (e) { if (e.status !== 403) REG.gout.push(o); } }
   saveReg();
-  if (authLost) groupAuthLost(); else if (out.length && !REG.gout.length) { toast('Todo lo pendiente del grupo ya se guardó en la nube.'); render(); }
 }
-let authPrompting = false;
-async function groupAuthLost() {
-  delete tokens().g512; saveReg();
-  if (authPrompting || !isGroup()) return;
-  authPrompting = true;
-  const ok = await ask({ title: 'Vuelve a entrar al grupo', text: 'La sesión del Grupo 512 se cerró (quizá cambió la contraseña). Escríbela de nuevo para guardar tus cambios; no se pierde nada.', ok: 'Escribir contraseña' });
-  if (ok && (await loginProfile('g512'))) { await flushGroupOutbox(); cloudSync(); }
-  authPrompting = false; render();
+function forestAuthLost(e) {
+  if (e && e.status === 403) { toast(e.message); return; }
+  toast('Tu sesión se cerró. Vuelve a entrar con tu contraseña; tus cambios no se pierden.');
 }
 function groupStatus() {
   const pend = (REG.gout || []).length;
-  if (!cloudOn()) return `<span class="gstat warn">${icon('bell', 'sm')}Sin nube: activa la Nube compartida en Más</span>`;
-  if (!tokens().g512) return `<button class="gstat warn" data-act="g-relogin">${icon('lock', 'sm')}Sesión cerrada: toca para entrar</button>`;
+  if (!REG.me || !tokens()[REG.me]) return `<button class="gstat warn" data-act="profile-choose">${icon('lock', 'sm')}Sesión cerrada: toca para entrar</button>`;
   if (pend) return `<button class="gstat warn" data-act="g-retry">${icon('reset', 'sm')}${plural(pend, 'cambio sin guardar', 'cambios sin guardar')}: toca para reintentar</button>`;
   if (CLOUD.error) return `<span class="gstat warn">${icon('bell', 'sm')}${esc(CLOUD.error)}</span>`;
   return `<span class="gstat ok">${icon('check', 'sm')}Guardado en la nube${CLOUD.last ? ` · ${new Date(CLOUD.last).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` : ''}</span>`;
@@ -1945,7 +1901,7 @@ function pushBanner() {
   return `<div class="banner">${icon('bell')}<p>Activa los avisos para enterarte al instante cuando alguien suba una tarea.</p><button class="btn primary" data-act="g-push">Activar</button></div>`;
 }
 function groupHead(title, sub) {
-  return `<section class="group-head"><div class="today-top"><div class="g-badge">${avatar(profile('g512'), 'lg')}</div>
+  return `<section class="group-head"><div class="today-top"><div class="g-badge">${avatar(profile(), 'lg')}</div>
       <div class="head-actions"><button type="button" class="who-chip" data-act="profile-sheet">${mini(me(), 'xs')}<span>${esc(me())}</span></button></div></div>
     <h1 class="page-title" style="margin-top:12px">${title}</h1><p class="page-sub">${sub}</p>${groupStatus()}</section>`;
 }
@@ -1954,8 +1910,8 @@ function viewGrupo() {
   const pend = tasks.filter((t) => !gDone()[t.id] && (!t.due || diffDays(today(), t.due) >= -3));
   const done = tasks.filter((t) => gDone()[t.id]);
   const by = {}; for (const t of pend) (by[bucketOf(t)] ||= []).push(t);
-  const people = new Set(G.items.map((x) => x.by).filter(Boolean));
-  return `${groupHead('Grupo 512', `${plural(pend.length, 'pendiente', 'pendientes')} del grupo · ${plural(people.size, 'compañero activo', 'compañeros activos')}`)}
+  const people = new Set(gItems().map((x) => x.by).filter(Boolean));
+  return `${groupHead(esc(forestMeta()?.name || 'Bosque'), `${plural(pend.length, 'pendiente', 'pendientes')} del grupo · ${plural(people.size, 'compañero activo', 'compañeros activos')}`)}
     <form class="quick" id="gTaskForm" autocomplete="off"><div class="quick-row"><label for="gTaskIn" class="sr">Nueva tarea del grupo</label>
       <input id="gTaskIn" placeholder="Ej. ensayo de historia para el viernes"><button class="quick-go">${icon('plus', 'sm')}Subir</button></div>
       <div class="quick-preview" id="gTaskPrev"></div></form>
@@ -2045,24 +2001,28 @@ function viewIdeas() {
       : `<div class="empty"><h3>Sin ideas todavía</h3><p>La primera idea puede ser la que les ayude a todos.</p></div>`}</div>`;
 }
 function viewMasGrupo() {
-  const p = profile('g512'); const st = S.settings;
+  const p = profile(); const f = forestMeta(); const st = S.settings;
+  if (!p || !f) return '<div class="empty"><h3>Este Bosque ya no está</h3><p><button class="btn" data-act="profile-choose">Volver</button></p></div>';
+  const mem = f.members.map((id) => ({ id, ...(FOR.members[id] || { name: cap(id), color: '#2F8A5B' }) }));
   return `<h1 class="page-title">Más</h1>
-    <p class="page-sub">Ajustes del Grupo 512 en este dispositivo.</p>
+    <p class="page-sub">Ajustes del Bosque ${esc(f.name)}.</p>
     ${groupStatus()}
-    <ul class="rows" style="margin-top:14px"><li><button type="button" class="rowbtn" data-act="profile-sheet">${avatar(p, 'sm')}<span class="txt"><b>Estás en el Grupo 512</b><span>Toca para cambiar de usuario</span></span>${icon('chev', 'chev')}</button></li>
-      <li><button type="button" class="rowbtn" data-act="g-name"><span class="ico">${icon('edit')}</span><span class="txt"><b>Mi nombre en el grupo</b><span>${esc(me())}</span></span>${icon('chev', 'chev')}</button></li>
-      <li><button type="button" class="rowbtn" data-act="g-invite"><span class="ico">${icon('share')}</span><span class="txt"><b>Invitar compañeros</b><span>Comparte el código para que se unan</span></span>${icon('chev', 'chev')}</button></li>
-      <li><button type="button" class="rowbtn" data-act="g-push"><span class="ico">${icon('bell')}</span><span class="txt"><b>Avisos del grupo</b><span>${REG.gpush ? 'Activados en este dispositivo' : 'Recibe una notificación cuando alguien suba algo'}</span></span>${icon('chev', 'chev')}</button></li>
+    <h2 class="sec">Integrantes <small>${mem.length}</small></h2>
+    <div class="card"><div class="members">${mem.map((m) => `<span class="member">${mini(m.name)}<span>${esc(m.name)}${m.id === f.owner ? ' · fundó el Bosque' : ''}</span></span>`).join('')}</div>
+      <div class="btn-row" style="margin-top:12px"><button class="btn primary" data-act="forest-invite">${icon('plus')}Invitar a alguien</button></div>
+      <p class="small muted" style="margin:10px 0 0">Escribe el nombre de usuario de tu compañero. Le llega una solicitud a su sesión y, si la acepta, entra al Bosque.</p></div>
+    <ul class="rows" style="margin-top:14px">
+      <li><button type="button" class="rowbtn" data-act="forest-rename"><span class="ico">${icon('edit')}</span><span class="txt"><b>Nombre del Bosque</b><span>${esc(f.name)}</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="g-push"><span class="ico">${icon('bell')}</span><span class="txt"><b>Avisos del Bosque</b><span>${REG.gpush ? 'Activados en este dispositivo' : 'Recibe una notificación cuando alguien suba algo'}</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="profile-choose"><span class="ico">${icon('users')}</span><span class="txt"><b>Volver a mi usuario</b><span>Cambiar de usuario o de Bosque</span></span>${icon('chev', 'chev')}</button></li>
       <li><a href="#/instalar"><span class="ico">${icon('phone')}</span><span class="txt"><b>Instalar la app</b><span>Necesario para avisos en iPhone y iPad</span></span>${icon('chev', 'chev')}</a></li></ul>
-    ${cloudHTML()}
-    ${PERSONAL.some((x) => tokens()[x.id]) ? `<h2 class="sec">Contraseña del grupo</h2><div class="card"><p style="margin:0 0 10px">Solo Mitchell o Mel pueden cambiarla. Al cambiarla, todos tendrán que escribir la nueva.</p><button class="btn" data-act="g-pw">${icon('lock')}Cambiar contraseña del grupo</button></div>` : ''}
     <h2 class="sec">Apariencia y sonido</h2>
     <div class="card" style="padding-top:6px;padding-bottom:6px">
       <div class="toggle"><span class="t">Tema</span><div class="seg">${[['light', 'Día'], ['dark', 'Noche']].map(([k, l]) => `<button type="button" data-act="theme" data-v="${k}" aria-pressed="${(st.theme === 'dark' ? 'dark' : 'light') === k}">${l}</button>`).join('')}</div></div>
       <div class="toggle"><span class="t">Hojas cayendo</span><label class="switch"><input type="checkbox" data-set="leaves" data-bool ${st.leaves !== false ? 'checked' : ''} aria-label="Hojas cayendo"><span></span></label></div>
       <div class="toggle"><span class="t">Sonidos suaves</span><label class="switch"><input type="checkbox" data-set="sounds" data-bool ${st.sounds !== false ? 'checked' : ''} aria-label="Sonidos suaves"><span></span></label></div>
     </div>
-    <p style="margin-top:18px"><button class="btn danger" data-act="g-logout">${icon('x')}Salir del grupo en este dispositivo</button></p>`;
+    <p style="margin-top:18px"><button class="btn danger" data-act="forest-leave">${icon('x')}Salir de este Bosque</button></p>`;
 }
 function urlB64(s) { const p = '='.repeat((4 - (s.length % 4)) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...b].map((c) => c.charCodeAt(0))); }
 async function enableGroupPush() {
@@ -2073,14 +2033,14 @@ async function enableGroupPush() {
     const { publicKey } = await (await fetch('/api/sync?kind=vapid', { cache: 'no-store' })).json();
     const reg = await navigator.serviceWorker.ready;
     const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(publicKey) }));
-    await cloudFetch('POST', { kind: 'gsub', subscription: sub.toJSON(), device: CLOUD.device, name: me() });
+    await cloudFetch('POST', { kind: 'gsub', as: REG.me, subscription: sub.toJSON(), device: CLOUD.device });
     REG.gpush = true; saveReg(); render(); toast('Avisos del grupo activados.'); Snd.chime();
   } catch (e) { toast('No se pudieron activar los avisos. Revisa tu conexión.'); }
 }
 
 let navMode = null;
-const NAV_PERSONAL = [['hoy', 'home', 'Hoy'], ['tareas', 'list', 'Tareas'], ['calendario', 'cal', 'Calendario'], ['materias', 'book', 'Materias'], ['mente', 'leaf', 'Mente'], ['mas', 'grid', 'Más']];
-const NAV_GROUP = [['grupo', 'list', 'Pendientes'], ['equipos', 'users', 'Equipos'], ['ideas', 'spark', 'Ideas'], ['mas', 'grid', 'Más']];
+const NAV_PERSONAL = [['hoy', 'home', 'Hoy'], ['tareas', 'list', 'Tareas'], ['calendario', 'cal', 'Calendario'], ['vida', 'tree', 'Vida'], ['mente', 'leaf', 'Mente'], ['mas', 'grid', 'Más']];
+const NAV_GROUP = [['grupo', 'list', 'Pendientes'], ['equipos', 'users', 'Equipos'], ['ideas', 'spark', 'Ideas'], ['vida', 'tree', 'Vida'], ['mas', 'grid', 'Más']];
 function setNav(group) {
   const mode = group ? 'g' : 'p'; if (mode === navMode) return; navMode = mode;
   $('.nav').innerHTML = (group ? NAV_GROUP : NAV_PERSONAL).map(([k, ic, l]) => `<a href="#/${k}" data-nav="${k}"><svg class="i"><use href="#i-${ic}"/></svg><span>${l}</span></a>`).join('');
@@ -2096,36 +2056,7 @@ function openTeamSheet(taskId) {
   setTimeout(() => $('#tmTitle')?.focus(), 60);
 }
 
-/* ---------- Usuarios ---------- */
-function viewQuien() {
-  return `<div class="who">
-    <h1 class="page-title" style="font-size:clamp(36px,10vw,48px)">¿Quién eres?</h1>
-    <p class="page-sub">Cada quien tiene sus propias tareas, materias y calificaciones.</p>
-    ${PROFILES.map((p) => {
-      const n = pendingCountFor(p.id);
-      return `<button type="button" class="who-btn" data-act="profile-pick" data-id="${p.id}">${avatar(p, 'lg')}
-        <span style="flex:1"><b>${esc(p.name)}</b><span class="d">${p.group ? (cloudOn() ? (hasPw('g512') ? 'Tareas, equipos e ideas del grupo' : 'Créalo para tu grupo') : 'Necesita la nube compartida') : locked(p.id) ? 'Con contraseña' : n ? plural(n, 'entrega pendiente', 'entregas pendientes') : 'Sin pendientes'}</span></span>
-        ${locked(p.id) ? `<span class="lock">${icon('lock')}</span>` : ''}</button>`;
-    }).join('')}
-    <p style="text-align:center;margin-top:22px">${cloudOn() ? `<span class="small muted">${icon('spark', 'sm')} Conectado a la nube</span>` : '<button class="link-btn" data-act="cloud-join">¿Ya tienen una nube? Unirme con código</button>'}</p>
-  </div>`;
-}
-function openProfileSheet() {
-  const html = `${sheetHead('Usuarios')}
-    <div class="sheet-body">
-      <p class="muted" style="margin-top:0">Cada usuario guarda sus propias tareas, materias, apuntes y ajustes en este dispositivo.</p>
-      ${PROFILES.map((p) => {
-        const isMe = p.id === REG.current;
-        const n = pendingCountFor(p.id);
-        return `<button type="button" class="who-btn ${isMe ? 'me' : ''}" data-act="profile-to" data-id="${p.id}" ${isMe ? 'aria-current="true"' : ''}>${avatar(p)}
-          <span style="flex:1"><b>${esc(p.name)}</b><span class="d">${n ? plural(n, 'entrega pendiente', 'entregas pendientes') : 'Sin pendientes'}</span></span>
-          ${isMe ? '<span class="chip pen">Activo</span>' : `<span class="chip">Cambiar</span>`}</button>`;
-      }).join('')}
-      <div class="toggle" style="margin-top:12px"><span><span class="t">Preguntar quién eres al abrir</span><span class="d" style="display:block">Útil si comparten el mismo celular.</span></span>
-        <label class="switch"><input type="checkbox" data-reg="ask" ${REG.ask ? 'checked' : ''} aria-label="Preguntar quién eres al abrir"><span></span></label></div>
-    </div>`;
-  openSheet(html);
-}
+/* viewQuien y openProfileSheet están en vida.js */
 function switchProfile(id) {
   if (!profile(id)) return;
   if (sheet().open) closeSheet(false);
@@ -2133,17 +2064,17 @@ function switchProfile(id) {
   save();
   const changed = id !== REG.current;
   REG.current = id; saveReg();
-  KEY = keyFor(id);
+  KEY = keyFor(dataOwner());
   S = load();
-  if (!S.settings.name) S.settings.name = profile(id).name;
+  if (!S.settings.name && !isForestId(id)) S.settings.name = profile(id).name;
   choosing = false;
   Object.assign(UI, { tf: 'pend', ts: 'all', tt: 'all', q: '', notesQ: '', wStep: 0, calSel: today(), calMonth: today().slice(0, 7) });
   applyTheme();
-  if (location.hash && location.hash !== '#/hoy') location.hash = '#/hoy'; else render();
+  if (location.hash && location.hash !== '#/hoy' && !isForestId(id)) location.hash = '#/hoy'; else if (isForestId(id) && location.hash !== '#/grupo') location.hash = '#/grupo'; else render();
   window.scrollTo(0, 0);
   updateBadge(); queueSync(); scheduleReminders(); dailyDigest();
-  if (changed) toast(`Ahora estás como ${profile(id).name}.`);
-  cloudSync();
+  if (changed) toast(`Ahora estás en ${isForestId(id) ? 'el Bosque ' : 'la sesión de '}${profile(id).name}.`);
+  cloudSync(); treeCheck();
 }
 
 /* ---------- Enfoque ---------- */
@@ -2408,13 +2339,7 @@ function viewAjustes() {
       <div class="toggle"><span><span class="t">Preguntar quién eres al abrir</span><span class="d" style="display:block">Útil si comparten el mismo celular.</span></span>
         <label class="switch"><input type="checkbox" data-reg="ask" ${REG.ask ? 'checked' : ''} aria-label="Preguntar quién eres al abrir"><span></span></label></div>
     </div>
-    ${cloudHTML()}
-    ${cloudOn() ? `<h2 class="sec">Contraseñas</h2><div class="card" style="padding-top:6px;padding-bottom:6px">
-      ${PERSONAL.map((pp) => `<div class="toggle"><span style="display:flex;gap:12px;align-items:center">${avatar(pp, 'sm')}<span><span class="t">${esc(pp.name)}</span><span class="d" style="display:block">${hasPw(pp.id) ? 'Protegido con contraseña' : 'Sin contraseña: cualquiera con el código puede entrar'}</span></span></span>
-        ${pp.id === REG.me ? `<button class="btn" data-act="set-pw" data-id="${pp.id}">${hasPw(pp.id) ? 'Cambiar' : 'Poner'}</button>` : `<span class="small muted" style="text-align:right;max-width:130px">${hasPw(pp.id) ? icon('lock', 'sm') : `La pone ${esc(pp.name)} desde su dispositivo`}</span>`}</div>`).join('')}
-      <div class="toggle"><span><span class="t">Este dispositivo es de</span><span class="d" style="display:block">Para el ojito: así la app sabe quién está mirando.</span></span>
-        <div class="seg">${PERSONAL.map((pp) => `<button type="button" data-act="set-me" data-v="${pp.id}" aria-pressed="${REG.me === pp.id}">${esc(pp.name)}</button>`).join('')}</div></div>
-    </div>` : ''}
+    ${accountCardHTML()}
     <div class="card" style="margin-top:12px">
       <div class="field"><label for="setName">Cómo te saludo</label><input id="setName" class="input" data-set="name" value="${esc(st.name)}" placeholder="Para saludarte"></div>
       <div class="field" style="margin:0"><span class="lbl">Tema</span><div class="seg" role="group">${[['light', 'Bosque de día'], ['dark', 'Bosque de noche']].map(([k, l]) => `<button type="button" data-act="theme" data-v="${k}" aria-pressed="${(st.theme === 'dark' ? 'dark' : 'light') === k}">${l}</button>`).join('')}</div></div>
@@ -2445,7 +2370,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 6.2. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.0. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -2515,7 +2440,7 @@ function render() {
   setNav(groupMode);
   if (choosing) html = viewQuien();
   else if (groupMode) {
-    html = r.name === 'equipos' ? viewEquipos() : r.name === 'equipo' ? viewEquipo(r.arg) : r.name === 'ideas' ? viewIdeas() : r.name === 'instalar' ? viewInstalar() : r.name === 'mas' ? viewMasGrupo() : viewGrupo();
+    html = r.name === 'equipos' ? viewEquipos() : r.name === 'equipo' ? viewEquipo(r.arg) : r.name === 'ideas' ? viewIdeas() : r.name === 'vida' ? viewVida() : r.name === 'instalar' ? viewInstalar() : r.name === 'mas' ? viewMasGrupo() : viewGrupo();
   } else if (showWelcome) html = viewBienvenida();
   else {
     switch (r.name) {
@@ -2536,6 +2461,7 @@ function render() {
       case 'ayuda': html = viewAyuda(); break;
       case 'escanear': html = viewEscanear(); break;
       case 'mente': html = viewMente(); break;
+      case 'vida': html = viewVida(); break;
       case 'carta': setTimeout(() => { history.replaceState(null, '', '#/mas'); writeLetter(); }, 0); html = viewMas(); break;
       default: html = viewHoy();
     }
@@ -2548,9 +2474,9 @@ function render() {
   if (qv && $('#quickIn')) { $('#quickIn').value = qv; updateQuickPreview(); }
   if (hadFocus && ['quickIn', 'taskQ', 'notesQ'].includes(hadFocus)) { const el = $('#' + hadFocus); if (el) { el.focus(); const v = el.value; el.setSelectionRange?.(v.length, v.length); } }
 
-  const known = ['carta', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
+  const known = ['carta', 'vida', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
   const rn = known.includes(r.name) ? r.name : 'hoy';
-  const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', mas: 'mas', instalar: 'mas' }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'materias', tareas: 'tareas', calendario: 'calendario', materias: 'materias', hoy: 'hoy', mente: 'mente' }[rn] || 'mas');
+  const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', vida: 'vida', mas: 'mas', instalar: 'mas' }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'mas', materias: 'mas', tareas: 'tareas', calendario: 'calendario', hoy: 'hoy', mente: 'mente', vida: 'vida' }[rn] || 'mas');
   $$('.nav a').forEach((a) => { if (a.dataset.nav === navName) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   $('.nav').hidden = showWelcome;
   $('#fab').hidden = groupMode || showWelcome || !['hoy', 'tareas', 'calendario', 'materia'].includes(rn);
@@ -3014,31 +2940,7 @@ const ACTIONS = {
   'ck-uncheck': () => $$('.checklist input[type=checkbox]').forEach((c) => { c.checked = false; }),
   'ck-reset': () => commit((s) => { s.settings.checklist = DEFAULT_CHECKLIST.slice(); }),
   'profile-sheet': () => openProfileSheet(),
-  'cloud-create': async () => {
-    const ok = await ask({ title: 'Crear nube compartida', text: 'Se subirá lo que tienen en este dispositivo (Mitchell y Mel) y se te dará un código para conectar los demás dispositivos.', ok: 'Crear nube' });
-    if (!ok) return;
-    REG.cloud = newSpaceCode(); saveReg();
-    PERSONAL.forEach((pp) => setDirty(pp.id, true));
-    render(); await cloudSync(); render();
-    toast(CLOUD.error ? `No se pudo conectar: ${CLOUD.error}` : 'Nube creada. Todo se guarda solo a partir de ahora.');
-  },
-  'cloud-join': async () => {
-    const v = await ask({ title: 'Unirme con código', text: 'Escribe el código que aparece en Ajustes del otro dispositivo.', input: { placeholder: 'BOSQUE-XXXXX-XXXXX-XXXXX' }, ok: 'Conectar' });
-    if (!v) return;
-    const code = v.toUpperCase().replace(/\s+/g, '');
-    if (!/^[A-Z0-9-]{14,40}$/.test(code)) { toast('Ese código no parece correcto. Revísalo.'); return; }
-    const prev = REG.cloud; REG.cloud = code; saveReg();
-    await cloudSync();
-    if (CLOUD.error) { REG.cloud = prev; saveReg(); toast(`No se pudo conectar: ${CLOUD.error}`); return; }
-    choosing = true; S = load(); applyTheme(); render();
-    toast('Conectado. Ya ves todo lo de la nube.');
-  },
   'cloud-now': async () => { await cloudSync(); toast(CLOUD.error ? CLOUD.error : 'Sincronizado.'); },
-  'cloud-copy': () => { navigator.clipboard?.writeText(REG.cloud).then(() => toast('Código copiado.'), () => toast('Mantén presionado el código para copiarlo.')); },
-  'cloud-off': async () => {
-    const ok = await ask({ title: '¿Desconectar este dispositivo?', text: 'Los datos se quedan aquí y en la nube, pero este dispositivo ya no se sincronizará. Puedes volver a unirte con el código.', ok: 'Desconectar', danger: true });
-    if (!ok) return; delete REG.cloud; saveReg(); render();
-  },
   'letter-open': (el) => openLetter(el.dataset.id),
   'letter-write': () => { if (!isGroup()) writeLetter(); },
   'letter-reply': () => { $('#ask').close(); setTimeout(writeLetter, 120); },
@@ -3106,16 +3008,14 @@ const ACTIONS = {
   },
   'profile-to': (el) => { if (el.dataset.id === REG.current) { closeSheet(false); return; } closeSheet(false); enterProfile(el.dataset.id); },
   'profile-pick': (el) => enterProfile(el.dataset.id),
-  'set-pw': async (el) => { await setPassword(el.dataset.id); render(); },
-  'set-me': (el) => { REG.me = el.dataset.v || null; saveReg(); render(); },
-  'g-done': (el) => { const d = gDone(); if (d[el.dataset.id]) delete d[el.dataset.id]; else { d[el.dataset.id] = Date.now(); Snd.chime(); leafBurst(el); } saveReg(); setTimeout(render, d[el.dataset.id] ? 450 : 0); },
+  'g-done': (el) => { const d = gDone(); if (d[el.dataset.id]) delete d[el.dataset.id]; else { d[el.dataset.id] = Date.now(); Snd.chime(); leafBurst(el); } saveReg(); treeSoon(); setTimeout(render, d[el.dataset.id] ? 450 : 0); },
   'g-open': (el) => openGroupTask(el.dataset.id),
   'g-task-save': (el) => { const t = gGet(el.dataset.id); gput({ ...t, title: $('#gtTitle').value.trim() || t.title, due: $('#gtDue').value || null, time: $('#gtTime').value, subject: $('#gtSubj').value.trim(), desc: $('#gtDesc').value }); closeSheet(false); toast('Tarea actualizada para todos.'); },
   'g-del': async (el) => { const it = gGet(el.dataset.id); if (!it) return; const ok = await ask({ title: '¿Quitarlo para todos?', text: 'Desaparece para todo el grupo.', ok: 'Quitar', danger: true }); if (!ok) return; closeSheet(false); gput({ ...it, deleted: true }); },
   'g-task-cal': (el) => { const t = gGet(el.dataset.id); if (t?.due) window.open(googleCalURL({ ...t, type: 'tarea', subjectId: null }), '_blank', 'noopener'); else toast('Esta tarea no tiene fecha.'); },
   'g-copy-mine': (el) => {
-    const t = gGet(el.dataset.id); const mineP = REG.me && !isGroup(REG.me) ? REG.me : null;
-    if (!mineP) { toast('Primero elige en Ajustes de quién es este dispositivo.'); return; }
+    const t = gGet(el.dataset.id); const mineP = REG.me || null;
+    if (!mineP) { toast('Primero entra con tu usuario.'); return; }
     const d = load(keyFor(mineP)); d.tasks.push({ id: uid(), title: t.title, subjectId: null, type: 'tarea', due: t.due, time: t.time || '', priority: 2, value: null, estimate: 0, desc: t.desc || '', steps: [], delivery: '', links: '', done: false, doneAt: null, grade: null, created: Date.now(), comments: [], photos: [] });
     try { localStorage.setItem(keyFor(mineP), JSON.stringify(d)); setDirty(mineP, true); } catch { /* */ }
     toast(`Copiada a las tareas de ${profile(mineP).name}.`);
@@ -3134,13 +3034,8 @@ const ACTIONS = {
   'g-part-take': (el) => { const p = gGet(el.dataset.id); gput({ ...p, owner: me() }); },
   'g-like': (el) => { const id = `${el.dataset.id}-${slug(me())}`; const l = gGet(id); if (l && !l.deleted) gput({ ...l, deleted: true }); else { gput({ id, type: 'like', idea: el.dataset.id, deleted: false }); Snd.drop(); } },
   'idea-tag': (el) => { ideaTag = el.dataset.v; el.parentElement.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b === el)); },
-  'g-name': () => askMemberName(),
-  'g-relogin': async () => { if (await loginProfile('g512')) { await flushGroupOutbox(); cloudSync(); render(); } },
-  'g-retry': async () => { await flushGroupOutbox(); cloudSync(); render(); },
-  'g-logout': async () => { const ok = await ask({ title: '¿Salir del grupo aquí?', text: 'Para volver a entrar necesitarás la contraseña del grupo.', ok: 'Salir', danger: true }); if (!ok) return; delete tokens().g512; saveReg(); choosing = true; render(); },
+  'g-retry': async () => { await flushForestOutbox(); cloudSync(); render(); },
   'g-push': () => enableGroupPush(),
-  'g-pw': async () => { await setPassword('g512'); },
-  'g-invite': () => shareText('Únete al Grupo 512', `¡Únete al Grupo 512 en Al Día!\n\n1. Abre ${location.origin} en Safari (iPhone/iPad) o Chrome e instálala en tu pantalla de inicio.\n2. Ábrela desde el ícono y toca "¿Ya tienen una nube? Unirme con código".\n3. Código: ${REG.cloud}\n4. Elige "Grupo 512" y escribe la contraseña del grupo (pídemela).`),
   'profile-choose': () => { choosing = true; render(); },
   'w-next': () => { UI.wStep = 1; render(); setTimeout(() => $('#wSubIn')?.focus(), 50); },
   'w-skip': () => { commit((s) => { s.settings.onboarded = true; }); location.hash = '#/hoy'; },
@@ -3166,7 +3061,7 @@ function markBackup() { commit((s) => { s.settings.lastBackup = today(); }); toa
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
   if (!el) return;
-  const fn = ACTIONS[el.dataset.act];
+  const fn = ACTIONS[el.dataset.act] || VIDA_ACTS[el.dataset.act];
   if (fn) { e.preventDefault(); if (!['toggle-task', 'toggle-step', 'ambient'].includes(el.dataset.act)) Snd.tick(); fn(el, e); }
 });
 sheet().addEventListener('close', () => { const fn = onSheetClose; onSheetClose = null; if (fn) fn(); else draft = null; });
@@ -3482,7 +3377,7 @@ function queueSync() {
       const t0 = today();
       // los avisos en segundo plano incluyen a los dos usuarios de este dispositivo
       const data = {
-        profiles: PERSONAL.map((p) => {
+        profiles: PERSONAL_LIST().filter(Boolean).map((p) => {
           const d = p.id === REG.current ? S : load(keyFor(p.id));
           return { name: p.name, notify: !!d.settings.digest && (d.settings.onboarded || d.tasks.length > 0), tasks: d.tasks.filter((t) => !t.done && t.due && diffDays(t0, t.due) <= 2).map((t) => ({ title: t.title, due: t.due, time: t.time })) };
         }),
@@ -3649,7 +3544,7 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') window.__hiddenAt = Date.now();
   if (document.visibilityState === 'visible') {
     if (S.timer?.running && timerRemaining() <= 0) timerComplete();
-    if (REG.cloud && REG.me && REG.current !== REG.me && !isGroup() && hasPw(REG.current) && Date.now() - (window.__hiddenAt || 0) > 120000) { choosing = true; render(); }
+    if (REG.me && REG.current !== REG.me && !isGroup() && Date.now() - (window.__hiddenAt || 0) > 120000) { choosing = true; render(); }
     dailyDigest(); scheduleReminders(); checkDueReminders(); autoBackup(); cloudSync(); if (!sheet().open) render();
   }
 });
@@ -3669,7 +3564,7 @@ if (window.visualViewport) {
   if (params.has('nueva') && S.settings.onboarded && !choosing) setTimeout(() => openTask(null), 150);
   if (params.has('nueva') || params.has('app')) history.replaceState(null, '', location.pathname + location.hash);
   if (!choosing && S.settings.onboarded) intro();
-  setTimeout(cloudSync, 400); setTimeout(presenceTick, 1500);
+  setTimeout(cloudSync, 400); setTimeout(presenceTick, 1500); setTimeout(treeCheck, 1800);
   setInterval(() => { if (document.visibilityState === 'visible') cloudSync(); }, 20000);
   window.addEventListener('online', () => cloudSync());
   updateBadge(); queueSync(); if (!choosing) { dailyDigest(); scheduleReminders(); setTimeout(checkDueReminders, 800); }
