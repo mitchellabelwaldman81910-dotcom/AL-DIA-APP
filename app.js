@@ -147,6 +147,7 @@ function load(key = KEY) {
 const PROFILES = [
   { id: 'mitchell', name: 'Mitchell', initials: 'Mi', color: '#2F8A5B' },
   { id: 'mel', name: 'Mel', initials: 'Me', color: '#3E9A93' },
+  { id: 'g512', name: 'Grupo 512', initials: '512', color: '#5B7FD1', group: true },
 ];
 const REG_KEY = 'aldia:usuarios';
 const keyFor = (id) => `aldia:v1:${id}`;
@@ -170,6 +171,7 @@ if (!profile()) REG.current = null;
 let choosing = !REG.current || REG.ask;
 KEY = keyFor(REG.current || 'mitchell');
 function pendingCountFor(id) {
+  if (id === 'g512') { try { return gAll('task').filter((t) => !gDone()[t.id] && (!t.due || t.due >= today())).length; } catch { return 0; } }
   if (id === REG.current) return S.tasks.filter((t) => !t.done).length;
   return load(keyFor(id)).tasks.filter((t) => !t.done).length;
 }
@@ -508,7 +510,7 @@ function ask({ title, text = '', ok = 'Aceptar', cancel = 'Cancelar', danger = f
     d.innerHTML = `<form method="dialog">
       <h3 class="serif">${esc(title)}</h3>
       ${text ? `<p>${esc(text)}</p>` : ''}
-      ${input ? `<div class="field"><input class="input" id="askIn" autocomplete="off" placeholder="${esc(input.placeholder || '')}" value="${esc(input.value || '')}"></div>` : ''}
+      ${input ? `<div class="field"><input class="input" id="askIn" autocomplete="off" type="${input.type || 'text'}" placeholder="${esc(input.placeholder || '')}" value="${esc(input.value || '')}"></div>` : ''}
       ${options ? `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">${options.map((o) => `<button class="btn block" value="${esc(o.value)}">${o.icon ? icon(o.icon) : ''}${esc(o.label)}</button>`).join('')}</div>` : ''}
       <div class="btn-row" style="flex-direction:row-reverse;justify-content:flex-start">
         ${options ? '' : `<button class="btn ${danger ? 'danger' : 'primary'}" value="ok">${esc(ok)}</button>`}
@@ -709,6 +711,7 @@ function viewHoy() {
       <p class="phrase">${leafSVG('#7DBE7A')}<span>${esc(phraseOfDay())}</span></p>
     </div></section>
     ${lettersHTML()}
+    ${!isGroup() && otherProfile() ? `<button type="button" class="letter-write" data-act="letter-write">${icon('heart', 'sm')}<span>Escribirle a ${esc(otherProfile().name)}</span>${(REG.letters || []).some((l) => l.from === REG.current && l.to === otherProfile().id && !l.read) ? `<span class="tiny faint">· tu mensaje aún no lo abre</span>` : ''}</button>` : ''}
     <form class="quick" id="quickForm" autocomplete="off">
       <div class="quick-row">
         <label for="quickIn" class="sr">Nueva tarea rápida</label>
@@ -1123,7 +1126,6 @@ function viewMas() {
     ['#/escanear', 'cam', 'Escanear foto', 'Saca pendientes y fechas de una foto o resuelve ejercicios de mate'],
     ['#/enfoque', 'timer', 'Modo enfoque', 'Temporizador para estudiar por bloques y llevar tu racha'],
     ['#/herramientas', 'tools', 'Herramientas', 'Calificación que necesitas, referencias APA y checklist de entrega'],
-    ['#/carta', 'heart', `Mensaje para ${otherProfile()?.name || ''}`, 'Déjale una nota bonita que verá al abrir la app'],
     ['#/mente', 'leaf', 'Pensamientos', 'Tu árbol de ideas, gratitud, metas y lo que sueltas'],
     ['#/notas', 'note', 'Apuntes', 'Notas rápidas por materia'],
     ['#/respaldo', 'save', 'Respaldo y calendario', S.settings.lastBackup ? `Último respaldo ${relDay(S.settings.lastBackup)}` : 'Aún no haces un respaldo'],
@@ -1591,7 +1593,7 @@ function plantHTML() {
 
 /* Mensajes entre Mitchell y Mel (en este mismo dispositivo) */
 const letters = () => (REG.letters ||= []);
-const otherProfile = () => PROFILES.find((p) => p.id !== REG.current);
+const otherProfile = () => (isGroup() ? null : PERSONAL.find((p) => p.id !== REG.current));
 function lettersHTML() {
   const mine = letters().filter((l) => l.to === REG.current && !l.read);
   if (!mine.length) return '';
@@ -1613,6 +1615,7 @@ function openLetter(id) {
 }
 async function writeLetter() {
   const to = otherProfile();
+  if (!to) return;
   const d = $('#ask'); if (d.open) d.close();
   const text = await ask({ title: `Un mensaje para ${to.name}`, text: cloudOn() ? `Le llegará a ${to.name} en su iPhone o iPad la próxima vez que abra la app.` : `Le aparecerá a ${to.name} cuando abra la app en este dispositivo. Activa la Nube compartida en Ajustes para que le llegue a su propio iPad.`, input: { placeholder: 'Escribe algo bonito…' }, ok: 'Enviar' });
   if (!text) return;
@@ -1683,7 +1686,7 @@ function mergeDocs(local, remote, base) {
 
 async function cloudFetch(method, body) {
   const r = await fetch(`/api/sync?space=${encodeURIComponent(REG.cloud)}`, {
-    method, headers: body ? { 'content-type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined, cache: 'no-store',
+    method, headers: { ...(body ? { 'content-type': 'application/json' } : {}), 'x-aldia-tokens': JSON.stringify(tokens()) }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store',
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || `error ${r.status}`);
@@ -1696,7 +1699,20 @@ async function cloudSync(opts = {}) {
   try {
     const remote = await cloudFetch('GET');
     let changedCurrent = false;
-    for (const p of PROFILES) {
+    REG.hasPw = remote.hasPw || {};
+    for (const id of Object.keys(tokens())) if (!(remote.authorized || []).includes(id)) delete tokens()[id];
+    saveReg();
+    if (remote.group) {
+      const before = JSON.stringify(G.items.map((x) => x.u || x.at));
+      const pendingIds = new Set((REG.gout || []).map((x) => x.id));
+      G.items = [...remote.group.items, ...G.items.filter((x) => pendingIds.has(x.id) && !remote.group.items.some((y) => y.id === x.id))];
+      saveG();
+      if (isGroup() && before !== JSON.stringify(G.items.map((x) => x.u || x.at)) && !sheet().open && !choosing && !['gTaskIn', 'gPostIn', 'gIdeaIn', 'gPartIn'].includes(document.activeElement?.id)) render();
+      flushGroupOutbox();
+    }
+    showPresence(remote.presence);
+    for (const p of PERSONAL) {
+      if (!(remote.authorized || []).includes(p.id)) continue;
       const isCur = p.id === REG.current;
       let local = isCur ? S : load(keyFor(p.id));
       const hasLocal = isCur ? true : !!localStorage.getItem(keyFor(p.id));
@@ -1777,6 +1793,277 @@ function cloudHTML() {
     </div>`;
 }
 
+/* ================= Contraseñas ================= */
+const PERSONAL = PROFILES.filter((p) => !p.group);
+const isGroup = (id = REG.current) => !!profile(id)?.group;
+const tokens = () => { REG.tokens ||= {}; return (REG.tokens[REG.cloud] ||= {}); };
+const hasPw = (id) => !!(REG.hasPw && REG.hasPw[id]);
+const locked = (id) => cloudOn() && (id === 'g512' || hasPw(id)) && !tokens()[id];
+
+async function loginProfile(id) {
+  const p = profile(id);
+  const pw = await ask({ title: `Entrar como ${p.name}`, text: id === 'g512' ? 'Escribe la contraseña del grupo.' : `Escribe la contraseña de ${p.name}.`, input: { placeholder: 'Contraseña', type: 'password' }, ok: 'Entrar' });
+  if (!pw) return false;
+  try {
+    const r = await cloudFetch('POST', { kind: 'login', profile: id, password: pw });
+    tokens()[id] = r.token; saveReg();
+    Snd.drop(); return true;
+  } catch (e) { toast(e.message === 'Contraseña incorrecta' ? 'Contraseña incorrecta. Intenta de nuevo.' : `No se pudo entrar: ${e.message}`); return false; }
+}
+async function setPassword(id) {
+  const p = profile(id);
+  if (!cloudOn()) { toast('Primero activa la Nube compartida en Ajustes.'); return false; }
+  const pw = await ask({ title: hasPw(id) ? `Cambiar contraseña de ${p.name}` : `Contraseña para ${p.name}`, text: id === 'g512' ? 'Es la que compartirás con tus compañeros para que entren al grupo. Mínimo 4 caracteres.' : 'Mínimo 4 caracteres. La pedirá cuando alguien quiera entrar a esta sección en otro dispositivo.', input: { placeholder: 'Nueva contraseña', type: 'password' }, ok: 'Guardar' });
+  if (!pw) return false;
+  if (pw.length < 4) { toast('Usa al menos 4 caracteres.'); return false; }
+  const again = await ask({ title: 'Confírmala', input: { placeholder: 'Escríbela otra vez', type: 'password' }, ok: 'Confirmar' });
+  if (again !== pw) { toast('No coinciden. Intenta de nuevo.'); return false; }
+  try {
+    const r = await cloudFetch('POST', { kind: 'setpw', profile: id, password: pw });
+    tokens()[id] = r.token; REG.hasPw = { ...(REG.hasPw || {}), [id]: true }; saveReg();
+    toast(`Contraseña de ${p.name} guardada.`); Snd.chime(); return true;
+  } catch (e) { toast(e.message); return false; }
+}
+async function enterProfile(id) {
+  if (id === 'g512' && !cloudOn()) { toast('El Grupo 512 vive en la nube: primero activa la Nube compartida en Ajustes.'); return; }
+  if (id === 'g512' && cloudOn() && !hasPw('g512')) {
+    const meOk = PERSONAL.some((p) => hasPw(p.id) && tokens()[p.id]);
+    if (!meOk) { toast('Para crear el Grupo 512, primero pon contraseña a tu usuario en Ajustes.'); return; }
+    const ok = await ask({ title: 'Crear el Grupo 512', text: 'Elige una contraseña para el grupo. Se la darás a tus compañeros para que entren. Ellos solo verán el grupo, nunca tu sección ni la de Mel.', ok: 'Elegir contraseña' });
+    if (!ok || !(await setPassword('g512'))) return;
+  } else if (locked(id) && !(await loginProfile(id))) return;
+  if (!REG.me && !isGroup(id)) { REG.me = id; saveReg(); }
+  switchProfile(id);
+  if (isGroup(id) && !REG.memberName) setTimeout(askMemberName, 500);
+}
+async function askMemberName() {
+  const n = await ask({ title: '¿Cómo te llamas?', text: 'Así tus compañeros sabrán quién subió cada tarea, idea o mensaje.', input: { placeholder: 'Tu nombre', value: REG.memberName || '' }, ok: 'Listo' });
+  if (n) { REG.memberName = n.slice(0, 30); saveReg(); render(); }
+}
+
+/* ================= Ojito: alguien está en tu sección ================= */
+let presenceT = null, presenceShown = null;
+function presenceTick() {
+  clearTimeout(presenceT);
+  if (!cloudOn() || document.visibilityState !== 'visible') { presenceT = setTimeout(presenceTick, 20000); return; }
+  if (REG.me && PERSONAL.some((p) => p.id === REG.current) && REG.current !== REG.me && !choosing) {
+    cloudFetch('POST', { kind: 'presence', viewer: REG.me, viewing: REG.current }).catch(() => {});
+  }
+  presenceT = setTimeout(presenceTick, 20000);
+}
+function showPresence(list) {
+  const mine = (list || []).filter((v) => v.viewing === REG.current && REG.current === REG.me && v.viewer !== REG.me);
+  const el = $('#eye');
+  if (!mine.length) { if (el) { el.classList.add('out'); setTimeout(() => el.remove(), 600); } presenceShown = null; return; }
+  const who = profile(mine[0].viewer)?.name || 'Alguien';
+  if (el && presenceShown === who) return;
+  el?.remove();
+  const d = document.createElement('button');
+  d.id = 'eye'; d.className = 'eye-pill'; d.type = 'button';
+  d.setAttribute('aria-label', `${who} está en tu sección`);
+  d.innerHTML = `<svg viewBox="0 0 64 40" class="eye-svg" aria-hidden="true">
+      <path class="lid" d="M4 20 C16 4 48 4 60 20 C48 36 16 36 4 20Z"/>
+      <circle class="iris" cx="32" cy="20" r="10"/><path class="pupil-heart" d="M32 25 C27 21.5 26 19 27.8 17.6 C29.4 16.4 31 17.3 32 18.6 C33 17.3 34.6 16.4 36.2 17.6 C38 19 37 21.5 32 25Z"/>
+      <circle class="glint" cx="35.5" cy="15.5" r="2.2"/>
+      <rect class="blink" x="0" y="0" width="64" height="40"/></svg>
+    <span><b>${esc(who)}</b> está aquí contigo</span>`;
+  d.addEventListener('click', () => { leafBurst(d); toast(`${who} está viendo tu sección ahora mismo.`); });
+  document.body.appendChild(d);
+  presenceShown = who;
+  if (Snd.on()) Snd.bell(880, 0, 1.2, 0.04);
+}
+
+/* ================= Grupo 512 ================= */
+const gKey = () => `aldia:g512cache:${REG.cloud || ''}`;
+let G = { items: [] };
+function loadG() { try { G = JSON.parse(localStorage.getItem(gKey()) || '{"items":[]}'); } catch { G = { items: [] }; } }
+function saveG() { try { localStorage.setItem(gKey(), JSON.stringify(G)); } catch { /* */ } }
+loadG();
+const gAll = (type) => G.items.filter((x) => x.type === type && !x.deleted);
+const gGet = (id) => G.items.find((x) => x.id === id);
+const me = () => REG.memberName || profile(REG.me)?.name || 'Yo';
+const initials = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+const nameColor = (n) => { const c = ['#2F8A5B', '#3E9A93', '#5B7FD1', '#B07AC8', '#D27C5E', '#C9A55C', '#4F9A63', '#7A8CA8']; let h = 0; for (const ch of String(n)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return c[h % c.length]; };
+const mini = (n, cls = '') => `<span class="mini ${cls}" style="--pc:${nameColor(n)}" title="${esc(n)}">${esc(initials(n))}</span>`;
+const ago = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'ahora' : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.round(m / 60)} h` : relDay(toISO(new Date(ms))); };
+function linkify(t) { return esc(t).replace(/https?:\/\/[^\s<]+/g, (u) => { const s = safeURL(u.replace(/&amp;/g, '&')); return s ? `<a href="${esc(s)}" target="_blank" rel="noopener">${esc(new URL(s).hostname.replace(/^www\./, ''))}</a>` : u; }); }
+
+async function gput(item) {
+  item.at ||= Date.now(); item.by ||= me();
+  const i = G.items.findIndex((x) => x.id === item.id);
+  if (i >= 0) G.items[i] = { ...G.items[i], ...item }; else G.items.push(item);
+  saveG(); render();
+  try { await cloudFetch('POST', { kind: 'gitem', item: i >= 0 ? G.items[i] : item, device: CLOUD.device }); }
+  catch { (REG.gout ||= []).push(item); saveReg(); toast('Sin conexión: se enviará en cuanto vuelva el internet.'); }
+}
+async function flushGroupOutbox() {
+  const out = REG.gout || []; if (!out.length) return;
+  REG.gout = [];
+  for (const it of out) { try { await cloudFetch('POST', { kind: 'gitem', item: it, device: CLOUD.device }); } catch { REG.gout.push(it); } }
+  saveReg();
+}
+const gid = () => uid() + Math.random().toString(36).slice(2, 5);
+const gDone = () => (REG.gdone ||= {});
+
+function groupTaskRow(t) {
+  const st = dueState(t); const done = !!gDone()[t.id];
+  const team = gAll('team').find((x) => x.taskId === t.id);
+  return `<li class="task ${done ? 'done' : ''}">
+    <span class="hl" style="background:${nameColor(t.subject || t.title)}"></span>
+    <button type="button" class="chk" data-act="g-done" data-id="${t.id}" role="checkbox" aria-checked="${done}" aria-label="Marcar como hecha por mí: ${esc(t.title)}"><span class="box">${icon('check')}</span></button>
+    <button type="button" class="body" data-act="g-open" data-id="${t.id}">
+      <span class="title">${esc(t.title)}</span>
+      <span class="meta">${t.due ? `<span class="tone ${done ? '' : urgencyTone(t)}"></span><span class="when ${done ? '' : st.cls}">${esc(st.label)}</span>` : '<span class="faint">Sin fecha</span>'}${t.subject ? `<span>${esc(t.subject)}</span>` : ''}${team ? `<span class="tag">${icon('users')}Equipo</span>` : ''}</span>
+      <span class="who-line">${mini(t.by, 'xs')}<span>${esc(t.by)} · ${ago(t.at)}</span></span>
+    </button></li>`;
+}
+function pushBanner() {
+  if (REG.gpush || !('serviceWorker' in navigator)) return '';
+  if (!('PushManager' in window)) return isIOS() && !isStandalone() ? `<div class="banner">${icon('bell')}<p>Para recibir avisos del grupo en iPhone o iPad, instala la app en tu pantalla de inicio y ábrela desde el ícono.</p></div>` : '';
+  return `<div class="banner">${icon('bell')}<p>Activa los avisos para enterarte al instante cuando alguien suba una tarea.</p><button class="btn primary" data-act="g-push">Activar</button></div>`;
+}
+function groupHead(title, sub) {
+  return `<section class="group-head"><div class="today-top"><div class="g-badge">${avatar(profile('g512'), 'lg')}</div>
+      <div class="head-actions"><button type="button" class="who-chip" data-act="profile-sheet">${mini(me(), 'xs')}<span>${esc(me())}</span></button></div></div>
+    <h1 class="page-title" style="margin-top:12px">${title}</h1><p class="page-sub">${sub}</p></section>`;
+}
+function viewGrupo() {
+  const tasks = gAll('task').sort((a, b) => dueKey(a).localeCompare(dueKey(b)));
+  const pend = tasks.filter((t) => !gDone()[t.id] && (!t.due || diffDays(today(), t.due) >= -3));
+  const done = tasks.filter((t) => gDone()[t.id]);
+  const by = {}; for (const t of pend) (by[bucketOf(t)] ||= []).push(t);
+  const people = new Set(G.items.map((x) => x.by).filter(Boolean));
+  return `${groupHead('Grupo 512', `${plural(pend.length, 'pendiente', 'pendientes')} del grupo · ${plural(people.size, 'compañero activo', 'compañeros activos')}`)}
+    <form class="quick" id="gTaskForm" autocomplete="off"><div class="quick-row"><label for="gTaskIn" class="sr">Nueva tarea del grupo</label>
+      <input id="gTaskIn" placeholder="Ej. ensayo de historia para el viernes"><button class="quick-go">${icon('plus', 'sm')}Subir</button></div>
+      <div class="quick-preview" id="gTaskPrev"></div></form>
+    ${pushBanner()}
+    ${pend.length ? BUCKETS.filter(([k]) => by[k]).map(([k, l]) => `<div class="group-h ${k === 'late' ? 'late' : ''}">${l}<span class="count">${by[k].length}</span></div><ul class="tasks">${by[k].map(groupTaskRow).join('')}</ul>`).join('')
+      : `<div class="empty" style="margin-top:18px"><h3>Sin pendientes del grupo</h3><p>Cuando alguien suba una tarea, aparece aquí para todos y les llega un aviso.</p></div>`}
+    ${done.length ? `<div class="group-h">Ya las hice<span class="count">${done.length}</span></div><ul class="tasks">${done.slice(0, 20).map(groupTaskRow).join('')}</ul>` : ''}`;
+}
+function openGroupTask(id) {
+  const t = gGet(id); if (!t) return;
+  const mine = t.by === me();
+  const team = gAll('team').find((x) => x.taskId === t.id);
+  openSheet(`${sheetHead('Tarea del grupo')}
+    <div class="sheet-body">
+      ${mine ? `<div class="field"><label for="gtTitle" class="sr">Título</label><input id="gtTitle" class="title-input" value="${esc(t.title)}"></div>
+        <div class="row2"><div class="field"><label for="gtDue">Entrega</label><input id="gtDue" class="input" type="date" value="${t.due || ''}"></div><div class="field"><label for="gtTime">Hora</label><input id="gtTime" class="input" type="time" value="${t.time || ''}"></div></div>
+        <div class="field"><label for="gtSubj">Materia</label><input id="gtSubj" class="input" value="${esc(t.subject || '')}"></div>
+        <div class="field"><label for="gtDesc">Instrucciones</label><textarea id="gtDesc" class="input">${esc(t.desc || '')}</textarea></div>`
+      : `<h2 class="serif" style="margin:0 0 6px">${esc(t.title)}</h2>
+        <p class="muted" style="margin:0 0 12px">${t.due ? cap(longDate(t.due)) + (t.time ? `, ${fmtTime(t.time)}` : '') : 'Sin fecha'}${t.subject ? ` · ${esc(t.subject)}` : ''}</p>
+        ${t.desc ? `<div class="card" style="white-space:pre-wrap">${linkify(t.desc)}</div>` : '<p class="small muted">Sin instrucciones.</p>'}`}
+      <p class="who-line" style="margin:12px 0">${mini(t.by, 'xs')}<span>Subida por ${esc(t.by)} · ${ago(t.at)}</span></p>
+      <div class="btn-row">${team ? `<a class="btn" href="#/equipo/${team.id}">${icon('users')}Ver trabajo en equipo</a>` : `<button class="btn" data-act="g-team-from" data-id="${t.id}">${icon('users')}Hacer en equipo</button>`}
+        <button class="btn" data-act="g-task-cal" data-id="${t.id}">${icon('calplus')}A mi calendario</button>
+        <button class="btn" data-act="g-copy-mine" data-id="${t.id}">${icon('copy')}Copiar a mis tareas</button></div>
+    </div>
+    <div class="sheet-foot">${mine ? `<button class="btn danger" data-act="g-del" data-id="${t.id}">${icon('trash')}Quitar</button><span class="grow"></span><button class="btn primary" data-act="g-task-save" data-id="${t.id}">Guardar</button>` : '<span class="grow"></span><button class="btn primary" data-act="sheet-close">Listo</button>'}</div>`);
+}
+function viewEquipos() {
+  const teams = gAll('team').sort((a, b) => dueKey(a).localeCompare(dueKey(b)));
+  return `${groupHead('Trabajo en equipo', 'Únanse a un trabajo, repártanse las partes y compartan todo en el muro.')}
+    <p><button class="btn primary" data-act="g-team-new">${icon('plus')}Nuevo trabajo en equipo</button></p>
+    ${teams.length ? teams.map((tm) => {
+      const mem = gAll('join').filter((j) => j.team === tm.id);
+      const parts = gAll('part').filter((p) => p.team === tm.id);
+      const dn = parts.filter((p) => p.done).length;
+      const imIn = mem.some((j) => j.name === me());
+      return `<a class="team-card" href="#/equipo/${tm.id}">
+        <div class="team-top"><b>${esc(tm.title)}</b>${imIn ? '<span class="chip pen">Estás dentro</span>' : ''}</div>
+        <span class="small muted">${tm.due ? `Entrega ${relDay(tm.due)}` : 'Sin fecha'} · ${plural(mem.length, 'integrante', 'integrantes')}</span>
+        <div class="team-foot"><span class="stack">${mem.slice(0, 6).map((j) => mini(j.name)).join('')}</span>
+        ${parts.length ? `<span class="team-prog"><i style="width:${Math.round((dn / parts.length) * 100)}%"></i></span><span class="tiny faint">${dn}/${parts.length}</span>` : ''}</div></a>`;
+    }).join('') : `<div class="empty"><h3>Aún no hay trabajos en equipo</h3><p>Crea uno, invita a tus compañeros a unirse y repártanse las partes.</p></div>`}`;
+}
+function viewEquipo(id) {
+  const tm = gGet(id);
+  if (!tm || tm.deleted) return `<a class="back" href="#/equipos">${icon('back')}Equipos</a><div class="empty" style="margin-top:20px"><h3>Este trabajo ya no existe</h3></div>`;
+  const mem = gAll('join').filter((j) => j.team === id);
+  const imIn = mem.some((j) => j.name === me());
+  const parts = gAll('part').filter((p) => p.team === id).sort((a, b) => a.at - b.at);
+  const posts = gAll('post').filter((p) => p.team === id).sort((a, b) => a.at - b.at);
+  return `<a class="back" href="#/equipos">${icon('back')}Equipos</a>
+    <h1 class="page-title">${esc(tm.title)}</h1>
+    <p class="page-sub">${tm.due ? `Entrega ${relDay(tm.due)} (${shortDate(tm.due)})` : 'Sin fecha'} · creado por ${esc(tm.by)}</p>
+    ${tm.desc ? `<div class="card" style="white-space:pre-wrap;margin-bottom:12px">${linkify(tm.desc)}</div>` : ''}
+    <div class="card"><div class="team-top"><b>Integrantes</b>${imIn ? `<button class="btn quiet" data-act="g-leave" data-id="${id}">Salir</button>` : `<button class="btn primary" data-act="g-join" data-id="${id}">${icon('plus')}Unirme</button>`}</div>
+      <div class="members">${mem.length ? mem.map((j) => `<span class="member">${mini(j.name)}<span>${esc(j.name)}</span></span>`).join('') : '<span class="small muted">Nadie todavía. ¡Sé el primero!</span>'}</div></div>
+    <h2 class="sec">Reparto <small>quién hace qué</small></h2>
+    <ul class="tasks">${parts.map((p) => `<li class="task ${p.done ? 'done' : ''}">
+      <button type="button" class="chk" data-act="g-part-done" data-id="${p.id}" role="checkbox" aria-checked="${!!p.done}" aria-label="Parte terminada"><span class="box">${icon('check')}</span></button>
+      <div class="body" style="cursor:default"><span class="title">${esc(p.text)}</span>
+        <span class="meta">${p.owner ? `<span class="who-line">${mini(p.owner, 'xs')}${esc(p.owner)}</span>` : `<button class="link-btn" data-act="g-part-take" data-id="${p.id}">Lo tomo yo</button>`}</span></div>
+      ${p.by === me() ? `<button class="icon-btn ghost" data-act="g-del" data-id="${p.id}" aria-label="Quitar parte">${icon('x', 'sm')}</button>` : ''}</li>`).join('')}</ul>
+    <form class="add-step" id="gPartForm" style="margin-top:8px"><label for="gPartIn" class="sr">Nueva parte</label><input id="gPartIn" class="input" placeholder="Ej. Introducción, diapositivas 1-5…"><button class="btn">Agregar</button></form>
+    <h2 class="sec">Muro del equipo <small>ideas, información y enlaces</small></h2>
+    <div class="wall" id="wall">${posts.length ? posts.map((p) => `<div class="post ${p.by === me() ? 'mine' : ''}">${p.by === me() ? '' : mini(p.by)}
+      <div class="bubble"><span class="tiny"><b>${esc(p.by)}</b> · ${ago(p.at)}</span><p>${linkify(p.text)}</p>
+      ${p.by === me() ? `<button class="link-btn tiny" data-act="g-del" data-id="${p.id}">Borrar</button>` : ''}</div></div>`).join('') : '<p class="small muted" style="text-align:center">Escribe el primer mensaje para tu equipo.</p>'}</div>
+    <form class="quick wall-form" id="gPostForm"><div class="quick-row"><label for="gPostIn" class="sr">Mensaje</label><input id="gPostIn" placeholder="Comparte una idea, dato o enlace…" autocomplete="off"><button class="quick-go">Enviar</button></div></form>`;
+}
+const IDEA_TAGS = { idea: ['Idea', '#8DBF5A'], propuesta: ['Propuesta', '#5B7FD1'], duda: ['Duda', '#D9A947'], recurso: ['Recurso', '#3E9A93'] };
+let ideaTag = 'idea';
+function viewIdeas() {
+  const likes = gAll('like');
+  const ideas = gAll('idea').map((i) => ({ ...i, n: likes.filter((l) => l.idea === i.id).length, mine: likes.some((l) => l.idea === i.id && l.by === me()) }))
+    .sort((a, b) => b.n - a.n || b.at - a.at);
+  return `${groupHead('Ideas del grupo', 'Propuestas, dudas y recursos. Apoya con un corazón las que más te gusten.')}
+    <form class="quick thought-new" id="gIdeaForm" autocomplete="off"><label for="gIdeaIn" class="sr">Nueva idea</label>
+      <textarea id="gIdeaIn" rows="2" placeholder="Comparte una idea con el grupo…"></textarea>
+      <div class="thought-new-row"><div class="pick" role="group">${Object.entries(IDEA_TAGS).map(([k, [l, c]], i) => `<button type="button" data-act="idea-tag" data-v="${k}" aria-pressed="${k === ideaTag}"><span class="dot" style="background:${c}"></span>${l}</button>`).join('')}</div>
+      <button class="btn primary">${icon('plus')}Compartir</button></div></form>
+    <div class="ideas">${ideas.length ? ideas.map((i) => { const [l, c] = IDEA_TAGS[i.tag] || IDEA_TAGS.idea; return `<article class="idea" style="--c:${c}">
+      <span class="thought-mood">${l}</span><p>${linkify(i.text)}</p>
+      <div class="idea-foot"><span class="who-line">${mini(i.by, 'xs')}<span>${esc(i.by)} · ${ago(i.at)}</span></span>
+      <button class="like ${i.mine ? 'on' : ''}" data-act="g-like" data-id="${i.id}" aria-pressed="${i.mine}" aria-label="Me gusta">${icon('heart', 'sm')}<span>${i.n || ''}</span></button>
+      ${i.by === me() ? `<button class="icon-btn ghost" data-act="g-del" data-id="${i.id}" aria-label="Quitar idea">${icon('trash', 'sm')}</button>` : ''}</div></article>`; }).join('')
+      : `<div class="empty"><h3>Sin ideas todavía</h3><p>La primera idea puede ser la que les ayude a todos.</p></div>`}</div>`;
+}
+function viewMasGrupo() {
+  const p = profile('g512');
+  return `<h1 class="page-title">Más</h1>
+    <ul class="rows"><li><button type="button" class="rowbtn" data-act="profile-sheet">${avatar(p, 'sm')}<span class="txt"><b>Estás en el Grupo 512</b><span>Toca para cambiar de usuario</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="g-name"><span class="ico">${icon('edit')}</span><span class="txt"><b>Mi nombre en el grupo</b><span>${esc(me())}</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="g-invite"><span class="ico">${icon('share')}</span><span class="txt"><b>Invitar compañeros</b><span>Comparte el código para que se unan</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="g-push"><span class="ico">${icon('bell')}</span><span class="txt"><b>Avisos del grupo</b><span>${REG.gpush ? 'Activados en este dispositivo' : 'Recibe una notificación cuando alguien suba algo'}</span></span>${icon('chev', 'chev')}</button></li>
+      ${PERSONAL.some((x) => tokens()[x.id]) ? `<li><button type="button" class="rowbtn" data-act="g-pw"><span class="ico">${icon('gear')}</span><span class="txt"><b>Contraseña del grupo</b><span>Cámbiala si alguien que no debe la conoce</span></span>${icon('chev', 'chev')}</button></li>` : ''}
+      <li><a href="#/instalar"><span class="ico">${icon('phone')}</span><span class="txt"><b>Instalar la app</b><span>Para recibir avisos en iPhone y iPad</span></span>${icon('chev', 'chev')}</a></li></ul>`;
+}
+function urlB64(s) { const p = '='.repeat((4 - (s.length % 4)) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...b].map((c) => c.charCodeAt(0))); }
+async function enableGroupPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) { toast(isIOS() ? 'En iPhone o iPad, instala la app en tu pantalla de inicio y ábrela desde el ícono para activar avisos.' : 'Este navegador no permite avisos.'); return; }
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { toast('Sin permiso para avisos. Puedes activarlos después en Más.'); return; }
+  try {
+    const { publicKey } = await (await fetch('/api/sync?kind=vapid', { cache: 'no-store' })).json();
+    const reg = await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(publicKey) }));
+    await cloudFetch('POST', { kind: 'gsub', subscription: sub.toJSON(), device: CLOUD.device, name: me() });
+    REG.gpush = true; saveReg(); render(); toast('Avisos del grupo activados.'); Snd.chime();
+  } catch (e) { toast('No se pudieron activar los avisos. Revisa tu conexión.'); }
+}
+
+let navMode = null;
+const NAV_PERSONAL = [['hoy', 'home', 'Hoy'], ['tareas', 'list', 'Tareas'], ['calendario', 'cal', 'Calendario'], ['materias', 'book', 'Materias'], ['mente', 'leaf', 'Mente'], ['mas', 'grid', 'Más']];
+const NAV_GROUP = [['grupo', 'list', 'Pendientes'], ['equipos', 'users', 'Equipos'], ['ideas', 'spark', 'Ideas'], ['mas', 'grid', 'Más']];
+function setNav(group) {
+  const mode = group ? 'g' : 'p'; if (mode === navMode) return; navMode = mode;
+  $('.nav').innerHTML = (group ? NAV_GROUP : NAV_PERSONAL).map(([k, ic, l]) => `<a href="#/${k}" data-nav="${k}"><svg class="i"><use href="#i-${ic}"/></svg><span>${l}</span></a>`).join('');
+}
+function openTeamSheet(taskId) {
+  const t = taskId ? gGet(taskId) : null;
+  openSheet(`${sheetHead('Nuevo trabajo en equipo')}<div class="sheet-body">
+    <div class="field"><label for="tmTitle" class="sr">Nombre</label><input id="tmTitle" class="title-input" placeholder="Nombre del trabajo" value="${esc(t?.title || '')}"></div>
+    <div class="field"><label for="tmDue">Entrega</label><input id="tmDue" class="input" type="date" value="${t?.due || ''}"></div>
+    <div class="field"><label for="tmTask">Tarea del grupo</label><select id="tmTask" class="input"><option value="">Ninguna</option>${gAll('task').map((x) => `<option value="${x.id}" ${x.id === taskId ? 'selected' : ''}>${esc(x.title)}</option>`).join('')}</select></div>
+    <div class="field"><label for="tmDesc">De qué se trata</label><textarea id="tmDesc" class="input" placeholder="Lo que hay que entregar, cómo se van a organizar…">${esc(t?.desc || '')}</textarea></div>
+  </div><div class="sheet-foot"><span class="grow"></span><button class="btn primary" data-act="g-team-create">${icon('users')}Crear y unirme</button></div>`);
+  setTimeout(() => $('#tmTitle')?.focus(), 60);
+}
+
 /* ---------- Usuarios ---------- */
 function viewQuien() {
   return `<div class="who">
@@ -1785,7 +2072,8 @@ function viewQuien() {
     ${PROFILES.map((p) => {
       const n = pendingCountFor(p.id);
       return `<button type="button" class="who-btn" data-act="profile-pick" data-id="${p.id}">${avatar(p, 'lg')}
-        <span><b>${esc(p.name)}</b><span class="d">${n ? plural(n, 'entrega pendiente', 'entregas pendientes') : 'Sin pendientes'}</span></span></button>`;
+        <span style="flex:1"><b>${esc(p.name)}</b><span class="d">${p.group ? (cloudOn() ? (hasPw('g512') ? 'Tareas, equipos e ideas del grupo' : 'Créalo para tu grupo') : 'Necesita la nube compartida') : locked(p.id) ? 'Con contraseña' : n ? plural(n, 'entrega pendiente', 'entregas pendientes') : 'Sin pendientes'}</span></span>
+        ${locked(p.id) ? `<span class="lock">${icon('lock')}</span>` : ''}</button>`;
     }).join('')}
     <p style="text-align:center;margin-top:22px">${cloudOn() ? `<span class="small muted">${icon('spark', 'sm')} Conectado a la nube</span>` : '<button class="link-btn" data-act="cloud-join">¿Ya tienen una nube? Unirme con código</button>'}</p>
   </div>`;
@@ -2089,6 +2377,12 @@ function viewAjustes() {
         <label class="switch"><input type="checkbox" data-reg="ask" ${REG.ask ? 'checked' : ''} aria-label="Preguntar quién eres al abrir"><span></span></label></div>
     </div>
     ${cloudHTML()}
+    ${cloudOn() ? `<h2 class="sec">Contraseñas</h2><div class="card" style="padding-top:6px;padding-bottom:6px">
+      ${PERSONAL.map((pp) => `<div class="toggle"><span style="display:flex;gap:12px;align-items:center">${avatar(pp, 'sm')}<span><span class="t">${esc(pp.name)}</span><span class="d" style="display:block">${hasPw(pp.id) ? 'Protegido con contraseña' : 'Sin contraseña: cualquiera con el código puede entrar'}</span></span></span>
+        ${hasPw(pp.id) && !tokens()[pp.id] ? `<span class="lock">${icon('lock')}</span>` : `<button class="btn" data-act="set-pw" data-id="${pp.id}">${hasPw(pp.id) ? 'Cambiar' : 'Poner'}</button>`}</div>`).join('')}
+      <div class="toggle"><span><span class="t">Este dispositivo es de</span><span class="d" style="display:block">Para el ojito: así la app sabe quién está mirando.</span></span>
+        <div class="seg">${PERSONAL.map((pp) => `<button type="button" data-act="set-me" data-v="${pp.id}" aria-pressed="${REG.me === pp.id}">${esc(pp.name)}</button>`).join('')}</div></div>
+    </div>` : ''}
     <div class="card" style="margin-top:12px">
       <div class="field"><label for="setName">Cómo te saludo</label><input id="setName" class="input" data-set="name" value="${esc(st.name)}" placeholder="Para saludarte"></div>
       <div class="field" style="margin:0"><span class="lbl">Tema</span><div class="seg" role="group">${[['light', 'Bosque de día'], ['dark', 'Bosque de noche']].map(([k, l]) => `<button type="button" data-act="theme" data-v="${k}" aria-pressed="${(st.theme === 'dark' ? 'dark' : 'light') === k}">${l}</button>`).join('')}</div></div>
@@ -2119,7 +2413,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 5.0. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 6.0. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -2184,9 +2478,13 @@ function render() {
   const r = route();
   const main = $('#view');
   let html;
-  const showWelcome = choosing || (!S.settings.onboarded && !S.tasks.length);
+  const groupMode = !choosing && isGroup();
+  const showWelcome = choosing || (!groupMode && !S.settings.onboarded && !S.tasks.length);
+  setNav(groupMode);
   if (choosing) html = viewQuien();
-  else if (showWelcome) html = viewBienvenida();
+  else if (groupMode) {
+    html = r.name === 'equipos' ? viewEquipos() : r.name === 'equipo' ? viewEquipo(r.arg) : r.name === 'ideas' ? viewIdeas() : r.name === 'instalar' ? viewInstalar() : r.name === 'mas' ? viewMasGrupo() : viewGrupo();
+  } else if (showWelcome) html = viewBienvenida();
   else {
     switch (r.name) {
       case 'tareas': html = viewTareas(); break;
@@ -2220,10 +2518,10 @@ function render() {
 
   const known = ['carta', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
   const rn = known.includes(r.name) ? r.name : 'hoy';
-  const navName = showWelcome ? '' : ({ materia: 'materias', tareas: 'tareas', calendario: 'calendario', materias: 'materias', hoy: 'hoy', mente: 'mente' }[rn] || 'mas');
+  const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', mas: 'mas', instalar: 'mas' }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'materias', tareas: 'tareas', calendario: 'calendario', materias: 'materias', hoy: 'hoy', mente: 'mente' }[rn] || 'mas');
   $$('.nav a').forEach((a) => { if (a.dataset.nav === navName) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   $('.nav').hidden = showWelcome;
-  $('#fab').hidden = showWelcome || !['hoy', 'tareas', 'calendario', 'materia'].includes(rn);
+  $('#fab').hidden = groupMode || showWelcome || !['hoy', 'tareas', 'calendario', 'materia'].includes(rn);
   updateFocusPill();
   if (r.name === 'calc') calcUpdate();
   if (r.name === 'respaldo') fillSnapList();
@@ -2688,7 +2986,7 @@ const ACTIONS = {
     const ok = await ask({ title: 'Crear nube compartida', text: 'Se subirá lo que tienen en este dispositivo (Mitchell y Mel) y se te dará un código para conectar los demás dispositivos.', ok: 'Crear nube' });
     if (!ok) return;
     REG.cloud = newSpaceCode(); saveReg();
-    PROFILES.forEach((pp) => setDirty(pp.id, true));
+    PERSONAL.forEach((pp) => setDirty(pp.id, true));
     render(); await cloudSync(); render();
     toast(CLOUD.error ? `No se pudo conectar: ${CLOUD.error}` : 'Nube creada. Todo se guarda solo a partir de ahora.');
   },
@@ -2700,8 +2998,7 @@ const ACTIONS = {
     const prev = REG.cloud; REG.cloud = code; saveReg();
     await cloudSync();
     if (CLOUD.error) { REG.cloud = prev; saveReg(); toast(`No se pudo conectar: ${CLOUD.error}`); return; }
-    if (!REG.current) { REG.current = 'mitchell'; }
-    choosing = !REG.current || REG.ask; S = load(); applyTheme(); render();
+    choosing = true; S = load(); applyTheme(); render();
     toast('Conectado. Ya ves todo lo de la nube.');
   },
   'cloud-now': async () => { await cloudSync(); toast(CLOUD.error ? CLOUD.error : 'Sincronizado.'); },
@@ -2711,6 +3008,7 @@ const ACTIONS = {
     if (!ok) return; delete REG.cloud; saveReg(); render();
   },
   'letter-open': (el) => openLetter(el.dataset.id),
+  'letter-write': () => { if (!isGroup()) writeLetter(); },
   'letter-reply': () => { $('#ask').close(); setTimeout(writeLetter, 120); },
   'mood-pick': (el) => { moodSel = el.dataset.v; el.parentElement.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b === el)); },
   'mood-filter': (el) => { UI.mood = el.dataset.v; lastRenderRoute = null; render(); },
@@ -2774,8 +3072,40 @@ const ACTIONS = {
     if ('Notification' in window && Notification.permission === 'default') enableNotifications(true);
     toast(`${plural(picked.length, 'tarea agregada', 'tareas agregadas')} con recordatorio.`, { action: 'Al calendario', onAction: () => downloadFile('al-dia-fotos.ics', buildICS(S.tasks.filter((t) => t.source === 'foto' && !t.done && t.due)), 'text/calendar') });
   },
-  'profile-to': (el) => { if (el.dataset.id === REG.current) { closeSheet(false); return; } switchProfile(el.dataset.id); },
-  'profile-pick': (el) => switchProfile(el.dataset.id),
+  'profile-to': (el) => { if (el.dataset.id === REG.current) { closeSheet(false); return; } closeSheet(false); enterProfile(el.dataset.id); },
+  'profile-pick': (el) => enterProfile(el.dataset.id),
+  'set-pw': async (el) => { await setPassword(el.dataset.id); render(); },
+  'set-me': (el) => { REG.me = el.dataset.v || null; saveReg(); render(); },
+  'g-done': (el) => { const d = gDone(); if (d[el.dataset.id]) delete d[el.dataset.id]; else { d[el.dataset.id] = Date.now(); Snd.chime(); leafBurst(el); } saveReg(); setTimeout(render, d[el.dataset.id] ? 450 : 0); },
+  'g-open': (el) => openGroupTask(el.dataset.id),
+  'g-task-save': (el) => { const t = gGet(el.dataset.id); gput({ ...t, title: $('#gtTitle').value.trim() || t.title, due: $('#gtDue').value || null, time: $('#gtTime').value, subject: $('#gtSubj').value.trim(), desc: $('#gtDesc').value }); closeSheet(false); toast('Tarea actualizada para todos.'); },
+  'g-del': async (el) => { const it = gGet(el.dataset.id); if (!it) return; const ok = await ask({ title: '¿Quitarlo para todos?', text: 'Desaparece para todo el grupo.', ok: 'Quitar', danger: true }); if (!ok) return; closeSheet(false); gput({ ...it, deleted: true }); },
+  'g-task-cal': (el) => { const t = gGet(el.dataset.id); if (t?.due) window.open(googleCalURL({ ...t, type: 'tarea', subjectId: null }), '_blank', 'noopener'); else toast('Esta tarea no tiene fecha.'); },
+  'g-copy-mine': (el) => {
+    const t = gGet(el.dataset.id); const mineP = REG.me && !isGroup(REG.me) ? REG.me : null;
+    if (!mineP) { toast('Primero elige en Ajustes de quién es este dispositivo.'); return; }
+    const d = load(keyFor(mineP)); d.tasks.push({ id: uid(), title: t.title, subjectId: null, type: 'tarea', due: t.due, time: t.time || '', priority: 2, value: null, estimate: 0, desc: t.desc || '', steps: [], delivery: '', links: '', done: false, doneAt: null, grade: null, created: Date.now(), comments: [], photos: [] });
+    try { localStorage.setItem(keyFor(mineP), JSON.stringify(d)); setDirty(mineP, true); } catch { /* */ }
+    toast(`Copiada a las tareas de ${profile(mineP).name}.`);
+  },
+  'g-team-new': () => openTeamSheet(null),
+  'g-team-from': (el) => { closeSheet(false); openTeamSheet(el.dataset.id); },
+  'g-team-create': () => {
+    const title = $('#tmTitle').value.trim(); if (!title) { toast('Ponle nombre al trabajo.'); return; }
+    const id = gid(); gput({ id, type: 'team', title, due: $('#tmDue').value || null, desc: $('#tmDesc').value, taskId: $('#tmTask').value || null });
+    gput({ id: `${id}-${slug(me())}`, type: 'join', team: id, name: me() });
+    closeSheet(false); location.hash = `#/equipo/${id}`; toast('Trabajo creado. Invita a tu equipo a unirse.');
+  },
+  'g-join': (el) => { gput({ id: `${el.dataset.id}-${slug(me())}`, type: 'join', team: el.dataset.id, name: me(), deleted: false }); Snd.chime(); },
+  'g-leave': (el) => { const j = gGet(`${el.dataset.id}-${slug(me())}`); if (j) gput({ ...j, deleted: true }); },
+  'g-part-done': (el) => { const p = gGet(el.dataset.id); gput({ ...p, done: !p.done }); if (!p.done) { Snd.chime(); leafBurst(el); } },
+  'g-part-take': (el) => { const p = gGet(el.dataset.id); gput({ ...p, owner: me() }); },
+  'g-like': (el) => { const id = `${el.dataset.id}-${slug(me())}`; const l = gGet(id); if (l && !l.deleted) gput({ ...l, deleted: true }); else { gput({ id, type: 'like', idea: el.dataset.id, deleted: false }); Snd.drop(); } },
+  'idea-tag': (el) => { ideaTag = el.dataset.v; el.parentElement.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b === el)); },
+  'g-name': () => askMemberName(),
+  'g-push': () => enableGroupPush(),
+  'g-pw': async () => { await setPassword('g512'); },
+  'g-invite': () => shareText('Únete al Grupo 512', `¡Únete al Grupo 512 en Al Día!\n\n1. Abre ${location.origin} en Safari (iPhone/iPad) o Chrome e instálala en tu pantalla de inicio.\n2. Ábrela desde el ícono y toca "¿Ya tienen una nube? Unirme con código".\n3. Código: ${REG.cloud}\n4. Elige "Grupo 512" y escribe la contraseña del grupo (pídemela).`),
   'profile-choose': () => { choosing = true; render(); },
   'w-next': () => { UI.wStep = 1; render(); setTimeout(() => $('#wSubIn')?.focus(), 50); },
   'w-skip': () => { commit((s) => { s.settings.onboarded = true; }); location.hash = '#/hoy'; },
@@ -2810,6 +3140,7 @@ sheet().addEventListener('click', (e) => { if (e.target === sheet()) closeSheet(
 document.addEventListener('input', (e) => {
   const el = e.target;
   if (el.id === 'quickIn') { updateQuickPreview(); return; }
+  if (el.id === 'gTaskIn') { const pq = parseQuick(el.value); $('#gTaskPrev').innerHTML = el.value.trim() ? `${pq.due ? `<span class="chip pen">${icon('cal', 'sm')}${esc(cap(relDay(pq.due)))}</span>` : '<span class="chip">Sin fecha</span>'}${pq.time ? `<span class="chip">${fmtTime(pq.time)}</span>` : ''}` : ''; return; }
   if (el.dataset.ambVol !== undefined) { Snd.setVol(+el.value); return; }
   if (el.dataset.voiceRate !== undefined) { REG.voiceRate = +el.value; saveReg(); const r = +el.value; $('#rateLbl').textContent = r < 0.85 ? 'muy calmada' : r < 0.95 ? 'calmada' : r < 1.05 ? 'normal' : 'rápida'; return; }
   if (el.id === 'taskQ') { UI.q = el.value; $('#taskList').innerHTML = taskListHTML(); return; }
@@ -2880,6 +3211,22 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('submit', (e) => {
   const f = e.target;
   if (f.id === 'quickForm') { e.preventDefault(); quickAdd(); }
+  else if (f.id === 'gTaskForm') {
+    e.preventDefault(); const raw = $('#gTaskIn').value.trim(); if (!raw) return;
+    const pq = parseQuick(raw);
+    gput({ id: gid(), type: 'task', title: pq.title || raw, due: pq.due, time: pq.time, subject: subj(pq.subjectId)?.name || '', desc: '' });
+    Snd.chime(); toast('Tarea subida. Les llegará un aviso a todos.');
+  } else if (f.id === 'gPostForm') {
+    e.preventDefault(); const v = $('#gPostIn').value.trim(); if (!v) return;
+    gput({ id: gid(), type: 'post', team: route().arg, text: v }); Snd.drop();
+    setTimeout(() => { $('#gPostIn')?.focus(); $('#wall')?.lastElementChild?.scrollIntoView({ block: 'end', behavior: 'smooth' }); }, 50);
+  } else if (f.id === 'gPartForm') {
+    e.preventDefault(); const v = $('#gPartIn').value.trim(); if (!v) return;
+    gput({ id: gid(), type: 'part', team: route().arg, text: v, owner: '', done: false });
+  } else if (f.id === 'gIdeaForm') {
+    e.preventDefault(); const v = $('#gIdeaIn').value.trim(); if (!v) return;
+    gput({ id: gid(), type: 'idea', text: v, tag: ideaTag }); Snd.chime();
+  }
   else if (f.id === 'thoughtForm') {
     e.preventDefault(); const v = $('#thoughtIn').value.trim(); if (!v) return;
     const t = { id: uid(), text: v, mood: moodSel, at: Date.now() };
@@ -3100,7 +3447,7 @@ function queueSync() {
       const t0 = today();
       // los avisos en segundo plano incluyen a los dos usuarios de este dispositivo
       const data = {
-        profiles: PROFILES.map((p) => {
+        profiles: PERSONAL.map((p) => {
           const d = p.id === REG.current ? S : load(keyFor(p.id));
           return { name: p.name, notify: !!d.settings.digest && (d.settings.onboarded || d.tasks.length > 0), tasks: d.tasks.filter((t) => !t.done && t.due && diffDays(t0, t.due) <= 2).map((t) => ({ title: t.title, due: t.due, time: t.time })) };
         }),
@@ -3285,8 +3632,8 @@ if (window.visualViewport) {
   if (params.has('nueva') && S.settings.onboarded && !choosing) setTimeout(() => openTask(null), 150);
   if (params.has('nueva') || params.has('app')) history.replaceState(null, '', location.pathname + location.hash);
   if (!choosing && S.settings.onboarded) intro();
-  setTimeout(cloudSync, 400);
-  setInterval(() => { if (document.visibilityState === 'visible') cloudSync(); }, 45000);
+  setTimeout(cloudSync, 400); setTimeout(presenceTick, 1500);
+  setInterval(() => { if (document.visibilityState === 'visible') cloudSync(); }, 20000);
   window.addEventListener('online', () => cloudSync());
   updateBadge(); queueSync(); if (!choosing) { dailyDigest(); scheduleReminders(); setTimeout(checkDueReminders, 800); }
   setInterval(() => { if (!choosing) checkDueReminders(); }, 60000);
