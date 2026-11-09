@@ -116,7 +116,7 @@ function defaults() {
       notify: false, digest: true, onboarded: false, lastBackup: null, lastDigest: null,
       checklist: DEFAULT_CHECKLIST.slice(), installDismissed: false,
     },
-    subjects: [], tasks: [], notes: [], focus: [], refs: [], thoughts: [], timer: null,
+    subjects: [], tasks: [], notes: [], libretas: [], vida: { garden: [], bonus: 0, claimed: {} }, focus: [], refs: [], thoughts: [], timer: null,
   };
 }
 function migrate(d) {
@@ -124,7 +124,7 @@ function migrate(d) {
   if (!d || typeof d !== 'object') return base;
   const out = { ...base, ...d, settings: { ...base.settings, ...(d.settings || {}) } };
   if (!out.settings.bosque) { out.settings.theme = 'light'; out.settings.bosque = true; }
-  for (const k of ['subjects', 'tasks', 'notes', 'focus', 'refs', 'thoughts']) if (!Array.isArray(out[k])) out[k] = [];
+  for (const k of ['subjects', 'tasks', 'notes', 'libretas', 'focus', 'refs', 'thoughts']) if (!Array.isArray(out[k])) out[k] = [];
   if (!Array.isArray(out.settings.checklist)) out.settings.checklist = DEFAULT_CHECKLIST.slice();
   out.subjects = out.subjects.filter((s) => s && s.id && s.name).map((s) => ({
     teacher: '', room: '', important: false, schedule: [], notes: '', target: null, ...s,
@@ -172,7 +172,7 @@ if (!Array.isArray(REG.users)) {
   }
 }
 saveReg();
-/* Bosques (grupos colaborativos): copia local de lo que hay en la nube */
+/* Salones (grupos colaborativos): copia local de lo que hay en la nube */
 const FOR_KEY = 'aldia:bosques7';
 let FOR = { f: {}, members: {}, invites: [], trees: {} };
 try { FOR = { ...FOR, ...JSON.parse(localStorage.getItem(FOR_KEY) || '{}') }; } catch { /* */ }
@@ -1418,7 +1418,7 @@ async function runScan(file, mode) {
   SCAN.busy = false; render();
 }
 
-/* ---------- Bosque: hojas cayendo, ráfaga de hojas, acomodo armonioso ---------- */
+/* ---------- Salón: hojas cayendo, ráfaga de hojas, acomodo armonioso ---------- */
 const LEAF_PATH = 'M12 2C7 5 3.5 10 5 18c.3 1.6 1 2.8 1.8 3.6C15 20.5 20 15 19.5 6.5 17.5 3.8 15 2.5 12 2z';
 const LEAF_VEIN = 'M6.8 21.6C9 16 12 10 17 5';
 const LEAF_COLORS = ['#7DBE7A', '#5DA36A', '#A8D08D', '#3F8F5F', '#C9DE8C', '#94C9A0'];
@@ -1668,7 +1668,7 @@ function intro() {
 const CLOUD = { busy: false, last: null, error: '', timer: null, device: null };
 try { CLOUD.device = localStorage.getItem('aldia:device') || ('d' + uid()); localStorage.setItem('aldia:device', CLOUD.device); } catch { CLOUD.device = 'd' + uid(); }
 const cloudOn = () => true;
-const COLLS = ['tasks', 'subjects', 'notes', 'thoughts', 'refs'];
+const COLLS = ['tasks', 'subjects', 'notes', 'thoughts', 'refs', 'libretas'];
 const hashStr = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
 const baseKey = (p) => keyFor(p) + ':base';
 const dirtyKey = (p) => keyFor(p) + ':dirty';
@@ -1835,7 +1835,7 @@ function showPresence(list) {
   if (Snd.on()) Snd.bell(880, 0, 1.2, 0.04);
 }
 
-/* ================= Bosques (grupos colaborativos) ================= */
+/* ================= Salones (grupos colaborativos) ================= */
 const curFid = () => (isForestId(REG.current) ? REG.current.slice(2) : null);
 const gItems = () => (FOR.f[curFid()]?.items) || [];
 const gAll = (type) => gItems().filter((x) => x.type === type && !x.deleted);
@@ -1883,6 +1883,11 @@ function groupStatus() {
 const gid = () => uid() + Math.random().toString(36).slice(2, 5);
 const gDone = () => (REG.gdone ||= {});
 
+function doneBubbles(id) {
+  const by = gAll('done').filter((x) => x.task === id); const n = (forestMeta()?.members || []).length;
+  if (!by.length) return '';
+  return `<span class="who-line done-line"><span class="stack">${by.slice(0, 6).map((x) => mini(x.by, 'xs')).join('')}</span><span class="tiny faint">${by.length}/${n} ya la hicieron</span></span>`;
+}
 function groupTaskRow(t) {
   const st = dueState(t); const done = !!gDone()[t.id];
   const team = gAll('team').find((x) => x.taskId === t.id);
@@ -1892,7 +1897,8 @@ function groupTaskRow(t) {
     <button type="button" class="body" data-act="g-open" data-id="${t.id}">
       <span class="title">${esc(t.title)}</span>
       <span class="meta">${t.due ? `<span class="tone ${done ? '' : urgencyTone(t)}"></span><span class="when ${done ? '' : st.cls}">${esc(st.label)}</span>` : '<span class="faint">Sin fecha</span>'}${t.subject ? `<span>${esc(t.subject)}</span>` : ''}${team ? `<span class="tag">${icon('users')}Equipo</span>` : ''}</span>
-      <span class="who-line">${mini(t.by, 'xs')}<span>${esc(t.by)} · ${ago(t.at)}</span></span>
+      <span class="who-line">${mini(t.by, 'xs')}<span>${esc(t.by)} · ${ago(t.at)}</span>${t.img ? `<span class="tag">${icon('cam')}Foto</span>` : ''}</span>
+      ${doneBubbles(t.id)}
     </button></li>`;
 }
 function pushBanner() {
@@ -1911,10 +1917,11 @@ function viewGrupo() {
   const done = tasks.filter((t) => gDone()[t.id]);
   const by = {}; for (const t of pend) (by[bucketOf(t)] ||= []).push(t);
   const people = new Set(gItems().map((x) => x.by).filter(Boolean));
-  return `${groupHead(esc(forestMeta()?.name || 'Bosque'), `${plural(pend.length, 'pendiente', 'pendientes')} del grupo · ${plural(people.size, 'compañero activo', 'compañeros activos')}`)}
-    <form class="quick" id="gTaskForm" autocomplete="off"><div class="quick-row"><label for="gTaskIn" class="sr">Nueva tarea del grupo</label>
-      <input id="gTaskIn" placeholder="Ej. ensayo de historia para el viernes"><button class="quick-go">${icon('plus', 'sm')}Subir</button></div>
+  return `${groupHead(esc(forestMeta()?.name || 'Salón'), `${plural(pend.length, 'pendiente', 'pendientes')} del grupo · ${plural(people.size, 'compañero activo', 'compañeros activos')}`)}
+    <form class="quick" id="gTaskForm" autocomplete="off"><div class="quick-row"><label for="gTaskIn" class="sr">Nueva tarea del Salón</label>
+      <input id="gTaskIn" placeholder="Ej. Tarea de hoy: ensayo de historia"><button class="quick-go">${icon('plus', 'sm')}Subir</button></div>
       <div class="quick-preview" id="gTaskPrev"></div></form>
+    <p style="margin:-4px 0 12px"><button type="button" class="btn" data-act="g-new">${icon('cam')}Subir con foto o instrucciones</button></p>
     ${pushBanner()}
     ${pend.length ? BUCKETS.filter(([k]) => by[k]).map(([k, l]) => `<div class="group-h ${k === 'late' ? 'late' : ''}">${l}<span class="count">${by[k].length}</span></div><ul class="tasks">${by[k].map(groupTaskRow).join('')}</ul>`).join('')
       : `<div class="empty" style="margin-top:18px"><h3>Sin pendientes del grupo</h3><p>Cuando alguien suba una tarea, aparece aquí para todos y les llega un aviso.</p></div>`}
@@ -1932,13 +1939,16 @@ function openGroupTask(id) {
         <div class="field"><label for="gtDesc">Instrucciones</label><textarea id="gtDesc" class="input">${esc(t.desc || '')}</textarea></div>`
       : `<h2 class="serif" style="margin:0 0 6px">${esc(t.title)}</h2>
         <p class="muted" style="margin:0 0 12px">${t.due ? cap(longDate(t.due)) + (t.time ? `, ${fmtTime(t.time)}` : '') : 'Sin fecha'}${t.subject ? ` · ${esc(t.subject)}` : ''}</p>
-        ${t.desc ? `<div class="card" style="white-space:pre-wrap">${linkify(t.desc)}</div>` : '<p class="small muted">Sin instrucciones.</p>'}`}
+        ${t.desc ? `<div class="card" style="white-space:pre-wrap">${linkify(t.desc)}</div>` : t.img ? '' : '<p class="small muted">Sin instrucciones.</p>'}`}
+      ${t.img ? `<div class="gimg-box" data-gimg="${t.id}"><p class="small muted">Cargando la foto…</p></div>` : ''}
+      ${gDoneBy(t.id).length ? `<h3 class="sec" style="margin-top:10px">Ya la hicieron</h3><div class="members">${gDoneBy(t.id).map((x) => `<span class="member">${mini(x.by)}<span>${esc(x.by)}</span></span>`).join('')}</div>` : ''}
       <p class="who-line" style="margin:12px 0">${mini(t.by, 'xs')}<span>Subida por ${esc(t.by)} · ${ago(t.at)}</span></p>
       <div class="btn-row">${team ? `<a class="btn" href="#/equipo/${team.id}">${icon('users')}Ver trabajo en equipo</a>` : `<button class="btn" data-act="g-team-from" data-id="${t.id}">${icon('users')}Hacer en equipo</button>`}
         <button class="btn" data-act="g-task-cal" data-id="${t.id}">${icon('calplus')}A mi calendario</button>
         <button class="btn" data-act="g-copy-mine" data-id="${t.id}">${icon('copy')}Copiar a mis tareas</button></div>
     </div>
     <div class="sheet-foot">${mine ? `<button class="btn danger" data-act="g-del" data-id="${t.id}">${icon('trash')}Quitar</button><span class="grow"></span><button class="btn primary" data-act="g-task-save" data-id="${t.id}">Guardar</button>` : '<span class="grow"></span><button class="btn primary" data-act="sheet-close">Listo</button>'}</div>`);
+  if (t.img) loadGImg(curFid(), t.id).then((d) => { const b = document.querySelector(`[data-gimg="${t.id}"]`); if (b) b.innerHTML = d ? `<img class="gimg" src="${d}" alt="Foto de las instrucciones">` : '<p class="small muted">No se pudo cargar la foto.</p>'; });
 }
 function viewEquipos() {
   const teams = gAll('team').sort((a, b) => dueKey(a).localeCompare(dueKey(b)));
@@ -2002,19 +2012,19 @@ function viewIdeas() {
 }
 function viewMasGrupo() {
   const p = profile(); const f = forestMeta(); const st = S.settings;
-  if (!p || !f) return '<div class="empty"><h3>Este Bosque ya no está</h3><p><button class="btn" data-act="profile-choose">Volver</button></p></div>';
+  if (!p || !f) return '<div class="empty"><h3>Este Salón ya no está</h3><p><button class="btn" data-act="profile-choose">Volver</button></p></div>';
   const mem = f.members.map((id) => ({ id, ...(FOR.members[id] || { name: cap(id), color: '#2F8A5B' }) }));
   return `<h1 class="page-title">Más</h1>
-    <p class="page-sub">Ajustes del Bosque ${esc(f.name)}.</p>
+    <p class="page-sub">Ajustes del Salón ${esc(f.name)}.</p>
     ${groupStatus()}
     <h2 class="sec">Integrantes <small>${mem.length}</small></h2>
-    <div class="card"><div class="members">${mem.map((m) => `<span class="member">${mini(m.name)}<span>${esc(m.name)}${m.id === f.owner ? ' · fundó el Bosque' : ''}</span></span>`).join('')}</div>
+    <div class="card"><div class="members">${mem.map((m) => `<span class="member">${mini(m.name)}<span>${esc(m.name)}${m.id === f.owner ? ' · fundó el Salón' : ''}</span></span>`).join('')}</div>
       <div class="btn-row" style="margin-top:12px"><button class="btn primary" data-act="forest-invite">${icon('plus')}Invitar a alguien</button></div>
-      <p class="small muted" style="margin:10px 0 0">Escribe el nombre de usuario de tu compañero. Le llega una solicitud a su sesión y, si la acepta, entra al Bosque.</p></div>
+      <p class="small muted" style="margin:10px 0 0">Escribe el nombre de usuario de tu compañero. Le llega una solicitud a su sesión y, si la acepta, entra al Salón.</p></div>
     <ul class="rows" style="margin-top:14px">
-      <li><button type="button" class="rowbtn" data-act="forest-rename"><span class="ico">${icon('edit')}</span><span class="txt"><b>Nombre del Bosque</b><span>${esc(f.name)}</span></span>${icon('chev', 'chev')}</button></li>
-      <li><button type="button" class="rowbtn" data-act="g-push"><span class="ico">${icon('bell')}</span><span class="txt"><b>Avisos del Bosque</b><span>${REG.gpush ? 'Activados en este dispositivo' : 'Recibe una notificación cuando alguien suba algo'}</span></span>${icon('chev', 'chev')}</button></li>
-      <li><button type="button" class="rowbtn" data-act="profile-choose"><span class="ico">${icon('users')}</span><span class="txt"><b>Volver a mi usuario</b><span>Cambiar de usuario o de Bosque</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="forest-rename"><span class="ico">${icon('edit')}</span><span class="txt"><b>Nombre del Salón</b><span>${esc(f.name)}</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="g-push"><span class="ico">${icon('bell')}</span><span class="txt"><b>Avisos del Salón</b><span>${REG.gpush ? 'Activados en este dispositivo' : 'Recibe una notificación cuando alguien suba algo'}</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="profile-choose"><span class="ico">${icon('users')}</span><span class="txt"><b>Volver a mi usuario</b><span>Cambiar de usuario o de Salón</span></span>${icon('chev', 'chev')}</button></li>
       <li><a href="#/instalar"><span class="ico">${icon('phone')}</span><span class="txt"><b>Instalar la app</b><span>Necesario para avisos en iPhone y iPad</span></span>${icon('chev', 'chev')}</a></li></ul>
     <h2 class="sec">Apariencia y sonido</h2>
     <div class="card" style="padding-top:6px;padding-bottom:6px">
@@ -2022,7 +2032,7 @@ function viewMasGrupo() {
       <div class="toggle"><span class="t">Hojas cayendo</span><label class="switch"><input type="checkbox" data-set="leaves" data-bool ${st.leaves !== false ? 'checked' : ''} aria-label="Hojas cayendo"><span></span></label></div>
       <div class="toggle"><span class="t">Sonidos suaves</span><label class="switch"><input type="checkbox" data-set="sounds" data-bool ${st.sounds !== false ? 'checked' : ''} aria-label="Sonidos suaves"><span></span></label></div>
     </div>
-    <p style="margin-top:18px"><button class="btn danger" data-act="forest-leave">${icon('x')}Salir de este Bosque</button></p>`;
+    <p style="margin-top:18px"><button class="btn danger" data-act="forest-leave">${icon('x')}Salir de este Salón</button></p>`;
 }
 function urlB64(s) { const p = '='.repeat((4 - (s.length % 4)) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...b].map((c) => c.charCodeAt(0))); }
 async function enableGroupPush() {
@@ -2073,7 +2083,7 @@ function switchProfile(id) {
   if (location.hash && location.hash !== '#/hoy' && !isForestId(id)) location.hash = '#/hoy'; else if (isForestId(id) && location.hash !== '#/grupo') location.hash = '#/grupo'; else render();
   window.scrollTo(0, 0);
   updateBadge(); queueSync(); scheduleReminders(); dailyDigest();
-  if (changed) toast(`Ahora estás en ${isForestId(id) ? 'el Bosque ' : 'la sesión de '}${profile(id).name}.`);
+  if (changed) toast(`Ahora estás en ${isForestId(id) ? 'el Salón ' : 'la sesión de '}${profile(id).name}.`);
   cloudSync(); treeCheck();
 }
 
@@ -2285,16 +2295,17 @@ function viewChecklist() {
 /* ---------- Apuntes ---------- */
 function noteCard(n) {
   const s = subj(n.subjectId);
-  return `<button type="button" class="note ${n.pinned ? 'pinned' : ''}" data-act="open-note" data-id="${n.id}" style="--c:${s ? safeColor(s.color) : 'transparent'}">
+  return `<button type="button" class="note ${n.pinned ? 'pinned' : ''}" data-act="open-note" data-id="${n.id}" style="--c:${(libretas().find((l) => l.id === n.libreta)?.color) || (s ? safeColor(s.color) : 'transparent')}">
     <b>${n.pinned ? '<svg class="i sm star" aria-label="Fijado"><use href="#i-star"/></svg> ' : ''}${esc(n.title || 'Sin título')}</b>${n.photos?.length ? `<span class="tiny faint">${plural(n.photos.length, 'foto', 'fotos')}</span>` : ''}<p>${esc((n.body || '').slice(0, 280))}</p>
-    <span class="tiny faint">${s ? esc(s.name) + ', ' : ''}${relDay(toISO(new Date(n.updated || Date.now())))}</span></button>`;
+    <span class="tiny faint">${libretas().find((l) => l.id === n.libreta) ? esc(libretas().find((l) => l.id === n.libreta).emoji) + ' ' : ''}${s ? esc(s.name) + ', ' : ''}${relDay(toISO(new Date(n.updated || Date.now())))}</span></button>`;
 }
 function viewNotas() {
   const q = normChars(UI.notesQ.trim());
-  const list = S.notes.filter((n) => !q || normChars(`${n.title} ${n.body}`).includes(q)).sort((a, b) => (!!b.pinned - !!a.pinned) || (b.updated || 0) - (a.updated || 0));
+  const list = S.notes.filter((n) => (!UI.libreta || n.libreta === UI.libreta) && (!q || normChars(`${n.title} ${n.body}`).includes(q))).sort((a, b) => (!!b.pinned - !!a.pinned) || (b.updated || 0) - (a.updated || 0));
   return `<a class="back" href="#/mas">${icon('back')}Más</a><h1 class="page-title">Apuntes</h1>
     <p class="page-sub">Lo que no quieres olvidar: temas del examen, lo que dijo el profe, ideas para el proyecto.</p>
-    ${S.notes.length ? `<div class="quick" style="box-shadow:none;margin-bottom:14px"><div class="quick-row">${icon('search')}<label for="notesQ" class="sr">Buscar apuntes</label><input id="notesQ" type="search" placeholder="Buscar en apuntes" value="${esc(UI.notesQ)}"></div></div>` : ''}
+    ${libretaBarHTML()}
+    ${S.notes.length ? `<div class="quick" style="box-shadow:none;margin:10px 0 14px"><div class="quick-row">${icon('search')}<label for="notesQ" class="sr">Buscar apuntes</label><input id="notesQ" type="search" placeholder="Buscar en apuntes" value="${esc(UI.notesQ)}"></div></div>` : ''}
     <div id="notesList">${list.length ? `<div class="notes">${list.map(noteCard).join('')}</div>` : S.notes.length ? '<p class="muted">Sin resultados.</p>' : `<div class="empty"><h3>Sin apuntes</h3><p>Escribe tu primer apunte. Puedes ligarlo a una materia.</p></div>`}</div>
     <p style="margin-top:14px"><button class="btn primary" data-act="new-note">${icon('plus')}Nuevo apunte</button></p>`;
 }
@@ -2370,7 +2381,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.0. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.1. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -2673,7 +2684,7 @@ function openNote(id, preset = {}) {
     <div class="sheet-body">
       <div class="field"><label for="nTitle" class="sr">Título</label><input id="nTitle" class="title-input" data-f="title" value="${esc(draft.title)}" placeholder="Título" autocomplete="off"></div>
       <div class="field"><label for="nSubj">Materia</label><select id="nSubj" class="input" data-f="subjectId"><option value="">Sin materia</option>${S.subjects.map((s) => `<option value="${s.id}" ${draft.subjectId === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div>
-      <div class="field"><label for="nBody" class="sr">Texto</label><textarea id="nBody" class="input" style="min-height:240px" data-f="body" placeholder="Escribe aquí…">${esc(draft.body)}</textarea></div>
+      ${noteEditorHTML(draft)}
       <div id="noteSum"></div>
       <div class="field"><span class="lbl">Fotos</span><div class="photos" id="photoList">${photosHTML(draft.photos)}</div>
         <label class="btn" for="photoIn" style="align-self:flex-start">${icon('cam')}Agregar foto</label><input id="photoIn" type="file" accept="image/*" class="sr" data-photo-add></div>
@@ -2683,7 +2694,7 @@ function openNote(id, preset = {}) {
         <button type="button" class="btn" data-act="note-share">${icon('share')}Compartir</button></div>
     </div>
     <div class="sheet-foot">${n ? `<button type="button" class="btn danger" data-act="note-delete">${icon('trash')}Eliminar</button>` : ''}<span class="grow"></span><button type="button" class="btn primary" data-act="note-save">Guardar</button></div>`;
-  openSheet(html, () => { if (draft && draftDirty) saveDraftNote(true); draft = null; });
+  openSheet(html, () => { stopDictation(); if (draft && draftDirty) saveDraftNote(true); draft = null; });
   if (!n) setTimeout(() => $('#nTitle')?.focus(), 60);
 }
 function saveDraftNote(silent = false) {
@@ -3008,7 +3019,13 @@ const ACTIONS = {
   },
   'profile-to': (el) => { if (el.dataset.id === REG.current) { closeSheet(false); return; } closeSheet(false); enterProfile(el.dataset.id); },
   'profile-pick': (el) => enterProfile(el.dataset.id),
-  'g-done': (el) => { const d = gDone(); if (d[el.dataset.id]) delete d[el.dataset.id]; else { d[el.dataset.id] = Date.now(); Snd.chime(); leafBurst(el); } saveReg(); treeSoon(); setTimeout(render, d[el.dataset.id] ? 450 : 0); },
+  'g-done': (el) => {
+    const tid = el.dataset.id; const d = gDone(); const on = !d[tid];
+    if (!on) delete d[tid]; else { d[tid] = Date.now(); Snd.chime(); leafBurst(el); }
+    saveReg(); treeSoon();
+    gput({ id: `dn-${tid}-${REG.me}`.slice(0, 60), type: 'done', task: tid, deleted: !on }).catch(() => {});
+    setTimeout(render, on ? 450 : 0);
+  },
   'g-open': (el) => openGroupTask(el.dataset.id),
   'g-task-save': (el) => { const t = gGet(el.dataset.id); gput({ ...t, title: $('#gtTitle').value.trim() || t.title, due: $('#gtDue').value || null, time: $('#gtTime').value, subject: $('#gtSubj').value.trim(), desc: $('#gtDesc').value }); closeSheet(false); toast('Tarea actualizada para todos.'); },
   'g-del': async (el) => { const it = gGet(el.dataset.id); if (!it) return; const ok = await ask({ title: '¿Quitarlo para todos?', text: 'Desaparece para todo el grupo.', ok: 'Quitar', danger: true }); if (!ok) return; closeSheet(false); gput({ ...it, deleted: true }); },

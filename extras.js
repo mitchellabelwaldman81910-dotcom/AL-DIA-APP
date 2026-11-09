@@ -1,0 +1,369 @@
+/* Al Día — extras 7.1: libretas con editor de texto rico, dictado, corrector de ortografía,
+   jardín con semillas y misiones, y tareas de Salón con foto. Se carga antes de app.js. */
+'use strict';
+
+/* =========================================================
+   1. Corrector de ortografía en español (sin internet, sin claves)
+   ========================================================= */
+const FIX_WORDS = {
+  q: 'que', xq: 'porque', pq: 'porque', porq: 'porque', tb: 'también', tmb: 'también', tambien: 'también', ademas: 'además', despues: 'después',
+  asi: 'así', aqui: 'aquí', alli: 'allí', ahi: 'ahí', facil: 'fácil', dificil: 'difícil', util: 'útil', numero: 'número', pagina: 'página', telefono: 'teléfono',
+  musica: 'música', ultimo: 'último', ultima: 'última', unico: 'único', unica: 'única', matematicas: 'matemáticas', quimica: 'química', fisica: 'física',
+  geografia: 'geografía', biologia: 'biología', tecnologia: 'tecnología', economia: 'economía', informatica: 'informática', ingles: 'inglés', espanol: 'español',
+  frances: 'francés', mexico: 'México', manana: 'mañana', anos: 'años', nino: 'niño', nina: 'niña', ninos: 'niños', senor: 'señor', senora: 'señora',
+  todavia: 'todavía', porfavor: 'por favor', osea: 'o sea', enserio: 'en serio', apesar: 'a pesar', atravez: 'a través', deacuerdo: 'de acuerdo',
+  sinembargo: 'sin embargo', talvez: 'tal vez', aveces: 'a veces', haiga: 'haya', hiba: 'iba', exelente: 'excelente', aser: 'hacer', vien: 'bien',
+  mercadotecnia: 'mercadotecnia', empresa: 'empresa', publico: 'público', publicidad: 'publicidad', analisis: 'análisis', ejemplo: 'ejemplo', tecnica: 'técnica',
+  tecnico: 'técnico', economico: 'económico', historico: 'histórico', politica: 'política', politico: 'político', quimico: 'químico', practico: 'práctico',
+  rapido: 'rápido', rapida: 'rápida', ultimamente: 'últimamente', cafe: 'café', mama: 'mamá', papa: 'papá', jovenes: 'jóvenes', joven: 'joven', examenes: 'exámenes',
+  articulo: 'artículo', articulos: 'artículos', parrafo: 'párrafo', capitulo: 'capítulo', titulo: 'título', indice: 'índice', metodo: 'método', modulo: 'módulo',
+  esta: 'esta', mas: 'más', tu: 'tu', el: 'el', si: 'si', solo: 'solo', como: 'como', cual: 'cual', quien: 'quien', donde: 'donde', cuando: 'cuando', que: 'que',
+};
+// las palabras ambiguas (más/mas, él/el, sí/si…) no se tocan: se dejan tal cual
+for (const k of ['esta', 'mas', 'tu', 'el', 'si', 'solo', 'como', 'cual', 'quien', 'donde', 'cuando', 'que', 'joven', 'empresa', 'publicidad', 'ejemplo', 'mercadotecnia']) delete FIX_WORDS[k];
+
+function fixCase(orig, rep) {
+  if (orig.length > 1 && orig === orig.toUpperCase()) return rep.toUpperCase();
+  if (orig[0] !== orig[0].toLowerCase()) return rep[0].toUpperCase() + rep.slice(1);
+  return rep;
+}
+function fixText(text, ctx) {
+  let n = 0; const before = text;
+  let t = text.replace(/[A-Za-zÁÉÍÓÚÜáéíóúüÑñ]+/g, (w) => {
+    const low = w.toLowerCase();
+    let rep = FIX_WORDS[low];
+    if (!rep && /^[a-záéíóúñ]{3,}(c|s)ion$/.test(low)) rep = low.replace(/ion$/, 'ión');
+    if (!rep || rep === low) return w;
+    n++; return fixCase(w, rep);
+  });
+  t = t.replace(/\u00a0/g, ' ').replace(/[ \t]{2,}/g, (m) => { n++; return ' '; });
+  t = t.replace(/[ \t]+([,;.!?:])/g, (m, p) => { n++; return p; });
+  t = t.replace(/([,;])(?=[^\s\d,;)"'])/g, (m, p) => { n++; return p + ' '; });
+  t = t.replace(/(:)(?=[^\s\d/)"'])/g, (m, p) => { n++; return p + ' '; });
+  t = t.replace(/([a-záéíóúñ])\.(?=[A-ZÁÉÍÓÚÑ][a-záéíóúñ])/g, (m, p) => { n++; return p + '. '; });
+  // mayúscula al empezar y después de punto
+  t = t.replace(/(^|[.!?¿¡]\s+|\n\s*)([a-záéíóúñ])/g, (m, pre, ch, off) => {
+    if (off === 0 && ctx && !/[.!?\n]\s*$/.test(ctx)) return m;
+    n++; return pre + ch.toUpperCase();
+  });
+  // signos de apertura que faltan
+  t = t.replace(/(^|[.!\n]\s*)([^.!?\n¿¡]*?[a-záéíóúñ][^.!?\n¿¡]*?)\?/g, (m, pre, body) => { if (/¿/.test(body)) return m; n++; return pre + '¿' + body.trimStart() + '?'; });
+  t = t.replace(/(^|[.?\n]\s*)([^.!?\n¿¡]*?[a-záéíóúñ][^.!?\n¿¡]*?)!/g, (m, pre, body) => { if (/¡/.test(body)) return m; n++; return pre + '¡' + body.trimStart() + '!'; });
+  return { text: t, n: t === before ? 0 : n };
+}
+function fixEditor(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+  let total = 0, ctx = '';
+  for (const nd of nodes) {
+    const r = fixText(nd.nodeValue, ctx);
+    if (r.text !== nd.nodeValue) { nd.nodeValue = r.text; total += r.n; }
+    ctx = (ctx + nd.nodeValue).slice(-3);
+  }
+  return total;
+}
+
+/* =========================================================
+   2. Editor de texto rico para apuntes
+   ========================================================= */
+const NOTE_FONTS = [
+  ['Normal', '-apple-system, system-ui, sans-serif'], ['Redondeada', 'ui-rounded, "SF Pro Rounded", system-ui, sans-serif'], ['Escolar', '"AlDia Schola", Georgia, serif'],
+  ['Elegante', 'Georgia, serif'], ['Clásica', 'Palatino, "Palatino Linotype", "Book Antiqua", serif'], ['Didot', 'Didot, "Bodoni 72", serif'],
+  ['Máquina de escribir', '"American Typewriter", "Courier New", monospace'], ['Código', 'Menlo, Courier, monospace'],
+  ['A mano', '"Bradley Hand", "Noteworthy", "Marker Felt", cursive'], ['Pizarrón', '"Chalkboard SE", "Chalkduster", cursive'],
+  ['Caligrafía', '"Snell Roundhand", "Zapfino", cursive'], ['Marcador', '"Marker Felt", "Comic Sans MS", cursive'],
+  ['Moderna', 'Avenir, "Helvetica Neue", sans-serif'], ['Condensada', '"Avenir Next Condensed", "Arial Narrow", sans-serif'],
+  ['Bonita', 'Optima, "Gill Sans", sans-serif'], ['Titulares', 'Impact, "Arial Black", sans-serif'],
+];
+const NOTE_SIZES = [['Chica', '15px'], ['Normal', '17px'], ['Grande', '20px'], ['Enorme', '24px'], ['Gigante', '30px']];
+const NOTE_PAPERS = [['liso', 'Lisa'], ['rayado', 'Rayada'], ['cuadros', 'Cuadrícula'], ['puntos', 'Puntos']];
+const PAPER_COLORS = ['#FFFFFF', '#FFF8DC', '#EAF6EA', '#E6F1FB', '#FBEAF0', '#F1EAFB', '#2B332F'];
+const TEXT_COLORS = ['#1B3A2D', '#000000', '#C0392B', '#D35400', '#B7950B', '#1E8449', '#2471A3', '#7D3C98', '#5D6D7E', '#FFFFFF'];
+const HILITES = ['#FFF59D', '#C8E6C9', '#B3E5FC', '#F8BBD0', '#FFE0B2', '#E1BEE7', 'transparent'];
+const LIB_EMOJI = ['📒', '📗', '📘', '📙', '📕', '📓', '🌿', '✏️'];
+const LIB_COLORS = ['#2F8A5B', '#3E9A93', '#5B7FD1', '#B07AC8', '#D27C5E', '#C9A55C', '#4F9A63', '#7A8CA8'];
+
+const OK_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'STRIKE', 'SPAN', 'DIV', 'P', 'BR', 'H1', 'H2', 'H3', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'HR', 'FONT', 'SUB', 'SUP']);
+const OK_CSS = /^(color|background-color|font-family|font-size|font-weight|font-style|text-decoration(-line)?|text-align)$/;
+function cleanHTML(html) {
+  const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
+  const walk = (el) => {
+    for (const ch of [...el.children]) {
+      if (!OK_TAGS.has(ch.tagName)) { if (/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|LINK|META)$/.test(ch.tagName)) ch.remove(); else { walk(ch); ch.replaceWith(...ch.childNodes); } continue; }
+      const style = ch.getAttribute('style') || '';
+      for (const a of [...ch.attributes]) ch.removeAttribute(a.name);
+      const keep = style.split(';').map((s) => s.trim()).filter((s) => { const k = s.split(':')[0]?.trim().toLowerCase(); return OK_CSS.test(k) && !/url\(|expression|javascript/i.test(s); });
+      if (keep.length) ch.setAttribute('style', keep.join('; '));
+      walk(ch);
+    }
+  };
+  walk(doc.body);
+  return doc.body.innerHTML;
+}
+const noteHTMLof = (n) => (n.html ? cleanHTML(n.html) : esc(n.body || '').replace(/\n/g, '<br>'));
+const isDarkPaper = (c) => c === '#2B332F';
+
+function noteEditorStyle(d) {
+  const f = d.font || NOTE_FONTS[0][1]; const sz = d.size || '17px';
+  const bg = d.pcolor || '#FFFFFF';
+  return `font-family:${f.replace(/"/g, '&quot;')};font-size:${sz};background-color:${bg};color:${isDarkPaper(bg) ? '#F2F2EC' : '#1B3A2D'}`;
+}
+function libretas() { return (S.libretas ||= []); }
+function noteEditorHTML(d) {
+  const sw = (arr, cmd, cur) => arr.map((c) => `<button type="button" class="sw" data-rt="${cmd}" data-v="${c}" style="--c:${c === 'transparent' ? '#fff' : c}" aria-label="${c === 'transparent' ? 'Quitar resaltado' : 'Color ' + c}">${c === 'transparent' ? '✕' : ''}</button>`).join('');
+  return `<div class="rt-wrap">
+    <div class="rt-bar" role="toolbar" aria-label="Formato del texto">
+      <button type="button" data-rt="bold" aria-label="Negrita"><b>N</b></button><button type="button" data-rt="italic" aria-label="Cursiva"><i>C</i></button><button type="button" data-rt="underline" aria-label="Subrayado"><u>S</u></button><button type="button" data-rt="strikeThrough" aria-label="Tachado"><s>T</s></button>
+      <button type="button" data-rt="formatBlock" data-v="h2" aria-label="Título">Título</button><button type="button" data-rt="formatBlock" data-v="p" aria-label="Párrafo normal">Párrafo</button>
+      <button type="button" data-rt="insertUnorderedList" aria-label="Lista">• Lista</button><button type="button" data-rt="insertOrderedList" aria-label="Lista numerada">1. Lista</button>
+      <button type="button" data-rt="justifyLeft" aria-label="Alinear a la izquierda">⇤</button><button type="button" data-rt="justifyCenter" aria-label="Centrar">↔</button><button type="button" data-rt="justifyRight" aria-label="Alinear a la derecha">⇥</button>
+      <button type="button" data-rt="undo" aria-label="Deshacer">↶</button><button type="button" data-rt="redo" aria-label="Rehacer">↷</button><button type="button" data-rt="removeFormat" aria-label="Quitar formato">Aa✕</button>
+    </div>
+    <div class="rt-bar rt-sel"><label>Letra<select data-rtsel="fontName" aria-label="Tipo de letra">${NOTE_FONTS.map(([n, f]) => `<option value="${esc(f)}" style="font-family:${esc(f)}">${n}</option>`).join('')}</select></label>
+      <label>Tamaño<select data-rtsel="fontSize" aria-label="Tamaño del texto"><option value="2">Chica</option><option value="3" selected>Normal</option><option value="5">Grande</option><option value="6">Enorme</option><option value="7">Gigante</option></select></label></div>
+    <div class="rt-bar rt-colors"><span class="tiny faint">Color</span>${sw(TEXT_COLORS, 'foreColor')}<span class="tiny faint">Resaltar</span>${sw(HILITES, 'hiliteColor')}</div>
+    <div class="rt-edit paper-${d.paper || 'liso'}" id="nRich" contenteditable="true" spellcheck="true" lang="es" autocapitalize="sentences" autocorrect="on" role="textbox" aria-multiline="true" aria-label="Texto del apunte" data-ph="Escribe aquí o toca Dictar…" style="${noteEditorStyle(d)}">${noteHTMLof(d)}</div>
+    <div class="btn-row rt-tools"><button type="button" class="btn" data-rt="dictate" id="rtDictate">🎙️ Dictar</button><button type="button" class="btn" data-rt="spell">✨ Corregir ortografía</button><label class="btn" for="ocrIn">${icon('cam')}Foto a texto</label><input id="ocrIn" type="file" accept="image/*" class="sr" data-ocr-in></div>
+    <div class="row2" style="margin-top:12px"><div class="field"><label for="nLib">Libreta</label><select id="nLib" class="input" data-nf="libreta"><option value="">Sin libreta</option>${libretas().map((l) => `<option value="${l.id}" ${d.libreta === l.id ? 'selected' : ''}>${esc(l.emoji || '📒')} ${esc(l.name)}</option>`).join('')}<option value="__new">+ Nueva libreta…</option></select></div>
+      <div class="field"><label for="nPaper">Hoja</label><select id="nPaper" class="input" data-nf="paper">${NOTE_PAPERS.map(([k, l]) => `<option value="${k}" ${(d.paper || 'liso') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
+    <div class="row2"><div class="field"><label for="nFont">Letra de toda la hoja</label><select id="nFont" class="input" data-nf="font">${NOTE_FONTS.map(([n, f]) => `<option value="${esc(f)}" ${(d.font || NOTE_FONTS[0][1]) === f ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="field"><label for="nSize">Tamaño base</label><select id="nSize" class="input" data-nf="size">${NOTE_SIZES.map(([n, s]) => `<option value="${s}" ${(d.size || '17px') === s ? 'selected' : ''}>${n}</option>`).join('')}</select></div></div>
+    <div class="field"><span class="lbl">Color de la hoja</span><div class="swatches">${PAPER_COLORS.map((c) => `<button type="button" data-nfc="${c}" class="${(d.pcolor || '#FFFFFF') === c ? 'on' : ''}" style="--c:${c}" aria-label="Hoja ${c}"></button>`).join('')}</div></div>
+  </div>`;
+}
+
+let rtRange = null; let dictation = null;
+document.addEventListener('selectionchange', () => {
+  const ed = document.getElementById('nRich'); const s = getSelection();
+  if (ed && s && s.rangeCount && ed.contains(s.anchorNode)) rtRange = s.getRangeAt(0).cloneRange();
+});
+function rtSync() {
+  const ed = document.getElementById('nRich'); if (!ed || !draft) return;
+  draft.html = cleanHTML(ed.innerHTML); draft.body = ed.innerText.replace(/ /g, ' ').trim(); draftDirty = true;
+}
+function rtExec(cmd, val) {
+  const ed = document.getElementById('nRich'); if (!ed) return;
+  ed.focus();
+  if (rtRange) { const s = getSelection(); s.removeAllRanges(); s.addRange(rtRange); }
+  try { document.execCommand('styleWithCSS', false, true); } catch { /* */ }
+  document.execCommand(cmd, false, val);
+  rtSync();
+}
+function rtInsert(text) {
+  const ed = document.getElementById('nRich'); if (!ed) return;
+  ed.focus();
+  if (rtRange) { const s = getSelection(); s.removeAllRanges(); s.addRange(rtRange); }
+  else { const r = document.createRange(); r.selectNodeContents(ed); r.collapse(false); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+  document.execCommand('insertText', false, text); rtSync();
+}
+function stopDictation() { if (dictation) { try { dictation.stop(); } catch { /* */ } dictation = null; } const b = document.getElementById('rtDictate'); if (b) { b.classList.remove('rec'); b.textContent = '🎙️ Dictar'; } }
+function toggleDictation() {
+  if (dictation) { stopDictation(); const ed = document.getElementById('nRich'); if (ed) { const n = fixEditor(ed); rtSync(); if (n) toast(`Dictado listo. Corregí ${plural(n, 'detalle', 'detalles')} de ortografía.`); } return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast(isIOS() ? 'Para dictar en iPhone o iPad, usa el micrófono del teclado (🎙️ abajo a la derecha): también se escribe aquí.' : 'Este navegador no permite dictar. Prueba con Chrome o Safari.'); return; }
+  const r = new SR(); r.lang = 'es-MX'; r.continuous = true; r.interimResults = false;
+  r.onresult = (e) => { for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) rtInsert(e.results[i][0].transcript.trim() + ' '); };
+  r.onerror = (e) => { if (e.error === 'not-allowed') toast('Permite el micrófono para poder dictar.'); stopDictation(); };
+  r.onend = () => { if (dictation === r) stopDictation(); };
+  try { r.start(); dictation = r; const b = document.getElementById('rtDictate'); if (b) { b.classList.add('rec'); b.textContent = '⏹️ Detener'; } toast('Te escucho. Habla con calma.'); }
+  catch { toast('No pude activar el micrófono.'); }
+}
+function applyNoteStyle() {
+  const ed = document.getElementById('nRich'); if (!ed || !draft) return;
+  ed.setAttribute('style', noteEditorStyle(draft)); ed.className = `rt-edit paper-${draft.paper || 'liso'}`;
+}
+
+document.addEventListener('pointerdown', (e) => { if (e.target.closest('[data-rt]') && !e.target.closest('label')) e.preventDefault(); });
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-rt]'); if (b && !b.closest('label')) {
+    e.preventDefault(); const c = b.dataset.rt;
+    if (c === 'dictate') toggleDictation();
+    else if (c === 'spell') {
+      const ed = document.getElementById('nRich'); if (!ed) return;
+      const prev = ed.innerHTML; const n = fixEditor(ed); rtSync();
+      if (n) { toast(`Corregí ${plural(n, 'detalle', 'detalles')} de ortografía y puntuación.`, { action: 'Deshacer', onAction: () => { ed.innerHTML = prev; rtSync(); } }); Snd.chime(); } else toast('Todo se ve bien. No encontré errores.');
+    } else rtExec(c, b.dataset.v);
+    return;
+  }
+  const c = e.target.closest('[data-nfc]');
+  if (c && draft) { draft.pcolor = c.dataset.nfc; draftDirty = true; applyNoteStyle(); c.parentElement.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === c)); }
+});
+document.addEventListener('change', async (e) => {
+  const el = e.target;
+  if (el.dataset.rtsel) { rtExec(el.dataset.rtsel, el.value); if (el.dataset.rtsel === 'fontSize') el.value = '3'; return; }
+  if (el.dataset.ocrIn !== undefined && el.files?.[0]) {
+    const f = el.files[0]; el.value = ''; toast('Leyendo la foto… puede tardar un poco la primera vez.', { ms: 5000 });
+    try { const t = await readPhoto(f); if (!t) { toast('No pude leer texto en esa foto.'); return; } rtInsert(t + '\n'); const ed = document.getElementById('nRich'); if (ed) { const n = fixEditor(ed); rtSync(); toast(`Texto agregado${n ? ` y corregí ${plural(n, 'detalle', 'detalles')}` : ''}.`); } }
+    catch { toast('No se pudo leer la foto. Intenta con más luz.'); }
+    return;
+  }
+  const k = el.dataset.nf; if (!k || !draft) return;
+  if (k === 'libreta' && el.value === '__new') {
+    const l = await newLibreta(); el.value = l ? l.id : ''; draft.libreta = l ? l.id : ''; draftDirty = true;
+    if (l) { const o = document.createElement('option'); o.value = l.id; o.textContent = `${l.emoji} ${l.name}`; el.insertBefore(o, el.querySelector('option[value="__new"]')); el.value = l.id; }
+    return;
+  }
+  draft[k] = el.value; draftDirty = true; if (k !== 'libreta') applyNoteStyle();
+});
+document.addEventListener('input', (e) => { if (e.target.id === 'nRich') rtSync(); });
+document.addEventListener('paste', (e) => {
+  if (e.target.id !== 'nRich') return; e.preventDefault();
+  const t = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, t); rtSync();
+});
+
+/* =========================================================
+   3. Libretas
+   ========================================================= */
+async function newLibreta() {
+  const name = await ask({ title: 'Nueva libreta', text: 'Una libreta junta apuntes de un mismo tema, como una materia o un proyecto.', input: { placeholder: 'Ej. Mercadotecnia' }, ok: 'Crear' });
+  if (!name) return null;
+  const l = { id: uid(), name: name.slice(0, 30), emoji: LIB_EMOJI[libretas().length % LIB_EMOJI.length], color: LIB_COLORS[libretas().length % LIB_COLORS.length] };
+  S.libretas.push(l); save(); Snd.chime(); return l;
+}
+function libretaBarHTML() {
+  const ls = libretas(); const cur = UI.libreta || '';
+  const cnt = (id) => S.notes.filter((n) => (n.libreta || '') === id).length;
+  return `<div class="lib-bar" role="group" aria-label="Libretas"><button type="button" class="lib ${!cur ? 'on' : ''}" data-act="lib-pick" data-v="">📚 Todas <b>${S.notes.length}</b></button>
+    ${ls.map((l) => `<button type="button" class="lib ${cur === l.id ? 'on' : ''}" style="--c:${l.color}" data-act="lib-pick" data-v="${l.id}">${esc(l.emoji)} ${esc(l.name)} <b>${cnt(l.id)}</b></button>`).join('')}
+    <button type="button" class="lib add" data-act="lib-new">+ Libreta</button></div>
+    ${cur && ls.find((l) => l.id === cur) ? `<p class="small muted" style="margin:6px 0 0"><button class="link-btn" data-act="lib-edit" data-id="${cur}">Renombrar o borrar esta libreta</button></p>` : ''}`;
+}
+
+/* =========================================================
+   4. Jardín, semillas y misiones del día (el minijuego)
+   ========================================================= */
+const GARDEN = [
+  { id: 'mush', name: 'Hongos mágicos', cost: 20, lvl: 2, emoji: '🍄' }, { id: 'bench', name: 'Banca de madera', cost: 35, lvl: 5, emoji: '🪑' },
+  { id: 'lantern', name: 'Farol de luz', cost: 45, lvl: 8, emoji: '🏮' }, { id: 'fence', name: 'Cerquita', cost: 55, lvl: 10, emoji: '🏡' },
+  { id: 'birdhouse', name: 'Casita de pájaros', cost: 60, lvl: 12, emoji: '🐦' }, { id: 'bunny', name: 'Conejito', cost: 90, lvl: 16, emoji: '🐰' },
+  { id: 'windmill', name: 'Molino', cost: 120, lvl: 22, emoji: '🌬️' }, { id: 'fox', name: 'Zorrito', cost: 150, lvl: 28, emoji: '🦊' },
+  { id: 'fountain', name: 'Fuente', cost: 200, lvl: 35, emoji: '⛲' }, { id: 'balloon', name: 'Globo aerostático', cost: 260, lvl: 45, emoji: '🎈' },
+  { id: 'tent', name: 'Casita de campaña', cost: 320, lvl: 55, emoji: '⛺' }, { id: 'chest', name: 'Cofre del tesoro', cost: 400, lvl: 70, emoji: '💎' },
+];
+function gardenSVG(ids, id) {
+  const has = (k) => (ids || []).includes(k); let o = '<g transform="translate(0 -26)">';
+  if (has('windmill')) o += `<g transform="translate(26 252)"><path d="M-7 0 L-4 -34 H4 L7 0Z" fill="#E8DCC4"/><path d="M-5 -34 L0 -44 L5 -34Z" fill="#C97B5A"/><g class="g-spin" style="transform-box:fill-box;transform-origin:center"><g transform="translate(0 -33)"><path d="M0 0 L-3 -22 L3 -22Z M0 0 L22 -3 L22 3Z M0 0 L3 22 L-3 22Z M0 0 L-22 3 L-22 -3Z" fill="#fff" stroke="#C9B99A" stroke-width=".8"/></g></g></g>`;
+  if (has('fence')) { o += '<g transform="translate(0 270)"><rect x="0" y="-9" width="46" height="2.4" fill="#E9DDC4"/><rect x="0" y="-3" width="46" height="2.4" fill="#E9DDC4"/>'; for (let i = 0; i < 7; i++) o += `<path d="M${1 + i * 7} 2 V-13 l2.2 -3 l2.2 3 V2Z" fill="#F3E9D2" stroke="#D9CBAA" stroke-width=".6"/>`; o += '</g>'; }
+  if (has('birdhouse')) o += `<g transform="translate(336 262)"><rect x="-1.2" y="-22" width="2.4" height="24" fill="#8A5E3A"/><rect x="-8" y="-36" width="16" height="14" rx="1.5" fill="#E7B66B"/><path d="M-10 -35 L0 -44 L10 -35Z" fill="#C0674A"/><circle cy="-29" r="3" fill="#5E432E"/></g><g style="transform:translate(329px,224px)"><g class="g-hop"><ellipse rx="4" ry="3" fill="#5B7FD1"/><circle cx="3" cy="-2" r="2.2" fill="#5B7FD1"/><path d="M5 -2 l3 .6 l-3 .8Z" fill="#F2A33A"/></g></g>`;
+  if (has('mush')) o += `<g transform="translate(214 273)"><rect x="-1.5" y="-6" width="3" height="7" fill="#F3E9D2"/><path d="M-7 -5 a7 6 0 0 1 14 0z" fill="#E5645A"/><circle cx="-3" cy="-8" r="1.2" fill="#fff"/><circle cx="3" cy="-7" r="1" fill="#fff"/></g><g transform="translate(226 276) scale(.7)"><rect x="-1.5" y="-6" width="3" height="7" fill="#F3E9D2"/><path d="M-7 -5 a7 6 0 0 1 14 0z" fill="#F0A24B"/><circle cx="-2" cy="-8" r="1.2" fill="#fff"/></g>`;
+  if (has('bench')) o += `<g transform="translate(264 270)"><rect x="-15" y="-9" width="30" height="3" rx="1" fill="#B07A4E"/><rect x="-15" y="-16" width="30" height="3" rx="1" fill="#C08A5A"/><rect x="-13" y="-14" width="2.6" height="16" fill="#8A5E3A"/><rect x="10.4" y="-14" width="2.6" height="16" fill="#8A5E3A"/></g>`;
+  if (has('lantern')) o += `<g transform="translate(310 270)"><circle class="v-pulse" cy="-34" r="15" fill="url(#gl-${id})"/><rect x="-1" y="-30" width="2" height="32" fill="#4A4A55"/><rect x="-5" y="-40" width="10" height="10" rx="2" fill="#FFE9A0"/><path d="M-7 -40 h14 l-3 -5 h-8z" fill="#4A4A55"/></g>`;
+  if (has('tent')) o += `<g transform="translate(66 296)"><path d="M-20 0 L0 -26 L20 0Z" fill="#E98B5A"/><path d="M0 -26 L8 0 H-8Z" fill="#3B2F25" opacity=".85"/><path d="M-20 0 H20" stroke="#B5633A" stroke-width="1.6"/></g>`;
+  if (has('chest')) o += `<g transform="translate(198 296)"><rect x="-11" y="-10" width="22" height="11" rx="2" fill="#B07A4E"/><path d="M-11 -10 a11 7 0 0 1 22 0z" fill="#C8905C"/><rect x="-1.6" y="-9" width="3.2" height="5" fill="#FFD34E"/><circle class="v-pulse" cy="-12" r="12" fill="url(#gl-${id})"/></g>`;
+  if (has('fountain')) o += `<g transform="translate(100 296)"><ellipse rx="19" ry="5" fill="#C9C2B4"/><ellipse rx="15" ry="3.6" fill="#8FD3F4"/><rect x="-2" y="-14" width="4" height="12" fill="#C9C2B4"/><circle class="v-fly" cy="-18" r="1.8" fill="#BFE7F7" style="--d:0s"/><circle class="v-fly" cx="-6" cy="-12" r="1.6" fill="#BFE7F7" style="--d:1s"/><circle class="v-fly" cx="6" cy="-12" r="1.6" fill="#BFE7F7" style="--d:2s"/></g>`;
+  if (has('fox')) o += `<g transform="translate(150 296)"><ellipse rx="9" ry="5" fill="#E5894A"/><path d="M-8 -1 q-9 -2 -10 6 q8 0 10 -4Z" fill="#E5894A"/><path d="M-17 4 q3 -2 3 1 q-2 2 -3 -1Z" fill="#fff"/><circle cx="8" cy="-5" r="5" fill="#E5894A"/><path d="M5 -8 l-1 -5 l4 3Z M10 -9 l2 -5 l1 6Z" fill="#E5894A"/><circle cx="10" cy="-5" r="1" fill="#3B2F25"/><path d="M12 -4 h4 l-3 3Z" fill="#fff"/></g>`;
+  if (has('bunny')) o += `<g style="transform:translate(240px,288px)"><g class="g-hop"><ellipse rx="7" ry="5" fill="#fff"/><circle cx="6" cy="-4" r="4" fill="#fff"/><ellipse cx="5" cy="-12" rx="1.6" ry="5" fill="#fff"/><ellipse cx="8.5" cy="-11.5" rx="1.6" ry="5" fill="#fff"/><circle cx="7.5" cy="-4.5" r=".9" fill="#3B2F25"/><circle cx="-7" cy="0" r="2.4" fill="#fff"/></g></g>`;
+  if (has('balloon')) o += `<g style="transform:translate(128px,80px)"><g class="g-float"><ellipse rx="13" ry="16" fill="#E5645A"/><path d="M-13 0 q13 24 26 0" fill="#F5B06A" opacity=".9"/><path d="M-5 14 L-4 24 M5 14 L4 24" stroke="#8A5E3A" stroke-width="1"/><rect x="-5" y="24" width="10" height="6" rx="1" fill="#B07A4E"/></g></g>`;
+  return o + '</g>';
+}
+function vidaData() { return (S.vida ||= { garden: [], bonus: 0, claimed: {} }); }
+function seedsOf(c) { const v = vidaData(); const spent = (v.garden || []).reduce((a, k) => a + (GARDEN.find((g) => g.id === k)?.cost || 0), 0); return Math.max(0, Math.floor(c.life / 2) + (v.bonus || 0) - spent); }
+function questsToday() {
+  const t0 = today(); const v = vidaData(); v.claimed ||= {};
+  const sameDay = (ms) => ms && toISO(new Date(ms)) === t0;
+  const dueToday = S.tasks.filter((t) => t.due === t0);
+  const Q = [
+    { id: 'entrega', icon: '✅', text: 'Entrega una tarea', ok: S.tasks.some((t) => t.done && sameDay(t.doneAt)), reward: 6 },
+    { id: 'nueva', icon: '📝', text: 'Sube una tarea nueva', ok: S.tasks.some((t) => sameDay(t.created)), reward: 3 },
+    { id: 'apunte', icon: '📒', text: 'Escribe un apunte o pensamiento', ok: S.notes.some((n) => sameDay(n.updated)) || S.thoughts.some((x) => sameDay(x.at)), reward: 4 },
+    { id: 'hoy', icon: '🌟', text: 'Termina todo lo de hoy', ok: dueToday.length > 0 && dueToday.every((t) => t.done), reward: 8 },
+  ];
+  return Q.map((q) => ({ ...q, claimed: !!v.claimed[`${t0}:${q.id}`] }));
+}
+function questsHTML() {
+  const Q = questsToday(); const done = Q.filter((q) => q.claimed).length;
+  return `<div class="card quests"><div class="q-head"><b class="serif">Misiones de hoy</b><span class="chip ${done === Q.length ? 'pen' : ''}">${done}/${Q.length}</span></div>
+    ${Q.map((q) => `<div class="quest ${q.ok ? 'ok' : ''}"><span class="q-ico">${q.icon}</span><span class="q-t">${esc(q.text)}</span>${q.claimed ? '<span class="chip pen">Listo ✓</span>' : q.ok ? `<button class="btn primary" data-act="quest-claim" data-id="${q.id}">+${q.reward} 🌰</button>` : `<span class="small muted">+${q.reward} 🌰</span>`}</div>`).join('')}</div>`;
+}
+function gardenTabHTML(c) {
+  const v = vidaData(); const bal = seedsOf(c);
+  return `<div class="card seeds"><span class="seed-n">🌰 <b id="seedBal">${bal}</b></span><span class="small muted">semillas para decorar tu jardín. Ganas 1 por cada 2 puntos del árbol y con las misiones.</span></div>
+    ${questsHTML()}
+    <h2 class="sec">Tienda del jardín <small>${(v.garden || []).length}/${GARDEN.length} en tu jardín</small></h2>
+    <div class="shop">${GARDEN.map((g) => {
+      const own = (v.garden || []).includes(g.id); const locked = c.level < g.lvl; const can = !own && !locked && bal >= g.cost;
+      return `<div class="shop-i ${own ? 'own' : ''} ${locked ? 'locked' : ''}"><span class="s-ico">${locked ? '🔒' : g.emoji}</span><b>${esc(g.name)}</b>
+        ${own ? '<span class="chip pen">En tu jardín</span>' : locked ? `<span class="small muted">Nivel ${g.lvl}</span>` : `<button class="btn ${can ? 'primary' : ''}" data-act="garden-buy" data-id="${g.id}" ${can ? '' : 'aria-disabled="true"'}>${g.cost} 🌰</button>`}</div>`;
+    }).join('')}</div>`;
+}
+Object.assign(VIDA_ACTS, {
+  'quest-claim': (el) => {
+    const q = questsToday().find((x) => x.id === el.dataset.id); if (!q || !q.ok || q.claimed) return;
+    const v = vidaData(); v.claimed[`${today()}:${q.id}`] = 1; v.bonus = (v.bonus || 0) + q.reward;
+    for (const k of Object.keys(v.claimed)) if (k.slice(0, 10) < addDays(today(), -14)) delete v.claimed[k];
+    commit(); Snd.chime(); leafBurst(el); toast(`+${q.reward} semillas 🌰`);
+  },
+  'garden-buy': (el) => {
+    const g = GARDEN.find((x) => x.id === el.dataset.id); if (!g) return;
+    const c = treeNow(dataOwner()); const v = vidaData();
+    if ((v.garden || []).includes(g.id)) return;
+    if (c.level < g.lvl) { toast(`Se desbloquea en el nivel ${g.lvl}.`); return; }
+    if (seedsOf(c) < g.cost) { toast(`Te faltan ${g.cost - seedsOf(c)} semillas. Entrega tareas y completa misiones.`); return; }
+    (v.garden ||= []).push(g.id); VUI.tab = 'arbol'; VUI.pour = Date.now() + 3000; commit(); Snd.chime(); setTimeout(() => leafBurst($('.vscene')), 250);
+    toast(`${g.emoji} ${g.name} ya vive en tu jardín.`);
+  },
+  'lib-pick': (el) => { UI.libreta = el.dataset.v || ''; render(); },
+  'lib-new': async () => { const l = await newLibreta(); if (l) { UI.libreta = l.id; render(); } },
+  'lib-edit': async (el) => {
+    const l = libretas().find((x) => x.id === el.dataset.id); if (!l) return;
+    const v = await ask({ title: `${l.emoji} ${l.name}`, cancel: 'Cerrar', options: [{ value: 'rename', label: 'Cambiar nombre', icon: 'edit' }, { value: 'del', label: 'Borrar libreta (los apuntes se quedan)', icon: 'trash' }] });
+    if (v === 'rename') { const n = await ask({ title: 'Nombre de la libreta', input: { value: l.name }, ok: 'Guardar' }); if (n) { l.name = n.slice(0, 30); commit(); } }
+    else if (v === 'del') { const ok = await ask({ title: '¿Borrar la libreta?', text: 'Los apuntes no se borran: solo quedan sin libreta.', ok: 'Borrar', danger: true }); if (ok) { S.notes.forEach((n) => { if (n.libreta === l.id) n.libreta = ''; }); S.libretas = S.libretas.filter((x) => x.id !== l.id); UI.libreta = ''; commit(); } }
+  },
+});
+
+/* =========================================================
+   5. Tareas del Salón con foto e instrucciones
+   ========================================================= */
+function fileToDataURL(file, max = 1100, q = 0.6) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src);
+      res(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = () => rej(new Error('img'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+const gImgCache = new Map();
+async function loadGImg(fid, id) {
+  if (gImgCache.has(id)) return gImgCache.get(id);
+  try { const c = await DB.get('files', 'gi:' + id); if (c) { gImgCache.set(id, c); return c; } } catch { /* */ }
+  try { const r = await cloudFetch('GET', null, `kind=gimg&forest=${encodeURIComponent(fid)}&id=${encodeURIComponent(id)}&as=${encodeURIComponent(REG.me)}`); if (r.data) { gImgCache.set(id, r.data); DB.put('files', 'gi:' + id, r.data).catch(() => {}); return r.data; } } catch { /* */ }
+  return null;
+}
+let gNewPhoto = null;
+function openGroupNew() {
+  gNewPhoto = null;
+  openSheet(`${sheetHead('Tarea para el Salón')}<div class="sheet-body">
+    <div class="field"><label for="gnTitle" class="sr">Título</label><input id="gnTitle" class="title-input" placeholder="Ej. Tarea de hoy: mapa conceptual"></div>
+    <div class="row2"><div class="field"><label for="gnDue">Entrega</label><input id="gnDue" class="input" type="date" value="${addDays(today(), 1)}"></div><div class="field"><label for="gnTime">Hora</label><input id="gnTime" class="input" type="time"></div></div>
+    <div class="field"><label for="gnSubj">Materia</label><input id="gnSubj" class="input" placeholder="Ej. Mercadotecnia"></div>
+    <div class="field"><label for="gnDesc">Instrucciones</label><textarea id="gnDesc" class="input" placeholder="Escribe lo que pidió el profe o pega el texto…"></textarea></div>
+    <div class="field"><span class="lbl">Foto de las instrucciones</span><div id="gnPrev"></div><label class="btn" for="gnImg" style="align-self:flex-start">${icon('cam')}Tomar o elegir foto</label><input id="gnImg" type="file" accept="image/*" class="sr" data-gn-img></div>
+  </div><div class="sheet-foot"><span class="grow"></span><button class="btn primary" data-act="g-new-save">${icon('plus')}Subir al Salón</button></div>`);
+  setTimeout(() => $('#gnTitle')?.focus(), 60);
+}
+document.addEventListener('change', async (e) => {
+  if (e.target.dataset.gnImg === undefined || !e.target.files?.[0]) return;
+  try { gNewPhoto = await fileToDataURL(e.target.files[0]); $('#gnPrev').innerHTML = `<img class="gimg" src="${gNewPhoto}" alt="Foto de las instrucciones">`; if (!$('#gnTitle').value.trim()) $('#gnTitle').focus(); }
+  catch { toast('No se pudo cargar esa foto.'); }
+});
+Object.assign(VIDA_ACTS, {
+  'g-new': () => openGroupNew(),
+  'g-new-save': async (el) => {
+    const title = $('#gnTitle').value.trim(); if (!title) { toast('Ponle un título a la tarea.'); return; }
+    el.disabled = true; const id = gid(); const fid = curFid();
+    const item = { id, type: 'task', title, due: $('#gnDue').value || null, time: $('#gnTime').value, subject: $('#gnSubj').value.trim(), desc: $('#gnDesc').value };
+    if (gNewPhoto) {
+      try { await cloudFetch('POST', { kind: 'gimg', as: REG.me, forest: fid, id, data: gNewPhoto }); item.img = true; gImgCache.set(id, gNewPhoto); DB.put('files', 'gi:' + id, gNewPhoto).catch(() => {}); }
+      catch (e) { toast(`No se pudo subir la foto: ${e.message}`); el.disabled = false; return; }
+    }
+    closeSheet(false); await gput(item); Snd.chime(); toast('Tarea subida. A tus compañeros les llega un aviso.');
+  },
+});
+
+const gDoneBy = (id) => gAll('done').filter((x) => x.task === id && !x.deleted);

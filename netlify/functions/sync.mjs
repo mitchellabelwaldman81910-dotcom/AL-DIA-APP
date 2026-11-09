@@ -6,7 +6,7 @@ import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual, createHash } from
 import webpush from "web-push";
 
 const W = "w/";
-const GTYPES = ["task", "team", "join", "part", "post", "idea", "like"];
+const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done"];
 const LETTER_USERS = ["mitchell", "mel"];
 const MAX = 3 * 1024 * 1024;
 const USER_RE = /^[a-z0-9]{3,20}$/;
@@ -93,8 +93,16 @@ export default async (req, context) => {
         const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean);
         return json({ ok: true, users: all.map((a) => ({ id: a.id, name: a.name, color: a.color })) });
       }
+      if (kindQ === "gimg") {
+        const as = url.searchParams.get("as");
+        const fid = url.searchParams.get("forest");
+        const id = url.searchParams.get("id");
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        if (!(await memberOf(as, fid)) || !/^[a-z0-9-]{4,60}$/i.test(id || "")) return json({ error: "No disponible" }, 403);
+        const data = await store.get(`${W}gi/${fid}/${id}`, { type: "text" });
+        return json({ ok: true, data: data || null });
+      }
       if (kindQ === "rank") {
-        if (!authList.length) return json({ error: "Inicia sesión primero" }, 401);
         const trees = await treeDocs();
         const people = trees.sort((a, b) => b.level - a.level || b.pts - a.pts || b.life - a.life).slice(0, 100)
           .map((t) => ({ id: t.id, name: t.name, color: t.color, level: t.level, pts: t.pts, life: t.life, streak: t.streak || 0 }));
@@ -301,6 +309,16 @@ export default async (req, context) => {
           if (context?.waitUntil) context.waitUntil(job); else await job;
         }
         return json({ ok: true, u: clean.u });
+      }
+      case "gimg": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const f = await memberOf(as, body.forest);
+        if (!f) return json({ error: "Ya no eres parte de este Salón" }, 403);
+        const d = String(body.data || "");
+        if (!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(d) || d.length > 900000) return json({ error: "La foto es muy grande o no es válida" }, 400);
+        if (!/^[a-z0-9-]{4,60}$/i.test(body.id || "")) return json({ error: "elemento inválido" }, 400);
+        await store.set(`${W}gi/${f.id}/${body.id}`, d);
+        return json({ ok: true });
       }
       case "gsub": {
         if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);

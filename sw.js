@@ -1,11 +1,12 @@
 /* Al Día — service worker: funciona sin internet y manda avisos. */
-const VERSION = 'aldia-v7.0.0';
+const VERSION = 'aldia-v7.1.0';
 const SHELL = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './vida.js',
+  './extras.js',
   './manifest.webmanifest',
   './fonts/schola-bold.woff',
   './fonts/schola-regular.woff',
