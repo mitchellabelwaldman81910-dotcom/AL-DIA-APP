@@ -264,7 +264,10 @@ export default async (req, context) => {
         const l = body.letter || {};
         if (!/^[a-z0-9]{6,30}$/i.test(l.id || "") || !LETTER_USERS.includes(l.from) || !LETTER_USERS.includes(l.to) || l.from === l.to) return json({ error: "mensaje inválido" }, 400);
         if (!allowed(l.from) && !allowed(l.to)) return json({ error: "Inicia sesión primero" }, 401);
-        await store.setJSON(`${W}l/${l.id}`, { id: l.id, from: l.from, to: l.to, text: clip(l.text, 4000), at: +l.at || Date.now(), read: !!l.read });
+        const prevL = await store.get(`${W}l/${l.id}`, { type: "json" });
+        // la hora la pone el servidor la primera vez (los relojes de los teléfonos pueden estar desfasados)
+        const at = prevL?.at || (Math.abs((+l.at || 0) - Date.now()) < 120000 || !(+l.at) ? Date.now() : Math.min(+l.at, Date.now()));
+        await store.setJSON(`${W}l/${l.id}`, { id: l.id, from: l.from, to: l.to, text: clip(l.text, 4000), at, tz: clip(l.tz, 40), read: !!l.read });
         await bump(store, [l.from, l.to]);
         return json({ ok: true });
       }
