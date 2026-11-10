@@ -27,7 +27,7 @@ async function liveLoop() {
       if (j.changed || first) { LIVE.lastMsg = Date.now(); liveSync(); clearTimeout(LIVE.t2); LIVE.t2 = setTimeout(liveSync, 1500); }
       if (lobChanged && typeof lobbyFetch === 'function') lobbyFetch();
     } catch (e) {
-      if (e && e.name === 'AbortError') continue;
+      if (e && e.name === 'AbortError') { await new Promise((r) => setTimeout(r, 250)); continue; }
       LIVE.fails++; LIVE.live = false; liveBadge();
       await new Promise((r) => setTimeout(r, Math.min(8000, 800 * LIVE.fails)));
     }

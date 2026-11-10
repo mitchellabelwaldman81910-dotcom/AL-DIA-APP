@@ -2,8 +2,8 @@
    Identidad: cuaderno de cuadro, pluma azul, marcatextos y pluma roja.
    Schola (escolar) para títulos y números; tipografía del sistema para leer. */
 
-@font-face { font-family: "AlDia Schola"; src: url("fonts/schola-bold.woff") format("woff"); font-weight: 700; font-display: swap; }
-@font-face { font-family: "AlDia Schola"; src: url("fonts/schola-regular.woff") format("woff"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "AlDia Schola"; src: url("../fonts/schola-bold.woff") format("woff"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "AlDia Schola"; src: url("../fonts/schola-regular.woff") format("woff"); font-weight: 400; font-display: swap; }
 
 :root {
   --paper: #EFE6D8; --sheet: #F7F0E4; --sheet-2: #E6DAC6; --grid: #E2D5C0; --ink: #3B2F25; --ink-2: #6E5E4E; --ink-3: #9A8977; --pen: #5F7D58; --pen-ink: #FBF6EC; --pen-soft: #DCE5D2; --red: #B9654A; --red-soft: #F1DCCD; --hl: #F0CD88; --hl-ink: #3B2F25; --ok: #6B9461; --ok-soft: #DDE8D5; --line: #DCCDB6; --shadow: 0 1px 0 rgba(90,64,40,.05), 0 14px 34px -18px rgba(90,64,40,.35); --amber: #D59A45;

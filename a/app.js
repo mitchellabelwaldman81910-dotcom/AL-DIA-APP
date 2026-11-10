@@ -2382,7 +2382,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.6. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.7. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -3601,18 +3601,19 @@ if (window.visualViewport) {
   if (navigator.storage?.persist) navigator.storage.persisted().then((p) => { if (!p) navigator.storage.persist().catch(() => {}); }).catch(() => {});
 
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('sw.js').then((reg) => {
-      reg.addEventListener('updatefound', () => {
-        const nw = reg.installing;
-        nw?.addEventListener('statechange', () => {
-          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-            toast('Hay una versión nueva de Al Día.', { action: 'Actualizar', ms: 15000, onAction: () => { wantsUpdate = true; nw.postMessage('skipWaiting'); } });
-          }
-        });
-      });
+    const hadSW = !!navigator.serviceWorker.controller; let reloading = false;
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
       if (S.settings.notify) registerPeriodic();
+      // al volver a la app, busca si hay versión nueva
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
     }).catch(() => {});
-    let wantsUpdate = false, reloading = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => { if (wantsUpdate && !reloading) { reloading = true; location.reload(); } });
+    // Versión nueva lista: se recarga sola en un momento tranquilo (sin hojas abiertas ni texto a medias)
+    const reloadSafe = () => {
+      if (reloading) return;
+      const a = document.activeElement; const typing = a && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.value;
+      if (document.visibilityState === 'hidden' || (!sheet().open && !typing)) { reloading = true; location.reload(); }
+      else setTimeout(reloadSafe, 4000);
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadSW) reloadSafe(); });
   }
 })();

@@ -216,9 +216,16 @@ function openProfileSheet() {
     </div>`);
 }
 
+/* Sin sesión en la nube no se puede crear ni unirse: se explica y se lleva a entrar */
+function slNeedLogin() {
+  openSheet(`${sheetHead('Entra con tu usuario')}<div class="sheet-body"><p class="muted" style="margin:0">Los Salones viven en la nube, así que necesitas tu usuario con contraseña. Si ya tienes uno, entra; si no, créalo en un minuto.</p></div>
+    <div class="sheet-foot"><button class="btn" data-act="sl-login-new">Crear usuario</button><span class="grow"></span><button class="btn primary" data-act="sl-login">Entrar</button></div>`);
+}
 /* ---------- Acciones ---------- */
 Object.assign(VIDA_ACTS, {
-  'forest-new': () => { if (!REG.me || !tokens()[REG.me]) { toast('Primero entra con tu usuario.'); return; } openCreateSalon(); },
+  'sl-login': () => { closeSheet(false); const f = ACTIONS['user-login'] || VIDA_ACTS['user-login']; if (f) f(); },
+  'sl-login-new': () => { closeSheet(false); const f = ACTIONS['user-new'] || VIDA_ACTS['user-new']; if (f) f(); },
+  'forest-new': () => { if (!REG.me || !tokens()[REG.me]) { slNeedLogin(); return; } openCreateSalon(); },
   'sl-color': (el) => { SL.color = el.dataset.v; document.querySelectorAll('.sl-sw .sw').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === SL.color)); const p = document.getElementById('slPrev'); if (p) p.innerHTML = slPreview(document.getElementById('slName')?.value.trim(), SL.color); },
   'sl-create': async (el) => {
     const name = (document.getElementById('slName')?.value || '').trim();
@@ -238,7 +245,7 @@ Object.assign(VIDA_ACTS, {
     if (navigator.share) { try { await navigator.share({ title: 'Al Día', text, url: location.origin + '/#/salones' }); } catch { /* cancelado */ } }
     else { try { await navigator.clipboard.writeText(text); toast('Mensaje copiado: pégalo en tu chat del grupo.'); } catch { toast(text); } }
   },
-  'sl-join': () => { if (!REG.me || !tokens()[REG.me]) { toast('Primero entra con tu usuario.'); return; } openJoinSalon(); },
+  'sl-join': () => { if (!REG.me || !tokens()[REG.me]) { slNeedLogin(); return; } openJoinSalon(); },
   'sl-join-go': async (el) => {
     const code = normCode(document.getElementById('slCode')?.value); const msg = document.getElementById('slJoinMsg');
     if (code.length < 6) { msg.textContent = 'Escribe el código completo (10 letras y números).'; return; }
