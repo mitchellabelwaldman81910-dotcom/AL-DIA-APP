@@ -45,6 +45,7 @@ const GLIFOS = {
   coffee: '<path d="M5 9h11v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V9zM16 10h2a2 2 0 0 1 0 4h-2M8 3v3M12 3v3"/>',
   palette: '<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2.2-.5-1.2.3-2.3 1.6-2.3H17a4 4 0 0 0 4-4c0-5-4-9.5-9-9.5z"/><circle cx="8" cy="11" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16" cy="11" r="1"/>',
   handshake: '<path d="M3 12l4-4 4 2 4-2 6 5-5 5-4-2-3 2-6-6z"/>',
+  network: '<circle cx="12" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="8" cy="19" r="2"/><circle cx="16" cy="19" r="2"/><path d="M10.6 6.4 6.4 10.6M13.4 6.4l4.2 4.2M6.2 13.7l1 3.4M17.8 13.7l-1 3.4M10 19h4M12 7v4l-3.4 6.4M12 11l3.4 6.4"/>',
   grid2: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
 };
 function glifo(id, cls = '') { return `<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${GLIFOS[id]}</svg>`; }

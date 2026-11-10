@@ -58,6 +58,14 @@ async function pushTo(store, users, origin, payload, exceptDevice) {
   } catch (e) { console.error("push error", e); }
 }
 
+/* Tiempo real: cada cambio "empuja" un número de revisión a las personas afectadas; los dispositivos lo vigilan (long-poll). */
+const revKey = (u) => `${W}rev/${u}`;
+const newRev = () => `${Date.now().toString(36)}${randomBytes(2).toString("hex")}`;
+async function bump(store, users) {
+  const r = newRev();
+  await Promise.all([...new Set(users)].filter((u) => u && (USER_RE.test(String(u)) || u === "_lobby")).map((u) => store.set(revKey(u), r)));
+}
+
 export default async (req, context) => {
   const url = new URL(req.url);
   const store = getStore({ name: "aldia", consistency: "strong" });
@@ -92,6 +100,23 @@ export default async (req, context) => {
         const { blobs } = await store.list({ prefix: `${W}a/` });
         const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean);
         return json({ ok: true, users: all.map((a) => ({ id: a.id, name: a.name, color: a.color })) });
+      }
+      if (kindQ === "watch") {
+        if (!authList.length) return json({ error: "Inicia sesión primero" }, 401);
+        const since = url.searchParams.get("since") || "";
+        const sinceL = url.searchParams.get("lob");
+        const wantL = sinceL !== null;
+        const read = async () => {
+          const rs = await Promise.all([...authList].sort().map((u) => store.get(revKey(u))));
+          const l = wantL ? await store.get(revKey("_lobby")) : "";
+          return { rev: rs.map((x) => x || "0").join("|"), lob: l || "0" };
+        };
+        const t0 = Date.now(); let cur = await read();
+        while (since && cur.rev === since && (!wantL || cur.lob === sinceL) && Date.now() - t0 < 7000) {
+          await new Promise((r) => setTimeout(r, 400));
+          cur = await read();
+        }
+        return json({ ok: true, rev: cur.rev, lob: cur.lob, changed: !!since && (cur.rev !== since || (wantL && cur.lob !== sinceL)) });
       }
       if (kindQ === "lobby") {
         const as = url.searchParams.get("as");
@@ -220,6 +245,7 @@ export default async (req, context) => {
         if (!allowed(p)) return json({ error: "Inicia sesión primero" }, 401);
         const at = Date.now();
         await store.setJSON(`${W}p/${p}`, { at, device: clip(body.device, 40), data: body.data });
+        await bump(store, [p]);
         return json({ ok: true, at });
       }
       case "tree": {
@@ -235,12 +261,14 @@ export default async (req, context) => {
         if (!/^[a-z0-9]{6,30}$/i.test(l.id || "") || !LETTER_USERS.includes(l.from) || !LETTER_USERS.includes(l.to) || l.from === l.to) return json({ error: "mensaje inválido" }, 400);
         if (!allowed(l.from) && !allowed(l.to)) return json({ error: "Inicia sesión primero" }, 401);
         await store.setJSON(`${W}l/${l.id}`, { id: l.id, from: l.from, to: l.to, text: clip(l.text, 4000), at: +l.at || Date.now(), read: !!l.read });
+        await bump(store, [l.from, l.to]);
         return json({ ok: true });
       }
       case "presence": {
         if (!USER_RE.test(String(body.viewing)) || !USER_RE.test(String(body.viewer)) || body.viewer === body.viewing) return json({ error: "presencia inválida" }, 400);
         if (!allowed(body.viewing)) return json({ error: "Inicia sesión primero" }, 401);
         await store.setJSON(`${W}presence/${body.viewing}-${body.viewer}`, { viewer: body.viewer, viewing: body.viewing, at: Date.now() });
+        await bump(store, [body.viewing]);
         return json({ ok: true });
       }
 
@@ -253,6 +281,7 @@ export default async (req, context) => {
         const f = { id, name, emoji: clip(body.emoji, 4) || "", color: COLORS.includes(body.color) ? body.color : COLORS[0], owner: as, members: [as], at: Date.now() };
         await store.setJSON(`${W}f/${id}`, f);
         await store.set(`${W}mf/${as}/${id}`, "1");
+        await bump(store, [as]);
         return json({ ok: true, forest: f });
       }
       case "finvite": {
@@ -265,6 +294,7 @@ export default async (req, context) => {
         if (f.members.includes(to)) return json({ error: `${tm.name} ya está en el Bosque` }, 409);
         if (f.members.length >= 40) return json({ error: "El Bosque está lleno (40 integrantes)" }, 400);
         await store.setJSON(`${W}inv/${to}/${f.id}`, { forest: f.id, forestName: f.name, emoji: f.emoji, from: as, fromName: auth[as].name, to, at: Date.now() });
+        await bump(store, [to, ...f.members]);
         if (context?.waitUntil) context.waitUntil(pushTo(store, [to], url.origin, { title: `${auth[as].name} te invita a un Bosque`, body: f.name, url: "#/vida", tag: `inv-${f.id}` }, ""));
         return json({ ok: true, name: tm.name });
       }
@@ -279,6 +309,7 @@ export default async (req, context) => {
           if (f) await store.set(`${W}mf/${as}/${fid}`, "1");
         }
         await store.delete(`${W}inv/${as}/${fid}`);
+        { const f2 = await forestOf(fid); await bump(store, [as, ...(f2 ? f2.members : [])]); }
         return json({ ok: true });
       }
       case "fleave": {
@@ -292,6 +323,7 @@ export default async (req, context) => {
           const gl = await store.list({ prefix: `${W}g/${f.id}/` });
           await Promise.all(gl.blobs.map((b) => store.delete(b.key)));
         } else { if (f.owner === as) f.owner = f.members[0]; await store.setJSON(`${W}f/${f.id}`, f); }
+        await bump(store, [as, ...f.members]);
         return json({ ok: true });
       }
       case "frename": {
@@ -302,6 +334,7 @@ export default async (req, context) => {
         if (name) f.name = name;
         if (body.emoji) f.emoji = clip(body.emoji, 4);
         await store.setJSON(`${W}f/${f.id}`, f);
+        await bump(store, f.members);
         return json({ ok: true });
       }
       case "gitem": {
@@ -319,6 +352,7 @@ export default async (req, context) => {
           clean.kind = clip(it.kind, 20); clean.est = Math.max(0, Math.min(600, +it.est || 0));
         }
         await store.setJSON(key, clean);
+        await bump(store, f.members);
         if ((!prev || (clean.type === "focus" && !clean.joined && (prev.deleted || prev.start !== clean.start))) && !clean.deleted && !(clean.type === "focus" && clean.joined) && ["task", "team", "idea", "focus", "tpl"].includes(clean.type) && !(clean.type === "focus" && clean.ghost)) {
           const what = clean.type === "task" ? "subió una tarea" : clean.type === "focus" ? "empezó a concentrarse: ¡únete a la sala de enfoque!" : clean.type === "tpl" ? "compartió una plantilla de estudio" : clean.type === "team" ? "creó un trabajo en equipo" : "compartió una idea";
           const payload = { title: `${f.name} · ${clean.by} ${what}`, body: clip(clean.title || clean.text, 140), url: "#/grupo", tag: `g-${clean.id}` };
@@ -330,9 +364,10 @@ export default async (req, context) => {
       case "lobby": {
         if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
         const key = `${W}lobby/${as}`;
-        if (body.leave) { await store.delete(key); return json({ ok: true }); }
+        if (body.leave) { await store.delete(key); await bump(store, ["_lobby"]); return json({ ok: true }); }
         const now = Date.now(); const end = Math.max(now + 1000, Math.min(+body.end || 0, now + 31 * 60000));
         await store.setJSON(key, { id: as, name: auth[as].name, color: auth[as].color, ghost: !!body.ghost, start: now, end });
+        await bump(store, ["_lobby"]);
         return json({ ok: true });
       }
       case "gimg": {
@@ -343,6 +378,7 @@ export default async (req, context) => {
         if (!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(d) || d.length > 900000) return json({ error: "La foto es muy grande o no es válida" }, 400);
         if (!/^[a-z0-9-]{4,60}$/i.test(body.id || "")) return json({ error: "elemento inválido" }, 400);
         await store.set(`${W}gi/${f.id}/${body.id}`, d);
+        await bump(store, f.members);
         return json({ ok: true });
       }
       case "gsub": {

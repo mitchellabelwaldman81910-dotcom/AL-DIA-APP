@@ -240,22 +240,7 @@ const GARDEN = [
   { id: 'fountain', name: 'Fuente', cost: 200, lvl: 35, emoji: 'drop' }, { id: 'balloon', name: 'Globo aerostático', cost: 260, lvl: 45, emoji: 'balloon' },
   { id: 'tent', name: 'Casita de campaña', cost: 320, lvl: 55, emoji: 'tent' }, { id: 'chest', name: 'Cofre del tesoro', cost: 400, lvl: 70, emoji: 'gem' },
 ];
-function gardenSVG(ids, id) {
-  const has = (k) => (ids || []).includes(k); let o = '<g transform="translate(0 -26)">';
-  if (has('windmill')) o += `<g transform="translate(26 252)"><path d="M-7 0 L-4 -34 H4 L7 0Z" fill="#E8DCC4"/><path d="M-5 -34 L0 -44 L5 -34Z" fill="#C97B5A"/><g class="g-spin" style="transform-box:fill-box;transform-origin:center"><g transform="translate(0 -33)"><path d="M0 0 L-3 -22 L3 -22Z M0 0 L22 -3 L22 3Z M0 0 L3 22 L-3 22Z M0 0 L-22 3 L-22 -3Z" fill="#fff" stroke="#C9B99A" stroke-width=".8"/></g></g></g>`;
-  if (has('fence')) { o += '<g transform="translate(0 270)"><rect x="0" y="-9" width="46" height="2.4" fill="#E9DDC4"/><rect x="0" y="-3" width="46" height="2.4" fill="#E9DDC4"/>'; for (let i = 0; i < 7; i++) o += `<path d="M${1 + i * 7} 2 V-13 l2.2 -3 l2.2 3 V2Z" fill="#F3E9D2" stroke="#D9CBAA" stroke-width=".6"/>`; o += '</g>'; }
-  if (has('birdhouse')) o += `<g transform="translate(336 262)"><rect x="-1.2" y="-22" width="2.4" height="24" fill="#8A5E3A"/><rect x="-8" y="-36" width="16" height="14" rx="1.5" fill="#E7B66B"/><path d="M-10 -35 L0 -44 L10 -35Z" fill="#C0674A"/><circle cy="-29" r="3" fill="#5E432E"/></g><g style="transform:translate(329px,224px)"><g class="g-hop"><ellipse rx="4" ry="3" fill="#5B7FD1"/><circle cx="3" cy="-2" r="2.2" fill="#5B7FD1"/><path d="M5 -2 l3 .6 l-3 .8Z" fill="#F2A33A"/></g></g>`;
-  if (has('mush')) o += `<g transform="translate(214 273)"><rect x="-1.5" y="-6" width="3" height="7" fill="#F3E9D2"/><path d="M-7 -5 a7 6 0 0 1 14 0z" fill="#E5645A"/><circle cx="-3" cy="-8" r="1.2" fill="#fff"/><circle cx="3" cy="-7" r="1" fill="#fff"/></g><g transform="translate(226 276) scale(.7)"><rect x="-1.5" y="-6" width="3" height="7" fill="#F3E9D2"/><path d="M-7 -5 a7 6 0 0 1 14 0z" fill="#F0A24B"/><circle cx="-2" cy="-8" r="1.2" fill="#fff"/></g>`;
-  if (has('bench')) o += `<g transform="translate(264 270)"><rect x="-15" y="-9" width="30" height="3" rx="1" fill="#B07A4E"/><rect x="-15" y="-16" width="30" height="3" rx="1" fill="#C08A5A"/><rect x="-13" y="-14" width="2.6" height="16" fill="#8A5E3A"/><rect x="10.4" y="-14" width="2.6" height="16" fill="#8A5E3A"/></g>`;
-  if (has('lantern')) o += `<g transform="translate(310 270)"><circle class="v-pulse" cy="-34" r="15" fill="url(#gl-${id})"/><rect x="-1" y="-30" width="2" height="32" fill="#4A4A55"/><rect x="-5" y="-40" width="10" height="10" rx="2" fill="#FFE9A0"/><path d="M-7 -40 h14 l-3 -5 h-8z" fill="#4A4A55"/></g>`;
-  if (has('tent')) o += `<g transform="translate(66 296)"><path d="M-20 0 L0 -26 L20 0Z" fill="#E98B5A"/><path d="M0 -26 L8 0 H-8Z" fill="#3B2F25" opacity=".85"/><path d="M-20 0 H20" stroke="#B5633A" stroke-width="1.6"/></g>`;
-  if (has('chest')) o += `<g transform="translate(198 296)"><rect x="-11" y="-10" width="22" height="11" rx="2" fill="#B07A4E"/><path d="M-11 -10 a11 7 0 0 1 22 0z" fill="#C8905C"/><rect x="-1.6" y="-9" width="3.2" height="5" fill="#FFD34E"/><circle class="v-pulse" cy="-12" r="12" fill="url(#gl-${id})"/></g>`;
-  if (has('fountain')) o += `<g transform="translate(100 296)"><ellipse rx="19" ry="5" fill="#C9C2B4"/><ellipse rx="15" ry="3.6" fill="#8FD3F4"/><rect x="-2" y="-14" width="4" height="12" fill="#C9C2B4"/><circle class="v-fly" cy="-18" r="1.8" fill="#BFE7F7" style="--d:0s"/><circle class="v-fly" cx="-6" cy="-12" r="1.6" fill="#BFE7F7" style="--d:1s"/><circle class="v-fly" cx="6" cy="-12" r="1.6" fill="#BFE7F7" style="--d:2s"/></g>`;
-  if (has('fox')) o += `<g transform="translate(150 296)"><ellipse rx="9" ry="5" fill="#E5894A"/><path d="M-8 -1 q-9 -2 -10 6 q8 0 10 -4Z" fill="#E5894A"/><path d="M-17 4 q3 -2 3 1 q-2 2 -3 -1Z" fill="#fff"/><circle cx="8" cy="-5" r="5" fill="#E5894A"/><path d="M5 -8 l-1 -5 l4 3Z M10 -9 l2 -5 l1 6Z" fill="#E5894A"/><circle cx="10" cy="-5" r="1" fill="#3B2F25"/><path d="M12 -4 h4 l-3 3Z" fill="#fff"/></g>`;
-  if (has('bunny')) o += `<g style="transform:translate(240px,288px)"><g class="g-hop"><ellipse rx="7" ry="5" fill="#fff"/><circle cx="6" cy="-4" r="4" fill="#fff"/><ellipse cx="5" cy="-12" rx="1.6" ry="5" fill="#fff"/><ellipse cx="8.5" cy="-11.5" rx="1.6" ry="5" fill="#fff"/><circle cx="7.5" cy="-4.5" r=".9" fill="#3B2F25"/><circle cx="-7" cy="0" r="2.4" fill="#fff"/></g></g>`;
-  if (has('balloon')) o += `<g style="transform:translate(128px,80px)"><g class="g-float"><ellipse rx="13" ry="16" fill="#E5645A"/><path d="M-13 0 q13 24 26 0" fill="#F5B06A" opacity=".9"/><path d="M-5 14 L-4 24 M5 14 L4 24" stroke="#8A5E3A" stroke-width="1"/><rect x="-5" y="24" width="10" height="6" rx="1" fill="#B07A4E"/></g></g>`;
-  return o + '</g>';
-}
+/* gardenSVG: ver linea.js */
 function vidaData() { return (S.vida ||= { garden: [], bonus: 0, claimed: {} }); }
 function seedsOf(c) { const v = vidaData(); const spent = (v.garden || []).reduce((a, k) => a + (GARDEN.find((g) => g.id === k)?.cost || 0), 0); return Math.max(0, Math.floor(c.life / 2) + (v.bonus || 0) - spent); }
 function questsToday() {
@@ -372,29 +357,8 @@ const gDoneBy = (id) => gAll('done').filter((x) => x.task === id && !x.deleted);
    6. Efectos llamativos: confeti, puntos flotantes, podio, tarjeta de Hoy
    ========================================================= */
 const CONF_COLORS = ['#2F8A5B', '#7CC07A', '#F2C94C', '#F2994A', '#EB5757', '#56CCF2', '#BB6BD9', '#FF8FB1'];
-function confetti(x, y, n = 28) {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  n = Math.min(n, 90);
-  for (let i = 0; i < n; i++) {
-    const d = document.createElement('span'); d.className = 'confetti';
-    const c = CONF_COLORS[i % CONF_COLORS.length]; const w = 6 + Math.random() * 6;
-    d.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${w * (Math.random() < .5 ? 1 : 1.8)}px;background:${c};border-radius:${Math.random() < .35 ? '50%' : '2px'}`;
-    document.body.appendChild(d);
-    const a = Math.random() * Math.PI * 2, dist = 70 + Math.random() * 190;
-    const dx = Math.cos(a) * dist, dy = Math.sin(a) * dist - 90;
-    d.animate([
-      { transform: 'translate(-50%,-50%) rotate(0deg)', opacity: 1 },
-      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${Math.random() * 540}deg)`, opacity: 1, offset: .45 },
-      { transform: `translate(calc(-50% + ${dx * 1.15}px), calc(-50% + ${dy + 260}px)) rotate(${Math.random() * 900}deg)`, opacity: 0 },
-    ], { duration: 1500 + Math.random() * 900, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => d.remove();
-  }
-}
-function floatText(el, text, cls = '') {
-  if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const r = el.getBoundingClientRect(); const d = document.createElement('span');
-  d.className = 'float-pts ' + cls; d.textContent = text; d.style.left = (r.left + r.width / 2) + 'px'; d.style.top = (r.top + r.height / 2) + 'px';
-  document.body.appendChild(d); setTimeout(() => d.remove(), 1700);
-}
+/* confetti: ver linea.js */
+/* floatText: ver linea.js */
 function podiumHTML(items) {
   if (!items || items.length < 1) return '';
   const order = [1, 0, 2].filter((i) => items[i]);

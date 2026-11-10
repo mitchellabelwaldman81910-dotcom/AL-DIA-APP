@@ -88,9 +88,24 @@ function applyMicro(kind, p, off = new Set()) {
 }
 function plusTopHTML(t) {
   if (t.id) return '';
-  return `<div class="tpl-row"><span class="tiny faint">Empieza desde una plantilla</span><div class="tpl-chips">${Object.entries(MICRO).filter(([k]) => k !== 'tarea').map(([k, v]) => `<button type="button" class="tpl-chip" data-act="tpl-start" data-v="${k}">${icon(v.emoji, 'sm')}${v.label}</button>`).join('')}</div></div>`;
+  return `<div id="microHint" class="micro-hint" hidden></div><div class="tpl-row"><span class="tiny faint">Empieza desde una plantilla</span><div class="tpl-chips">${Object.entries(MICRO).filter(([k]) => k !== 'tarea').map(([k, v]) => `<button type="button" class="tpl-chip" data-act="tpl-start" data-v="${k}">${icon(v.emoji, 'sm')}${v.label}</button>`).join('')}</div></div>`;
 }
+/* Al escribir el título, propone el desglose automático en pasos de 5 minutos */
+let microHintT = null;
+document.addEventListener('input', (e) => {
+  if (e.target.id !== 'fTitle' || typeof draft === 'undefined' || !draft) return;
+  clearTimeout(microHintT);
+  microHintT = setTimeout(() => {
+    const box = document.getElementById('microHint'); if (!box) return;
+    const k = detectMicro(e.target.value, draft.type);
+    if (k === 'tarea' || (draft.steps || []).length || e.target.value.trim().length < 4) { box.hidden = true; return; }
+    const M = MICRO[k]; const steps = microBuild(k, microDefaults(k));
+    box.innerHTML = `<span class="mh-i">${icon(M.emoji)}</span><span class="mh-t"><b>Parece ${M.label.toLowerCase() === 'ejercicios' ? 'una práctica de ejercicios' : M.label.toLowerCase() === 'mapa o resumen' ? 'un mapa o resumen' : (['exposición', 'lectura', 'tarea general'].includes(M.label.toLowerCase()) ? 'una ' : 'un ') + M.label.toLowerCase()}</b><span class="small muted">Lo divido en ${steps.length} pasos de unos 5 minutos.</span></span><button type="button" class="btn primary" data-act="micro-auto" data-v="${k}">Dividir</button>`;
+    box.hidden = false;
+  }, 320);
+});
 Object.assign(PLUS_ACTS, {
+  'micro-auto': (el) => { const k = el.dataset.v; const M = MICRO[k]; if (!M) return; if (draft.type === 'tarea' && M.type) draft.type = M.type; applyMicro(k, microDefaults(k)); draftDirty = true; renderTaskSheet(); toast(`Listo: ${draft.steps.length} pasos de 5 minutos. Puedes moverlos o borrarlos.`); },
   'micro-open': () => microOpen(),
   'micro-close': () => { PUI.micro = null; paintMicro(); },
   'micro-kind': (el) => { const k = el.dataset.v; PUI.micro = { kind: k, p: microDefaults(k), off: new Set() }; paintMicro(); },
@@ -123,8 +138,9 @@ function estStats() {
   const insights = [];
   for (const [k, g] of Object.entries(groups)) {
     const avg = Math.round(g.reduce((a, r) => a + r.err, 0) / g.length); const [type, sn] = k.split('|');
-    if (Math.abs(avg) < 10) continue;
-    const label = `${(TYPES[type]?.label || 'tareas').toLowerCase()}${sn ? ` de ${sn}` : ''}`;
+    if (Math.abs(avg) < 10 || (g.length < 2 && Math.abs(avg) < 25)) continue;
+    const PLU = { tarea: 'las tareas', proyecto: 'los proyectos', examen: 'los exámenes', exposicion: 'las exposiciones', lectura: 'las lecturas', practica: 'las prácticas', otro: 'las entregas' };
+    const label = `${PLU[type] || 'las tareas'}${sn ? ` de ${sn}` : ''}`;
     insights.push({ avg, n: g.length, text: avg > 0 ? `Sueles subestimar ${label} por ${fmtMinutes(avg)}.` : `Sueles calcular de más ${label}: terminas ${fmtMinutes(-avg)} antes.` });
   }
   insights.sort((a, b) => Math.abs(b.avg) - Math.abs(a.avg));
@@ -181,7 +197,7 @@ Object.assign(PLUS_ACTS, {
 /* =========================================================
    3. Energía del día y ruta crítica
    ========================================================= */
-const ENERGIES = { alta: ['bolt', 'Con mucha energía', 'Ataca primero lo más pesado y de más valor.'], normal: ['gauge', 'Normal', 'Ritmo parejo: mezcla lo difícil con lo fácil.'], baja: ['battery', 'Cansado/a', 'Empieza por lo más fácil y rápido para avanzar sin agotarte.'] };
+const ENERGIES = { alta: ['bolt', 'Con energía', 'Ataca primero lo más pesado y de más valor.'], normal: ['gauge', 'Normal', 'Ritmo parejo: mezcla lo difícil con lo fácil.'], baja: ['battery', 'Cansado/a', 'Empieza por lo más fácil y rápido para avanzar sin agotarte.'] };
 const energyNow = () => { const e = S.settings.energy; return e && e.d === today() ? e.v : 'normal'; };
 function habitToday() { const h = (S.habits ||= {}); return (h[today()] ||= { sleep: 0, water: 0, move: 0 }); }
 function blockRec() {
@@ -394,18 +410,23 @@ function skillTreeHTML() {
   const subs = S.subjects.slice(0, 8);
   if (!subs.length) return `<section class="pn-card"><h2 class="serif">Árbol de habilidades</h2><p class="muted" style="margin:0">Agrega tus materias y cada una será una rama que se ilumina conforme avanzas.</p></section>`;
   const W = 360, H = 300, cx = 180, base = 286; let g = '';
-  g += `<path d="M${cx} ${base} C${cx - 6} 240 ${cx + 6} 200 ${cx} 160" stroke="#8A6A4E" stroke-width="9" fill="none" stroke-linecap="round"/>`;
+  g += `<path class="ln s" stroke-width=".8" d="M${cx - 70} ${base + 2}C${cx - 30} ${base - 6} ${cx + 30} ${base - 6} ${cx + 70} ${base + 2}"/>`;
+  g += `<path class="ln" stroke-width="2.4" d="M${cx} ${base - 2}C${cx - 4} 240 ${cx + 4} 200 ${cx} 160"/><path class="ln s" stroke-width=".6" d="M${cx - 4} ${base - 4}C${cx - 7} 246 ${cx - 2} 206 ${cx - 3} 172M${cx} ${base - 2}q-9 2 -16 7M${cx} ${base - 2}q9 2 16 7"/>`;
   const infos = subs.map((s, i) => {
     const xp = skillXP(s.id); const lv = skillLv(xp); const n = subs.length;
     const ang = (-80 + (160 * (n === 1 ? 0.5 : i / (n - 1)))) * Math.PI / 180; const c = safeColor(s.color);
     const sx = cx, sy = 170 + (i % 2) * 18; const len = 120; const ex = sx + Math.sin(ang) * len * 1.25, ey = sy - Math.cos(ang) * len;
-    g += `<path d="M${sx} ${sy} Q${(sx + ex) / 2 + Math.sin(ang) * 10} ${(sy + ey) / 2 + 12} ${ex} ${ey}" stroke="${lv > 0 ? c : '#C9C2B4'}" stroke-width="${lv > 0 ? 5 : 3}" fill="none" stroke-linecap="round" opacity="${lv > 0 ? 1 : .6}"/>`;
-    for (let k = 1; k <= 5; k++) { const u = k / 5; const nx = sx + (ex - sx) * u + Math.sin(ang) * 10 * Math.sin(u * Math.PI) * .5, ny = sy + (ey - sy) * u + 12 * Math.sin(u * Math.PI) * .5; const on = lv >= k;
-      g += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="${on ? 7 : 5}" fill="${on ? c : '#E7E2D6'}" stroke="${on ? '#fff' : '#C9C2B4'}" stroke-width="2"${on ? ` class="sk-on" style="--c:${c}"` : ''}/>`; }
+    const qx = (sx + ex) / 2 + Math.sin(ang) * 10, qy = (sy + ey) / 2 + 12;
+    g += `<path class="ln ${lv > 0 ? '' : 's'}" stroke-width="${lv > 0 ? 1.5 : 1}" ${lv > 0 ? `style="stroke:${c}"` : 'stroke-dasharray="3 4"'} d="M${sx} ${sy}Q${qx.toFixed(1)} ${qy.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}"/>`;
+    for (let k = 1; k <= 5; k++) { const u = k / 5; const nx = (1 - u) * (1 - u) * sx + 2 * (1 - u) * u * qx + u * u * ex, ny = (1 - u) * (1 - u) * sy + 2 * (1 - u) * u * qy + u * u * ey; const on = lv >= k;
+      g += on ? `<circle class="sk-on" cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="6" style="--c:${c};fill:var(--sheet);stroke:${c};stroke-width:1.3"/><circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="2.2" style="fill:${c}"/>`
+        : `<circle class="ln s" stroke-width=".9" cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="3.6" style="fill:var(--sheet)"/>`; }
+    if (lv >= 3) { const deg = Math.atan2(ey - qy, ex - qx) * 180 / Math.PI; g += lnLeaf(ex, ey, deg - 35, 13) + lnLeaf(ex, ey, deg + 35, 12, 'lf2'); }
+    if (lv >= 5) g += `<g transform="translate(${ex.toFixed(1)} ${(ey - 10).toFixed(1)})">${lnFlower(0, 0, 1.6)}</g>`;
     return { s, xp, lv, c };
   });
   return `<section class="pn-card"><h2 class="serif">Árbol de habilidades</h2><p class="small muted" style="margin:0 0 6px">Cada materia es una rama. Entregar tareas, sacar buenas notas y enfocarte la ilumina.</p>
-    <svg viewBox="0 0 ${W} ${H}" class="skill-svg" role="img" aria-label="Árbol de habilidades por materia">${g}</svg>
+    <svg viewBox="0 0 ${W} ${H}" class="skill-svg ln-ico" role="img" aria-label="Árbol de habilidades por materia">${g}</svg>
     <ul class="skill-leg">${infos.map(({ s, xp, lv, c }) => { const nxt = SKILL_T[Math.min(5, lv + 1)]; const pct = lv >= 5 ? 100 : Math.round(((xp - SKILL_T[lv]) / (nxt - SKILL_T[lv])) * 100); return `<li><span class="dot" style="background:${c}"></span><span class="sk-t"><b>${esc(s.name)}</b><span class="small muted">${SKILL_N[lv]} · nivel ${lv}/5 · ${xp} XP</span><span class="v-bar sm"><i style="width:${pct}%"></i></span></span></li>`; }).join('')}</ul></section>`;
 }
 
@@ -480,6 +501,15 @@ function buildQuiz(t) {
     const ans = [...ws].sort((a, b) => b.length - a.length)[0];
     const dist = shuffle(all.filter((w) => normChars(w) !== normChars(ans) && Math.abs(w.length - ans.length) <= 4)).slice(0, 2); if (dist.length < 2) continue;
     qs.push({ q: s.replace(ans, '_____'), ans, opts: shuffle([ans, ...dist]) }); if (qs.length === 3) break;
+  }
+  // con los pasos (subtareas): ¿qué sigue después de…?
+  const st = (t.steps || []).map((x) => String(x.text || '').trim()).filter(Boolean);
+  if (qs.length < 3 && st.length >= 3) {
+    const idx = shuffle(st.slice(0, -1).map((_, i) => i));
+    for (const i of idx) {
+      const ans = st[i + 1]; const dist = shuffle(st.filter((x, j) => j !== i + 1 && j !== i)).slice(0, 2); if (dist.length < 2) continue;
+      qs.push({ q: `Según tu plan, ¿qué sigue después de «${st[i]}»?`, ans, opts: shuffle([ans, ...dist]) }); if (qs.length === 3) break;
+    }
   }
   return qs;
 }
@@ -588,6 +618,7 @@ function lobbyBody() {
 }
 function lobbyPaint() { const b = document.getElementById('lobBox'); if (b) b.innerHTML = lobbyBody(); }
 function lobbyOpen() {
+  if (typeof LIVE !== 'undefined') { LIVE.lob = ''; liveKick(); }
   openSheet(`${sheetHead('Biblioteca global')}<div class="sheet-body"><div id="lobBox"></div></div>`, () => { clearInterval(LOB.t); LOB.t = null; });
   lobbyPaint(); lobbyFetch(); let k = 0; clearInterval(LOB.t);
   LOB.t = setInterval(() => {
@@ -626,7 +657,7 @@ function viewPanel() {
     <div class="btn-row" style="margin-bottom:12px"><button class="btn danger block" data-act="sos-open">Nube de emergencia</button><button class="btn block" data-act="lobby-open">Biblioteca global</button></div>
     ${radarHTML()}${freeHTML()}${critHTML()}${estHTML()}${patternsHTML()}${habitsHTML()}${skillTreeHTML()}
     ${myForests().length ? `<section class="pn-card"><h2 class="serif">Plantillas de mis Salones</h2>${tplListHTML(allTpls())}</section>` : ''}
-    <section class="pn-card"><h2 class="serif">Quiz antes de entregar</h2><div class="toggle"><span><span class="t">Preguntarme 3 cosas con mis apuntes</span><span class="d" style="display:block">Solo si tienes apuntes de esa materia.</span></span><label class="switch"><input type="checkbox" data-quiz-set ${S.settings.quizOff ? '' : 'checked'} aria-label="Quiz antes de entregar"><span></span></label></div></section>`;
+    <section class="pn-card"><h2 class="serif">Quiz antes de entregar</h2><div class="toggle"><span><span class="t">Preguntarme 3 cosas con mis apuntes</span><span class="d" style="display:block">Usa tus apuntes de la materia o los pasos de la tarea.</span></span><label class="switch"><input type="checkbox" data-quiz-set ${S.settings.quizOff ? '' : 'checked'} aria-label="Quiz antes de entregar"><span></span></label></div></section>`;
 }
 document.addEventListener('change', (e) => { if (e.target.dataset.quizSet !== undefined) { S.settings.quizOff = !e.target.checked; save(); toast(e.target.checked ? 'Quiz activado.' : 'Quiz desactivado.'); } });
 Object.assign(VIDA_ACTS, PLUS_ACTS);

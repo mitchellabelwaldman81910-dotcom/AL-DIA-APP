@@ -1150,8 +1150,8 @@ function viewMateria(id) {
 /* ---------- Más ---------- */
 function viewMas() {
   const items = [
-    ['#/estilo', 'spark', 'Estilo de la app', 'Cambia los colores y el diseño: 7 plantillas con día y noche'],
-    ['#/cerebro', 'spark', 'Tu Cerebro', 'Todo lo que has hecho y pensado, conectado en una red viva'],
+    ['#/estilo', 'palette', 'Estilo de la app', 'Cambia los colores y el diseño: 7 plantillas con día y noche'],
+    ['#/cerebro', 'network', 'Tu Cerebro', 'Todo lo que has hecho y pensado, conectado en una red viva'],
     ['#/panel', 'grid', 'Mi panel', 'Radar de carga, tiempo libre real, patrones y hábitos'],
     ['#/materias', 'book', 'Materias', 'Tus materias, horarios y calificaciones'],
     ['#/escanear', 'cam', 'Escanear foto', 'Saca pendientes y fechas de una foto o resuelve ejercicios de mate'],
@@ -1428,7 +1428,7 @@ async function runScan(file, mode) {
 const LEAF_PATH = 'M12 2C7 5 3.5 10 5 18c.3 1.6 1 2.8 1.8 3.6C15 20.5 20 15 19.5 6.5 17.5 3.8 15 2.5 12 2z';
 const LEAF_VEIN = 'M6.8 21.6C9 16 12 10 17 5';
 const LEAF_COLORS = ['#7DBE7A', '#5DA36A', '#A8D08D', '#3F8F5F', '#C9DE8C', '#94C9A0'];
-const leafSVG = (c) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${LEAF_PATH}" fill="${c}"/><path d="${LEAF_VEIN}" stroke="rgba(255,255,255,.55)" stroke-width="1" fill="none"/></svg>`;
+const leafSVG = () => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${LEAF_PATH}" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/><path d="${LEAF_VEIN}" stroke="currentColor" stroke-width=".7" fill="none" opacity=".7"/></svg>`;
 function buildLeaves() {
   const box = $('#leaves'); if (!box) return;
   const off = S.settings.leaves === false || matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1601,18 +1601,7 @@ function plantInfo() {
   const stage = done === 0 ? 0 : ratio < 0.34 ? 1 : ratio < 0.67 ? 2 : ratio < 1 ? 3 : 4;
   return { done, total, stage };
 }
-function plantSVG(stage) {
-  const leaf = (x, y, r, s, c, d) => `<path class="pl-leaf" style="--d:${d}ms" transform="translate(${x} ${y}) rotate(${r}) scale(${s})" d="M0 0 C6 -10 18 -12 26 -6 C18 2 8 4 0 0Z" fill="${c}"/>`;
-  return `<svg viewBox="0 0 120 130" class="plant st${stage}" aria-hidden="true">
-    <ellipse cx="60" cy="122" rx="34" ry="5" fill="rgba(22,58,43,.12)"/>
-    <path d="M36 96 H84 L78 122 H42Z" fill="#C98E62"/><rect x="32" y="90" width="56" height="10" rx="4" fill="#B47A50"/>
-    <path class="pl-stem" d="M60 92 C60 76 58 62 61 ${stage >= 3 ? 30 : stage === 2 ? 46 : stage === 1 ? 64 : 84}" stroke="#4F9A63" stroke-width="4" fill="none" stroke-linecap="round"/>
-    ${stage >= 1 ? leaf(60, 78, -150, 0.9, '#7CC07A', 100) + leaf(61, 76, -30, 0.9, '#5DAE74', 200) : `<ellipse cx="60" cy="88" rx="6" ry="4" fill="#8A6A4E"/>`}
-    ${stage >= 2 ? leaf(60, 60, -160, 1, '#5DAE74', 300) + leaf(61, 56, -20, 1.05, '#8CCB8A', 400) : ''}
-    ${stage >= 3 ? leaf(60, 42, -150, 0.95, '#8CCB8A', 500) + leaf(61, 38, -35, 0.9, '#3E9563', 600) : ''}
-    ${stage >= 4 ? `<g class="pl-flower" transform="translate(61 26)">${[0, 72, 144, 216, 288].map((r) => `<ellipse rx="6" ry="10" transform="rotate(${r}) translate(0 -9)" fill="#F4A9BE"/>`).join('')}<circle r="6" fill="#F6D06B"/></g>` : ''}
-  </svg>`;
-}
+/* plantSVG: ver linea.js */
 function plantHTML() {
   const p = plantInfo();
   if (!p.total) return '';
@@ -1727,7 +1716,8 @@ async function cloudFetch(method, body, query = '') {
 }
 
 async function cloudSync(opts = {}) {
-  if (CLOUD.busy || !navigator.onLine || !Object.keys(tokens()).length) return;
+  if (CLOUD.busy) { CLOUD.again = true; return; }
+  if (!navigator.onLine || !Object.keys(tokens()).length) return;
   CLOUD.busy = true; CLOUD.error = '';
   try {
     const remote = await cloudFetch('GET');
@@ -1781,19 +1771,19 @@ async function cloudSync(opts = {}) {
     await postTrees(live);
     CLOUD.last = Date.now();
     if (lost) { choosing = true; render(); toast('Tu contraseña cambió en otro dispositivo. Vuelve a entrar.'); }
-    else if (changedCurrent && !sheet().open && !choosing) { render(); applyTheme(); }
-    else if (forestChanged && !sheet().open && !choosing && !['gTaskIn', 'gPostIn', 'gIdeaIn', 'gPartIn'].includes(document.activeElement?.id)) render();
-    else if (route().name === 'hoy' && !sheet().open && !choosing && (remote.letters || []).some((l) => l.to === REG.current && !l.read)) render();
+    else if (changedCurrent && !choosing) { if (softRender()) applyTheme(); }
+    else if (forestChanged && !choosing) softRender();
+    else if (route().name === 'hoy' && !choosing && (remote.letters || []).some((l) => l.to === REG.current && !l.read)) softRender();
     updateCloudBadge();
   } catch (e) {
     CLOUD.error = /fetch|network|Failed|Load failed/i.test(e.message) ? 'Sin conexión con la nube' : e.message;
     updateCloudBadge();
-  } finally { CLOUD.busy = false; }
+  } finally { CLOUD.busy = false; if (CLOUD.again) { CLOUD.again = false; setTimeout(() => cloudSync(), 0); } }
 }
 function queueCloud() {
   if (!dataOwner()) return;
   setDirty(dataOwner(), true);
-  clearTimeout(CLOUD.timer); CLOUD.timer = setTimeout(cloudSync, 1500);
+  clearTimeout(CLOUD.timer); CLOUD.timer = setTimeout(cloudSync, 120);
 }
 function updateCloudBadge() {
   const el = $('#cloudState'); if (!el) return;
@@ -1885,7 +1875,7 @@ function groupStatus() {
   if (!REG.me || !tokens()[REG.me]) return `<button class="gstat warn" data-act="profile-choose">${icon('lock', 'sm')}Sesión cerrada: toca para entrar</button>`;
   if (pend) return `<button class="gstat warn" data-act="g-retry">${icon('reset', 'sm')}${plural(pend, 'cambio sin guardar', 'cambios sin guardar')}: toca para reintentar</button>`;
   if (CLOUD.error) return `<span class="gstat warn">${icon('bell', 'sm')}${esc(CLOUD.error)}</span>`;
-  return `<span class="gstat ok">${icon('check', 'sm')}Guardado en la nube${CLOUD.last ? ` · ${new Date(CLOUD.last).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` : ''}</span>`;
+  return `<span class="gstat ok"><i id="liveDot" class="live-dot" data-on="${typeof LIVE !== 'undefined' && LIVE.live ? 1 : 0}"></i>En vivo · guardado al instante${CLOUD.last ? ` · ${new Date(CLOUD.last).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` : ''}</span>`;
 }
 const gid = () => uid() + Math.random().toString(36).slice(2, 5);
 const gDone = () => (REG.gdone ||= {});
@@ -2391,7 +2381,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.4. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.5. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -3601,7 +3591,8 @@ if (window.visualViewport) {
   if (params.has('nueva') || params.has('app')) history.replaceState(null, '', location.pathname + location.hash);
   if (!choosing && S.settings.onboarded) intro();
   setTimeout(cloudSync, 400); setTimeout(presenceTick, 1500); setTimeout(treeCheck, 1800);
-  setInterval(() => { if (document.visibilityState === 'visible') cloudSync(); }, 20000);
+  setInterval(() => { if (document.visibilityState === 'visible') cloudSync(); }, 30000);
+  liveLoop();
   window.addEventListener('online', () => cloudSync());
   updateBadge(); queueSync(); if (!choosing) { dailyDigest(); scheduleReminders(); setTimeout(checkDueReminders, 800); }
   setInterval(() => { if (!choosing) checkDueReminders(); }, 60000);
