@@ -1,6 +1,6 @@
-/* Al Día 7.6 — Salones rediseñados.
-   Un solo lugar claro para crear, unirse (por invitación o con código) y entrar a tus Salones;
-   un encabezado sobrio dentro de cada Salón y hojas cuidadas para crear, invitar y unirse. */
+/* Al Día 7.6 — Bosques rediseñados.
+   Un solo lugar claro para crear, unirse (por invitación o con código) y entrar a tus Bosques;
+   un encabezado sobrio dentro de cada Bosque y hojas cuidadas para crear, invitar y unirse. */
 'use strict';
 const SL = { color: null, created: null };
 const SL_COLORS = ['#2F8A5B', '#3E9A93', '#5B7FD1', '#B07AC8', '#D27C5E', '#C9A55C', '#4F9A63', '#7A8CA8'];
@@ -43,12 +43,13 @@ function forestCardHTML(f, act) { return slCardHTML(f, act); }
 
 function slStepsHTML() {
   return `<ol class="sl-steps">
-    <li><span class="sl-n">1</span><span><b>Crea un Salón o únete</b><span>Con el código que te compartan o con una invitación a tu usuario.</span></span></li>
-    <li><span class="sl-n">2</span><span><b>Compartan sus pendientes</b><span>Tareas con foto, trabajos en equipo, ideas y sala de enfoque, en tiempo real.</span></span></li>
-    <li><span class="sl-n">3</span><span><b>Crezcan juntos</b><span>El árbol del Salón sube con lo que cumple cada integrante.</span></span></li></ol>`;
+    <li><span class="sl-n">1</span><span><b>Crea un Bosque o únete</b><span>Con el código que te compartan o con una invitación a tu usuario.</span></span></li>
+    <li><span class="sl-n">2</span><span><b>Compartan sus pendientes</b><span>Tareas con foto, trabajos en equipo, ideas, un pizarrón compartido y sala de enfoque, en tiempo real.</span></span></li>
+    <li><span class="sl-n">3</span><span><b>Funciona sin internet</b><span>Consulta horario, instrucciones y borradores sin red; todo se sincroniza solo al volver.</span></span></li>
+    <li><span class="sl-n">4</span><span><b>Crezcan juntos</b><span>El árbol del Bosque sube con lo que cumple cada integrante.</span></span></li></ol>`;
 }
 function salonesBody() {
-  if (!REG.me || !tokens()[REG.me]) return `<div class="empty"><h3>Entra con tu usuario</h3><p>Los Salones viven en la nube: necesitas tu usuario y contraseña para verlos.</p><p><button class="btn primary" data-act="profile-choose">Entrar</button></p></div>`;
+  if (!REG.me || !tokens()[REG.me]) return `<div class="empty"><h3>Entra con tu usuario</h3><p>Los Bosques viven en la nube: necesitas tu usuario y contraseña para verlos.</p><p><button class="btn primary" data-act="profile-choose">Entrar</button></p></div>`;
   const mine = slMine(); const inv = FOR.invites || []; const reqs = FOR.myreqs || [];
   let o = '';
   if (inv.length) o += `<h2 class="sec">Invitaciones <small>${inv.length}</small></h2><div class="sl-list">${inv.map((i) => `<div class="sl-inv">
@@ -57,49 +58,49 @@ function salonesBody() {
   if (reqs.length) o += `<h2 class="sec">Solicitudes enviadas</h2><div class="sl-list">${reqs.map((r) => `<div class="sl-inv pend">
       ${monogram(r.forestName, r.color)}<span class="sl-main"><b class="sl-name">${esc(r.forestName)}</b><span class="sl-meta"><i class="live-dot" data-on="1"></i>Esperando a que te acepten · ${ago(r.at)}</span></span>
       <span class="sl-acts"><button class="btn quiet" data-act="sl-cancel" data-id="${r.forest}">Cancelar</button></span></div>`).join('')}</div>`;
-  o += `<h2 class="sec">Tus Salones ${mine.length ? `<small>${mine.length}</small>` : ''}</h2>`;
+  o += `<h2 class="sec">Tus Bosques ${mine.length ? `<small>${mine.length}</small>` : ''}</h2>`;
   o += mine.length ? `<div class="sl-list">${mine.map((f) => slCardHTML(f)).join('')}</div>` : `<div class="sl-empty">${slStepsHTML()}</div>`;
-  o += `<div class="sl-tiles"><button type="button" class="sl-tile" data-act="forest-new"><span class="sl-ti">${icon('plus')}</span><b>Crear un Salón</b><span>Para tu grupo, equipo o clase</span></button>
+  o += `<div class="sl-tiles"><button type="button" class="sl-tile" data-act="forest-new"><span class="sl-ti">${icon('plus')}</span><b>Crear un Bosque</b><span>Para grupos: tu salón, equipo o clase</span></button>
     <button type="button" class="sl-tile" data-act="sl-join"><span class="sl-ti">${icon('link')}</span><b>Unirme con código</b><span>Pide el código a un integrante</span></button></div>`;
   return o;
 }
-function viewSalones() {
-  return `<a class="back" href="#/mas">${icon('back')}Más</a><h1 class="page-title">Salones</h1>
-    <p class="page-sub">Organícense en grupo: todo se comparte y se guarda al instante.</p>${salonesBody()}`;
+function viewBosques() {
+  return `<a class="back" href="#/mas">${icon('back')}Más</a><h1 class="page-title">Bosques <span class="pt-tag">para grupos</span></h1>
+    <p class="page-sub">Un Bosque es el espacio de tu grupo: tu salón, tu equipo o tu clase. Ahí comparten tareas con instrucciones, trabajos en equipo, ideas, archivos y un pizarrón, en vivo y aunque no haya internet.</p>${salonesBody()}`;
 }
 function bosquesTabHTML() { return salonesBody(); }
 
 /* ---------- Crear ---------- */
 function slPreview(name, color) {
-  return `<div class="sl-card static">${monogram(name || 'S', color)}<span class="sl-main"><b class="sl-name">${esc(name || 'Tu Salón')}</b><span class="sl-meta">1 integrante · nivel 0</span><span class="sl-foot">${stackHTML([REG.me])}<span class="sl-chips"><span class="sl-chip ok">Nuevo</span></span></span></span></div>`;
+  return `<div class="sl-card static">${monogram(name || 'S', color)}<span class="sl-main"><b class="sl-name">${esc(name || 'Tu Bosque')}</b><span class="sl-meta">1 integrante · nivel 0</span><span class="sl-foot">${stackHTML([REG.me])}<span class="sl-chips"><span class="sl-chip ok">Nuevo</span></span></span></span></div>`;
 }
 function openCreateSalon() {
   SL.color = SL.color || SL_COLORS[0];
-  openSheet(`${sheetHead('Nuevo Salón')}<div class="sheet-body">
+  openSheet(`${sheetHead('Nuevo Bosque')}<div class="sheet-body">
     <div class="field"><label for="slName">Nombre</label><input id="slName" class="input" maxlength="30" placeholder="Ej. 512 T.V, Equipo de Historia" autocomplete="off"></div>
-    <div class="field"><span class="lbl">Color</span><div class="sl-sw" role="group" aria-label="Color del Salón">${SL_COLORS.map((c) => `<button type="button" class="sw" data-act="sl-color" data-v="${c}" style="--c:${c}" aria-pressed="${SL.color === c}" aria-label="Color ${c}"></button>`).join('')}</div></div>
+    <div class="field"><span class="lbl">Color</span><div class="sl-sw" role="group" aria-label="Color del Bosque">${SL_COLORS.map((c) => `<button type="button" class="sw" data-act="sl-color" data-v="${c}" style="--c:${c}" aria-pressed="${SL.color === c}" aria-label="Color ${c}"></button>`).join('')}</div></div>
     <span class="lbl">Así se verá</span><div id="slPrev">${slPreview('', SL.color)}</div>
     <p class="small muted" style="margin:12px 0 0">Después te damos un código para que tus compañeros se unan.</p></div>
-    <div class="sheet-foot"><button class="btn" data-act="sheet-close">Cancelar</button><span class="grow"></span><button class="btn primary" data-act="sl-create">Crear Salón</button></div>`);
+    <div class="sheet-foot"><button class="btn" data-act="sheet-close">Cancelar</button><span class="grow"></span><button class="btn primary" data-act="sl-create">Crear Bosque</button></div>`);
   setTimeout(() => document.getElementById('slName')?.focus(), 80);
 }
 document.addEventListener('input', (e) => { if (e.target.id === 'slName') { const p = document.getElementById('slPrev'); if (p) p.innerHTML = slPreview(e.target.value.trim(), SL.color); } });
 
 /* ---------- Invitar (código + usuario) ---------- */
 function codeBoxHTML(fid, name) {
-  return `<div class="code-box"><span class="tiny faint">Código del Salón</span><b class="code" aria-label="Código ${fmtCode(fid).split('').join(' ')}">${fmtCode(fid)}</b>
+  return `<div class="code-box"><span class="tiny faint">Código del Bosque</span><b class="code" aria-label="Código ${fmtCode(fid).split('').join(' ')}">${fmtCode(fid)}</b>
     <div class="btn-row"><button class="btn" data-act="sl-copy" data-id="${fid}">${icon('copy', 'sm')}Copiar</button><button class="btn" data-act="sl-share" data-id="${fid}" data-name="${esc(name)}">${icon('share', 'sm')}Compartir</button></div></div>`;
 }
 function openInviteSalon(fid, fresh = false) {
   const f = FOR.f[fid]?.meta; if (!f) return;
-  openSheet(`${sheetHead(fresh ? 'Salón creado' : 'Invitar al Salón')}<div class="sheet-body">
+  openSheet(`${sheetHead(fresh ? 'Bosque creado' : 'Invitar al Bosque')}<div class="sheet-body">
     ${fresh ? `<div class="sl-ok">${slPreview(f.name, f.color)}</div>` : ''}
     <h3 class="sl-h3">Comparte el código</h3><p class="small muted" style="margin:0 0 10px">Quien lo tenga puede pedir unirse; tú o cualquier integrante acepta la solicitud.</p>
     ${codeBoxHTML(f.id, f.name)}
     <h3 class="sl-h3">O invita por usuario</h3>
     <form class="sl-user" id="slInvForm" autocomplete="off"><span class="at">@</span><label for="slInvIn" class="sr">Usuario</label><input id="slInvIn" placeholder="usuario de tu compañero" autocapitalize="off" spellcheck="false"><button class="btn primary">Enviar</button></form>
     <p class="small" id="slInvMsg" role="status" style="min-height:20px;margin:8px 0 0"></p></div>
-    <div class="sheet-foot"><span class="grow"></span>${fresh ? `<button class="btn primary" data-act="sl-enter" data-id="${f.id}">Entrar al Salón</button>` : '<button class="btn primary" data-act="sheet-close">Listo</button>'}</div>`);
+    <div class="sheet-foot"><span class="grow"></span>${fresh ? `<button class="btn primary" data-act="sl-enter" data-id="${f.id}">Entrar al Bosque</button>` : '<button class="btn primary" data-act="sheet-close">Listo</button>'}</div>`);
 }
 document.addEventListener('submit', async (e) => {
   if (e.target.id !== 'slInvForm') return; e.preventDefault();
@@ -113,7 +114,7 @@ document.addEventListener('submit', async (e) => {
 /* ---------- Unirse con código ---------- */
 function openJoinSalon() {
   openSheet(`${sheetHead('Unirme con código')}<div class="sheet-body" id="slJoinBody">
-    <p class="muted" style="margin:0 0 12px">Pide el código a alguien del Salón. Les llega tu solicitud al instante y, cuando la acepten, entras.</p>
+    <p class="muted" style="margin:0 0 12px">Pide el código a alguien del Bosque. Les llega tu solicitud al instante y, cuando la acepten, entras.</p>
     <div class="field"><label for="slCode">Código</label><input id="slCode" class="input code-in" maxlength="14" placeholder="XXXXX-XXXXX" autocapitalize="characters" autocomplete="off" spellcheck="false"></div>
     <p class="small err-t" id="slJoinMsg" role="status" style="min-height:20px;margin:0"></p></div>
     <div class="sheet-foot"><button class="btn" data-act="sheet-close">Cancelar</button><span class="grow"></span><button class="btn primary" data-act="sl-join-go">Enviar solicitud</button></div>`);
@@ -121,7 +122,7 @@ function openJoinSalon() {
 }
 document.addEventListener('input', (e) => { if (e.target.id === 'slCode') { const v = normCode(e.target.value).slice(0, 10).toUpperCase(); const f = v.length > 5 ? `${v.slice(0, 5)}-${v.slice(5)}` : v; if (e.target.value !== f) e.target.value = f; } });
 
-/* ---------- Solicitudes dentro del Salón ---------- */
+/* ---------- Solicitudes dentro del Bosque ---------- */
 function reqsHTML() {
   const f = FOR.f[curFid()]; const rs = (f && f.reqs) || []; if (!rs.length) return '';
   return `<section class="sl-reqs"><h2 class="sec" style="margin-top:0">Quieren unirse <small>${rs.length}</small></h2>${rs.map((r) => `<div class="sl-inv">
@@ -129,11 +130,11 @@ function reqsHTML() {
     <span class="sl-acts"><button class="btn quiet" data-act="sl-approve" data-id="${esc(r.user)}" data-v="0">Rechazar</button><button class="btn primary" data-act="sl-approve" data-id="${esc(r.user)}" data-v="1">Aceptar</button></span></div>`).join('')}</section>`;
 }
 
-/* ---------- Encabezado dentro de un Salón ---------- */
+/* ---------- Encabezado dentro de un Bosque ---------- */
 function groupHead(title, sub) {
   const m = forestMeta();
   return `<section class="g-head">
-    <div class="g-bar">${m ? `<button type="button" class="g-id" data-act="profile-sheet" aria-label="Cambiar de Salón o de usuario">${monogram(m.name, m.color, 'sm')}<span><b>${esc(m.name)}</b><span class="tiny faint">${plural(m.members.length, 'integrante', 'integrantes')}</span></span>${icon('chev', 'chev sm')}</button>` : '<span></span>'}
+    <div class="g-bar">${m ? `<button type="button" class="g-id" data-act="profile-sheet" aria-label="Cambiar de Bosque o de usuario">${monogram(m.name, m.color, 'sm')}<span><b>${esc(m.name)}</b><span class="tiny faint">${plural(m.members.length, 'integrante', 'integrantes')}</span></span>${icon('chev', 'chev sm')}</button>` : '<span></span>'}
       <button type="button" class="who-chip" data-act="profile-sheet">${mini(me(), 'xs')}<span>${esc(me())}</span></button></div>
     <h1 class="page-title">${title}</h1>${sub ? `<p class="page-sub">${sub}</p>` : ''}${groupStatus()}</section>`;
 }
@@ -147,7 +148,7 @@ function viewGrupo() {
   const tpls = typeof allTpls === 'function' ? allTpls(curFid()).length : 0;
   return `${groupHead('Pendientes', pend.length ? `${plural(pend.length, 'pendiente', 'pendientes')} del grupo` : 'El grupo va al día')}
     ${reqsHTML()}
-    <form class="quick g-compose" id="gTaskForm" autocomplete="off"><div class="quick-row"><label for="gTaskIn" class="sr">Nueva tarea del Salón</label>
+    <form class="quick g-compose" id="gTaskForm" autocomplete="off"><div class="quick-row"><label for="gTaskIn" class="sr">Nueva tarea del Bosque</label>
       <input id="gTaskIn" placeholder="Sube una tarea para todos…"><button class="quick-go">${icon('plus', 'sm')}Subir</button></div>
       <div class="quick-preview" id="gTaskPrev"></div></form>
     <div class="g-tools">
@@ -162,23 +163,23 @@ function viewGrupo() {
 }
 function viewMasGrupo() {
   const p = profile(); const f = forestMeta(); const st = S.settings;
-  if (!p || !f) return '<div class="empty"><h3>Este Salón ya no está</h3><p><button class="btn" data-act="profile-choose">Volver</button></p></div>';
+  if (!p || !f) return '<div class="empty"><h3>Este Bosque ya no está</h3><p><button class="btn" data-act="profile-choose">Volver</button></p></div>';
   const rows = f.members.map((id) => { const t = id === REG.me ? treeNow(id) : FOR.trees[id] || { level: 0 }; return { id, name: memberName(id), color: memberColor2(id), level: t.level || 0 }; });
-  return `${groupHead('Ajustes del Salón', '')}
+  return `${groupHead('Ajustes del Bosque', '')}
     ${reqsHTML()}
     <h2 class="sec">Integrantes <small>${rows.length}</small></h2>
-    <ul class="rows sl-members">${rows.map((r) => `<li><div class="rowline"><span class="mini" style="--pc:${safeColor(r.color)}">${esc(initials(r.name))}</span><span class="txt"><b>${esc(r.name)}${r.id === REG.me ? ' (tú)' : ''}</b><span>@${esc(r.id)}${r.id === f.owner ? ' · fundó el Salón' : ''}</span></span><span class="sl-chip">Nivel ${r.level}</span></div></li>`).join('')}</ul>
+    <ul class="rows sl-members">${rows.map((r) => `<li><div class="rowline"><span class="mini" style="--pc:${safeColor(r.color)}">${esc(initials(r.name))}</span><span class="txt"><b>${esc(r.name)}${r.id === REG.me ? ' (tú)' : ''}</b><span>@${esc(r.id)}${r.id === f.owner ? ' · fundó el Bosque' : ''}</span></span><span class="sl-chip">Nivel ${r.level}</span></div></li>`).join('')}</ul>
     <h2 class="sec">Invitar</h2>
     ${codeBoxHTML(f.id, f.name)}
     <p style="margin:10px 0 0"><button class="btn" data-act="forest-invite">${icon('users', 'sm')}Invitar por usuario</button></p>
-    <h2 class="sec">Salón</h2>
+    <h2 class="sec">Bosque</h2>
     <ul class="rows">
       <li><button type="button" class="rowbtn" data-act="forest-rename"><span class="ico">${icon('edit')}</span><span class="txt"><b>Nombre</b><span>${esc(f.name)}</span></span>${icon('chev', 'chev')}</button></li>
       <li><button type="button" class="rowbtn" data-act="g-push"><span class="ico">${icon('bell')}</span><span class="txt"><b>Avisos</b><span>${REG.gpush ? 'Activados en este dispositivo' : 'Recibe una notificación cuando alguien suba algo'}</span></span>${icon('chev', 'chev')}</button></li>
-      <li><button type="button" class="rowbtn" data-act="profile-choose"><span class="ico">${icon('back')}</span><span class="txt"><b>Volver a mi usuario</b><span>Cambiar de usuario o de Salón</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="profile-choose"><span class="ico">${icon('back')}</span><span class="txt"><b>Volver a mi usuario</b><span>Cambiar de usuario o de Bosque</span></span>${icon('chev', 'chev')}</button></li>
       <li><button type="button" class="rowbtn" data-act="style-open"><span class="ico">${icon('palette')}</span><span class="txt"><b>Estilo de la app</b><span>${typeof ESTILOS !== 'undefined' ? ESTILOS[currentStyle()].name : ''} · ${st.theme === 'dark' ? 'noche' : 'día'}</span></span>${icon('chev', 'chev')}</button></li>
       <li><a href="#/instalar"><span class="ico">${icon('phone')}</span><span class="txt"><b>Instalar la app</b><span>Necesario para avisos en iPhone y iPad</span></span>${icon('chev', 'chev')}</a></li></ul>
-    <p style="margin-top:22px"><button class="btn danger" data-act="forest-leave">Salir de este Salón</button></p>`;
+    <p style="margin-top:22px"><button class="btn danger" data-act="forest-leave">Salir de este Bosque</button></p>`;
 }
 
 /* ---------- ¿Quién eres? y hoja de usuarios ---------- */
@@ -188,14 +189,14 @@ function viewQuien() {
   return `<div class="who">
     <div class="who-brand">${treeIcon(60)}<span>Al Día</span></div>
     <h1 class="page-title who-t">${users.length ? '¿Quién eres?' : 'Bienvenida, bienvenido'}</h1>
-    <p class="page-sub">${users.length ? 'Elige tu usuario. Cada quien tiene su contraseña y nadie más entra a tu sección.' : 'Tus tareas, tu árbol y tus Salones, guardados en la nube y al instante en todos tus dispositivos.'}</p>
+    <p class="page-sub">${users.length ? 'Elige tu usuario. Cada quien tiene su contraseña y nadie más entra a tu sección.' : 'Tus tareas, tu árbol y tus Bosques, guardados en la nube y al instante en todos tus dispositivos.'}</p>
     ${users.length ? `<div class="who-list">${users.map((p) => {
       const n = pendingCountFor(p.id); const on = !!tokens()[p.id]; const lvl = FOR.trees[p.id]?.level;
       return `<button type="button" class="who-row" data-act="profile-pick" data-id="${p.id}">${avatar(p)}
         <span class="sl-main"><b class="sl-name">${esc(p.name)}</b><span class="sl-meta">${p.legacy && !on ? 'Toca para ponerle contraseña' : on && p.id === REG.me ? (n ? plural(n, 'entrega pendiente', 'entregas pendientes') : 'Sin pendientes') : 'Con contraseña'}${lvl !== undefined ? ` · árbol nivel ${lvl}` : ''}</span></span>
         ${on && p.id === REG.me ? icon('chev', 'chev') : `<span class="lock">${icon('lock', 'sm')}</span>`}</button>`;
     }).join('')}</div>` : ''}
-    ${mine.length ? `<h2 class="sec">Tus Salones ${inv ? `<small>${plural(inv, 'invitación', 'invitaciones')}</small>` : ''}</h2><div class="sl-list">${mine.map((f) => slCardHTML(f)).join('')}</div>` : ''}
+    ${mine.length ? `<h2 class="sec">Tus Bosques ${inv ? `<small>${plural(inv, 'invitación', 'invitaciones')}</small>` : ''}</h2><div class="sl-list">${mine.map((f) => slCardHTML(f)).join('')}</div>` : ''}
     <div class="who-actions"><button type="button" class="btn primary block" data-act="user-new">Crear mi usuario</button>
       <button type="button" class="btn block" data-act="user-login">Ya tengo usuario</button></div>
     <button type="button" class="who-link" data-act="rank-open">${icon('trophy', 'sm')}Ver el ranking de árboles${icon('chev', 'chev sm')}</button>
@@ -208,9 +209,9 @@ function openProfileSheet() {
       <span class="lbl">Usuarios en este dispositivo</span>
       <div class="who-list">${users.map((p) => { const isMe = p.id === REG.current; return `<button type="button" class="who-row ${isMe ? 'me' : ''}" data-act="profile-to" data-id="${p.id}" ${isMe ? 'aria-current="true"' : ''}>${avatar(p)}
         <span class="sl-main"><b class="sl-name">${esc(p.name)}</b><span class="sl-meta">@${esc(p.id)}</span></span>${isMe ? '<span class="sl-chip ok">Aquí estás</span>' : icon('chev', 'chev')}</button>`; }).join('')}</div>
-      <span class="lbl" style="margin-top:18px">Salones</span>
-      ${mine.length ? `<div class="sl-list">${mine.map((f) => slCardHTML(f, 'profile-to').replace('class="sl-card"', `class="sl-card ${REG.current === 'f:' + f.meta.id ? 'me' : ''}"`)).join('')}</div>` : '<p class="small muted" style="margin:4px 0 0">Aún no estás en ningún Salón.</p>'}
-      <div class="btn-row" style="margin-top:14px"><button class="btn" data-act="sl-go-hub">${icon('users', 'sm')}Salones</button><button class="btn" data-act="sheet-close-new">${icon('plus', 'sm')}Otro usuario</button></div>
+      <span class="lbl" style="margin-top:18px">Bosques</span>
+      ${mine.length ? `<div class="sl-list">${mine.map((f) => slCardHTML(f, 'profile-to').replace('class="sl-card"', `class="sl-card ${REG.current === 'f:' + f.meta.id ? 'me' : ''}"`)).join('')}</div>` : '<p class="small muted" style="margin:4px 0 0">Aún no estás en ningún Bosque.</p>'}
+      <div class="btn-row" style="margin-top:14px"><button class="btn" data-act="sl-go-hub">${icon('users', 'sm')}Bosques</button><button class="btn" data-act="sheet-close-new">${icon('plus', 'sm')}Otro usuario</button></div>
       <div class="toggle" style="margin-top:12px"><span><span class="t">Preguntar quién eres al abrir</span><span class="d" style="display:block">Útil si comparten el mismo celular.</span></span>
         <label class="switch"><input type="checkbox" data-reg="ask" ${REG.ask ? 'checked' : ''} aria-label="Preguntar quién eres al abrir"><span></span></label></div>
     </div>`);
@@ -218,7 +219,7 @@ function openProfileSheet() {
 
 /* Sin sesión en la nube no se puede crear ni unirse: se explica y se lleva a entrar */
 function slNeedLogin() {
-  openSheet(`${sheetHead('Entra con tu usuario')}<div class="sheet-body"><p class="muted" style="margin:0">Los Salones viven en la nube, así que necesitas tu usuario con contraseña. Si ya tienes uno, entra; si no, créalo en un minuto.</p></div>
+  openSheet(`${sheetHead('Entra con tu usuario')}<div class="sheet-body"><p class="muted" style="margin:0">Los Bosques viven en la nube, así que necesitas tu usuario con contraseña. Si ya tienes uno, entra; si no, créalo en un minuto.</p></div>
     <div class="sheet-foot"><button class="btn" data-act="sl-login-new">Crear usuario</button><span class="grow"></span><button class="btn primary" data-act="sl-login">Entrar</button></div>`);
 }
 /* ---------- Acciones ---------- */
@@ -229,19 +230,19 @@ Object.assign(VIDA_ACTS, {
   'sl-color': (el) => { SL.color = el.dataset.v; document.querySelectorAll('.sl-sw .sw').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === SL.color)); const p = document.getElementById('slPrev'); if (p) p.innerHTML = slPreview(document.getElementById('slName')?.value.trim(), SL.color); },
   'sl-create': async (el) => {
     const name = (document.getElementById('slName')?.value || '').trim();
-    if (!name) { toast('Ponle nombre a tu Salón.'); document.getElementById('slName')?.focus(); return; }
+    if (!name) { toast('Ponle nombre a tu Bosque.'); document.getElementById('slName')?.focus(); return; }
     el.disabled = true; el.textContent = 'Creando…';
     try {
       const r = await cloudFetch('POST', { kind: 'fcreate', as: REG.me, name, color: SL.color });
       FOR.f[r.forest.id] = { meta: r.forest, items: [], reqs: [] }; saveFOR(); SL.created = r.forest.id;
       Snd.chime(); confetti(innerWidth / 2, innerHeight / 3, 40); openInviteSalon(r.forest.id, true); cloudSync();
-    } catch (e) { el.disabled = false; el.textContent = 'Crear Salón'; toast(e.message); }
+    } catch (e) { el.disabled = false; el.textContent = 'Crear Bosque'; toast(e.message); }
   },
   'sl-enter': (el) => { closeSheet(false); enterProfile('f:' + el.dataset.id); },
   'forest-invite': () => { const fid = curFid(); if (!fid) { location.hash = '#/salones'; return; } SL.created = null; openInviteSalon(fid); },
   'sl-copy': async (el) => { const c = fmtCode(el.dataset.id); try { await navigator.clipboard.writeText(c); toast(`Código ${c} copiado.`); } catch { toast(`Tu código es ${c}`); } },
   'sl-share': async (el) => {
-    const c = fmtCode(el.dataset.id); const text = `Únete a mi Salón "${el.dataset.name}" en Al Día. Abre la app, ve a Salones › Unirme con código y escribe: ${c}`;
+    const c = fmtCode(el.dataset.id); const text = `Únete a mi Bosque "${el.dataset.name}" en Al Día. Abre la app, ve a Bosques › Unirme con código y escribe: ${c}`;
     if (navigator.share) { try { await navigator.share({ title: 'Al Día', text, url: location.origin + '/#/salones' }); } catch { /* cancelado */ } }
     else { try { await navigator.clipboard.writeText(text); toast('Mensaje copiado: pégalo en tu chat del grupo.'); } catch { toast(text); } }
   },
@@ -253,7 +254,7 @@ Object.assign(VIDA_ACTS, {
     try {
       const r = await cloudFetch('POST', { kind: 'freq', as: REG.me, code });
       (FOR.myreqs ||= []).push({ forest: r.forest.id, forestName: r.forest.name, at: Date.now() }); saveFOR(); Snd.chime();
-      document.getElementById('slJoinBody').innerHTML = `<div class="sl-done">${treeIcon(20)}<h3>Solicitud enviada</h3><p class="muted">Les avisamos al instante a los de <b>${esc(r.forest.name)}</b>. En cuanto te acepten, el Salón aparece en tu lista.</p></div>`;
+      document.getElementById('slJoinBody').innerHTML = `<div class="sl-done">${treeIcon(20)}<h3>Solicitud enviada</h3><p class="muted">Les avisamos al instante a los de <b>${esc(r.forest.name)}</b>. En cuanto te acepten, el Bosque aparece en tu lista.</p></div>`;
       el.outerHTML = '<button class="btn primary" data-act="sheet-close">Listo</button>'; render();
     } catch (e) { el.disabled = false; el.textContent = 'Enviar solicitud'; msg.textContent = e.message; }
   },
@@ -263,7 +264,7 @@ Object.assign(VIDA_ACTS, {
     try {
       await cloudFetch('POST', { kind: 'fapprove', as: REG.me, forest: fid, user, accept: ok });
       const f = FOR.f[fid]; if (f) { f.reqs = (f.reqs || []).filter((r) => r.user !== user); if (ok && !f.meta.members.includes(user)) f.meta.members.push(user); } saveFOR();
-      if (ok) { Snd.chime(); toast(`¡${memberName(user)} ya es parte del Salón!`); } render(); cloudSync();
+      if (ok) { Snd.chime(); toast(`¡${memberName(user)} ya es parte del Bosque!`); } render(); cloudSync();
     } catch (e) { el.disabled = false; toast(e.message); }
   },
   'sl-go-hub': () => { closeSheet(false); if (isGroup()) { REG.current = REG.me; saveReg(); switchProfile(REG.me); } location.hash = '#/salones'; },

@@ -178,7 +178,7 @@ if (!Array.isArray(REG.users)) {
   }
 }
 saveReg();
-/* Salones (grupos colaborativos): copia local de lo que hay en la nube */
+/* Bosques (grupos colaborativos): copia local de lo que hay en la nube */
 const FOR_KEY = 'aldia:bosques7';
 let FOR = { f: {}, members: {}, invites: [], trees: {} };
 try { FOR = { ...FOR, ...JSON.parse(localStorage.getItem(FOR_KEY) || '{}') }; } catch { /* */ }
@@ -1172,7 +1172,7 @@ function viewMateria(id) {
 /* ---------- Más ---------- */
 function viewMas() {
   const items = [
-    ['#/salones', 'users', 'Salones', 'Crea o únete a un grupo y compartan todo en tiempo real'],
+    ['#/salones', 'users', 'Bosques (para grupos)', 'Crea un Bosque con tu salón o equipo y compartan todo en tiempo real'],
     ['#/estilo', 'palette', 'Estilo de la app', 'Cambia los colores y el diseño: 7 plantillas con día y noche'],
     ['#/cerebro', 'network', 'Tu Cerebro', 'Todo lo que has hecho y pensado, conectado en una red viva'],
     ['#/panel', 'grid', 'Mi panel', 'Radar de carga, tiempo libre real, patrones y hábitos'],
@@ -1447,7 +1447,7 @@ async function runScan(file, mode) {
   SCAN.busy = false; render();
 }
 
-/* ---------- Salón: hojas cayendo, ráfaga de hojas, acomodo armonioso ---------- */
+/* ---------- Bosque: hojas cayendo, ráfaga de hojas, acomodo armonioso ---------- */
 const LEAF_PATH = 'M12 2C7 5 3.5 10 5 18c.3 1.6 1 2.8 1.8 3.6C15 20.5 20 15 19.5 6.5 17.5 3.8 15 2.5 12 2z';
 const LEAF_VEIN = 'M6.8 21.6C9 16 12 10 17 5';
 const LEAF_COLORS = ['#7DBE7A', '#5DA36A', '#A8D08D', '#3F8F5F', '#C9DE8C', '#94C9A0'];
@@ -1733,6 +1733,7 @@ function mergeDocs(local, remote, base, trustDeletes = false) {
   out.focus = [...(local.focus || []), ...(remote.focus || []).filter((f) => !fset.has(JSON.stringify(f)))];
   const localSettingsChanged = !base || hashStr(JSON.stringify(stripLocal(local.settings))) !== base.settings;
   if (!localSettingsChanged) out.settings = { ...remote.settings, lastDigest: local.settings.lastDigest, installDismissed: local.settings.installDismissed, lastBackup: local.settings.lastBackup };
+  if (typeof mergeVida === 'function') out.vida = mergeVida(local.vida, remote.vida);
   return out;
 }
 
@@ -1871,7 +1872,7 @@ function showPresence(list) {
   if (Snd.on()) Snd.bell(880, 0, 1.2, 0.04);
 }
 
-/* ================= Salones (grupos colaborativos) ================= */
+/* ================= Bosques (grupos colaborativos) ================= */
 const curFid = () => (isForestId(REG.current) ? REG.current.slice(2) : null);
 const gItems = () => (FOR.f[curFid()]?.items) || [];
 const gAll = (type) => gItems().filter((x) => x.type === type && !x.deleted);
@@ -1912,6 +1913,7 @@ function forestAuthLost(e) {
 function groupStatus() {
   const pend = (REG.gout || []).length;
   if (!REG.me || !tokens()[REG.me]) return `<button class="gstat warn" data-act="profile-choose">${icon('lock', 'sm')}Sesión cerrada: toca para entrar</button>`;
+  if (!navigator.onLine) return `<span class="gstat off">${icon('bell', 'sm')}Sin conexión: puedes seguir trabajando, todo se envía solo al volver la red${pend ? ` · ${plural(pend, 'cambio en espera', 'cambios en espera')}` : ''}</span>`;
   if (pend) return `<button class="gstat warn" data-act="g-retry">${icon('reset', 'sm')}${plural(pend, 'cambio sin guardar', 'cambios sin guardar')}: toca para reintentar</button>`;
   if (CLOUD.error) return `<span class="gstat warn">${icon('bell', 'sm')}${esc(CLOUD.error)}</span>`;
   return `<span class="gstat ok"><i id="liveDot" class="live-dot" data-on="${typeof LIVE !== 'undefined' && LIVE.live ? 1 : 0}"></i>En vivo · guardado al instante${CLOUD.last ? ` · ${new Date(CLOUD.last).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` : ''}</span>`;
@@ -1953,8 +1955,8 @@ function viewGrupo_v7() {
   const done = tasks.filter((t) => gDone()[t.id]);
   const by = {}; for (const t of pend) (by[bucketOf(t)] ||= []).push(t);
   const people = new Set(gItems().map((x) => x.by).filter(Boolean));
-  return `${groupHead(esc(forestMeta()?.name || 'Salón'), `${plural(pend.length, 'pendiente', 'pendientes')} del grupo · ${plural(people.size, 'compañero activo', 'compañeros activos')}`)}
-    <form class="quick" id="gTaskForm" autocomplete="off"><div class="quick-row"><label for="gTaskIn" class="sr">Nueva tarea del Salón</label>
+  return `${groupHead(esc(forestMeta()?.name || 'Bosque'), `${plural(pend.length, 'pendiente', 'pendientes')} del grupo · ${plural(people.size, 'compañero activo', 'compañeros activos')}`)}
+    <form class="quick" id="gTaskForm" autocomplete="off"><div class="quick-row"><label for="gTaskIn" class="sr">Nueva tarea del Bosque</label>
       <input id="gTaskIn" placeholder="Ej. Tarea de hoy: ensayo de historia"><button class="quick-go">${icon('plus', 'sm')}Subir</button></div>
       <div class="quick-preview" id="gTaskPrev"></div></form>
     <p style="margin:-4px 0 12px"><button type="button" class="btn" data-act="g-new">${icon('cam')}Subir con foto o instrucciones</button></p>
@@ -2050,19 +2052,19 @@ function viewIdeas() {
 }
 function viewMasGrupo_v7() {
   const p = profile(); const f = forestMeta(); const st = S.settings;
-  if (!p || !f) return '<div class="empty"><h3>Este Salón ya no está</h3><p><button class="btn" data-act="profile-choose">Volver</button></p></div>';
+  if (!p || !f) return '<div class="empty"><h3>Este Bosque ya no está</h3><p><button class="btn" data-act="profile-choose">Volver</button></p></div>';
   const mem = f.members.map((id) => ({ id, ...(FOR.members[id] || { name: cap(id), color: '#2F8A5B' }) }));
   return `<h1 class="page-title">Más</h1>
-    <p class="page-sub">Ajustes del Salón ${esc(f.name)}.</p>
+    <p class="page-sub">Ajustes del Bosque ${esc(f.name)}.</p>
     ${groupStatus()}
     <h2 class="sec">Integrantes <small>${mem.length}</small></h2>
-    <div class="card"><div class="members">${mem.map((m) => `<span class="member">${mini(m.name)}<span>${esc(m.name)}${m.id === f.owner ? ' · fundó el Salón' : ''}</span></span>`).join('')}</div>
+    <div class="card"><div class="members">${mem.map((m) => `<span class="member">${mini(m.name)}<span>${esc(m.name)}${m.id === f.owner ? ' · fundó el Bosque' : ''}</span></span>`).join('')}</div>
       <div class="btn-row" style="margin-top:12px"><button class="btn primary" data-act="forest-invite">${icon('plus')}Invitar a alguien</button></div>
-      <p class="small muted" style="margin:10px 0 0">Escribe el nombre de usuario de tu compañero. Le llega una solicitud a su sesión y, si la acepta, entra al Salón.</p></div>
+      <p class="small muted" style="margin:10px 0 0">Escribe el nombre de usuario de tu compañero. Le llega una solicitud a su sesión y, si la acepta, entra al Bosque.</p></div>
     <ul class="rows" style="margin-top:14px">
-      <li><button type="button" class="rowbtn" data-act="forest-rename"><span class="ico">${icon('edit')}</span><span class="txt"><b>Nombre del Salón</b><span>${esc(f.name)}</span></span>${icon('chev', 'chev')}</button></li>
-      <li><button type="button" class="rowbtn" data-act="g-push"><span class="ico">${icon('bell')}</span><span class="txt"><b>Avisos del Salón</b><span>${REG.gpush ? 'Activados en este dispositivo' : 'Recibe una notificación cuando alguien suba algo'}</span></span>${icon('chev', 'chev')}</button></li>
-      <li><button type="button" class="rowbtn" data-act="profile-choose"><span class="ico">${icon('users')}</span><span class="txt"><b>Volver a mi usuario</b><span>Cambiar de usuario o de Salón</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="forest-rename"><span class="ico">${icon('edit')}</span><span class="txt"><b>Nombre del Bosque</b><span>${esc(f.name)}</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="g-push"><span class="ico">${icon('bell')}</span><span class="txt"><b>Avisos del Bosque</b><span>${REG.gpush ? 'Activados en este dispositivo' : 'Recibe una notificación cuando alguien suba algo'}</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="profile-choose"><span class="ico">${icon('users')}</span><span class="txt"><b>Volver a mi usuario</b><span>Cambiar de usuario o de Bosque</span></span>${icon('chev', 'chev')}</button></li>
       <li><a href="#/instalar"><span class="ico">${icon('phone')}</span><span class="txt"><b>Instalar la app</b><span>Necesario para avisos en iPhone y iPad</span></span>${icon('chev', 'chev')}</a></li></ul>
     <h2 class="sec">Apariencia y sonido</h2>
     <div class="card" style="padding-top:6px;padding-bottom:6px">
@@ -2070,7 +2072,7 @@ function viewMasGrupo_v7() {
       <div class="toggle"><span class="t">Hojas cayendo</span><label class="switch"><input type="checkbox" data-set="leaves" data-bool ${st.leaves !== false ? 'checked' : ''} aria-label="Hojas cayendo"><span></span></label></div>
       <div class="toggle"><span class="t">Sonidos suaves</span><label class="switch"><input type="checkbox" data-set="sounds" data-bool ${st.sounds !== false ? 'checked' : ''} aria-label="Sonidos suaves"><span></span></label></div>
     </div>
-    <p style="margin-top:18px"><button class="btn danger" data-act="forest-leave">${icon('x')}Salir de este Salón</button></p>`;
+    <p style="margin-top:18px"><button class="btn danger" data-act="forest-leave">${icon('x')}Salir de este Bosque</button></p>`;
 }
 function urlB64(s) { const p = '='.repeat((4 - (s.length % 4)) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...b].map((c) => c.charCodeAt(0))); }
 async function enableGroupPush() {
@@ -2088,7 +2090,7 @@ async function enableGroupPush() {
 
 let navMode = null;
 const NAV_PERSONAL = [['hoy', 'home', 'Hoy'], ['tareas', 'list', 'Tareas'], ['calendario', 'cal', 'Calendario'], ['vida', 'tree', 'Vida'], ['mente', 'leaf', 'Mente'], ['mas', 'grid', 'Más']];
-const NAV_GROUP = [['grupo', 'list', 'Pendientes'], ['equipos', 'users', 'Equipos'], ['ideas', 'spark', 'Ideas'], ['vida', 'tree', 'Vida'], ['mas', 'grid', 'Más']];
+const NAV_GROUP = [['grupo', 'list', 'Pendientes'], ['equipos', 'users', 'Equipos'], ['ideas', 'spark', 'Ideas'], ['pizarron', 'board', 'Pizarrón'], ['vida', 'tree', 'Vida'], ['mas', 'grid', 'Más']];
 function setNav(group) {
   const mode = group ? 'g' : 'p'; if (mode === navMode) return; navMode = mode;
   $('.nav').innerHTML = (group ? NAV_GROUP : NAV_PERSONAL).map(([k, ic, l]) => `<a href="#/${k}" data-nav="${k}"><svg class="i"><use href="#i-${ic}"/></svg><span>${l}</span></a>`).join('');
@@ -2122,7 +2124,7 @@ function switchProfile(id) {
   window.scrollTo(0, 0);
   updateBadge(); queueSync(); scheduleReminders(); dailyDigest();
   if (changed) setTimeout(presenceTick, 300);
-  if (changed) toast(`Ahora estás en ${isForestId(id) ? 'el Salón ' : 'la sesión de '}${profile(id).name}.`);
+  if (changed) toast(`Ahora estás en ${isForestId(id) ? 'el Bosque ' : 'la sesión de '}${profile(id).name}.`);
   cloudSync(); treeCheck();
 }
 
@@ -2421,7 +2423,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.13. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.14. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -2491,7 +2493,7 @@ function render() {
   setNav(groupMode);
   if (choosing) html = viewQuien();
   else if (groupMode) {
-    html = r.name === 'equipos' ? viewEquipos() : r.name === 'equipo' ? viewEquipo(r.arg) : r.name === 'ideas' ? viewIdeas() : r.name === 'vida' ? viewVida() : r.name === 'instalar' ? viewInstalar() : r.name === 'mas' ? viewMasGrupo() : viewGrupo();
+    html = r.name === 'pizarron' ? viewPizarron() : r.name === 'equipos' ? viewEquipos() : r.name === 'equipo' ? viewEquipo(r.arg) : r.name === 'ideas' ? viewIdeas() : r.name === 'vida' ? viewVida() : r.name === 'instalar' ? viewInstalar() : r.name === 'mas' ? viewMasGrupo() : viewGrupo();
   } else if (showWelcome) html = viewBienvenida();
   else {
     switch (r.name) {
@@ -2515,7 +2517,7 @@ function render() {
       case 'vida': html = viewVida(); break;
       case 'panel': html = viewPanel(); break;
       case 'cerebro': html = viewCerebro(); break;
-      case 'salones': html = viewSalones(); break;
+      case 'salones': html = viewBosques(); break;
       case 'estilo': setTimeout(() => { history.replaceState(null, '', '#/mas'); openEstilos(); }, 0); html = viewMas(); break;
       case 'carta': setTimeout(() => { history.replaceState(null, '', '#/mas'); writeLetter(); }, 0); html = viewMas(); break;
       default: html = viewHoy();
@@ -2533,7 +2535,7 @@ function render() {
 
   const known = ['carta', 'estilo', 'salones', 'panel', 'cerebro', 'vida', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
   const rn = known.includes(r.name) ? r.name : 'hoy';
-  const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', vida: 'vida', mas: 'mas', instalar: 'mas' }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'mas', materias: 'mas', tareas: 'tareas', calendario: 'calendario', hoy: 'hoy', mente: 'mente', vida: 'vida' }[rn] || 'mas');
+  const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', pizarron: 'pizarron', vida: 'vida', mas: 'mas', instalar: 'mas' }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'mas', materias: 'mas', tareas: 'tareas', calendario: 'calendario', hoy: 'hoy', mente: 'mente', vida: 'vida' }[rn] || 'mas');
   $$('.nav a').forEach((a) => { if (a.dataset.nav === navName) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   $('.nav').hidden = showWelcome;
   $('#fab').hidden = groupMode || showWelcome || !['hoy', 'tareas', 'calendario', 'materia'].includes(rn);

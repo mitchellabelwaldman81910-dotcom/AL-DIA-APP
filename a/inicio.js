@@ -11,7 +11,7 @@ function hoyArtHTML() {
   const qs = typeof questsToday === 'function' ? questsToday() : []; const ready = qs.filter((q) => q.ok && !q.claimed).length;
   const garden = typeof vidaData === 'function' ? vidaData().garden : null;
   return `<a class="hoy-art" href="#/vida" aria-label="Tu árbol, nivel ${c.level}. Abrir Vida">
-    <span class="ha-frame">${treeScene({ level: c.level, wet: c.wet, id: 'hoy', seed: REG.me, garden }).replace('viewBox="0 0 360 300"', 'viewBox="0 64 360 236"')}</span>
+    <span class="ha-frame">${treeScene({ level: c.level, wet: c.wet, id: 'hoy', seed: REG.me, garden, species: typeof curSpecies === 'function' ? curSpecies() : 'roble', fx: typeof curFX === 'function' ? curFX() : null }).replace('viewBox="0 0 360 300"', 'viewBox="0 64 360 236"')}</span>
     <span class="ha-cap">
       <span class="ha-top"><b>Nivel ${c.level}</b><span class="ha-st">${esc(stageName(c.level))}</span><span class="ha-sk">${c.streak ? `Racha ${c.streak}` : ''}</span></span>
       <span class="ha-p"><i style="width:${pct}%"></i></span>
@@ -55,7 +55,7 @@ function hoyToolsHTML() {
     ['act:sos-open', 'flag', 'Emergencia', 'Plan de daños mínimos'],
     ['#/cerebro', 'network', 'Tu Cerebro', 'Todo, conectado'],
     ['act:lobby-open', 'globe', 'Biblioteca', 'Estudia acompañado'],
-    ['#/salones', 'users', 'Salones', 'Tu grupo en vivo'],
+    ['#/salones', 'users', 'Bosques', 'Para grupos, en vivo'],
     ['act:speak-day', 'play', 'Escuchar', 'Tu día en voz alta'],
   ];
   return `<h2 class="sec">Atajos</h2><div class="hoy-tools">${t.map(([h, ic, b, s]) => h.startsWith('act:')

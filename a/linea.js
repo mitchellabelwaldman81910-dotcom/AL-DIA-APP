@@ -23,13 +23,55 @@ function lnFlower(x, y, s = 1, cls = 'fl') {
   return o + '<circle class="dot" r=".7"/></g>';
 }
 
-function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pour = false, garden = null }) {
+/* Especies de árbol (se compran en Vida › Comprar). Cada una cambia forma, hoja, flor y color. */
+const SPECIES = {
+  roble: { name: 'Roble de la vida' },
+  cedro: { name: 'Cedro', form: 'cone', leaf: 'needle', acc: '#3F7A5C', cw: '#2F6B4F' },
+  olivo: { name: 'Olivo plateado', leaf: 'round', acc: '#7E9A86', gold: '#B9A35F', cw: '#8FA99A', spread: 1.15, twist: 1 },
+  arce: { name: 'Arce de otoño', leaf: 'maple', acc: '#C8643B', gold: '#D9A441', cw: '#D27A45', spread: 1.05, fall: 1 },
+  jacaranda: { name: 'Jacaranda', leaf: 'almond', acc: '#6E8F6B', gold: '#8C6CD6', cw: '#9C80E0', bloom: 3, blossom: '#9F86E6', spread: 1.2, fall: 1 },
+  cerezo: { name: 'Cerezo en flor', leaf: 'almond', acc: '#7C9B78', gold: '#E39AB4', cw: '#F0B3C8', bloom: 4, blossom: '#F2A7C3', spread: 1.25, fall: 1 },
+  flamboyan: { name: 'Flamboyán', form: 'wide', leaf: 'almond', acc: '#5E8F55', gold: '#E0603A', cw: '#E8774A', bloom: 3, blossom: '#E8613C', spread: 1.5 },
+  sauce: { name: 'Sauce llorón', form: 'weep', leaf: 'almond', acc: '#7FA463', cw: '#93B873', spread: 1.1 },
+  ginkgo: { name: 'Ginkgo dorado', leaf: 'fan', acc: '#C9A23F', gold: '#E3C25A', cw: '#E2BE4E', spread: 1.05, fall: 1 },
+  luz: { name: 'Árbol de luz', leaf: 'almond', acc: '#D7B65E', gold: '#F3DC8B', cw: '#F1D27A', bloom: 2, blossom: '#FFF1B8', spread: 1.2, glow: 1, fall: 1 },
+};
+function spLeaf(sp, x, y, ang, L, cls, d) {
+  const k = sp.leaf || 'almond';
+  const tr = `transform="translate(${lnR(x)} ${lnR(y)}) rotate(${lnR(ang)})" style="--d:${d}ms"`;
+  if (k === 'needle') return `<path class="${cls} nd" ${tr} d="M0 0L${lnR(L)} ${lnR(-L * 0.28)}M0 0L${lnR(L * 1.05)} 0M0 0L${lnR(L)} ${lnR(L * 0.28)}M${lnR(L * 0.4)} 0L${lnR(L * 0.9)} ${lnR(-L * 0.42)}M${lnR(L * 0.4)} 0L${lnR(L * 0.9)} ${lnR(L * 0.42)}"/>`;
+  if (k === 'round') return `<ellipse class="${cls}" ${tr} cx="${lnR(L * 0.42)}" rx="${lnR(L * 0.42)}" ry="${lnR(L * 0.2)}"/>`;
+  if (k === 'fan') return `<path class="${cls}" ${tr} d="M0 0L${lnR(L * 0.82)} ${lnR(-L * 0.5)}Q${lnR(L * 1.12)} 0 ${lnR(L * 0.82)} ${lnR(L * 0.5)}ZM${lnR(L * 0.15)} 0L${lnR(L * 0.86)} ${lnR(-L * 0.24)}M${lnR(L * 0.15)} 0L${lnR(L * 0.86)} ${lnR(L * 0.24)}"/>`;
+  if (k === 'maple') { const s = L / 10; return `<path class="${cls}" ${tr} d="M0 0L${lnR(4 * s)} ${lnR(-1 * s)}L${lnR(4.6 * s)} ${lnR(-4.6 * s)}L${lnR(6.4 * s)} ${lnR(-2.4 * s)}L${lnR(8 * s)} ${lnR(-3.8 * s)}L${lnR(8 * s)} ${lnR(-1.2 * s)}L${lnR(10.6 * s)} 0L${lnR(8 * s)} ${lnR(1.2 * s)}L${lnR(8 * s)} ${lnR(3.8 * s)}L${lnR(6.4 * s)} ${lnR(2.4 * s)}L${lnR(4.6 * s)} ${lnR(4.6 * s)}L${lnR(4 * s)} ${lnR(1 * s)}ZM${lnR(1.5 * s)} 0H${lnR(9 * s)}"/>`; }
+  return lnLeaf(x, y, ang, L, cls, d);
+}
+function spBlossom(x, y, s, d) {
+  let o = `<g class="fl-g bl-g" style="--d:${d}ms" transform="translate(${lnR(x)} ${lnR(y)}) scale(${lnR(s)})">`;
+  for (let i = 0; i < 5; i++) { const a = (i * 72 * Math.PI) / 180; o += `<ellipse class="bl" cx="${lnR(Math.sin(a) * 2.2)}" cy="${lnR(-Math.cos(a) * 2.2)}" rx="1.7" ry="1.25" transform="rotate(${i * 72} ${lnR(Math.sin(a) * 2.2)} ${lnR(-Math.cos(a) * 2.2)})"/>`; }
+  return o + '<circle class="bl-c" r=".75"/></g>';
+}
+/* Ambientes comprables: aurora, faroles, estrellas fugaces, nevada y arcoíris */
+function sceneFX(fx, W, H, R, u) {
+  if (!fx || !fx.length) return '';
+  let o = '';
+  if (fx.includes('arcoiris')) o += `<g class="fx-rain" opacity=".5">${['#E98F8F', '#EBC07A', '#9CCB8A', '#86B4E0', '#B39BDE'].map((c, i) => `<path fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round" opacity=".55" d="M${40 + i * 3} 200A${140 - i * 3} ${120 - i * 3} 0 0 1 ${320 - i * 3} 200"/>`).join('')}</g>`;
+  if (fx.includes('aurora')) o += `<g class="fx-aurora" filter="url(#soft-${u})">${[0, 1, 2].map((i) => `<path class="fx-au a${i}" d="M-20 ${48 + i * 16}C60 ${18 + i * 14} 120 ${78 + i * 8} 200 ${44 + i * 12}S320 ${22 + i * 12} 380 ${54 + i * 10}V${70 + i * 16}C300 ${56 + i * 12} 240 ${96 + i * 6} 170 ${70 + i * 14}S50 ${52 + i * 16} -20 ${80 + i * 12}Z"/>`).join('')}</g>`;
+  if (fx.includes('fugaces')) for (let i = 0; i < 3; i++) o += `<g class="fx-shoot" style="--d:${lnR(i * 3.3 + R() * 2)}s"><path class="ln g" stroke-width="1" d="M${lnR(60 + R() * 220)} ${lnR(14 + R() * 40)}l-34 14"/></g>`;
+  if (fx.includes('faroles')) for (let i = 0; i < 7; i++) { const x = lnR(30 + R() * 300); o += `<g class="fx-lant" style="--d:${lnR(R() * 9)}s;--dur:${lnR(12 + R() * 8)}s;--dx:${lnR((R() - 0.5) * 40)}px"><g transform="translate(${x} ${H + 10})"><circle class="fx-lg" r="7"/><path class="ln g" stroke-width=".9" d="M-3 -4H3L4 3H-4ZM-2 3V5H2V3"/></g></g>`; }
+  if (fx.includes('nieve')) for (let i = 0; i < 26; i++) o += `<circle class="fx-snow" cx="${lnR(R() * W)}" cy="-6" r="${lnR(0.8 + R() * 1.3)}" style="--d:${lnR(R() * 10)}s;--dur:${lnR(8 + R() * 7)}s;--dx:${lnR((R() - 0.5) * 50)}px"/>`;
+  return o;
+}
+
+function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pour = false, garden = null, species = 'roble', fx = null, mini = false }) {
+  const sp = SPECIES[species] || SPECIES.roble;
   const v = max === 100 ? Math.max(0, Math.min(100, level)) : Math.max(0, Math.min(100, Math.round(100 * Math.sqrt(level / max))));
   const p = v / 100;
   const R = rnd(seedOf(seed + ':' + id));
   const W = 360, H = 300, GY = 252, cx = 180;
   const key = `${id}:${seed}:${v}`; const anim = !LN.seen.has(key); LN.seen.add(key);
-  let o = `<svg viewBox="0 0 ${W} ${H}" class="vscene-svg ln-scene ${wet ? 'is-wet' : 'is-dry'} ${pour ? 'is-pour' : ''}" role="img" aria-label="Tu árbol, nivel ${level}" preserveAspectRatio="xMidYMid slice">`;
+  const spStyle = sp.acc ? ` style="--cw:${sp.cw || sp.acc};--bl:${sp.blossom || sp.gold || sp.acc}"` : '';
+  const spTree = sp.acc ? ` style="--l-acc:${sp.acc};${sp.gold ? `--l-gold:${sp.gold}` : ''}"` : '';
+  let o = `<svg viewBox="0 0 ${W} ${H}" class="vscene-svg ln-scene sp-${species in SPECIES ? species : 'roble'} ${wet ? 'is-wet' : 'is-dry'} ${pour ? 'is-pour' : ''} ${mini ? 'is-mini' : ''}"${spStyle} role="img" aria-label="${esc(sp.name)}, nivel ${level}" preserveAspectRatio="xMidYMid slice">`;
   const u = `${id}-${String(seed).replace(/[^a-z0-9]/gi, '')}`;
   // ---- acuarela: cielo, luz, montañas y colinas lavadas (los trazos van encima) ----
   o += `<defs>
@@ -46,6 +88,7 @@ function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pou
   </defs>`;
   o += `<rect width="${W}" height="${H}" fill="url(#sky-${u})"/>`;
   o += `<rect width="${W}" height="${H}" fill="url(#sun-${u})" class="w-sun"/>`;
+  o += sceneFX(fx, W, H, rnd(seedOf('fx:' + seed)), u);
   if (v >= 20) o += `<g class="w-rays">${[-0.5, -0.2, 0.12, 0.42].map((k, i) => `<path d="M292 60L${lnR(292 + Math.cos(2.2 + k) * 420)} ${lnR(60 + Math.sin(2.2 + k) * 420)}L${lnR(292 + Math.cos(2.26 + k) * 420)} ${lnR(60 + Math.sin(2.26 + k) * 420)}Z" style="--d:${i * 1.7}s"/>`).join('')}</g>`;
   o += `<path class="w-mt1" fill="url(#mt-${u})" d="M0 170L28 150L52 158L86 128L116 146L140 136L176 112L206 134L228 126L262 104L296 132L326 120L360 138V230H0Z"/>`;
   o += `<path class="w-mt2" fill="url(#mt-${u})" d="M0 188L40 168L74 178L110 156L150 174L190 160L224 172L258 150L300 170L336 160L360 168V230H0Z"/>`;
@@ -88,14 +131,14 @@ function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pou
   }
   if (v >= 70) o += `<g class="v-river"><path class="ln w" stroke-width="1" d="M-2 ${GY + 38}C60 ${GY + 46} 140 ${GY + 34} 200 ${GY + 41}S250 ${GY + 34} 270 ${GY + 31}"/><path class="ln w" stroke-width=".7" stroke-dasharray="6 7" d="M-2 ${GY + 44}C70 ${GY + 52} 150 ${GY + 41} 210 ${GY + 47}S262 ${GY + 41} 282 ${GY + 35}"/></g>`;
   // pasto
-  const nGrass = Math.min(40, Math.floor(10 + v * 0.45));
+  const nGrass = mini ? 0 : Math.min(40, Math.floor(10 + v * 0.45));
   for (let i = 0; i < nGrass; i++) {
     const x = R() * W, y = GY - 3 + R() * 40; if (v >= 35 && x > 256 && x < 344 && y > GY + 16 && y < GY + 38) continue;
     const h = 4 + R() * 6;
     o += `<path class="ln a" stroke-width=".8" opacity=".75" d="M${lnR(x)} ${lnR(y)}q-1.5 ${lnR(-h * 0.6)} -3 ${lnR(-h)}M${lnR(x)} ${lnR(y)}q.6 ${lnR(-h * 0.7)} 1.8 ${lnR(-h * 1.1)}"/>`;
   }
   // flores del prado
-  const nFl = v < 8 ? 0 : Math.min(26, Math.floor(v / 3.6));
+  const nFl = v < 8 || mini ? 0 : Math.min(26, Math.floor(v / 3.6));
   for (let i = 0; i < nFl; i++) {
     const x = 10 + R() * (W - 20), y = GY + 4 + R() * 34; if (v >= 35 && x > 256 && x < 344 && y > GY + 14 && y < GY + 40) continue;
     o += `<path class="ln a" stroke-width=".7" d="M${lnR(x)} ${lnR(y)}v-6"/>${lnFlower(x, y - 7, 0.8 + R() * 0.3)}`;
@@ -117,7 +160,7 @@ function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pou
     const trunkLen = 16 + 33 * Math.pow(p, 0.6), trunkW = 1.5 + 3.4 * Math.pow(p, 0.8);
     const L = 5.5 + 4.4 * Math.pow(p, 0.5);
     const br = [], bark = [], leaves = [], ends = [];
-    const step = 170;
+    const step = 170; const SPR = sp.spread || 1; const form = sp.form || 'normal';
     const grow = (x, y, ang, len, w, d) => {
       const x2 = x + Math.sin(ang) * len, y2 = y - Math.cos(ang) * len;
       const mx = x + Math.sin(ang + (R() - 0.5) * 0.35) * len * 0.5, my = y - Math.cos(ang) * len * 0.5;
@@ -127,15 +170,36 @@ function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pou
       const ld = d * step + 420;
       if (d >= 1) {
         const n = d >= depthMax ? 2 + (R() < 0.45 ? 1 : 0) : (R() < 0.3 ? 1 : 0);
-        for (let i = 0; i < n; i++) leaves.push(lnLeaf(x2, y2, deg + (i - (n - 1) / 2) * 42 + (R() - 0.5) * 16, L * (0.8 + R() * 0.35), R() < 0.1 ? 'lf2' : 'lf', ld));
+        for (let i = 0; i < n; i++) leaves.push(spLeaf(sp, x2, y2, deg + (i - (n - 1) / 2) * 42 + (R() - 0.5) * 16, L * (0.8 + R() * 0.35), R() < 0.1 ? 'lf2' : 'lf', ld));
         if (d >= depthMax - 1) ends.push([x2, y2, ld]);
+        if (sp.bloom && wet && d >= depthMax - 1 && v >= 4) { const nb = Math.round(sp.bloom * Math.min(1, 0.35 + p)); for (let i = 0; i < nb; i++) leaves.push(spBlossom(x2 + (R() - 0.5) * 10, y2 + (R() - 0.5) * 9, 0.75 + R() * 0.45 + p * 0.3, ld + 120)); }
+        if (form === 'weep' && d >= depthMax - 1 && v >= 6) { const hl = 18 + 46 * p * (0.6 + R() * 0.6); const sx = x2 + (R() - 0.5) * 4; const ex = sx + (sx - cx) * 0.12; br.push(`<path class="ln a br wp" pathLength="1" style="--d:${ld}ms" stroke-width=".7" d="M${lnR(x2)} ${lnR(y2)}Q${lnR(sx + (sx - cx) * 0.18)} ${lnR(y2 + hl * 0.35)} ${lnR(ex)} ${lnR(Math.min(GY - 4, y2 + hl))}"/>`); for (let k = 1; k <= 4; k++) { const t = k / 5; leaves.push(spLeaf(sp, sx + (ex - sx) * t, Math.min(GY - 6, y2 + hl * t), 90 + (k % 2 ? 30 : -30), L * 0.7, 'lf', ld + k * 60)); } }
       }
       if (d >= depthMax) return;
       const kids = d === 0 ? (v >= 40 ? 3 : 2) : (d < 4 && v >= 60 && R() < 0.3 ? 3 : 2);
-      const spread = 0.34 + 0.12 * R();
-      for (let i = 0; i < kids; i++) grow(x2, y2, (ang + (i - (kids - 1) / 2) * spread * (d < 2 ? 1.25 : 1.45) + (R() - 0.5) * 0.18) * (d >= 2 ? 0.93 : 1), len * (0.64 + R() * 0.2) * (d === 0 ? 1.05 : 1), w * 0.64, d + 1);
+      const spread = (0.34 + 0.12 * R()) * SPR;
+      const decay = form === 'wide' ? (d >= 1 ? 1.08 : 1) : (d >= 2 ? 0.93 : 1);
+      const lenK = form === 'wide' && d >= 1 ? 0.78 : 0.64;
+      for (let i = 0; i < kids; i++) grow(x2, y2, (ang + (i - (kids - 1) / 2) * spread * (d < 2 ? 1.25 : 1.45) + (R() - 0.5) * 0.18) * decay, len * (lenK + R() * 0.2) * (d === 0 ? (form === 'wide' ? 0.85 : 1.05) : 1), w * 0.64, d + 1);
     };
-    grow(cx, GY - 3, (R() - 0.5) * 0.08, trunkLen, trunkW, 0);
+    if (form === 'cone') {
+      // cedro: tronco recto y pisos de ramas que se acortan hacia la punta
+      const H2 = trunkLen * 2.6; const top = GY - 3 - H2;
+      br.push(`<path class="ln br" pathLength="1" style="--d:0ms" stroke-width="${lnR(trunkW)}" d="M${cx} ${GY - 3}L${cx} ${lnR(top)}"/>`);
+      const tiers = Math.max(2, Math.min(11, 2 + Math.floor(v / 9)));
+      for (let t = 0; t < tiers; t++) {
+        const k = (t + 1) / (tiers + 1); const y = GY - 3 - H2 * (0.18 + 0.8 * k); const len = (H2 * 0.42) * (1 - k * 0.85) + 4; const ld = 200 + t * 120;
+        for (const s of [-1, 1]) {
+          const x2 = cx + s * len, y2 = y + len * 0.22;
+          br.push(`<path class="ln br" pathLength="1" style="--d:${ld}ms" stroke-width="${lnR(Math.max(0.6, trunkW * 0.38 * (1 - k * 0.6)))}" d="M${cx} ${lnR(y)}Q${lnR(cx + s * len * 0.55)} ${lnR(y - 2)} ${lnR(x2)} ${lnR(y2)}"/>`);
+          const nn = Math.max(2, Math.round(len / 4.5));
+          for (let j = 1; j <= nn; j++) { const q = j / nn; leaves.push(spLeaf(sp, cx + s * len * q, y + (y2 - y) * q * q - 1, s > 0 ? -60 + R() * 20 : -120 - R() * 20, L * 1.05, 'lf', ld + j * 40)); }
+          ends.push([cx + s * len * 0.6, y + 2, ld]);
+        }
+      }
+      leaves.push(spLeaf(sp, cx, top + 2, -90, L * 0.9, 'lf', 200 + tiers * 120));
+      ends.push([cx, top + 10, 200 + tiers * 120]);
+    } else grow(cx, GY - 3, (R() - 0.5) * 0.08, trunkLen, trunkW, 0);
     let roots = '';
     if (v >= 20) for (const s of [-1, 1]) roots += `<path class="ln" stroke-width="${lnR(trunkW * 0.45)}" d="M${cx} ${GY - 3}q${s * 7} 2 ${lnR(s * (12 + 12 * p))} 6"/><path class="ln s" stroke-width=".6" d="M${cx + s * 4} ${GY}q${s * 5} 4 ${lnR(s * (8 + 8 * p))} 9"/>`;
     // copa en acuarela: manchas suaves bajo las hojas de línea, con luz del lado del sol
@@ -147,7 +211,7 @@ function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pou
       wash = `<g class="w-canopy ${anim ? 'grow-w' : ''}" filter="url(#soft-${u})">${wash}${hi}</g>`;
     }
     const shadow = `<ellipse class="w-shadow" cx="${cx + 14}" cy="${GY + 2}" rx="${lnR(26 + 46 * p)}" ry="${lnR(4 + 3 * p)}" filter="url(#soft-${u})"/>`;
-    o += `<g class="vt-sway ${anim ? 'grow' : ''} ${wet ? '' : 'dry'}">${shadow}${wash}<ellipse class="ln s" stroke-width=".7" cx="${cx}" cy="${GY + 3}" rx="${lnR(20 + 26 * p)}" ry="4"/>${roots}${br.join('')}${bark.join('')}<g class="vt-leaves">${leaves.join('')}</g>`;
+    o += `<g class="vt-sway ${anim ? 'grow' : ''} ${wet ? '' : 'dry'}"${spTree}>${shadow}${wash}<ellipse class="ln s" stroke-width=".7" cx="${cx}" cy="${GY + 3}" rx="${lnR(20 + 26 * p)}" ry="4"/>${roots}${br.join('')}${bark.join('')}<g class="vt-leaves">${leaves.join('')}</g>`;
     if (wet && v >= 38) { const nF = Math.min(16, Math.floor((v - 36) / 3)); for (let i = 0; i < nF && ends.length; i++) { const [x, y, d] = ends[Math.floor(R() * ends.length)]; o += `<g class="fl-g" style="--d:${d + 200}ms">${lnFlower(x + (R() - 0.5) * 8, y + (R() - 0.5) * 8, 0.85)}</g>`; } }
     if (wet && v >= 55) { const nF = Math.min(12, Math.floor((v - 52) * 0.3)); for (let i = 0; i < nF && ends.length; i++) { const [x, y, d] = ends[Math.floor(R() * ends.length)]; const fx = x + (R() - 0.5) * 7, fy = y + 3 + R() * 4; o += `<g class="fl-g" style="--d:${d + 300}ms"><path class="ln g" stroke-width=".6" d="M${lnR(fx)} ${lnR(fy - 3)}v2"/><circle class="fr" cx="${lnR(fx)}" cy="${lnR(fy + 1)}" r="${v >= 95 ? 2.6 : 2.1}"/></g>`; } }
     if (!wet) o += `<path class="ln w vt-thirst" stroke-width="1" stroke-dasharray="2 2.5" d="M0 0C-5 8-7 12-3 15 1 17 5 15 6 11 7 7 3 3 0 0Z" transform="translate(${cx + 30} ${lnR(GY - trunkLen - 30)})"/>`;
@@ -158,6 +222,8 @@ function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pou
   if (v >= 45) { const n = Math.min(5, 1 + Math.floor((v - 45) / 12)); for (let i = 0; i < n; i++) o += `<g class="v-bfly" style="--d:${lnR(i * 1.7)}s;--x:${lnR(40 + R() * 280)}px;--y:${lnR(120 + R() * 90)}px"><path class="ln a" stroke-width=".8" d="M0 0C-3 -5 -8 -4 -6 0C-8 4 -3 5 0 0C3 -5 8 -4 6 0C8 4 3 5 0 0Z"/></g>`; }
   if (v >= 60) { const n = Math.min(4, 1 + Math.floor((v - 60) / 14)); for (let i = 0; i < n; i++) o += `<g class="v-bird" style="--d:${lnR(i * 2.3)}s;--y:${lnR(30 + R() * 60)}px"><path class="ln" stroke-width="1" d="M0 0q4 -4.5 8 0q4 -4.5 8 0"/></g>`; }
   if (v >= 70) { const n = Math.min(14, 4 + Math.floor((v - 70) / 2.5)); for (let i = 0; i < n; i++) o += `<circle class="v-fly dot" cx="${lnR(20 + R() * 320)}" cy="${lnR(150 + R() * 100)}" r="1.3" style="--d:${lnR(R() * 4)}s"/>`; }
+  if (sp.fall && wet && v >= 10 && v < 75 && !mini) { const n = Math.min(8, 2 + Math.floor(v / 10)); for (let i = 0; i < n; i++) o += `<g class="v-petal" style="--d:${lnR(R() * 8)}s;--dur:${lnR(9 + R() * 6)}s;--dx:${lnR((R() - 0.5) * 80)}px"${spTree}><g transform="translate(${lnR(cx - 90 + R() * 180)} ${lnR(GY - 150 - R() * 40)})">${sp.bloom ? spBlossom(0, 0, 0.7, 0).replace('fl-g bl-g', 'bl-g') : spLeaf(sp, 0, 0, R() * 360, 6, 'lf', 0)}</g></g>`; }
+  if (sp.glow && v >= 5) { const n = Math.min(18, 6 + Math.floor(v / 6)); for (let i = 0; i < n; i++) o += `<circle class="v-fly dot sp-mote" cx="${lnR(cx - 110 + R() * 220)}" cy="${lnR(GY - 30 - R() * 170)}" r="1.3" style="--d:${lnR(R() * 4)}s"/>`; }
   if (v >= 75) { const n = Math.min(10, 3 + Math.floor((v - 75) / 3)); for (let i = 0; i < n; i++) o += `<g class="v-petal" style="--d:${lnR(R() * 8)}s;--dur:${lnR(9 + R() * 6)}s;--dx:${lnR((R() - 0.5) * 80)}px"><g transform="translate(${lnR(R() * W)} -10)">${lnLeaf(0, 0, R() * 360, 6, i % 3 ? 'lf' : 'lf2')}</g></g>`; }
   // riego
   if (pour) {
@@ -165,7 +231,7 @@ function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pou
     for (let i = 0; i < 20; i++) o += `<path class="ln w v-drop" stroke-width="1" d="M${lnR(130 + R() * 100)} 52v6" style="--d:${lnR(R() * 1.2)}s;--h:${lnR(150 + R() * 70)}px"/>`;
     o += '</g>';
   }
-  if (garden && garden.length) o += gardenSVG(garden, id);
+  if (garden && garden.length && !mini) o += gardenSVG(garden, id);
   o += `<rect width="${W}" height="${H}" fill="url(#vg-${u})" pointer-events="none"/>`;
   return o + '</svg>';
 }
