@@ -110,4 +110,4 @@ function heroScene() {
   o += `<rect width="${W}" height="${H}" fill="url(#fade-${u})"/></svg>`;
   return o;
 }
-function hoyHeroHTML() { if (isGroup()) return ''; return `<div class="hoy-hero">${heroScene()}</div>`; }
+function hoyHeroHTML() { if (isGroup()) return ''; return `<div class="hoy-hero">${heroScene()}<a class="hero-play" href="#/juego" aria-label="Jugar Cosecha">${icon('play', 'sm')}<span>Jugar</span></a></div>`; }
