@@ -10,7 +10,7 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
-const icon = (id, cls = '') => `<svg class="i ${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+const icon = (id, cls = '') => (typeof GLIFOS !== 'undefined' && GLIFOS[id]) ? glifo(id, cls) : `<svg class="i ${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
 const pad = (n) => String(n).padStart(2, '0');
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
@@ -181,7 +181,7 @@ const isForestId = (id) => String(id || '').startsWith('f:');
 const initials2 = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 const profile = (id = REG.current) => {
   if (!id) return null;
-  if (isForestId(id)) { const f = FOR.f[id.slice(2)]?.meta; return f ? { id, fid: f.id, name: f.name, initials: f.emoji || '🌳', color: f.color || '#2F8A5B', group: true } : null; }
+  if (isForestId(id)) { const f = FOR.f[id.slice(2)]?.meta; return f ? { id, fid: f.id, name: f.name, initials: String(f.name || '?').trim().charAt(0).toUpperCase(), color: f.color || '#2F8A5B', group: true } : null; }
   const u = (REG.users || []).find((x) => x.id === id);
   return u ? { ...u, initials: initials2(u.name) } : null;
 };
@@ -886,11 +886,11 @@ function voiceSettingsHTML() {
   return `<h2 class="sec">Voz de lectura</h2>
     <div class="card">
       <div class="field"><label for="voiceSel">Voz</label>
-        <select id="voiceSel" class="input" data-voice>${VOICE.list.length ? VOICE.list.map((v) => `<option value="${esc(v.name)}" ${v.name === cur ? 'selected' : ''}>${esc(v.name.replace(/\s*\(.*\)$/, ''))} · ${esc(v.lang)}${/premium|enhanced|mejorada/i.test(v.name) ? ' ★' : ''}</option>`).join('') : '<option>Voz del sistema</option>'}</select></div>
+        <select id="voiceSel" class="input" data-voice>${VOICE.list.length ? VOICE.list.map((v) => `<option value="${esc(v.name)}" ${v.name === cur ? 'selected' : ''}>${esc(v.name.replace(/\s*\(.*\)$/, ''))} · ${esc(v.lang)}${/premium|enhanced|mejorada/i.test(v.name) ? ' (mejor)' : ''}</option>`).join('') : '<option>Voz del sistema</option>'}</select></div>
       <div class="field"><label for="voiceRate">Velocidad: <span id="rateLbl">${VOICE.prefs().rate < 0.85 ? 'muy calmada' : VOICE.prefs().rate < 0.95 ? 'calmada' : VOICE.prefs().rate < 1.05 ? 'normal' : 'rápida'}</span></label>
         <input id="voiceRate" type="range" min="0.7" max="1.15" step="0.01" value="${VOICE.prefs().rate}" data-voice-rate style="accent-color:var(--pen)"></div>
       <button class="btn" data-act="voice-test">${icon('play')}Probar voz</button>
-      <p class="small muted" style="margin:12px 0 0">Para una voz más natural en iPhone o iPad: Configuración, Accesibilidad, Contenido leído, Voces, Español (México) y descarga una voz <b>Mejorada</b> (por ejemplo Paulina). Luego elígela aquí; tiene ★.</p>
+      <p class="small muted" style="margin:12px 0 0">Para una voz más natural en iPhone o iPad: Configuración, Accesibilidad, Contenido leído, Voces, Español (México) y descarga una voz <b>Mejorada</b> (por ejemplo Paulina). Luego elígela aquí; es la mejor.</p>
     </div>`;
 }
 
@@ -1150,6 +1150,7 @@ function viewMateria(id) {
 /* ---------- Más ---------- */
 function viewMas() {
   const items = [
+    ['#/estilo', 'spark', 'Estilo de la app', 'Cambia los colores y el diseño: 7 plantillas con día y noche'],
     ['#/cerebro', 'spark', 'Tu Cerebro', 'Todo lo que has hecho y pensado, conectado en una red viva'],
     ['#/panel', 'grid', 'Mi panel', 'Radar de carga, tiempo libre real, patrones y hábitos'],
     ['#/materias', 'book', 'Materias', 'Tus materias, horarios y calificaciones'],
@@ -2305,7 +2306,7 @@ function noteCard(n) {
   const s = subj(n.subjectId);
   return `<button type="button" class="note ${n.pinned ? 'pinned' : ''}" data-act="open-note" data-id="${n.id}" style="--c:${(libretas().find((l) => l.id === n.libreta)?.color) || (s ? safeColor(s.color) : 'transparent')}">
     <b>${n.pinned ? '<svg class="i sm star" aria-label="Fijado"><use href="#i-star"/></svg> ' : ''}${esc(n.title || 'Sin título')}</b>${n.photos?.length ? `<span class="tiny faint">${plural(n.photos.length, 'foto', 'fotos')}</span>` : ''}<p>${esc((n.body || '').slice(0, 280))}</p>
-    <span class="tiny faint">${libretas().find((l) => l.id === n.libreta) ? esc(libretas().find((l) => l.id === n.libreta).emoji) + ' ' : ''}${s ? esc(s.name) + ', ' : ''}${relDay(toISO(new Date(n.updated || Date.now())))}</span></button>`;
+    <span class="tiny faint">${libretas().find((l) => l.id === n.libreta) ? esc(libretas().find((l) => l.id === n.libreta).name) + ', ' : ''}${s ? esc(s.name) + ', ' : ''}${relDay(toISO(new Date(n.updated || Date.now())))}</span></button>`;
 }
 function viewNotas() {
   const q = normChars(UI.notesQ.trim());
@@ -2360,6 +2361,7 @@ function viewAjustes() {
     </div>
     ${accountCardHTML()}
     <div class="card" style="margin-top:12px">
+      ${estilosRowHTML()}
       <div class="field"><label for="setName">Cómo te saludo</label><input id="setName" class="input" data-set="name" value="${esc(st.name)}" placeholder="Para saludarte"></div>
       <div class="field" style="margin:0"><span class="lbl">Tema</span><div class="seg" role="group">${[['light', 'Bosque de día'], ['dark', 'Bosque de noche']].map(([k, l]) => `<button type="button" data-act="theme" data-v="${k}" aria-pressed="${(st.theme === 'dark' ? 'dark' : 'light') === k}">${l}</button>`).join('')}</div></div>
     </div>
@@ -2389,7 +2391,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.3. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.4. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -2483,6 +2485,7 @@ function render() {
       case 'vida': html = viewVida(); break;
       case 'panel': html = viewPanel(); break;
       case 'cerebro': html = viewCerebro(); break;
+      case 'estilo': setTimeout(() => { history.replaceState(null, '', '#/mas'); openEstilos(); }, 0); html = viewMas(); break;
       case 'carta': setTimeout(() => { history.replaceState(null, '', '#/mas'); writeLetter(); }, 0); html = viewMas(); break;
       default: html = viewHoy();
     }
@@ -2496,7 +2499,7 @@ function render() {
   if (qv && $('#quickIn')) { $('#quickIn').value = qv; updateQuickPreview(); }
   if (hadFocus && ['quickIn', 'taskQ', 'notesQ'].includes(hadFocus)) { const el = $('#' + hadFocus); if (el) { el.focus(); const v = el.value; el.setSelectionRange?.(v.length, v.length); } }
 
-  const known = ['carta', 'panel', 'cerebro', 'vida', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
+  const known = ['carta', 'estilo', 'panel', 'cerebro', 'vida', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
   const rn = known.includes(r.name) ? r.name : 'hoy';
   const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', vida: 'vida', mas: 'mas', instalar: 'mas' }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'mas', materias: 'mas', tareas: 'tareas', calendario: 'calendario', hoy: 'hoy', mente: 'mente', vida: 'vida' }[rn] || 'mas');
   $$('.nav a').forEach((a) => { if (a.dataset.nav === navName) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
@@ -2738,14 +2741,14 @@ function toggleTask(id, rowEl) {
     if (typeof quizGate === 'function' && quizGate(t)) return;
     t.done = true; t.made = true; t.doneAt = Date.now();
     save(); Snd.chime();
-    if (rowEl) { floatText(rowEl, `+${t.priority === 3 ? 14 : 10} ✨`); leafBurst(rowEl); }
+    if (rowEl) { floatText(rowEl, `+${t.priority === 3 ? 14 : 10}`); leafBurst(rowEl); }
     if (rowEl && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
       rowEl.classList.add('done', 'leaving');
       rowEl.insertAdjacentHTML('beforeend', '<span class="stamp" aria-hidden="true">Entregado</span>');
       setTimeout(render, 900);
     } else render();
     leafBurst(rowEl?.querySelector('.chk'));
-    if (+t.estimate > 0 && typeof realMin === 'function' && realMin(t) >= 3) { const d = realMin(t) - +t.estimate; toast(d > 5 ? `Entregada. Te tomó ${fmtMinutes(realMin(t))}: ${fmtMinutes(d)} más de lo que calculaste.` : d < -5 ? `Entregada. Terminaste ${fmtMinutes(-d)} antes de lo calculado. 🎯` : 'Entregada. Calculaste casi perfecto. 🎯', { ms: 5500, action: 'Deshacer', onAction: () => commit(() => { t.done = false; t.doneAt = null; }) }); }
+    if (+t.estimate > 0 && typeof realMin === 'function' && realMin(t) >= 3) { const d = realMin(t) - +t.estimate; toast(d > 5 ? `Entregada. Te tomó ${fmtMinutes(realMin(t))}: ${fmtMinutes(d)} más de lo que calculaste.` : d < -5 ? `Entregada. Terminaste ${fmtMinutes(-d)} antes de lo calculado.` : 'Entregada. Calculaste casi perfecto.', { ms: 5500, action: 'Deshacer', onAction: () => commit(() => { t.done = false; t.doneAt = null; }) }); }
     else toast(`Entregada: ${t.title}`, { action: 'Deshacer', onAction: () => commit(() => { t.done = false; t.doneAt = null; }) });
     if (navigator.vibrate) navigator.vibrate(18);
   } else {
@@ -3565,8 +3568,8 @@ function applyTheme() {
   buildLeaves(); applyDaypart();
   if (REG.current) document.documentElement.setAttribute('data-profile', REG.current);
   document.documentElement.setAttribute('data-theme', th);
+  if (typeof applyStyle === 'function') applyStyle();
   const dark = th === 'dark' || (th === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
-  $$('meta[name="theme-color"]').forEach((m) => { if (th === 'auto') m.setAttribute('content', m.media.includes('dark') ? '#0B1A14' : '#F3FAF5'); else m.setAttribute('content', th === 'dark' ? '#0B1A14' : '#F3FAF5'); });
 }
 
 /* =========================================================

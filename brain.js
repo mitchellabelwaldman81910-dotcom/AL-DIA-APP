@@ -56,7 +56,7 @@ function brainViewHTML() {
     <section class="brain" id="brainRoot"><canvas id="brainCv" aria-label="Tu cerebro: una red de tus tareas, apuntes y pensamientos conectados" role="img"></canvas>
       <div class="brain-hud"><div class="bh-title"><b>Tu Cerebro</b><span id="brainSub" class="small"></span></div>
         <div class="bh-stats"><span><b id="bsN">0</b><i>neuronas</i></span><span><b id="bsE">0</b><i>conexiones</i></span><span><b>${nT}</b><i>tareas hechas</i></span><span><b>${nH}</b><i>pensamientos</i></span></div></div>
-      <div class="brain-ctl"><button type="button" class="bc" data-act="brain-tour" id="bcTour">✦ Viajar por mis ideas</button><button type="button" class="bc" data-act="brain-reset">⌖ Centrar</button></div>
+      <div class="brain-ctl"><button type="button" class="bc" data-act="brain-tour" id="bcTour">Viajar por mis ideas</button><button type="button" class="bc" data-act="brain-reset">⌖ Centrar</button></div>
       <div class="brain-card" id="brainCard" hidden></div></section>
     <p class="small muted" style="margin:12px 4px 0">Cada punto es algo que hiciste o pensaste: ${plural(nT, 'tarea entregada', 'tareas entregadas')}, ${plural(nN, 'apunte', 'apuntes')} y ${plural(nH, 'pensamiento', 'pensamientos')}. Toca una neurona para ver cómo se conecta. Arrastra para moverte y pellizca para acercar.</p>`;
 }
@@ -69,15 +69,15 @@ function brainSelect(id, fly = true) {
   BR.rings.push({ x: n.x, y: n.y, t: performance.now(), c: n.color }); BR.rings.push({ x: n.x, y: n.y, t: performance.now() + 220, c: n.color });
   const nb = (BR.adj.get(id) || []).map((e) => (e.a === n ? e.b : e.a));
   let det = '';
-  if (n.type === 'task') { const t = task(n.ref); if (t) det = `${t.done ? '✅ Entregada' : '⏳ Pendiente'}${t.due ? ` · ${esc(cap(relDay(t.due)))}` : ''}${t.done && hasGrade(t) ? ` · calificación ${esc(String(t.grade))}` : ''}`; }
-  else if (n.type === 'thought') { const x = (S.thoughts || []).find((y) => y.id === n.ref); if (x) det = `💭 ${esc(cap(relDay(toISO(new Date(x.at)))))}`; }
-  else if (n.type === 'note') { const x = S.notes.find((y) => y.id === n.ref); if (x) det = `📒 ${esc(cap(relDay(toISO(new Date(x.updated || Date.now())))))}`; }
+  if (n.type === 'task') { const t = task(n.ref); if (t) det = `${t.done ? 'Entregada' : 'Pendiente'}${t.due ? ` · ${esc(cap(relDay(t.due)))}` : ''}${t.done && hasGrade(t) ? ` · calificación ${esc(String(t.grade))}` : ''}`; }
+  else if (n.type === 'thought') { const x = (S.thoughts || []).find((y) => y.id === n.ref); if (x) det = `Pensamiento · ${esc(cap(relDay(toISO(new Date(x.at)))))}`; }
+  else if (n.type === 'note') { const x = S.notes.find((y) => y.id === n.ref); if (x) det = `Apunte · ${esc(cap(relDay(toISO(new Date(x.updated || Date.now())))))}`; }
   else if (n.type === 'subject') det = `${plural(nb.length, 'conexión', 'conexiones')}`;
   else det = `${plural(S.tasks.filter((t) => t.done).length, 'tarea entregada', 'tareas entregadas')} · ${plural((S.thoughts || []).length, 'pensamiento', 'pensamientos')}`;
   const full = n.type === 'thought' ? ((S.thoughts || []).find((y) => y.id === n.ref)?.text || n.label) : n.label;
   const act = n.type === 'task' ? `<button class="bc go" data-act="brain-open" data-id="${n.id}">Abrir tarea</button>` : n.type === 'note' ? `<button class="bc go" data-act="brain-open" data-id="${n.id}">Abrir apunte</button>` : n.type === 'thought' ? `<button class="bc go" data-act="brain-open" data-id="${n.id}">Ir a pensamientos</button>` : n.type === 'subject' ? `<button class="bc go" data-act="brain-open" data-id="${n.id}">Ver materia</button>` : '';
   card.hidden = false; card.style.setProperty('--nc', n.color);
-  card.innerHTML = `<div class="bk-h"><span class="bk-dot"></span><span class="bk-ty">${BR_TYPE[n.type]}</span><button type="button" class="bk-x" data-act="brain-close" aria-label="Cerrar">✕</button></div><p class="bk-t">${esc(full)}</p><p class="bk-d">${det}</p>
+  card.innerHTML = `<div class="bk-h"><span class="bk-dot"></span><span class="bk-ty">${BR_TYPE[n.type]}</span><button type="button" class="bk-x" data-act="brain-close" aria-label="Cerrar">${icon('x', 'sm')}</button></div><p class="bk-t">${esc(full)}</p><p class="bk-d">${det}</p>
     ${nb.length ? `<div class="bk-n"><span class="tiny">Conectada con</span>${nb.slice(0, 8).map((m) => `<button type="button" class="bk-c" data-act="brain-go" data-id="${m.id}" style="--nc:${m.color}">${esc(String(m.label).slice(0, 22))}</button>`).join('')}</div>` : ''}${act}`;
   if (navigator.vibrate) navigator.vibrate(8);
   Snd.tick?.();
@@ -168,7 +168,7 @@ function brainTap(sx, sy) {
   for (const n of BR.nodes) { if (performance.now() - BR.t0 < n.born) continue; const [x, y] = brScr(n.x, n.y); const d = Math.hypot(x - sx, y - sy); const hit = Math.max(16, n.r * BR.cam.k + 10); if (d < hit && d < bd) { best = n; bd = d; } }
   if (best) brainSelect(best.id); else { BR.sel = null; const c = document.getElementById('brainCard'); if (c && BR.nodes.length > 1) c.hidden = true; }
 }
-BR.tourStop = () => { if (BR.tour) { clearInterval(BR.tour); BR.tour = null; const b = document.getElementById('bcTour'); if (b) b.textContent = '✦ Viajar por mis ideas'; } };
+BR.tourStop = () => { if (BR.tour) { clearInterval(BR.tour); BR.tour = null; const b = document.getElementById('bcTour'); if (b) b.textContent = 'Viajar por mis ideas'; } };
 Object.assign(VIDA_ACTS, {
   'brain-go': (el) => { BR.tourStop(); brainSelect(el.dataset.id); },
   'brain-close': () => { BR.sel = null; const c = document.getElementById('brainCard'); if (c) c.hidden = true; },

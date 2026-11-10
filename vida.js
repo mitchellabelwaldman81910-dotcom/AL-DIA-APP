@@ -94,7 +94,7 @@ function treeCheck() {
   if (c.wet && st.wetDay !== today()) {
     st.wetDay = today(); saveReg();
     VUI.pour = Date.now() + 7000;
-    if (!choosing) { toast('💧 ¡Regaste tu árbol! Hoy crecerá más.'); if (Snd.on()) { Snd.drop(); } if (route().name === 'vida') render(); }
+    if (!choosing) { toast('¡Regaste tu árbol! Hoy crecerá más.'); if (Snd.on()) { Snd.drop(); } if (route().name === 'vida') render(); }
   }
   if (c.level > st.level) {
     st.level = c.level; saveReg();
@@ -120,7 +120,7 @@ function levelUp(level) {
       <h3 class="serif">¡Nivel ${level}!</h3><p><b>${esc(stageName(level))}${ms ? ` · ${esc(ms[1])}` : ''}</b></p><p>${esc(ms ? ms[2] : 'Tu árbol sigue creciendo gracias a ti.')}</p>
       <div class="btn-row" style="justify-content:center"><button class="btn primary" value="ok">Seguir creciendo</button></div></form>`;
     if (!d.open) { d.showModal(); setTimeout(() => leafBurst(d.querySelector('.lu-tree')), 300); }
-  } else toast(`🌱 ¡Tu árbol subió al nivel ${level}!`);
+  } else toast(`¡Tu árbol subió al nivel ${level}!`);
 }
 
 /* Publica el nivel de cada persona para el ranking */
@@ -446,7 +446,7 @@ function viewQuien() {
         ${on && p.id === REG.me ? '' : `<span class="lock">${icon('lock')}</span>`}</button>`;
     }).join('')}
     ${forests.length ? `<h2 class="sec">Mis Salones ${inv ? `<small class="chip pen">${plural(inv, 'invitación', 'invitaciones')}</small>` : ''}</h2>${forests.map((f) => forestCardHTML(f, 'profile-pick')).join('')}` : ''}
-    <button type="button" class="who-btn rank-btn" data-act="rank-open"><span class="avatar lg" style="--pc:#C9A55C">🏆</span><span style="flex:1"><b>Ranking de árboles</b><span class="d">Mira quién tiene el árbol más alto, sin necesidad de entrar</span></span>${icon('chev', 'chev')}</button>
+    <button type="button" class="who-btn rank-btn" data-act="rank-open"><span class="avatar lg" style="--pc:#C9A55C">${icon('trophy')}</span><span style="flex:1"><b>Ranking de árboles</b><span class="d">Mira quién tiene el árbol más alto, sin necesidad de entrar</span></span>${icon('chev', 'chev')}</button>
     <div class="who-actions"><button type="button" class="btn primary block" data-act="user-new">${icon('plus')}Crear mi usuario</button>
     <button type="button" class="btn block" data-act="user-login">Ya tengo usuario: entrar</button></div>
     <p style="text-align:center;margin-top:18px"><span class="small muted">${icon('spark', 'sm')} Tus cosas se guardan solas en la nube</span></p>
@@ -454,7 +454,7 @@ function viewQuien() {
 }
 function forestCardHTML(f, act) {
   const m = f.meta; const life = forestLife(m.id); const lv = levelOf(life, FOREST_T, 1000);
-  return `<button type="button" class="who-btn forest-btn" data-act="${act}" data-id="f:${m.id}"><span class="avatar lg" style="--pc:${m.color || '#2F8A5B'}">${esc(m.emoji || '🌳')}</span>
+  return `<button type="button" class="who-btn forest-btn" data-act="${act}" data-id="f:${m.id}"><span class="avatar lg" style="--pc:${m.color || '#2F8A5B'}">${esc(String(m.name || '?').trim().charAt(0).toUpperCase())}</span>
     <span style="flex:1"><b>${esc(m.name)}</b><span class="d">${plural(m.members.length, 'integrante', 'integrantes')} · nivel ${lv} de 1000</span></span>${icon('chev', 'chev')}</button>`;
 }
 function openProfileSheet() {
@@ -474,7 +474,7 @@ function openProfileSheet() {
 /* =========================================================
    4. Salones (grupos colaborativos)
    ========================================================= */
-const FOREST_EMOJI = ['🌳', '🌲', '🌴', '🌿', '🍀', '🌸', '🌻', '🍃'];
+const FOREST_EMOJI = [''];
 let forestSig = '';
 function applyForests(remote) {
   const f = {};
@@ -520,7 +520,7 @@ async function fetchRank(force) {
 }
 const rankBox = () => document.getElementById('rankBox');
 function paintRankBox() { const b = rankBox(); if (b) b.innerHTML = rankingHTML(); }
-function openRankSheet() { openSheet(`${sheetHead('🏆 Ranking de árboles')}<div class="sheet-body"><div id="rankBox"></div></div>`); paintRankBox(); fetchRank(true); }
+function openRankSheet() { openSheet(`${sheetHead('Ranking de árboles')}<div class="sheet-body"><div id="rankBox"></div></div>`); paintRankBox(); fetchRank(true); }
 function sceneBlock({ level, max, wet, id, seed, title, sub, pts, cur, need, extra = '', garden = null }) {
   const pour = Date.now() < VUI.pour;
   const pct = need > cur ? Math.max(0, Math.min(100, Math.round(((pts - cur) / (need - cur)) * 100))) : 100;
@@ -528,7 +528,7 @@ function sceneBlock({ level, max, wet, id, seed, title, sub, pts, cur, need, ext
   return `<section class="vida-card ${wet ? '' : 'thirsty'}">
     <div class="vscene">${treeScene({ level, max, wet, id, seed, pour, garden })}
       <div class="v-badge"><span class="v-lv">${level}</span><span class="v-of">${max === 100 ? 'de 100' : 'de 1000'}</span></div>
-      <div class="v-water ${wet ? 'ok' : 'low'}">${wet ? '💧 Regado hoy' : '🥀 Tiene sed'}</div></div>
+      <div class="v-water ${wet ? 'ok' : 'low'}">${wet ? 'Regado hoy' : 'Tiene sed'}</div></div>
     <div class="v-info"><h2 class="serif">${title}</h2><p class="muted" style="margin:0 0 10px">${sub}</p>
       <div class="v-bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${top ? 100 : pct}%"></i></div>
       <p class="tiny faint" style="margin:6px 0 0">${top ? 'Nivel máximo alcanzado' : `${Math.max(0, pts - cur)} de ${need - cur} puntos para el nivel ${level + 1}`}</p>${extra}</div></section>`;
@@ -547,12 +547,12 @@ function viewVidaPersonal() {
   let body = '';
   if (VUI.tab === 'arbol') {
     const next = MILESTONES.find((m) => m[0] > c.level);
-    body = `${next ? `<div class="card next-ms"><span class="tiny faint">Lo próximo en tu paraíso · nivel ${next[0]}</span><b class="serif">${esc(next[1])}</b><span class="muted">${esc(next[2])}</span></div>` : '<div class="card next-ms"><b class="serif">Tu paraíso está completo ✨</b><span class="muted">Mantenlo regado para conservar el nivel 100.</span></div>'}
+    body = `${next ? `<div class="card next-ms"><span class="tiny faint">Lo próximo en tu paraíso · nivel ${next[0]}</span><b class="serif">${esc(next[1])}</b><span class="muted">${esc(next[2])}</span></div>` : '<div class="card next-ms"><b class="serif">Tu paraíso está completo</b><span class="muted">Mantenlo regado para conservar el nivel 100.</span></div>'}
       <h2 class="sec">Cómo crece <small>reglas simples</small></h2>
       <ul class="rows v-rules">
         <li><div class="rowline"><span class="ico">${icon('check')}</span><span class="txt"><b>Entrega a tiempo</b><span>+10 puntos por cada tarea entregada antes de su fecha (+3 si es tarde).</span></span></div></li>
-        <li><div class="rowline"><span class="ico">💧</span><span class="txt"><b>Riega cada día</b><span>Sube una tarea, escribe un apunte o un pensamiento. Con eso tu árbol queda regado hoy.</span></span></div></li>
-        <li><div class="rowline"><span class="ico">🥀</span><span class="txt"><b>Sin riego, baja</b><span>Cada día sin regar pierde puntos y puede bajar de nivel.</span></span></div></li>
+        <li><div class="rowline"><span class="ico">${icon('drop')}</span><span class="txt"><b>Riega cada día</b><span>Sube una tarea, escribe un apunte o un pensamiento. Con eso tu árbol queda regado hoy.</span></span></div></li>
+        <li><div class="rowline"><span class="ico">${icon('drop')}</span><span class="txt"><b>Sin riego, baja</b><span>Cada día sin regar pierde puntos y puede bajar de nivel.</span></span></div></li>
         <li><div class="rowline"><span class="ico">${icon('spark')}</span><span class="txt"><b>Racha</b><span>Entre más días seguidos riegues, más puntos ganas por tus entregas.</span></span></div></li></ul>
       <h2 class="sec">Tu camino al nivel 100</h2>
       <ol class="milestones">${MILESTONES.map((m) => `<li class="${c.level >= m[0] ? 'done' : ''}"><span class="ms-dot">${c.level >= m[0] ? icon('check', 'sm') : m[0]}</span><span><b>${esc(m[1])}</b><span class="small muted"> · nivel ${m[0]}</span><span class="small muted" style="display:block">${esc(m[2])}</span></span></li>`).join('')}</ol>`;
@@ -567,14 +567,14 @@ function rankingHTML() {
   const R = RANK.data;
   const note = VUI.rank === 'personas' ? 'Árboles de personas, del 0 al 100.' : 'Los Salones compiten solo con otros Salones, hasta el nivel 1000.';
   if (!R) return `${seg}<p class="small muted">${note}</p>${RANK.err ? `<div class="banner warn">${icon('bell')}<p>${esc(RANK.err)}</p><button class="btn" data-act="rank-refresh">Reintentar</button></div>` : '<p class="muted" style="text-align:center;padding:24px 0">Buscando a los mejores árboles…</p>'}`;
-  const medal = (i) => (i < 3 ? ['🥇', '🥈', '🥉'][i] : `<span class="rk-n">${i + 1}</span>`);
+  const medal = (i) => (i < 3 ? `<span class="rk-n rk-m${i + 1}">${i + 1}</span>` : `<span class="rk-n">${i + 1}</span>`);
   let list;
   if (VUI.rank === 'personas') {
-    list = R.people.map((u, i) => `<li class="rk ${u.id === REG.me ? 'me' : ''}"><span class="rk-pos">${medal(i)}</span>${treeIcon(u.level)}<span class="rk-name"><b>${esc(u.name)}${u.id === REG.me ? ' (tú)' : ''}</b><span class="tiny faint">${esc(stageName(u.level))}${u.streak ? ` · 🔥 ${u.streak}` : ''}</span></span><span class="rk-lv">Nivel <b>${u.level}</b></span></li>`).join('');
+    list = R.people.map((u, i) => `<li class="rk ${u.id === REG.me ? 'me' : ''}"><span class="rk-pos">${medal(i)}</span>${treeIcon(u.level)}<span class="rk-name"><b>${esc(u.name)}${u.id === REG.me ? ' (tú)' : ''}</b><span class="tiny faint">${esc(stageName(u.level))}${u.streak ? ` · racha ${u.streak}` : ''}</span></span><span class="rk-lv">Nivel <b>${u.level}</b></span></li>`).join('');
   } else {
-    list = R.forests.map((f, i) => `<li class="rk ${FOR.f[f.id]?.meta.members.includes(REG.me) ? 'me' : ''}"><span class="rk-pos">${medal(i)}</span><span class="rk-emoji" style="--pc:${f.color || '#2F8A5B'}">${esc(f.emoji || '🌳')}</span><span class="rk-name"><b>${esc(f.name)}</b><span class="tiny faint">${plural(f.members, 'integrante', 'integrantes')}</span></span><span class="rk-lv">Nivel <b>${f.level}</b></span></li>`).join('');
+    list = R.forests.map((f, i) => `<li class="rk ${FOR.f[f.id]?.meta.members.includes(REG.me) ? 'me' : ''}"><span class="rk-pos">${medal(i)}</span><span class="rk-emoji" style="--pc:${f.color || '#2F8A5B'}">${esc(String(f.name || '?').trim().charAt(0).toUpperCase())}</span><span class="rk-name"><b>${esc(f.name)}</b><span class="tiny faint">${plural(f.members, 'integrante', 'integrantes')}</span></span><span class="rk-lv">Nivel <b>${f.level}</b></span></li>`).join('');
   }
-  const top3 = VUI.rank === 'personas' ? R.people.slice(0, 3).map((u) => ({ name: u.name, level: u.level, color: u.color, icon: esc(initials(u.name)), me: u.id === REG.me })) : R.forests.slice(0, 3).map((f) => ({ name: f.name, level: f.level, color: f.color, icon: esc(f.emoji || '🌳'), me: !!FOR.f[f.id]?.meta.members.includes(REG.me) }));
+  const top3 = VUI.rank === 'personas' ? R.people.slice(0, 3).map((u) => ({ name: u.name, level: u.level, color: u.color, icon: esc(initials(u.name)), me: u.id === REG.me })) : R.forests.slice(0, 3).map((f) => ({ name: f.name, level: f.level, color: f.color, icon: esc(String(f.name || '?').trim().charAt(0).toUpperCase()), me: !!FOR.f[f.id]?.meta.members.includes(REG.me) }));
   const podium = podiumHTML(top3);
   const mine = VUI.rank === 'personas' ? R.people.findIndex((u) => u.id === REG.me) : -1;
   return `${seg}<p class="small muted" style="margin:0 0 10px">${note}${mine >= 0 ? ` Vas en el lugar <b>${mine + 1}</b>.` : ''}</p>
@@ -585,7 +585,7 @@ function rankingHTML() {
 
 function bosquesTabHTML() {
   const mine = Object.values(FOR.f).filter((f) => f.meta.members.includes(REG.me));
-  return `${FOR.invites.length ? `<h2 class="sec" style="margin-top:6px">Invitaciones</h2>${FOR.invites.map((i) => `<div class="card inv"><span class="avatar" style="--pc:#2F8A5B">${esc(i.emoji || '🌳')}</span><span class="inv-t"><b>${esc(i.forestName)}</b><span class="small muted">${esc(i.fromName)} te invita a su Salón</span></span>
+  return `${FOR.invites.length ? `<h2 class="sec" style="margin-top:6px">Invitaciones</h2>${FOR.invites.map((i) => `<div class="card inv"><span class="avatar" style="--pc:#2F8A5B">${esc(String(i.name || '?').trim().charAt(0).toUpperCase())}</span><span class="inv-t"><b>${esc(i.forestName)}</b><span class="small muted">${esc(i.fromName)} te invita a su Salón</span></span>
         <span class="inv-b"><button class="btn primary" data-act="invite-yes" data-id="${i.forest}">Unirme</button><button class="btn quiet" data-act="invite-no" data-id="${i.forest}">No</button></span></div>`).join('')}` : ''}
     <h2 class="sec">Mis Salones</h2>
     ${mine.length ? mine.map((f) => forestCardHTML(f, 'profile-pick')).join('') : '<div class="empty"><h3>Todavía no estás en un Salón</h3><p>Un Salón es un grupo colaborativo: comparten pendientes, trabajos en equipo e ideas, y su árbol crece con el esfuerzo de todos.</p></div>'}
@@ -598,14 +598,14 @@ function viewVidaBosque() {
   const life = forestLife(m.id); const lv = levelOf(life, FOREST_T, 1000);
   const wetToday = gItems().some((x) => !x.deleted && toISO(new Date(x.u || x.at)) === today()) || Object.keys(tokens()).some((u) => FOR.f[m.id].meta.members.includes(u) && treeNow(u).wet);
   const tabs = `<div class="seg full" role="group" style="margin:16px 0">${[['arbol', 'Nuestro árbol'], ['ranking', 'Ranking']].map(([k, l]) => `<button type="button" data-act="vtab" data-v="${k}" aria-pressed="${VUI.tab === k}">${l}</button>`).join('')}</div>`;
-  const card = sceneBlock({ level: lv, max: 1000, wet: wetToday, id: 'bosque', seed: m.id, title: `${esc(m.emoji || '🌳')} ${esc(m.name)}`, sub: `${esc(stageName(Math.round(100 * Math.sqrt(lv / 1000))))} · ${plural(m.members.length, 'integrante', 'integrantes')}`, pts: life, cur: FOREST_T(lv), need: lv >= 1000 ? FOREST_T(1000) : FOREST_T(lv + 1) });
+  const card = sceneBlock({ level: lv, max: 1000, wet: wetToday, id: 'bosque', seed: m.id, title: `${esc(m.name)}`, sub: `${esc(stageName(Math.round(100 * Math.sqrt(lv / 1000))))} · ${plural(m.members.length, 'integrante', 'integrantes')}`, pts: life, cur: FOREST_T(lv), need: lv >= 1000 ? FOREST_T(1000) : FOREST_T(lv + 1) });
   let body = '';
   if (VUI.tab === 'ranking') body = rankingHTML();
   else {
     const rows = m.members.map((u) => { const name = FOR.members[u]?.name || cap(u); const t = u === REG.me ? treeNow(u) : FOR.trees[u] || { level: 0, life: 0 }; return { u, name, level: t.level || 0, life: t.life || 0 }; }).sort((a, b) => b.life - a.life);
     body = `<p class="small muted" style="margin:0 0 10px">El árbol del Salón crece con todo lo que cumplen sus integrantes. Mientras más colaboran, más alto sube.</p>
       <h2 class="sec" style="margin-top:6px">Quién hace crecer el Salón</h2>
-      <ol class="ranking">${rows.map((r, i) => `<li class="rk ${r.u === REG.me ? 'me' : ''}"><span class="rk-pos">${i === 0 ? '🥇' : `<span class="rk-n">${i + 1}</span>`}</span>${mini(r.name)}<span class="rk-name"><b>${esc(r.name)}${r.u === REG.me ? ' (tú)' : ''}</b><span class="tiny faint">${r.life} puntos aportados</span></span><span class="rk-lv">Árbol <b>${r.level}</b></span></li>`).join('')}</ol>
+      <ol class="ranking">${rows.map((r, i) => `<li class="rk ${r.u === REG.me ? 'me' : ''}"><span class="rk-pos"><span class="rk-n ${i === 0 ? 'rk-m1' : ''}">${i + 1}</span></span>${mini(r.name)}<span class="rk-name"><b>${esc(r.name)}${r.u === REG.me ? ' (tú)' : ''}</b><span class="tiny faint">${r.life} puntos aportados</span></span><span class="rk-lv">Árbol <b>${r.level}</b></span></li>`).join('')}</ol>
       <p style="margin-top:14px"><button class="btn primary" data-act="forest-invite">${icon('plus')}Invitar a alguien</button></p>`;
   }
   return `<h1 class="page-title">Vida del Salón</h1><p class="page-sub">Juntos hacen crecer el árbol hasta el nivel 1000.</p>${groupStatus()}${card}${tabs}${body}`;

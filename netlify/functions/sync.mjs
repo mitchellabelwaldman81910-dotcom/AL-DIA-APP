@@ -250,7 +250,7 @@ export default async (req, context) => {
         const name = clip(body.name, 30).trim();
         if (!name) return json({ error: "Ponle nombre a tu Bosque" }, 400);
         const id = randomBytes(5).toString("hex");
-        const f = { id, name, emoji: clip(body.emoji, 4) || "🌳", color: COLORS.includes(body.color) ? body.color : COLORS[0], owner: as, members: [as], at: Date.now() };
+        const f = { id, name, emoji: clip(body.emoji, 4) || "", color: COLORS.includes(body.color) ? body.color : COLORS[0], owner: as, members: [as], at: Date.now() };
         await store.setJSON(`${W}f/${id}`, f);
         await store.set(`${W}mf/${as}/${id}`, "1");
         return json({ ok: true, forest: f });
@@ -265,7 +265,7 @@ export default async (req, context) => {
         if (f.members.includes(to)) return json({ error: `${tm.name} ya está en el Bosque` }, 409);
         if (f.members.length >= 40) return json({ error: "El Bosque está lleno (40 integrantes)" }, 400);
         await store.setJSON(`${W}inv/${to}/${f.id}`, { forest: f.id, forestName: f.name, emoji: f.emoji, from: as, fromName: auth[as].name, to, at: Date.now() });
-        if (context?.waitUntil) context.waitUntil(pushTo(store, [to], url.origin, { title: `🌳 ${auth[as].name} te invita a un Bosque`, body: f.name, url: "#/vida", tag: `inv-${f.id}` }, ""));
+        if (context?.waitUntil) context.waitUntil(pushTo(store, [to], url.origin, { title: `${auth[as].name} te invita a un Bosque`, body: f.name, url: "#/vida", tag: `inv-${f.id}` }, ""));
         return json({ ok: true, name: tm.name });
       }
       case "frespond": {
@@ -321,7 +321,7 @@ export default async (req, context) => {
         await store.setJSON(key, clean);
         if ((!prev || (clean.type === "focus" && !clean.joined && (prev.deleted || prev.start !== clean.start))) && !clean.deleted && !(clean.type === "focus" && clean.joined) && ["task", "team", "idea", "focus", "tpl"].includes(clean.type) && !(clean.type === "focus" && clean.ghost)) {
           const what = clean.type === "task" ? "subió una tarea" : clean.type === "focus" ? "empezó a concentrarse: ¡únete a la sala de enfoque!" : clean.type === "tpl" ? "compartió una plantilla de estudio" : clean.type === "team" ? "creó un trabajo en equipo" : "compartió una idea";
-          const payload = { title: `${f.emoji || "🌳"} ${f.name} · ${clean.by} ${what}`, body: clip(clean.title || clean.text, 140), url: "#/grupo", tag: `g-${clean.id}` };
+          const payload = { title: `${f.name} · ${clean.by} ${what}`, body: clip(clean.title || clean.text, 140), url: "#/grupo", tag: `g-${clean.id}` };
           const job = pushTo(store, f.members.filter((m) => m !== as), url.origin, payload, clip(body.device, 40));
           if (context?.waitUntil) context.waitUntil(job); else await job;
         }
