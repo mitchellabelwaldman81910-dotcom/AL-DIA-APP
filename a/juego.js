@@ -7,7 +7,7 @@ const GAME = { run: null, raf: 0, rank: null, tab: 'dia' };
 function viewJuego() {
   const nm = !REG.me || !tokens()[REG.me];
   return `<section class="gm-home"><div class="gm-hero">${gmHeroArt()}</div>
-    <h1 class="page-title gm-title">Cosecha</h1><p class="page-sub">Atrapa las manzanas que caen del gran manzano. La normal vale <b>1</b>, la dorada vale <b>5</b>. Cada vez caen más rápido; si se te caen 3, se acaba.</p>
+    <h1 class="page-title gm-title">Cosecha</h1><p class="page-sub">Atrapa las manzanas que caen del gran manzano. La normal vale <b>1</b>, la dorada vale <b>5</b>. Cada vez caen más rápido; si se te caen 3, se acaba. Si pierdes vidas, a veces cae una manzana verde curativa que te devuelve una. Cada 100 manzanas el paisaje cambia: pradera, jungla, desierto y montaña nevada.</p>
     <button class="btn primary block gm-play" data-act="gm-start">${icon('play')}Jugar</button>
     ${nm ? '<p class="small muted" style="text-align:center">Entra con tu usuario para aparecer en el ranking.</p>' : ''}
     <div id="gmRank">${gmRankHTML()}</div></section>`;
@@ -43,6 +43,12 @@ Object.assign(VIDA_ACTS, {
 });
 
 /* ---------------- el juego ---------------- */
+const GM_BIOMES = [
+  { name: 'La pradera', sky: ['#9FD0EE', '#F9E1B8', '#F6EBD3'], m1: 'rgba(150,180,190,.7)', m2: 'rgba(126,164,150,.85)', g1: '#9DC193', g2: '#86B27E', pine: 'rgba(70,120,80,.75)', c1: '#7DBE6E', c2: '#3F7E45' },
+  { name: 'La jungla', sky: ['#8FCBB4', '#CFE6B8', '#E4EFC4'], m1: 'rgba(86,142,118,.72)', m2: 'rgba(52,108,84,.88)', g1: '#5E9A5A', g2: '#4A8750', deco: 'palm', c1: '#5DAE63', c2: '#25663A', rays: true, vines: true },
+  { name: 'El desierto', sky: ['#F2B36B', '#F8D9A0', '#F6E8C8'], m1: 'rgba(216,164,108,.72)', m2: 'rgba(200,142,84,.88)', g1: '#E2B676', g2: '#D6A55F', deco: 'cactus', c1: '#A3B96C', c2: '#6B8744' },
+  { name: 'La montaña nevada', sky: ['#BCD5EA', '#E4EDF5', '#F4F6F8'], m1: 'rgba(138,160,186,.75)', m2: 'rgba(104,130,160,.88)', g1: '#EAF1F5', g2: '#D8E4EC', pine: 'rgba(52,96,84,.85)', snow: true, cap: 'rgba(255,255,255,.9)', c1: '#A5CDB0', c2: '#5E8F78' },
+];
 function gmStart() {
   if (GAME.run) return;
   const wrap = document.createElement('div'); wrap.className = 'gm-stage'; wrap.innerHTML = `<canvas id="gmC"></canvas>
@@ -51,24 +57,34 @@ function gmStart() {
   const c = wrap.querySelector('canvas'); const g = c.getContext('2d');
   const R = { w: 0, h: 0, dpr: Math.min(2, devicePixelRatio || 1) };
   const size = () => { R.w = innerWidth; R.h = innerHeight; c.width = R.w * R.dpr; c.height = R.h * R.dpr; c.style.width = R.w + 'px'; c.style.height = R.h + 'px'; g.setTransform(R.dpr, 0, 0, R.dpr, 0, 0); scene(); };
-  const st = { score: 0, apples: 0, golden: 0, lives: 3, apples_: [], parts: [], floats: [], t0: performance.now(), last: performance.now(), spawn: 0, combo: 0, over: false, bx: innerWidth / 2, tx: innerWidth / 2, squash: 0, shake: 0, sunA: 0, clouds: [], hang: [] };
+  const st = { score: 0, apples: 0, golden: 0, lives: 3, apples_: [], parts: [], floats: [], t0: performance.now(), last: performance.now(), spawn: 0, combo: 0, over: false, bx: innerWidth / 2, tx: innerWidth / 2, squash: 0, shake: 0, sunA: 0, clouds: [], hang: [], biome: 0, fade: 0, lastHeal: -30 };
   GAME.run = st;
   // fondo pre-dibujado
-  let bg = null; const scene = () => {
+  let bg = null, bgOld = null; const scene = (keep) => {
+    const old = bg; const B = GM_BIOMES[st.biome || 0];
     bg = document.createElement('canvas'); bg.width = c.width; bg.height = c.height; const b = bg.getContext('2d'); b.setTransform(R.dpr, 0, 0, R.dpr, 0, 0);
     const W = R.w, H = R.h;
-    const sky = b.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#9FD0EE'); sky.addColorStop(0.5, '#F9E1B8'); sky.addColorStop(1, '#F6EBD3'); b.fillStyle = sky; b.fillRect(0, 0, W, H);
-    const mt = (y, amp, col, seed) => { const r = rnd(seedOf('gm' + seed)); b.fillStyle = col; b.beginPath(); b.moveTo(0, H); b.lineTo(0, y); for (let x = 0; x <= W + 40; x += 40) b.lineTo(x, y - amp * (0.3 + r() * 0.7)); b.lineTo(W, H); b.closePath(); b.fill(); };
-    mt(H * 0.62, H * 0.16, 'rgba(150,180,190,.7)', 1); mt(H * 0.7, H * 0.12, 'rgba(126,164,150,.85)', 2);
-    b.fillStyle = '#9DC193'; b.beginPath(); b.moveTo(0, H); b.lineTo(0, H * 0.82); b.bezierCurveTo(W * 0.3, H * 0.76, W * 0.7, H * 0.86, W, H * 0.8); b.lineTo(W, H); b.fill();
-    const r2 = rnd(seedOf('gmt')); for (let i = 0; i < 9; i++) { const x = r2() * W, y = H * (0.74 + r2() * 0.06), s = 0.6 + r2() * 0.6; b.fillStyle = 'rgba(70,120,80,.75)'; b.beginPath(); b.moveTo(x, y - 34 * s); b.lineTo(x - 12 * s, y); b.lineTo(x + 12 * s, y); b.fill(); b.fillRect(x - 1.5, y, 3, 6 * s); }
-    b.fillStyle = '#86B27E'; b.beginPath(); b.moveTo(0, H); b.lineTo(0, H * 0.9); b.bezierCurveTo(W * 0.4, H * 0.86, W * 0.6, H * 0.93, W, H * 0.89); b.lineTo(W, H); b.fill();
+    const sky = b.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, B.sky[0]); sky.addColorStop(0.5, B.sky[1]); sky.addColorStop(1, B.sky[2]); b.fillStyle = sky; b.fillRect(0, 0, W, H);
+    const mt = (y, amp, col, seed, cap) => { const r = rnd(seedOf('gm' + seed)); const pts = []; for (let x = 0; x <= W + 40; x += 40) pts.push([x, y - amp * (0.3 + r() * 0.7)]); b.fillStyle = col; b.beginPath(); b.moveTo(0, H); b.lineTo(0, y); for (const [x, yy] of pts) b.lineTo(x, yy); b.lineTo(W, H); b.closePath(); b.fill();
+      if (cap) { b.fillStyle = cap; for (let k = 1; k < pts.length - 1; k++) if (pts[k][1] < pts[k - 1][1] && pts[k][1] < pts[k + 1][1]) { const [x, yy] = pts[k]; b.beginPath(); b.moveTo(x, yy); b.lineTo(x - 15, yy + 17); b.lineTo(x - 5, yy + 13); b.lineTo(x + 3, yy + 19); b.lineTo(x + 15, yy + 15); b.closePath(); b.fill(); } } };
+    mt(H * 0.62, H * 0.16, B.m1, 1, B.cap); mt(H * 0.7, H * 0.12, B.m2, 2, B.cap);
+    b.fillStyle = B.g1; b.beginPath(); b.moveTo(0, H); b.lineTo(0, H * 0.82); b.bezierCurveTo(W * 0.3, H * 0.76, W * 0.7, H * 0.86, W, H * 0.8); b.lineTo(W, H); b.fill();
+    const r2 = rnd(seedOf('gmt')); for (let i = 0; i < 9; i++) {
+      const x = r2() * W, y = H * (0.74 + r2() * 0.06), s = 0.6 + r2() * 0.6;
+      if (B.deco === 'palm') { b.strokeStyle = '#5B4426'; b.lineWidth = 3 * s; b.beginPath(); b.moveTo(x, y + 4); b.quadraticCurveTo(x + 8 * s, y - 20 * s, x + 3 * s, y - 38 * s); b.stroke(); b.fillStyle = 'rgba(38,110,64,.85)'; for (let k = 0; k < 6; k++) { const an = -Math.PI / 2 + (k - 2.5) * 0.62; b.beginPath(); b.moveTo(x + 3 * s, y - 38 * s); b.quadraticCurveTo(x + 3 * s + Math.cos(an) * 20 * s, y - 38 * s + Math.sin(an) * 16 * s - 6, x + 3 * s + Math.cos(an) * 34 * s, y - 38 * s + Math.sin(an) * 24 * s + 12 * s); b.quadraticCurveTo(x + 3 * s + Math.cos(an) * 20 * s, y - 38 * s + Math.sin(an) * 16 * s + 2, x + 3 * s, y - 38 * s); b.fill(); } }
+      else if (B.deco === 'cactus') { b.fillStyle = 'rgba(96,128,72,.9)'; const w = 6 * s; b.beginPath(); b.roundRect(x - w / 2, y - 34 * s, w, 38 * s, w / 2); b.fill(); b.beginPath(); b.roundRect(x - 13 * s, y - 24 * s, 5 * s, 14 * s, 2.5 * s); b.roundRect(x - 13 * s, y - 14 * s, 13 * s, 4 * s, 2); b.fill(); b.beginPath(); b.roundRect(x + 8 * s, y - 28 * s, 5 * s, 16 * s, 2.5 * s); b.roundRect(x, y - 14 * s, 13 * s, 4 * s, 2); b.fill(); }
+      else { b.fillStyle = B.pine; b.beginPath(); b.moveTo(x, y - 34 * s); b.lineTo(x - 12 * s, y); b.lineTo(x + 12 * s, y); b.fill(); b.fillRect(x - 1.5, y, 3, 6 * s); if (B.snow) { b.fillStyle = 'rgba(255,255,255,.85)'; b.beginPath(); b.moveTo(x, y - 34 * s); b.lineTo(x - 6 * s, y - 18 * s); b.lineTo(x + 6 * s, y - 18 * s); b.fill(); } }
+    }
+    b.fillStyle = B.g2; b.beginPath(); b.moveTo(0, H); b.lineTo(0, H * 0.9); b.bezierCurveTo(W * 0.4, H * 0.86, W * 0.6, H * 0.93, W, H * 0.89); b.lineTo(W, H); b.fill();
+    if (B.rays) { b.save(); b.globalAlpha = 0.16; b.fillStyle = '#FFF6C8'; for (const [x, w] of [[0.18, 0.07], [0.45, 0.05], [0.7, 0.08]]) { b.beginPath(); b.moveTo(W * x, 0); b.lineTo(W * (x + w), 0); b.lineTo(W * (x + w) - H * 0.2, H * 0.85); b.lineTo(W * x - H * 0.2, H * 0.85); b.fill(); } b.restore(); }
     // el gran manzano arriba
     b.fillStyle = '#6B4A2A'; b.fillRect(W * 0.5 - 14, -20, 28, H * 0.12);
     const crown = [[0.08, 0.06, 0.16], [0.28, 0.02, 0.2], [0.5, 0.0, 0.24], [0.72, 0.02, 0.2], [0.92, 0.06, 0.16], [0.18, 0.12, 0.14], [0.4, 0.11, 0.15], [0.62, 0.11, 0.15], [0.82, 0.12, 0.14]];
-    for (const [x, y, r] of crown) { const gr = b.createRadialGradient(W * x - 10, H * y - 10, 4, W * x, H * y, W * r); gr.addColorStop(0, '#7DBE6E'); gr.addColorStop(1, '#3F7E45'); b.fillStyle = gr; b.beginPath(); b.arc(W * x, H * y, W * r, 0, Math.PI * 2); b.fill(); }
+    for (const [x, y, r] of crown) { const gr = b.createRadialGradient(W * x - 10, H * y - 10, 4, W * x, H * y, W * r); gr.addColorStop(0, B.c1); gr.addColorStop(1, B.c2); b.fillStyle = gr; b.beginPath(); b.arc(W * x, H * y, W * r, 0, Math.PI * 2); b.fill(); }
+    if (B.vines) { const r4 = rnd(seedOf('gmv')); b.strokeStyle = 'rgba(40,100,56,.75)'; b.lineWidth = 2.2; b.lineCap = 'round'; for (let i = 0; i < 14; i++) { const x = W * (0.04 + r4() * 0.92), l = H * (0.07 + r4() * 0.12); b.beginPath(); b.moveTo(x, H * 0.14); b.bezierCurveTo(x + 6, H * 0.14 + l * 0.4, x - 6, H * 0.14 + l * 0.7, x + 2, H * 0.14 + l); b.stroke(); b.fillStyle = 'rgba(52,126,70,.8)'; b.beginPath(); b.ellipse(x + 2, H * 0.14 + l, 4, 7, 0.3, 0, Math.PI * 2); b.fill(); } }
     const r3 = rnd(seedOf('gml')); b.strokeStyle = 'rgba(255,255,255,.18)'; b.lineWidth = 1.2; for (let i = 0; i < 70; i++) { const x = r3() * W, y = r3() * H * 0.2; b.beginPath(); b.ellipse(x, y, 7, 3.5, r3() * 3, 0, Math.PI * 2); b.stroke(); }
     st.treeBottom = H * 0.2;
+    if (keep) { bgOld = old; st.fade = 1; }
   };
   size(); addEventListener('resize', size);
   for (let i = 0; i < 4; i++) st.clouds.push({ x: Math.random() * R.w, y: R.h * 0.25 + Math.random() * R.h * 0.14, s: 0.6 + Math.random() * 0.7, v: 6 + Math.random() * 10 });
@@ -90,11 +106,12 @@ function gmStart() {
     const gold = Math.random() < Math.min(0.09, 0.035 + st.apples * 0.0004);
     const live = () => st.hang.length + st.apples_.filter((a) => !a.done).length;
     if (live() >= Math.min(6, 3 + Math.floor(level() / 2))) return false;
+    const heal = !gold && st.lives < 3 && st.apples - st.lastHeal >= 30 && Math.random() < 0.03; if (heal) st.lastHeal = st.apples;
     const y = st.treeBottom * (0.35 + Math.random() * 0.55);
     // elige el lugar más alejado de las manzanas que ya están cayendo, para que no caigan encimadas
     let x = 30 + Math.random() * (R.w - 60), best = -1;
     for (let k = 0; k < 8; k++) { const cx = 30 + Math.random() * (R.w - 60); let md = 1e9; for (const o of [...st.hang, ...st.apples_.filter((a) => !a.done)]) md = Math.min(md, Math.hypot(o.x - cx, (o.y - y) * 0.5)); if (md > best) { best = md; x = cx; } }
-    st.hang.push({ x, y, gold, t: 0, wob: 0.55 - Math.min(0.3, level() * 0.02) });
+    st.hang.push({ x, y, gold, heal, t: 0, wob: 0.55 - Math.min(0.3, level() * 0.02) });
     return true;
   };
   const loop = (now) => {
@@ -104,7 +121,7 @@ function gmStart() {
     st.spawn -= dt; if (st.spawn <= 0 && !st.over) { if (spawn() && lv > 4 && Math.random() < Math.min(0.25, (lv - 4) * 0.05)) spawn(); st.spawn = Math.max(0.5, 1.3 - lv * 0.08) * (0.75 + Math.random() * 0.5); }
     // manzanas que tiemblan antes de caer
     for (const a of st.hang) a.t += dt;
-    for (const a of st.hang.filter((a) => a.t >= a.wob)) st.apples_.push({ x: a.x, y: a.y, vx: (Math.random() - 0.5) * 20 * Math.min(3, lv / 2), vy: 40, gold: a.gold, r: a.gold ? 15 : 14, rot: 0, vr: (Math.random() - 0.5) * 4 });
+    for (const a of st.hang.filter((a) => a.t >= a.wob)) st.apples_.push({ x: a.x, y: a.y, vx: (Math.random() - 0.5) * 20 * Math.min(3, lv / 2), vy: 40, gold: a.gold, heal: a.heal, r: a.gold ? 15 : 14, rot: 0, vr: (Math.random() - 0.5) * 4 });
     st.hang = st.hang.filter((a) => a.t < a.wob);
     st.bx += (st.tx - st.bx) * Math.min(1, dt * 18);
     const by = H * 0.86, bw = Math.min(120, W * 0.28);
@@ -112,16 +129,19 @@ function gmStart() {
     for (const a of st.apples_) {
       a.vy += grav * dt; a.y += a.vy * dt; a.x += a.vx * dt; a.rot += a.vr * dt; if (a.x < 16 || a.x > W - 16) a.vx *= -1;
       if (!a.done && a.y + a.r >= by - 6 && a.y < by + 14 && Math.abs(a.x - st.bx) < bw / 2 + 4) {
-        a.done = 'catch'; const pts = a.gold ? 5 : 1; st.score += pts; st.apples++; if (a.gold) st.golden++; st.combo++; st.squash = 1;
-        st.floats.push({ x: a.x, y: by - 30, t: 0, txt: `+${pts}`, gold: a.gold });
+        a.done = 'catch'; const pts = a.heal ? 0 : a.gold ? 5 : 1; st.score += pts; if (!a.heal) st.apples++; if (a.gold) st.golden++; st.combo++; st.squash = 1;
+        st.floats.push({ x: a.x, y: by - 30, t: 0, txt: a.heal ? '+1 ♥' : `+${pts}`, gold: a.gold, heal: a.heal });
         for (let i = 0; i < (a.gold ? 26 : 12); i++) st.parts.push({ x: a.x, y: by - 10, vx: (Math.random() - 0.5) * 260, vy: -80 - Math.random() * 260, t: 0, life: 0.7 + Math.random() * 0.5, gold: a.gold, leaf: Math.random() < 0.4 });
         vib(a.gold ? [30, 40, 30, 40, 60] : 18); flash(a.gold ? 'gm-gold' : 'gm-ok');
-        gmSound(a.gold ? 'gold' : 'catch', st.combo);
+        if (a.heal) { st.lives = Math.min(3, st.lives + 1); lives(); msg('¡Manzana curativa! +1 vida', 1400); gmSound('heal'); vib([20, 40, 20, 40, 80]); flash('gm-ok'); }
+        else gmSound(a.gold ? 'gold' : 'catch', st.combo);
+        if (!a.heal && st.apples > 0 && st.apples % 100 === 0) { st.biome = Math.floor(st.apples / 100) % GM_BIOMES.length; scene(true); setTimeout(() => msg(GM_BIOMES[st.biome].name, 1800), 900); }
         if (st.combo && st.combo % 10 === 0) { msg(`¡${st.combo} seguidas!`); gmSound('combo', st.combo); }
         else if (a.gold) msg('¡Manzana dorada! +5', 900);
         if (st.apples % 25 === 0) msg('¡Más rápido!', 1000);
         document.getElementById('gmScore').textContent = st.score; document.getElementById('gmScore').classList.remove('bump'); void document.getElementById('gmScore').offsetWidth; document.getElementById('gmScore').classList.add('bump');
       }
+      if (!a.done && a.y - a.r > H && a.heal) a.done = 'gone';
       if (!a.done && a.y - a.r > H) { a.done = 'miss'; st.lives--; st.combo = 0; st.shake = 0.35; vib([220, 90, 220]); flash('gm-miss'); gmSound('miss'); lives(); if (st.lives <= 0) { st.over = true; setTimeout(() => end(false), 700); } else msg(st.lives === 1 ? '¡Cuidado, última!' : 'Se cayó una…', 900); }
     }
     st.apples_ = st.apples_.filter((a) => !a.done);
@@ -132,7 +152,7 @@ function gmStart() {
     st.sunA += dt * 0.25;
     // ---- dibujo ----
     g.save(); if (st.shake) g.translate((Math.random() - 0.5) * 10 * st.shake, 0);
-    g.drawImage(bg, 0, 0, W, H);
+    g.drawImage(bg, 0, 0, W, H); if (st.fade > 0 && bgOld) { st.fade = Math.max(0, st.fade - dt / 1.4); g.globalAlpha = st.fade; g.drawImage(bgOld, 0, 0, W, H); g.globalAlpha = 1; }
     // sol girando
     const sx = W * 0.82, sy = H * 0.3, sr = Math.min(W, H) * 0.06;
     const halo = g.createRadialGradient(sx, sy, sr * 0.5, sx, sy, sr * 4); halo.addColorStop(0, 'rgba(255,220,140,.55)'); halo.addColorStop(1, 'rgba(255,220,140,0)'); g.fillStyle = halo; g.beginPath(); g.arc(sx, sy, sr * 4, 0, Math.PI * 2); g.fill();
@@ -142,8 +162,8 @@ function gmStart() {
     // nubes
     for (const cl of st.clouds) { cl.x += cl.v * dt; if (cl.x > W + 80) cl.x = -80; g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.ellipse(cl.x, cl.y, 34 * cl.s, 12 * cl.s, 0, 0, Math.PI * 2); g.ellipse(cl.x + 18 * cl.s, cl.y - 8 * cl.s, 20 * cl.s, 12 * cl.s, 0, 0, Math.PI * 2); g.ellipse(cl.x - 16 * cl.s, cl.y - 4 * cl.s, 16 * cl.s, 10 * cl.s, 0, 0, Math.PI * 2); g.fill(); }
     // manzanas colgando (tiemblan)
-    for (const a of st.hang) { const wob = Math.sin(a.t * 40) * 3 * (a.t / a.wob); gmApple(g, a.x + wob, a.y, a.gold ? 15 : 14, a.gold, 0, now); }
-    for (const a of st.apples_) gmApple(g, a.x, a.y, a.r, a.gold, a.rot, now);
+    for (const a of st.hang) { const wob = Math.sin(a.t * 40) * 3 * (a.t / a.wob); gmApple(g, a.x + wob, a.y, a.gold ? 15 : 14, a.gold, 0, now, a.heal); }
+    for (const a of st.apples_) gmApple(g, a.x, a.y, a.r, a.gold, a.rot, now, a.heal);
     // canasta
     gmBasket(g, st.bx, by, bw, st.squash);
     // partículas
@@ -171,14 +191,16 @@ function gmStart() {
     wrap.querySelector('#gmOut').addEventListener('click', () => { wrap.remove(); document.body.classList.remove('gm-on'); GAME.rank = null; if (location.hash !== '#/juego') location.hash = '#/juego'; else render(); });
   }
 }
-function gmApple(g, x, y, r, gold, rot, now) {
+function gmApple(g, x, y, r, gold, rot, now, heal) {
   g.save(); g.translate(x, y); g.rotate(rot);
+  if (heal) { const pu = 0.75 + 0.25 * Math.sin(now / 200); const hl = g.createRadialGradient(0, 0, r * 0.5, 0, 0, r * 2.6); hl.addColorStop(0, `rgba(150,240,190,${0.6 * pu})`); hl.addColorStop(1, 'rgba(150,240,190,0)'); g.fillStyle = hl; g.beginPath(); g.arc(0, 0, r * 2.6, 0, Math.PI * 2); g.fill(); }
   if (gold) { const hl = g.createRadialGradient(0, 0, r * 0.5, 0, 0, r * 2.6); hl.addColorStop(0, 'rgba(255,215,90,.55)'); hl.addColorStop(1, 'rgba(255,215,90,0)'); g.fillStyle = hl; g.beginPath(); g.arc(0, 0, r * 2.6, 0, Math.PI * 2); g.fill(); }
   const gr = g.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r * 1.1);
-  if (gold) { gr.addColorStop(0, '#FFF6C9'); gr.addColorStop(0.45, '#F5C842'); gr.addColorStop(1, '#B98314'); } else { gr.addColorStop(0, '#FF8A7A'); gr.addColorStop(0.5, '#E0362C'); gr.addColorStop(1, '#9E1F1A'); }
+  if (heal) { gr.addColorStop(0, '#D8F8C8'); gr.addColorStop(0.45, '#4CB86B'); gr.addColorStop(1, '#1F7440'); } else if (gold) { gr.addColorStop(0, '#FFF6C9'); gr.addColorStop(0.45, '#F5C842'); gr.addColorStop(1, '#B98314'); } else { gr.addColorStop(0, '#FF8A7A'); gr.addColorStop(0.5, '#E0362C'); gr.addColorStop(1, '#9E1F1A'); }
   g.fillStyle = gr; g.beginPath(); g.moveTo(0, -r * 0.7); g.bezierCurveTo(r * 0.9, -r * 1.25, r * 1.35, r * 0.2, r * 0.55, r * 0.95); g.bezierCurveTo(r * 0.25, r * 1.1, -r * 0.25, r * 1.1, -r * 0.55, r * 0.95); g.bezierCurveTo(-r * 1.35, r * 0.2, -r * 0.9, -r * 1.25, 0, -r * 0.7); g.fill();
   g.strokeStyle = '#5B3A1E'; g.lineWidth = 2; g.lineCap = 'round'; g.beginPath(); g.moveTo(0, -r * 0.65); g.quadraticCurveTo(2, -r * 1.1, 4, -r * 1.3); g.stroke();
   g.fillStyle = '#5E9A3E'; g.beginPath(); g.ellipse(r * 0.45, -r * 1.05, r * 0.42, r * 0.18, -0.5, 0, Math.PI * 2); g.fill();
+  if (heal) { g.fillStyle = 'rgba(255,255,255,.92)'; g.fillRect(-r * 0.12, -r * 0.1, r * 0.24, r * 0.78); g.fillRect(-r * 0.39, r * 0.17, r * 0.78, r * 0.24); }
   g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(-r * 0.38, -r * 0.28, r * 0.18, r * 0.3, -0.5, 0, Math.PI * 2); g.fill();
   if (gold) { const tw = (Math.sin(now / 120) + 1) / 2; g.fillStyle = `rgba(255,255,255,${0.5 + tw * 0.5})`; for (const [sx, sy] of [[r * 0.9, -r * 0.8], [-r * 1.1, r * 0.2]]) { g.beginPath(); g.moveTo(sx, sy - 5); g.lineTo(sx + 1.5, sy - 1.5); g.lineTo(sx + 5, sy); g.lineTo(sx + 1.5, sy + 1.5); g.lineTo(sx, sy + 5); g.lineTo(sx - 1.5, sy + 1.5); g.lineTo(sx - 5, sy); g.lineTo(sx - 1.5, sy - 1.5); g.fill(); } }
   g.restore();
@@ -200,6 +222,7 @@ function gmSound(kind, combo = 0) {
   if (!Snd.on()) return; const c = Snd.ac(); if (!c) return;
   if (kind === 'catch') { const base = 523.25 * Math.pow(2, Math.min(12, combo % 13) / 12); Snd.mar(base, 0, 0.07, 0.5); Snd.mar(base * 2, 0.03, 0.025, 0.3); }
   else if (kind === 'gold') { [0, 4, 7, 12, 16].forEach((s, i) => Snd.mar(659.25 * Math.pow(2, s / 12), i * 0.05, 0.06, 0.9)); }
+  else if (kind === 'heal') { [0, 7, 12, 16, 19].forEach((s, i) => Snd.mar(440 * Math.pow(2, s / 12), i * 0.08, 0.06, 1.1)); }
   else if (kind === 'combo') { [0, 7, 12, 19].forEach((s, i) => Snd.mar(523.25 * Math.pow(2, s / 12), i * 0.07, 0.05, 1)); }
   else if (kind === 'miss') { const o = c.createOscillator(), gn = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(220, c.currentTime); o.frequency.exponentialRampToValueAtTime(90, c.currentTime + 0.25); gn.gain.setValueAtTime(0.0001, c.currentTime); gn.gain.exponentialRampToValueAtTime(0.12, c.currentTime + 0.01); gn.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.3); o.connect(gn).connect(c.destination); o.start(); o.stop(c.currentTime + 0.32); }
   else if (kind === 'over') { [12, 7, 4, 0].forEach((s, i) => Snd.mar(392 * Math.pow(2, s / 12), i * 0.12, 0.05, 1.2)); }
