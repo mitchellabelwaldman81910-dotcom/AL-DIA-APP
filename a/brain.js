@@ -108,7 +108,7 @@ function brainViewHTML() {
     <section class="brain" id="brainRoot"><canvas id="brainCv" aria-label="Tu cerebro: una red en tres dimensiones de tus tareas, apuntes y pensamientos" role="img"></canvas>
       <div class="brain-hud">
         <div class="bh-title"><span class="bh-k">Córtex personal</span><b>Tu Cerebro</b></div>
-        <div class="bh-stats"><span><i>Neuronas</i><b id="bsN">0</b></span><span><i>Sinapsis</i><b id="bsE">0</b></span><span><i>Actividad</i><b><span id="bsHz">0</span> Hz</b></span></div>
+        <div class="bh-stats"><span><i>Neuronas</i><b id="bsN">0</b></span><span><i>Sinapsis</i><b id="bsE">0</b></span><span><i>Materias</i><b>${S.subjects.length}</b></span></div>
       </div>
       <div class="brain-legend"><span style="--c:${BR_C.done}">Tareas</span><span style="--c:${BR_C.note}">Apuntes</span><span style="--c:${BR_C.thought}">Pensamientos</span><span style="--c:#FFFFFF">Materias</span></div>
       <div class="brain-ctl"><button type="button" class="bc" data-act="brain-tour" id="bcTour">${icon('play', 'sm')}<span>Recorrido</span></button><button type="button" class="bc" data-act="brain-reset">${icon('target', 'sm')}<span>Centrar</span></button></div>
@@ -120,7 +120,6 @@ function brainSelect(id, fly = true) {
   const card = document.getElementById('brainCard'); if (!card) return;
   if (!n) { card.hidden = true; return; }
   if (fly) brFocus(n);
-  brCascade(n, performance.now());
   const nb = (BR.adj.get(id) || []).map((e) => (e.a === n ? e.b : e.a));
   let det = '';
   if (n.type === 'task') { const t = task(n.ref); if (t) det = `${t.done ? 'Entregada' : 'Pendiente'}${t.due ? ` · ${esc(cap(relDay(t.due)))}` : ''}${t.done && hasGrade(t) ? ` · calificación ${esc(String(t.grade))}` : ''}`; }
@@ -202,36 +201,13 @@ function brainFrame(now) {
     ctx.lineWidth = (hot ? 1.3 : e.kind === 'hub' ? 1 : 0.7) * Math.min(1.5, (e.a.ss + e.b.ss) / 2 * 1.2);
     ctx.beginPath(); ctx.moveTo(e.a.sx, e.a.sy); ctx.quadraticCurveTo(qx, qy, e.b.sx, e.b.sy); ctx.stroke();
   }
-  // señales: actividad espontánea + cascadas
-  if (!reduce) {
-    if (Math.random() < dt / (sel ? 260 : 170) && BR.sig.length < 70) brSpawn(now);
-    for (let i = BR.queue.length - 1; i >= 0; i--) { const q = BR.queue[i]; if (now >= q.at) { BR.sig.push({ e: q.e, from: q.from, t: 0, sp: 0.0024, born: now, hop: 0, lit: true }); BR.hzN++; BR.queue.splice(i, 1); } }
-  }
-  const keep = [];
-  for (const g of BR.sig) {
-    g.t += g.sp * dt; const e = g.e; const a = g.from, b = a === e.a ? e.b : e.a;
-    if (g.t >= 1) {
-      b.flash = now;
-      if (!g.lit && g.hop < 2 && Math.random() < 0.32) { const out = (BR.adj.get(b.id) || []).filter((x) => x !== e); if (out.length) { BR.sig.push({ e: out[Math.floor(Math.random() * out.length)], from: b, t: 0, sp: g.sp, born: now, hop: g.hop + 1 }); BR.hzN++; } }
-      continue;
-    }
-    keep.push(g);
-    if (Math.min(a.ap, b.ap) < 1) continue;
-    const pt = (t) => { const u = 1 - t; const fx = a === e.a; const [x0, y0, x1, y1] = fx ? [e.a.sx, e.a.sy, e.b.sx, e.b.sy] : [e.b.sx, e.b.sy, e.a.sx, e.a.sy]; return [u * u * x0 + 2 * u * t * e.qx + t * t * x1, u * u * y0 + 2 * u * t * e.qy + t * t * y1]; };
-    const fog = brFog((a.sz + b.sz) / 2); const dimmed = sel && !g.lit && Math.max(lvl(a.id), lvl(b.id)) > 2;
-    const base = (g.lit ? 1 : 0.75) * fog * (dimmed ? 0.25 : 1);
-    // estela
-    const steps = 7; let [px, py] = pt(Math.max(0, g.t - 0.14));
-    for (let k = 1; k <= steps; k++) { const tt = Math.max(0, g.t - 0.14 + (0.14 * k) / steps); const [x, y] = pt(tt); ctx.strokeStyle = `rgba(232,224,255,${(base * k) / steps * 0.8})`; ctx.lineWidth = 0.6 + (1.4 * k) / steps; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke(); px = x; py = y; }
-    const sz = (g.lit ? 16 : 12) * Math.min(1.6, b.ss * 1.3); ctx.globalAlpha = base; ctx.drawImage(brSprite('#E8E0FF'), px - sz / 2, py - sz / 2, sz, sz); ctx.globalAlpha = 1;
-  }
-  BR.sig = keep;
+  BR.sig = []; BR.queue = [];
   // neuronas, de atrás hacia delante
   const order = [...BR.nodes].sort((p, q) => q.sz - p.sz);
   for (const n of order) {
     if (n.ap <= 0) continue; const x = n.sx, y = n.sy; if (x < -40 || y < -40 || x > W + 40 || y > H + 40) continue;
     const L = lvl(n.id); const fog = brFog(n.sz); const isSel = n.id === sel;
-    const fl = brClamp(1 - (now - n.flash) / 700, 0, 1);
+    const fl = 0;
     const a = (sel ? (L === 0 ? 1 : L === 1 ? 0.95 : L === 2 ? 0.6 : 0.14) : fog) * n.ap;
     const r = n.r * n.ss * 1.25 * (n.type === 'core' ? 1 : 1) * (0.92 + 0.08 * Math.sin(time / 900 + n.ph));
     const gs = r * (n.type === 'core' ? 10 : 7) * (1 + fl * 0.8);
@@ -256,7 +232,7 @@ function brainFrame(now) {
     const fog = sel ? 1 : brFog(n.sz); const x = n.sx, y = n.sy;
     if (isSel) {
       // retícula de selección
-      const R = Math.max(12, n.r * n.ss * 1.25 + 9); const rot = time / 2600;
+      const R = Math.max(12, n.r * n.ss * 1.25 + 9); const rot = 0;
       ctx.strokeStyle = 'rgba(236,230,255,0.9)'; ctx.lineWidth = 1;
       for (let i = 0; i < 4; i++) { const a0 = rot + i * Math.PI / 2; ctx.beginPath(); ctx.arc(x, y, R, a0 + 0.18, a0 + Math.PI / 2 - 0.18); ctx.stroke(); }
       ctx.beginPath(); for (let i = 0; i < 4; i++) { const a0 = rot + i * Math.PI / 2 + Math.PI / 4; ctx.moveTo(x + Math.cos(a0) * (R + 3), y + Math.sin(a0) * (R + 3)); ctx.lineTo(x + Math.cos(a0) * (R + 8), y + Math.sin(a0) * (R + 8)); } ctx.stroke();
@@ -275,7 +251,7 @@ function brainFrame(now) {
     else { ctx.font = '500 11px -apple-system, system-ui, sans-serif'; ctx.fillStyle = 'rgba(230,224,255,0.8)'; ctx.fillText(String(n.label).slice(0, 22), x, y + 14); }
   }
   // métricas
-  if (now - BR.hzT > 1000) { BR.hz = Math.round(BR.hzN * 1000 / Math.max(1, now - BR.hzT)); BR.hzN = 0; BR.hzT = now; const h = document.getElementById('bsHz'); if (h) h.textContent = BR.hz; }
+  if (false) { BR.hz = Math.round(BR.hzN * 1000 / Math.max(1, now - BR.hzT)); BR.hzN = 0; BR.hzT = now; const h = document.getElementById('bsHz'); if (h) h.textContent = BR.hz; }
   const live = BR.nodes.filter((n) => time >= n.born).length; const el = document.getElementById('bsN');
   if (el && el.textContent !== String(live)) { el.textContent = live; const ee = document.getElementById('bsE'); if (ee) ee.textContent = BR.edges.filter((e) => time >= Math.max(e.a.born, e.b.born)).length; }
   BR.raf = requestAnimationFrame(brainFrame);

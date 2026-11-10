@@ -949,6 +949,19 @@ function daySpeech() {
   const soon = pend.filter((t) => t.due && diffDays(today(), t.due) <= 2);
   return `Tienes ${plural(pend.length, 'entrega pendiente', 'entregas pendientes')}. ` + (soon.length ? soon.map((t) => `${t.title}, ${t.due < today() ? 'atrasada' : relDay(t.due)}`).join('. ') + '.' : 'Nada urgente en los próximos dos días.');
 }
+const myTZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { return ''; } })();
+const tzName = (tz) => String(tz || '').split('/').pop().replace(/_/g, ' ');
+/* Hora de un mensaje tal como la vio quien lo envió; si estás en otra zona horaria, también la tuya */
+function fmtLetterStamp(l) {
+  const at = +l.at || Date.now();
+  if (!l.tz || l.tz === myTZ) return fmtStamp(at);
+  try {
+    const o = { hour: 'numeric', minute: '2-digit' };
+    const theirs = new Date(at).toLocaleTimeString('es-MX', { ...o, timeZone: l.tz });
+    const mine = new Date(at).toLocaleTimeString('es-MX', o);
+    return `${cap(relDay(toISO(new Date(at))))}, ${theirs} hora de ${esc(tzName(l.tz))} (${mine} tu hora)`;
+  } catch { return fmtStamp(at); }
+}
 const fmtStamp = (ms) => { const d = new Date(ms); return `${cap(relDay(toISO(d)))}, ${d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}`; };
 function commentsHTML() {
   const cs = draft.comments || [];
@@ -1623,7 +1636,7 @@ function openLetter(id) {
   const l = letters().find((x) => x.id === id); if (!l) return;
   l.read = true; saveReg(); cloudSync();
   const d = $('#ask');
-  d.innerHTML = `<form method="dialog" class="letter-open"><div class="paper"><span class="tiny faint">${fmtStamp(l.at)}</span>
+  d.innerHTML = `<form method="dialog" class="letter-open"><div class="paper"><span class="tiny faint">${fmtLetterStamp(l)}</span>
     <p class="letter-text">${esc(l.text)}</p><p class="letter-sign">— ${esc(profile(l.from)?.name || cap(l.from))}</p></div>
     <div class="btn-row" style="justify-content:space-between;margin-top:14px"><button type="button" class="btn" data-act="letter-reply">Responder</button><button class="btn primary" value="cancel">Guardar en mi corazón</button></div></form>`;
   d.showModal(); Snd.chime();
@@ -1636,7 +1649,7 @@ async function writeLetter() {
   const d = $('#ask'); if (d.open) d.close();
   const text = await ask({ title: `Un mensaje para ${to.name}`, text: cloudOn() ? `Le llegará a ${to.name} en su iPhone o iPad la próxima vez que abra la app.` : `Le aparecerá a ${to.name} cuando abra la app en este dispositivo. Activa la Nube compartida en Ajustes para que le llegue a su propio iPad.`, input: { placeholder: 'Escribe algo bonito…' }, ok: 'Enviar' });
   if (!text) return;
-  letters().push({ id: uid(), from: REG.current, to: to.id, text, at: Date.now(), read: false }); saveReg();
+  letters().push({ id: uid(), from: REG.current, to: to.id, text, at: Date.now(), tz: myTZ, read: false }); saveReg();
   toast(cloudOn() ? `Mensaje enviado a ${to.name}.` : `Mensaje guardado para ${to.name}.`); Snd.chime(); cloudSync();
 }
 
@@ -1757,6 +1770,7 @@ async function cloudSync(opts = {}) {
       if (!ll) mine.set(rl.id, rl);
       else if (ll.read && !rl.read) toPush.push(ll);
       else if (rl.read && !ll.read) ll.read = true;
+      if (ll && rl.at) { ll.at = rl.at; if (rl.tz) ll.tz = rl.tz; }
     }
     const remoteIds = new Set((remote.letters || []).map((l) => l.id));
     for (const l of mine.values()) if (!remoteIds.has(l.id) && tokens()[l.from]) toPush.push(l);
@@ -2376,7 +2390,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.11. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.12. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
