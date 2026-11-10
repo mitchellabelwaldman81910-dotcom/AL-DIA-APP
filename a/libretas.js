@@ -84,7 +84,7 @@ function pageHTML(p) {
   else if (p.kind === 'pegatina') body = `<div class="lb-big-stk">${stickerSVG(p.sticker || 'hoja', 'big')}</div>${p.text ? `<p class="lb-cap">${esc(p.text)}</p>` : ''}`;
   else body = `${p.text ? `<p>${linkify(p.text)}</p>` : ''}`;
   return `<article class="lb-page t-${tone} k-${p.kind} lb-tap" data-pid="${p.id}">${p.sticker && p.kind !== 'pegatina' ? stickerSVG(p.sticker, 'corner') : ''}
-    <header>${p.kind === 'info' ? `<span class="lb-kind">Información clave</span>` : ''}${p.title && p.kind !== 'enlace' ? `<h3>${esc(p.title)}</h3>` : ''}</header>${body}
+    <header>${p.kind === 'info' ? `<span class="lb-kind">Información clave</span>` : ''}${p.shared ? `<span class="lb-shared">${icon('share', 'sm')}${p.isOwner ? 'Compartida' : `Compartida${p.sharedFrom ? ` · de ${esc(p.sharedFrom)}` : ''}`}</span>` : ''}${p.title && p.kind !== 'enlace' ? `<h3>${esc(p.title)}</h3>` : ''}</header>${body}
     <footer><span class="tiny faint">${esc(relDay(toISO(new Date(p.updated || p.at))))}</span><span class="grow"></span>
       <button class="icon-btn ghost" data-act="lb-send" data-id="${p.id}" aria-label="Mandar">${icon('share', 'sm')}</button><button class="icon-btn ghost" data-act="lb-edit" data-id="${p.id}" aria-label="Editar">${icon('edit', 'sm')}</button></footer></article>`;
 }
@@ -136,17 +136,20 @@ function lbReadOpen(title, meta, body, tone, acts) {
   o.classList.add('open'); document.body.classList.add('lb-open');
   hydrateUF(); o.querySelector('.lb-rd-scroll').scrollTop = 0;
 }
-function lbReadClose() { const o = document.getElementById('lbRead'); if (o) { o.classList.remove('open'); o.innerHTML = ''; } document.body.classList.remove('lb-open'); }
+let LBR_ID = null;
+function lbReadClose() { const o = document.getElementById('lbRead'); if (o) { o.classList.remove('open'); o.innerHTML = ''; } document.body.classList.remove('lb-open'); LBR_ID = null; }
 function lbReadPage(p) {
   const when = relDay(toISO(new Date(p.updated || p.at)));
-  lbReadOpen(p.title, `${LB_TONES[p.tone] ? esc(LB_KIND_NAME[p.kind] || 'Hoja') : 'Hoja'} · ${esc(when)}`, lbReadBody(p), LB_TONES[p.tone] ? p.tone : 'papel',
-    `<button type="button" class="icon-btn ghost" data-act="lb-send" data-id="${p.id}" aria-label="Mandar">${icon('share', 'sm')}</button><button type="button" class="btn quiet lb-rd-edit" data-act="lb-edit" data-id="${p.id}">${icon('edit', 'sm')}Editar</button>`);
+  LBR_ID = p.id;
+  const badge = p.shared ? ` · Compartida${p.sharedFrom ? ` con ti (de ${esc(p.sharedFrom)})` : ''}` : '';
+  lbReadOpen(p.title, `${esc(LB_KIND_NAME[p.kind] || 'Hoja')} · ${esc(when)}${badge}`, lbReadBody(p), LB_TONES[p.tone] ? p.tone : 'papel',
+    `<button type="button" class="icon-btn ghost" data-act="shp-open" data-id="${p.id}" aria-label="Compartir">${icon('share', 'sm')}</button><button type="button" class="btn quiet lb-rd-edit" data-act="lb-edit" data-id="${p.id}">${icon('edit', 'sm')}Editar</button>`);
 }
 function lbReadNote(n) {
   const when = n.updated ? relDay(toISO(new Date(n.updated))) : '';
   const body = htmlText(n.body || '').trim().split(/\n+/).filter(Boolean).map((l) => `<p>${esc(l)}</p>`).join('') || '<p class="lb-rd-empty">Este apunte está vacío.</p>';
   lbReadOpen(n.title || 'Sin título', `Apunte · ${esc(when)}`, `<div class="lb-rd-text lb-rd-note">${body}</div>`, 'papel',
-    `<button type="button" class="icon-btn ghost" data-act="lb-send-note" data-id="${n.id}" aria-label="Mandar">${icon('share', 'sm')}</button><button type="button" class="btn quiet" data-act="lb-open-note" data-id="${n.id}">${icon('edit', 'sm')}Editar</button>`);
+    `<button type="button" class="btn quiet" data-act="shp-note" data-id="${n.id}">${icon('share', 'sm')}Compartir</button><button type="button" class="btn quiet" data-act="lb-open-note" data-id="${n.id}">${icon('edit', 'sm')}Editar</button>`);
 }
 const LB_KIND_NAME = { info: 'Información clave', lista: 'Lista', foto: 'Fotos', enlace: 'Enlace', pegatina: 'Pegatina', nota: 'Página' };
 document.addEventListener('click', (e) => {
@@ -175,7 +178,7 @@ function pageSheet(p) {
   openSheet(`${sheetHead(isNew ? { info: 'Información clave', lista: 'Nueva lista', foto: 'Fotos', enlace: 'Enlace', pegatina: 'Pegatina', nota: 'Página' }[k] : 'Editar página')}<div class="sheet-body">${f}
     <div class="field"><span class="lbl">${k === 'pegatina' ? 'Elige una pegatina' : 'Pegatina (opcional)'}</span><div class="lb-stks" role="group">${k === 'pegatina' ? '' : `<button type="button" class="lb-sb ${!LB.sticker ? 'on' : ''}" data-v="">Ninguna</button>`}${Object.keys(STICKERS).map((s) => `<button type="button" class="lb-sb ${LB.sticker === s ? 'on' : ''}" data-v="${s}" aria-label="${s}">${stickerSVG(s)}</button>`).join('')}</div></div>
     <div class="field"><span class="lbl">Color de la hoja</span><div class="pz-tones" role="group" id="lbTones">${Object.keys(LB_TONES).map((t) => `<button type="button" class="pz-tone lbt-${t}" data-v="${t}" aria-pressed="${LB.tone === t}" aria-label="${LB_TONES[t]}"></button>`).join('')}</div></div></div>
-    <div class="sheet-foot">${isNew ? '<button class="btn" data-act="sheet-close">Cancelar</button>' : `<button class="btn danger" data-act="lb-del" data-id="${p.id}">${icon('trash', 'sm')}Quitar</button>`}<span class="grow"></span><button class="btn primary" id="lbSave">${isNew ? 'Pegar en la libreta' : 'Guardar'}</button></div>`);
+    <div class="sheet-foot">${isNew ? '<button class="btn" data-act="sheet-close">Cancelar</button>' : `<button class="btn danger" data-act="lb-del" data-id="${p.id}">${icon('trash', 'sm')}Quitar</button>`}<span class="grow"></span>${!isNew && k !== 'foto' ? `<button class="btn quiet" data-act="shp-open" data-id="${p.id}">${icon('share', 'sm')}Compartir</button>` : ''}<button class="btn primary" id="lbSave">${isNew ? 'Pegar en la libreta' : 'Guardar'}</button></div>`);
   setTimeout(hydrateUF, 30);
   const sh = sheet(); const pickIn = (sel, key) => sh.querySelectorAll(`${sel} button`).forEach((b) => b.addEventListener('click', () => { LBD[key] = b.dataset.v; LB[key] = b.dataset.v; sh.querySelectorAll(`${sel} button`).forEach((x) => x.setAttribute('aria-pressed', x === b)); sh.querySelectorAll('#lbPrev .lb-ph').forEach((ph) => { ph.className = `lb-ph fr-${LBD.frame || LB.frame} fx-${LBD.filter || LB.filter}`; }); }));
   pickIn('#lbFrame', 'frame'); pickIn('#lbFilter', 'filter');
@@ -199,6 +202,7 @@ function pageSheet(p) {
     if ((k === 'nota' || k === 'info') && !d.text && !d.title) { toast('Escribe algo primero.'); return; }
     d.updated = Date.now();
     commit((s) => { s.pages ||= []; const i = s.pages.findIndex((x) => x.id === d.id); if (i >= 0) s.pages[i] = d; else s.pages.push(d); });
+    if (d.shared) shpPush(d);
     closeSheet(false); Snd.drop(); waterToday(); setTimeout(() => { const el = document.querySelector('.lb-page'); if (el) { el.classList.add('lb-new'); leafBurst(el); } }, 60);
   });
 }
@@ -234,7 +238,7 @@ Object.assign(VIDA_ACTS, {
     pageSheet({ id: 'pg' + uid(), kind: k, subjectId: lbSid(sid), title: '', text: '', items: [], img: [], tone: LB.tone, at: Date.now() });
   },
   'lb-edit': (el) => { const p = (S.pages || []).find((x) => x.id === el.dataset.id); if (p) pageSheet(p); },
-  'lb-del': async (el) => { const ok = await ask({ title: '¿Quitar esta página?', text: 'Se quita de tu libreta.', ok: 'Quitar', danger: true }); if (!ok) return; commit((s) => { const p = s.pages.find((x) => x.id === el.dataset.id); if (p) { p.deleted = true; p.updated = Date.now(); } }); closeSheet(false); },
+  'lb-del': async (el) => { const cur = (S.pages || []).find((x) => x.id === el.dataset.id); const ok = await ask({ title: '¿Quitar esta página?', text: cur && cur.shared ? 'Se quita de tu libreta y dejas de compartirla con tus amigos.' : 'Se quita de tu libreta.', ok: 'Quitar', danger: true }); if (!ok) return; if (cur && cur.shared && !shpNeedLogin()) { try { await cloudFetch('POST', { kind: 'shpleave', as: REG.me, id: cur.shared }); } catch { /* sin internet: se queda local */ } } commit((s) => { const p = s.pages.find((x) => x.id === el.dataset.id); if (p) { p.deleted = true; p.updated = Date.now(); } }); closeSheet(false); },
   'lb-check': (el) => { commit((s) => { const p = s.pages.find((x) => x.id === el.dataset.id); if (p && p.items[+el.dataset.i]) { p.items[+el.dataset.i].done = !p.items[+el.dataset.i].done; p.updated = Date.now(); } }); Snd.pop ? Snd.pop() : Snd.tick(); },
   'lb-send': (el) => { const p = (S.pages || []).find((x) => x.id === el.dataset.id); if (p) sendPage(p); },
   'lb-send-note': (el) => { const n = S.notes.find((x) => x.id === el.dataset.id); if (n) sendPage({ kind: 'nota', title: n.title, text: htmlText(n.body).trim(), tone: 'papel' }); },
