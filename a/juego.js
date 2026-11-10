@@ -94,6 +94,10 @@ function gmStart() {
   c.addEventListener('pointermove', (e) => { if (e.buttons || e.pointerType === 'touch') move(e.clientX); });
   const key = (e) => { if (e.key === 'ArrowLeft') st.tx -= 46; if (e.key === 'ArrowRight') st.tx += 46; st.tx = Math.max(40, Math.min(R.w - 40, st.tx)); };
   addEventListener('keydown', key);
+  try { history.pushState({ gmGame: true }, ''); } catch { /* */ }
+  const onPop = () => { if (GAME.run) { try { history.pushState({ gmGame: true }, ''); } catch { /* */ } } };
+  addEventListener('popstate', onPop);
+  wrap.addEventListener('touchstart', (e) => { if (!e.target.closest('button')) e.preventDefault(); }, { passive: false });
   wrap.querySelector('#gmX').addEventListener('click', () => end(true));
   const vib = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch { /* */ } };
   const flash = (k) => { wrap.classList.remove('gm-ok', 'gm-gold', 'gm-miss'); void wrap.offsetWidth; wrap.classList.add(k); clearTimeout(flash.t); flash.t = setTimeout(() => wrap.classList.remove(k), 480); };
@@ -105,7 +109,7 @@ function gmStart() {
   const spawn = () => {
     const gold = Math.random() < Math.min(0.09, 0.035 + st.apples * 0.0004);
     const live = () => st.hang.length + st.apples_.filter((a) => !a.done).length;
-    if (live() >= Math.min(6, 3 + Math.floor(level() / 2))) return false;
+    const cap = level() < 3 ? 1 : level() < 6 ? 2 : 3; if (live() >= cap) return false;
     const heal = !gold && st.lives < 3 && st.apples - st.lastHeal >= 30 && Math.random() < 0.03; if (heal) st.lastHeal = st.apples;
     const y = st.treeBottom * (0.35 + Math.random() * 0.55);
     // elige el lugar más alejado de las manzanas que ya están cayendo, para que no caigan encimadas
@@ -116,9 +120,14 @@ function gmStart() {
   };
   const loop = (now) => {
     if (!GAME.run) return;
+    GAME.raf = requestAnimationFrame(loop);
+    try { loopBody(now); } catch (err) { console.error('Cosecha', err); }
+  };
+  const loopBody = (now) => {
+    if (!GAME.run) return;
     const dt = Math.min(0.05, (now - st.last) / 1000); st.last = now;
     const W = R.w, H = R.h; const lv = level();
-    st.spawn -= dt; if (st.spawn <= 0 && !st.over) { if (spawn() && lv > 4 && Math.random() < Math.min(0.25, (lv - 4) * 0.05)) spawn(); st.spawn = Math.max(0.5, 1.3 - lv * 0.08) * (0.75 + Math.random() * 0.5); }
+    st.spawn -= dt; if (st.spawn <= 0 && !st.over) { if (spawn() && lv > 4 && Math.random() < Math.min(0.25, (lv - 4) * 0.05)) spawn(); st.spawn = Math.max(1.1, 1.8 - lv * 0.06) * (0.8 + Math.random() * 0.4); }
     // manzanas que tiemblan antes de caer
     for (const a of st.hang) a.t += dt;
     for (const a of st.hang.filter((a) => a.t >= a.wob)) st.apples_.push({ x: a.x, y: a.y, vx: (Math.random() - 0.5) * 20 * Math.min(3, lv / 2), vy: 40, gold: a.gold, heal: a.heal, r: a.gold ? 15 : 14, rot: 0, vr: (Math.random() - 0.5) * 4 });
@@ -171,11 +180,10 @@ function gmStart() {
     g.globalAlpha = 1;
     for (const f of st.floats) { g.globalAlpha = 1 - f.t / 0.9; g.font = `700 ${f.gold ? 30 : 24}px "Cormorant Garamond", Georgia, serif`; g.textAlign = 'center'; g.fillStyle = f.gold ? '#C9921F' : '#2F6B3F'; g.fillText(f.txt, f.x, f.y - f.t * 60); }
     g.globalAlpha = 1; g.restore();
-    GAME.raf = requestAnimationFrame(loop);
   };
   GAME.raf = requestAnimationFrame(loop);
   async function end(quit) {
-    if (!GAME.run) return; cancelAnimationFrame(GAME.raf); removeEventListener('resize', size); removeEventListener('keydown', key);
+    if (!GAME.run) return; cancelAnimationFrame(GAME.raf); removeEventListener('resize', size); removeEventListener('keydown', key); removeEventListener('popstate', onPop);
     const res = { score: st.score, apples: st.apples, golden: st.golden, dur: Math.round((performance.now() - st.t0) / 1000) };
     GAME.run = null;
     if (quit && !st.score) { wrap.remove(); document.body.classList.remove('gm-on'); return; }

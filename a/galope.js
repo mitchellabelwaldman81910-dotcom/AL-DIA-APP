@@ -91,8 +91,26 @@ function viewGalope() {
     <h1 class="page-title gm-title">Galope</h1>
     <p class="page-sub">Un caballo corre por la pradera. <b>Toca la pantalla</b> (o presiona espacio) para saltar los manzanos; mantén el toque para saltar más alto. Cada vez corre más rápido y, de vez en cuando, cae la noche.</p>
     <button class="btn primary block gm-play" data-act="gl-start">${icon('play')}Galopar</button>
-    <p class="small muted" style="text-align:center;margin-top:12px">${best ? `Tu récord en este dispositivo: <b>${best}</b> puntos` : 'Todavía no tienes récord. ¡Sé la primera marca!'}</p></section>`;
+    <p class="small muted" style="text-align:center;margin-top:12px">${best ? `Tu récord en este dispositivo: <b>${best}</b> puntos` : 'Todavía no tienes récord. ¡Sé la primera marca!'}</p>
+    <div id="glRank">${glRankHTML()}</div></section>`;
 }
+const GL_TABS = [['dia', 'Hoy'], ['semana', 'Semana'], ['record', 'Récord'], ['manzanas', 'Partidas']];
+function glRankHTML() {
+  GL.tab ||= 'dia';
+  const r = GL.rank; const list = r ? r[GL.tab] || [] : null;
+  const val = (x) => (GL.tab === 'manzanas' ? `${x.apples} ${x.apples === 1 ? 'partida' : 'partidas'}` : `${x.score} pts`);
+  const pod = list && list.length ? `<div class="gm-podium">${[1, 0, 2].map((i) => list[i] ? `<div class="gm-pod p${i + 1}">${avatar({ id: list[i].id, name: list[i].name, color: list[i].color })}<b>${esc(list[i].name)}</b><span>${val(list[i])}</span><i>${i + 1}</i></div>` : '<div class="gm-pod empty"></div>').join('')}</div>` : '';
+  const rest = list && list.length > 3 ? `<ol class="gm-list" start="4">${list.slice(3, 20).map((x) => `<li class="${x.id === REG.me ? 'me' : ''}"><span>${esc(x.name)}</span><b>${val(x)}</b></li>`).join('')}</ol>` : '';
+  const mine = r && r.me ? `<p class="small muted gm-mine">Tu mejor: <b>${r.me.best || 0} pts</b> · partidas: <b>${r.me.games || 0}</b></p>` : '';
+  if (!list) setTimeout(galLoad, 10);
+  return `<h2 class="sec">Ranking</h2><div class="seg full" role="group">${GL_TABS.map(([k, l]) => `<button type="button" data-act="gl-tab" data-v="${k}" aria-pressed="${GL.tab === k}">${l}</button>`).join('')}</div>
+    <div id="glRankBox">${list ? (list.length ? pod + rest : '<p class="small muted" style="text-align:center;margin-top:14px">Aún nadie ha galopado en este periodo. ¡Sé la primera persona!</p>') : (typeof loaderHTML === 'function' ? loaderHTML('Cargando ranking…') : '')}</div>${mine}`;
+}
+async function galLoad() {
+  if (!navigator.onLine) return;
+  try { GL.rank = await cloudFetch('GET', null, `kind=gamerank&game=galope&as=${encodeURIComponent(REG.me || '')}`); const b = document.getElementById('glRank'); if (b) b.innerHTML = glRankHTML(); } catch { /* */ }
+}
+Object.assign(VIDA_ACTS, { 'gl-tab': (el) => { GL.tab = el.dataset.v; const b = document.getElementById('glRank'); if (b) b.innerHTML = glRankHTML(); } });
 EXTRA_VIEWS.galope = viewGalope; EXTRA_NAV.galope = 'mas'; GROUP_VIEWS.galope = viewGalope; GROUP_NAV.galope = 'mas';
 Object.assign(VIDA_ACTS, { 'gl-start': () => glStart() });
 
@@ -101,7 +119,7 @@ function glStart() {
   if (GL.run) return;
   const wrap = document.createElement('div'); wrap.className = 'gl-stage';
   wrap.innerHTML = `<canvas id="glC"></canvas><button class="gm-x gl-x" id="glX" aria-label="Salir">${icon('x')}</button>
-    <div class="gl-over" id="glOver" hidden><b>Fin del galope</b><span id="glFin"></span><button class="btn primary" id="glAgain">${icon('play', 'sm')}Otra vez</button></div>
+    <div class="gl-over" id="glOver" hidden><b>Fin del galope</b><span id="glFin"></span><span class="small muted" id="glRankLine"></span><div class="btn-row" style="justify-content:center"><button class="btn primary" id="glAgain">${icon('play', 'sm')}Otra vez</button><button class="btn" id="glOut">Ver ranking</button></div></div>
     <div class="gl-hint" id="glHint">Toca para saltar</div>`;
   document.body.appendChild(wrap); document.body.classList.add('gm-on');
   const c = wrap.querySelector('canvas'); const g = c.getContext('2d');
@@ -109,7 +127,7 @@ function glStart() {
   const size = () => { const W = innerWidth, H = innerHeight; V.s = Math.min(W / 480, H / 300); V.w = W / V.s; V.h = H / V.s; V.gy = V.h * 0.66; c.width = W * V.dpr; c.height = H * V.dpr; c.style.width = W + 'px'; c.style.height = H + 'px'; };
   size();
   const hx = () => Math.max(60, V.w * 0.16);
-  const st = { state: 'idle', score: 0, speed: 0, y: 0, vy: 0, air: false, hold: false, dist: 0, trees: [], next: 360, hi: glBest(), flash: 0, night: 0, nightT: 0, nightGoal: 0, phase: 0, clouds: [], deco: [], last: performance.now(), id: 0, lastBlip: 0, hills: 0, over: 0 };
+  const st = { state: 'idle', score: 0, speed: 0, y: 0, vy: 0, air: false, hold: false, dist: 0, trees: [], next: 360, hi: glBest(), flash: 0, night: 0, nightT: 0, nightGoal: 0, phase: 0, clouds: [], deco: [], last: performance.now(), id: 0, lastBlip: 0, hills: 0, over: 0, t0: performance.now() };
   GL.run = st;
   for (let i = 0; i < 5; i++) st.clouds.push({ x: Math.random() * V.w, y: 20 + Math.random() * V.h * 0.22, k: 0.6 + Math.random() * 0.8 });
   const stars = Array.from({ length: 50 }, () => ({ x: Math.random(), y: Math.random() * 0.45, r: 0.5 + Math.random() * 1.2 }));
@@ -131,6 +149,10 @@ function glStart() {
     if (e.key === 'Escape') exit();
   };
   const onKeyUp = (e) => { if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w') release(); };
+  try { history.pushState({ glGame: true }, ''); } catch { /* */ }
+  const onPop = () => { if (GL.run) { try { history.pushState({ glGame: true }, ''); } catch { /* */ } } };
+  addEventListener('popstate', onPop);
+  wrap.addEventListener('touchstart', (e) => { if (!e.target.closest('button')) e.preventDefault(); }, { passive: false });
   wrap.addEventListener('pointerdown', onDown); wrap.addEventListener('pointerup', onUp); wrap.addEventListener('pointercancel', onUp);
   addEventListener('keydown', onKey); addEventListener('keyup', onKeyUp); addEventListener('resize', size);
 
@@ -144,21 +166,32 @@ function glStart() {
     st.next = st.dist + Math.max(300, st.speed * (0.95 + Math.random() * 0.7)) + n * gap;
   };
 
-  const end = () => {
+  const end = async () => {
+    if (st.state === 'over') return;
     st.state = 'over'; st.over = performance.now(); const sc = Math.floor(st.score);
+    const secs = Math.max(1, Math.round((performance.now() - st.t0) / 1000));
+    GL.rank = null;
     glTone(180, 0.35, 'sawtooth', 0.08, 60); vib([220, 80, 220]);
     if (sc > st.hi) { st.hi = sc; glSaveBest(sc); }
     wrap.querySelector('#glFin').textContent = `${sc} puntos${sc >= st.hi && sc > 0 ? ' · ¡nuevo récord!' : ` · récord ${st.hi}`}`; over.hidden = false;
     over.classList.remove('show'); void over.offsetWidth; over.classList.add('show');
+    if (REG.me && tokens()[REG.me] && sc > 0) {
+      try {
+        const rec = await Promise.race([cloudFetch('POST', { kind: 'game', as: REG.me, game: 'galope', score: sc, apples: 0, dur: secs }), new Promise((_, rej) => setTimeout(() => rej(new Error('lento')), 6000))]);
+        const line = wrap.querySelector('#glRankLine');
+        if (rec && line && wrap.isConnected) line.textContent = rec.rankDay ? `Lugar #${rec.rankDay} de hoy` : '';
+      } catch (e) { if (!(e && e.status >= 400 && e.status < 500)) { (REG.gameout ||= []).push({ game: 'galope', score: sc, apples: 0, dur: secs }); saveReg(); } }
+    }
   };
   const again = () => {
     Object.assign(st, { state: 'run', score: 0, speed: 270, y: 0, vy: 0, air: false, dist: 0, trees: [], next: 360, flash: 0, night: 0, nightGoal: 0, nightT: 0, lastBlip: 0 });
-    over.hidden = true; hint.hidden = true; st.last = performance.now();
+    over.hidden = true; hint.hidden = true; st.last = performance.now(); st.t0 = performance.now();
   };
   wrap.querySelector('#glAgain').addEventListener('click', again);
+  wrap.querySelector('#glOut').addEventListener('click', () => { exit(); if (location.hash !== '#/galope') location.hash = '#/galope'; else render(); });
 
   const exit = () => {
-    cancelAnimationFrame(st.id); removeEventListener('keydown', onKey); removeEventListener('keyup', onKeyUp); removeEventListener('resize', size);
+    cancelAnimationFrame(st.id); removeEventListener('keydown', onKey); removeEventListener('keyup', onKeyUp); removeEventListener('resize', size); removeEventListener('popstate', onPop);
     wrap.remove(); document.body.classList.remove('gm-on'); GL.run = null; if (location.hash === '#/galope') render();
   };
   wrap.querySelector('#glX').addEventListener('click', exit);
@@ -199,6 +232,11 @@ function glStart() {
 
   const loop = (now) => {
     if (!GL.run) return;
+    st.id = requestAnimationFrame(loop);
+    try { loopBody(now); } catch (err) { console.error('Galope', err); }
+  };
+  const loopBody = (now) => {
+    if (!GL.run) return;
     const dt = Math.min(0.04, (now - st.last) / 1000); st.last = now;
     const n = st.night;
     if (st.state === 'run') {
@@ -229,7 +267,6 @@ function glStart() {
     for (const d of st.deco) d.x -= sp * dt; st.deco = st.deco.filter((d) => d.x > -10);
     while (st.deco.length < 40) st.deco.push({ x: (st.deco.length ? Math.max(...st.deco.map((d) => d.x)) : 0) + 10 + Math.random() * 40, y: 8 + Math.random() * (V.h - V.gy - 12), f: Math.random() < 0.14 });
     draw();
-    st.id = requestAnimationFrame(loop);
   };
   st.id = requestAnimationFrame(loop);
 }
