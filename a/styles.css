@@ -1653,3 +1653,87 @@ h1, h2, h3, .serif { letter-spacing: -.015em; }
 .leaf { opacity: .32; }
 .banner p { font-size: 14px; line-height: 1.4; }
 .live-dot[data-on="1"]::after { inset: -3px; border-width: 1px; }
+
+/* =========================================================
+   7.8 — Tu Cerebro: instrumento, no juguete
+   ========================================================= */
+.brain { border-radius: 22px; background: #05050B; height: min(74vh, 660px); border: 1px solid rgba(160,150,255,.14); box-shadow: 0 30px 60px -30px rgba(10,6,40,.6); }
+.brain-hud { top: 16px; left: 18px; right: 18px; display: flex; flex-direction: column; gap: 14px; color: #EDEAFF; }
+.bh-title { gap: 2px; }
+.bh-title .bh-k { font: 500 10px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .18em; text-transform: uppercase; color: rgba(200,190,255,.6); }
+.bh-title b { font: 650 22px/1.15 -apple-system, "SF Pro Display", system-ui, sans-serif; letter-spacing: -.01em; background: none; -webkit-text-fill-color: #F4F1FF; color: #F4F1FF; }
+.bh-stats { gap: 0; }
+.bh-stats span { padding: 0 16px 0 0; margin-right: 16px; border-right: 1px solid rgba(180,170,255,.16); gap: 3px; }
+.bh-stats span:last-child { border: 0; margin: 0; }
+.bh-stats i { font: 500 9.5px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .14em; text-transform: uppercase; font-style: normal; color: rgba(200,190,255,.55); }
+.bh-stats b { font: 500 16px/1.1 ui-monospace, "SF Mono", Menlo, monospace; color: #F4F1FF; font-variant-numeric: tabular-nums; }
+.brain-legend { position: absolute; left: 18px; bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap; pointer-events: none; font: 500 9.5px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; color: rgba(210,200,255,.6); }
+.brain-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.brain-legend span::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); }
+.brain-ctl { top: 16px; right: 16px; flex-direction: row; gap: 6px; }
+.bc { min-height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(180,170,255,.22); background: rgba(14,12,30,.55); color: #EDEAFF; font: 500 12.5px/1 -apple-system, system-ui, sans-serif; display: inline-flex; align-items: center; gap: 6px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: none; animation: none; }
+.bc .i { width: 14px; height: 14px; }
+.bc:active { background: rgba(60,50,120,.6); }
+.brain-card { left: 14px; right: 14px; bottom: 14px; padding: 14px 16px 16px; border-radius: 16px; background: rgba(12,10,26,.78); border: 1px solid rgba(180,170,255,.18); color: #EDEAFF; backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2); box-shadow: 0 20px 40px -20px rgba(0,0,0,.7); animation: bkin .35s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes bkin { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.brain-card:not([hidden]) ~ .brain-legend, .brain:has(.brain-card:not([hidden])) .brain-legend { opacity: 0; }
+.bk-h { gap: 8px; }
+.bk-dot { width: 7px; height: 7px; box-shadow: 0 0 10px var(--nc); background: var(--nc); }
+.bk-ty, .bk-id { font: 500 10px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .14em; text-transform: uppercase; color: rgba(210,200,255,.7); }
+.bk-id { margin-left: auto; color: rgba(210,200,255,.45); }
+.bk-x { color: rgba(230,224,255,.7); margin-left: 6px; }
+.bk-t { margin: 10px 0 4px; font: 600 16.5px/1.35 -apple-system, "SF Pro Text", system-ui, sans-serif; letter-spacing: -.005em; color: #F6F3FF; }
+.bk-d { margin: 0 0 12px; font-size: 12.5px; color: rgba(220,212,255,.65); opacity: 1; }
+.bk-n { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.bk-c { padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(180,170,255,.2); background: rgba(255,255,255,.04); color: #E6E1FF; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+.bk-c::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--nc); }
+.bc.go { width: 100%; justify-content: space-between; min-height: 40px; background: rgba(140,120,255,.16); border-color: rgba(170,150,255,.35); }
+.brain-link { background: #0B0A18; color: #EDEAFF; border: 1px solid rgba(160,150,255,.2); box-shadow: none; }
+.brain-link::after { display: none; }
+@media (max-width: 420px) { .bh-stats span { padding-right: 12px; margin-right: 12px; } .brain-ctl .bc span { display: none; } .brain-ctl .bc { padding: 0 10px; } }
+.bh-stats b { white-space: nowrap; } .bh-stats b span { font: inherit; }
+.bh-stats b span { display: inline; padding: 0; margin: 0; border: 0; }
+
+/* =========================================================
+   7.8 — Prestigio: tipografía, superficies y movimiento
+   ========================================================= */
+:root { --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; --ease: cubic-bezier(.2,.8,.2,1); }
+body { font-family: var(--sans); letter-spacing: -.003em; }
+.forest, .ln-forest, .leaves, #leaves { display: none !important; }
+body { background: var(--paper); }
+/* títulos editoriales */
+.page-title { font-family: var(--serif); font-weight: 700; font-size: 33px; line-height: 1.08; letter-spacing: -.012em; margin: 14px 0 6px; }
+.page-sub { font-size: 15.5px; line-height: 1.45; color: var(--ink-2); max-width: 34em; }
+/* encabezados de sección: etiqueta discreta */
+h2.sec { font-family: var(--sans); font-size: 12.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); margin: 30px 0 10px; }
+h2.sec small { font-size: 12.5px; font-weight: 600; letter-spacing: .04em; color: var(--ink-3); text-transform: none; }
+h3, .sheet-head h2, .empty h3 { font-family: var(--sans); font-weight: 650; letter-spacing: -.01em; }
+.sheet-head h2 { font-size: 18px; }
+/* superficies */
+.card, .rows, .quick, .meter, .summary-card, .task, .pn-card, .sl-card, .who-row, .sl-tile, .g-tool, .empty, .vida-card, .home-tree, .energy, .plus-link { border-radius: 16px; border: 1px solid var(--line); box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 4%, transparent), 0 8px 24px -18px color-mix(in srgb, var(--ink) 30%, transparent); }
+.tasks .task { box-shadow: none; }
+/* movimiento: entradas suaves al cambiar de pantalla, sin rebotes */
+#view.enter > * { animation: vEnter .42s var(--ease) both; }
+#view.enter > *:nth-child(2) { animation-delay: .03s; } #view.enter > *:nth-child(3) { animation-delay: .06s; } #view.enter > *:nth-child(4) { animation-delay: .09s; } #view.enter > *:nth-child(n+5) { animation-delay: .12s; }
+@keyframes vEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { #view.enter > * { animation: none; } }
+dialog#sheet[open] { animation: sheetUp .38s var(--ease) both; }
+@keyframes sheetUp { from { transform: translateY(24px); opacity: .0; } to { transform: none; opacity: 1; } }
+/* barra inferior */
+.nav { border-top: 1px solid var(--line); box-shadow: 0 -8px 24px -20px color-mix(in srgb, var(--ink) 40%, transparent); }
+.nav a { font-weight: 550; letter-spacing: 0; }
+.nav a[aria-current="page"] { color: var(--pen); }
+/* listas tipo ajustes */
+.rows li + li { border-top: 1px solid var(--line); }
+.rowbtn .ico, .rows a .ico { color: var(--pen); }
+/* botones de acción flotante */
+#fab { box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--pen) 70%, transparent); }
+/* números con aspecto de instrumento */
+.big-n, .free-big b, .seed-n b, .v-lv, .meter b { font-variant-numeric: tabular-nums; }
+:root { --display: ui-serif, "New York", "AlDia Schola", Georgia, serif; }
+.page-title, .bigdate, .who-t { font-family: var(--display); font-weight: 600; letter-spacing: -.015em; }
+.bigdate { font-size: clamp(36px, 10vw, 48px); line-height: 1.04; }
+.greet { font-size: 12.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+html body, :root[data-daypart] body { background: var(--paper) !important; }
+.nav { background: var(--sheet) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.task:active, .rows li > a:active, .rowbtn:active { background: color-mix(in srgb, var(--ink) 4%, var(--sheet)); }

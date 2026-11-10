@@ -1432,7 +1432,7 @@ const LEAF_COLORS = ['#7DBE7A', '#5DA36A', '#A8D08D', '#3F8F5F', '#C9DE8C', '#94
 const leafSVG = () => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${LEAF_PATH}" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/><path d="${LEAF_VEIN}" stroke="currentColor" stroke-width=".7" fill="none" opacity=".7"/></svg>`;
 function buildLeaves() {
   const box = $('#leaves'); if (!box) return;
-  const off = S.settings.leaves === false || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const off = S.settings.leaves !== true || matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (off) { box.innerHTML = ''; return; }
   if (box.childElementCount) return;
   let html = '';
@@ -2029,7 +2029,7 @@ function viewMasGrupo_v7() {
     <h2 class="sec">Apariencia y sonido</h2>
     <div class="card" style="padding-top:6px;padding-bottom:6px">
       <div class="toggle"><span class="t">Tema</span><div class="seg">${[['light', 'Día'], ['dark', 'Noche']].map(([k, l]) => `<button type="button" data-act="theme" data-v="${k}" aria-pressed="${(st.theme === 'dark' ? 'dark' : 'light') === k}">${l}</button>`).join('')}</div></div>
-      <div class="toggle"><span class="t">Hojas cayendo</span><label class="switch"><input type="checkbox" data-set="leaves" data-bool ${st.leaves !== false ? 'checked' : ''} aria-label="Hojas cayendo"><span></span></label></div>
+      <div class="toggle"><span class="t">Hojas cayendo</span><label class="switch"><input type="checkbox" data-set="leaves" data-bool ${st.leaves === true ? 'checked' : ''} aria-label="Hojas cayendo"><span></span></label></div>
       <div class="toggle"><span class="t">Sonidos suaves</span><label class="switch"><input type="checkbox" data-set="sounds" data-bool ${st.sounds !== false ? 'checked' : ''} aria-label="Sonidos suaves"><span></span></label></div>
     </div>
     <p style="margin-top:18px"><button class="btn danger" data-act="forest-leave">${icon('x')}Salir de este Salón</button></p>`;
@@ -2370,7 +2370,7 @@ function viewAjustes() {
       <div class="toggle"><span><span class="t">Notificaciones</span><span class="d" style="display:block">${notifState === 'granted' ? 'Activadas en este dispositivo.' : notifState === 'denied' ? 'Bloqueadas. Actívalas en los permisos del navegador para este sitio.' : notifState === 'unsupported' ? (isIOS() && !isStandalone() ? 'En iPhone, primero instala la app en tu pantalla de inicio (Más, Instalar la app). Ahí ya podrás activar los avisos.' : 'Este navegador no permite notificaciones. Usa “Al calendario” en cada tarea.') : 'Te avisa lo que vence hoy y mañana.'}</span></span>
         ${notifState === 'default' ? `<button class="btn primary" data-act="notif-enable">Activar</button>` : notifState === 'granted' ? `<button class="btn" data-act="notif-test">Probar</button>` : ''}</div>
       <div class="toggle"><span><span class="t">Hojas cayendo</span><span class="d" style="display:block">Hojas que caen despacio por la app.</span></span>
-        <label class="switch"><input type="checkbox" data-set="leaves" data-bool ${st.leaves !== false ? 'checked' : ''} aria-label="Hojas cayendo"><span></span></label></div>
+        <label class="switch"><input type="checkbox" data-set="leaves" data-bool ${st.leaves === true ? 'checked' : ''} aria-label="Hojas cayendo"><span></span></label></div>
       <div class="toggle"><span><span class="t">Sonidos suaves</span><span class="d" style="display:block">Campanita al entregar y gotita al terminar un paso.</span></span>
         <label class="switch"><input type="checkbox" data-set="sounds" data-bool ${st.sounds !== false ? 'checked' : ''} aria-label="Sonidos suaves"><span></span></label></div>
       <div class="toggle"><span><span class="t">Resumen del día</span><span class="d" style="display:block">Al abrir la app, un aviso con lo que vence hoy y mañana.</span></span>
@@ -2382,7 +2382,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.7. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.8. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -2486,6 +2486,7 @@ function render() {
   const qv = $('#quickIn')?.value;
   const hadFocus = document.activeElement?.id;
   main.innerHTML = html;
+  if (render.lastRoute !== r.name + (groupMode ? ':g' : '')) { render.lastRoute = r.name + (groupMode ? ':g' : ''); main.classList.remove('enter'); void main.offsetWidth; main.classList.add('enter'); }
   harmonize(main);
   if (r.name === 'cerebro' && !groupMode && !choosing && !showWelcome) brainInit();
   if (qv && $('#quickIn')) { $('#quickIn').value = qv; updateQuickPreview(); }
