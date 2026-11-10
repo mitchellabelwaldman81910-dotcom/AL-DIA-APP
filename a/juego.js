@@ -54,6 +54,7 @@ function gmStart() {
   const wrap = document.createElement('div'); wrap.className = 'gm-stage'; wrap.innerHTML = `<canvas id="gmC"></canvas>
     <div class="gm-hud"><span class="gm-score" id="gmScore">0</span><span class="gm-lives" id="gmLives"></span><button class="gm-x" id="gmX" aria-label="Salir">${icon('x')}</button></div><div class="gm-msg" id="gmMsg"></div>`;
   document.body.appendChild(wrap); document.body.classList.add('gm-on');
+  wrap.addEventListener('animationend', () => { wrap.style.animation = 'none'; }, { once: true });
   const c = wrap.querySelector('canvas'); const g = c.getContext('2d');
   const R = { w: 0, h: 0, dpr: Math.min(2, devicePixelRatio || 1) };
   const size = () => { if (innerWidth === R.w && innerHeight === R.h && bg) return; R.w = innerWidth; R.h = innerHeight; c.width = R.w * R.dpr; c.height = R.h * R.dpr; c.style.width = R.w + 'px'; c.style.height = R.h + 'px'; g.setTransform(R.dpr, 0, 0, R.dpr, 0, 0); scene(); };

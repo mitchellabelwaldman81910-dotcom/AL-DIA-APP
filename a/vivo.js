@@ -61,9 +61,11 @@ window.addEventListener('online', () => { liveKick(); cloudSync(); });
 /* Mientras escribes, no se repinta la pantalla; al terminar se pone al día */
 function softRender() {
   const a = document.activeElement; const typing = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.closest('main');
-  if (sheet().open || typing) { CLOUD.stale = true; return false; }
-  CLOUD.stale = false; render(); return true;
+  if (sheet().open || typing || document.body.classList.contains('gm-on')) { CLOUD.stale = true; return false; }
+  CLOUD.stale = false; render.soft = true; try { render(); } finally { render.soft = false; } return true;
 }
 function staleCheck() { if (CLOUD.stale && !sheet().open && !choosing) setTimeout(() => { const a = document.activeElement; if (!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.closest('main'))) softRender(); }, 60); }
 document.addEventListener('focusout', staleCheck);
+/* al cerrar un juego se pone al día lo que quedó pendiente */
+new MutationObserver(() => { if (!document.body.classList.contains('gm-on')) staleCheck(); }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 document.addEventListener('DOMContentLoaded', () => { const d = document.getElementById('sheet'); if (d) d.addEventListener('close', staleCheck); });
