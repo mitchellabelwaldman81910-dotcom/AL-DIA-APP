@@ -2695,3 +2695,8 @@ body.lb-open { overflow: hidden; }
 .gl-over span { color: #4a5a46; font-size: 14px; }
 .gl-over.show { animation: glIn .28s ease-out; }
 @keyframes glIn { from { opacity: 0; transform: translate(-50%, 8px); } }
+
+/* 7.20 El Bosque con pestañas */
+.bos-tabs { display: flex; width: 100%; margin: 4px 0 14px; overflow-x: auto; scrollbar-width: none; }
+.bos-tabs::-webkit-scrollbar { display: none; }
+.bos-tabs button { flex: 1 0 auto; white-space: nowrap; }
