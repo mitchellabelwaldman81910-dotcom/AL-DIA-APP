@@ -58,7 +58,7 @@ function gmStart() {
   const c = wrap.querySelector('canvas'); const g = c.getContext('2d');
   const R = { w: 0, h: 0, dpr: Math.min(2, devicePixelRatio || 1) };
   const size = () => { if (innerWidth === R.w && innerHeight === R.h && bg) return; R.w = innerWidth; R.h = innerHeight; c.width = R.w * R.dpr; c.height = R.h * R.dpr; c.style.width = R.w + 'px'; c.style.height = R.h + 'px'; g.setTransform(R.dpr, 0, 0, R.dpr, 0, 0); scene(); };
-  const st = { score: 0, apples: 0, golden: 0, lives: 3, apples_: [], parts: [], floats: [], t0: performance.now(), last: performance.now(), spawn: 0, combo: 0, over: false, bx: innerWidth / 2, tx: innerWidth / 2, squash: 0, shake: 0, sunA: 0, clouds: [], hang: [], biome: 0, fade: 0, lastHeal: -30 };
+  const st = { coinsF: [], coinT: 18 + Math.random() * 14, coinGot: 0, score: 0, apples: 0, golden: 0, lives: 3, apples_: [], parts: [], floats: [], t0: performance.now(), last: performance.now(), spawn: 0, combo: 0, over: false, bx: innerWidth / 2, tx: innerWidth / 2, squash: 0, shake: 0, sunA: 0, clouds: [], hang: [], biome: 0, fade: 0, lastHeal: -30 };
   GAME.run = st;
   // fondo pre-dibujado
   let bg = null, bgOld = null; const scene = (keep) => {
@@ -155,6 +155,14 @@ function gmStart() {
       if (!a.done && a.y - a.r > H) { a.done = 'miss'; st.lives--; st.combo = 0; st.shake = 0.35; vib([220, 90, 220]); flash('gm-miss'); gmSound('miss'); lives(); if (st.lives <= 0) { st.over = true; setTimeout(() => end(false), 700); } else msg(st.lives === 1 ? '¡Cuidado, última!' : 'Se cayó una…', 900); }
     }
     st.apples_ = st.apples_.filter((a) => !a.done);
+    // moneda rara: cae despacio, no cuesta vida si se escapa
+    if (!st.over && st.apples >= 5) { st.coinT -= dt; if (st.coinT <= 0) { st.coinT = 32 + Math.random() * 40; st.coinsF.push({ x: 30 + Math.random() * (W - 60), y: -16, vy: 50, ph: Math.random() * 6 }); } }
+    for (const c of st.coinsF) {
+      c.vy = Math.min(210, c.vy + 120 * dt); c.y += c.vy * dt; c.ph += dt * 7;
+      if (!c.done && c.y + 11 >= by - 6 && c.y < by + 14 && Math.abs(c.x - st.bx) < bw / 2 + 8) { c.done = 1; st.coinGot++; navCoins(1); st.floats.push({ x: c.x, y: by - 34, t: 0, txt: '+1 moneda', gold: true }); gmSound('gold'); vib(25); msg('¡Una moneda para tu árbol!', 1100); for (let i = 0; i < 10; i++) st.parts.push({ x: c.x, y: by - 10, vx: (Math.random() - 0.5) * 220, vy: -60 - Math.random() * 200, t: 0, life: 0.6 + Math.random() * 0.4, gold: true }); }
+      else if (c.y > H + 20) c.done = 1;
+    }
+    st.coinsF = st.coinsF.filter((c) => !c.done);
     for (const p of st.parts) { p.t += dt; p.vy += 520 * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
     st.parts = st.parts.filter((p) => p.t < p.life);
     for (const f of st.floats) f.t += dt; st.floats = st.floats.filter((f) => f.t < 0.9);
@@ -174,6 +182,7 @@ function gmStart() {
     // manzanas colgando (tiemblan)
     for (const a of st.hang) { const wob = Math.sin(a.t * 40) * 3 * (a.t / a.wob); gmApple(g, a.x + wob, a.y, a.gold ? 15 : 14, a.gold, 0, now, a.heal); }
     for (const a of st.apples_) gmApple(g, a.x, a.y, a.r, a.gold, a.rot, now, a.heal);
+    for (const c of st.coinsF) { const k = Math.abs(Math.cos(c.ph)); const hl = g.createRadialGradient(c.x, c.y, 2, c.x, c.y, 26); hl.addColorStop(0, 'rgba(255,225,120,.55)'); hl.addColorStop(1, 'rgba(255,225,120,0)'); g.fillStyle = hl; g.beginPath(); g.arc(c.x, c.y, 26, 0, Math.PI * 2); g.fill(); g.fillStyle = '#E8B23A'; g.strokeStyle = '#A8761A'; g.lineWidth = 2; g.beginPath(); g.ellipse(c.x, c.y, 3 + 9 * k, 12, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.fillStyle = '#FFE9A0'; g.beginPath(); g.ellipse(c.x, c.y, 1.5 + 5 * k, 8, 0, 0, Math.PI * 2); g.fill(); }
     // canasta
     gmBasket(g, st.bx, by, bw, st.squash);
     // partículas
@@ -195,7 +204,7 @@ function gmStart() {
     const paint = (rec) => {
       const best = rec ? rec.best : local;
       const tmp = document.createElement('div');
-      tmp.innerHTML = `<div class="gm-over"><div class="gm-card"><span class="gm-k">${rec && rec.newBest ? '¡Nuevo récord!' : 'Fin de la cosecha'}</span><b class="gm-big">${st.score}</b><span class="gm-sub">${plural(st.apples, 'manzana', 'manzanas')}${st.golden ? ` · ${plural(st.golden, 'dorada', 'doradas')}` : ''}</span>
+      tmp.innerHTML = `<div class="gm-over"><div class="gm-card"><span class="gm-k">${rec && rec.newBest ? '¡Nuevo récord!' : 'Fin de la cosecha'}</span><b class="gm-big">${st.score}</b><span class="gm-sub">${plural(st.apples, 'manzana', 'manzanas')}${st.golden ? ` · ${plural(st.golden, 'dorada', 'doradas')}` : ''}</span>${st.coinGot ? `<span class="gm-sub">+${plural(st.coinGot, 'moneda', 'monedas')} para tu árbol de Navidad</span>` : ''}
         <p class="gm-best">Tu mejor: <b>${best}</b>${rec && rec.rankDay ? ` · lugar <b>#${rec.rankDay}</b> de hoy` : ''}</p>
         <div class="btn-row" style="justify-content:center"><button class="btn primary" id="gmAgain">${icon('play', 'sm')}Otra vez</button><button class="btn" id="gmOut">Ver ranking</button></div></div></div>`;
       const nu = tmp.firstElementChild; const old = wrap.querySelector('.gm-over');

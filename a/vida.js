@@ -404,6 +404,7 @@ function sceneBlock({ level, max, wet, id, seed, title, sub, pts, cur, need, ext
   const top = level >= max;
   return `<section class="vida-card ${wet ? '' : 'thirsty'}">
     <div class="vscene">${treeScene({ level, max, wet, id, seed, pour, garden, species: max === 100 && typeof curSpecies === 'function' ? curSpecies() : 'roble', fx: max === 100 && typeof curFX === 'function' ? curFX() : null })}
+      ${typeof seasonLayer === 'function' ? seasonLayer() : ''}${typeof navMiniHTML === 'function' && max === 100 ? navMiniHTML() : ''}
       <div class="v-badge"><span class="v-lv">${level}</span><span class="v-of">${max === 100 ? 'de 100' : 'de 1000'}</span></div>
       <div class="v-water ${wet ? 'ok' : 'low'}">${wet ? 'Regado hoy' : 'Tiene sed'}</div></div>
     <div class="v-info"><h2 class="serif">${title}</h2><p class="muted" style="margin:0 0 10px">${sub}</p>

@@ -127,7 +127,7 @@ function glStart() {
   const size = () => { const W = innerWidth, H = innerHeight; V.s = Math.min(W / 480, H / 300); V.w = W / V.s; V.h = H / V.s; V.gy = V.h * 0.66; c.width = W * V.dpr; c.height = H * V.dpr; c.style.width = W + 'px'; c.style.height = H + 'px'; };
   size();
   const hx = () => Math.max(60, V.w * 0.16);
-  const st = { state: 'idle', score: 0, speed: 0, y: 0, vy: 0, air: false, hold: false, dist: 0, trees: [], next: 360, hi: glBest(), flash: 0, night: 0, nightT: 0, nightGoal: 0, phase: 0, clouds: [], deco: [], last: performance.now(), id: 0, lastBlip: 0, hills: 0, over: 0, t0: performance.now() };
+  const st = { coinsF: [], got: 0, nextBonus: 500, state: 'idle', score: 0, speed: 0, y: 0, vy: 0, air: false, hold: false, dist: 0, trees: [], next: 360, hi: glBest(), flash: 0, night: 0, nightT: 0, nightGoal: 0, phase: 0, clouds: [], deco: [], last: performance.now(), id: 0, lastBlip: 0, hills: 0, over: 0, t0: performance.now() };
   GL.run = st;
   for (let i = 0; i < 5; i++) st.clouds.push({ x: Math.random() * V.w, y: 20 + Math.random() * V.h * 0.22, k: 0.6 + Math.random() * 0.8 });
   const stars = Array.from({ length: 50 }, () => ({ x: Math.random(), y: Math.random() * 0.45, r: 0.5 + Math.random() * 1.2 }));
@@ -156,6 +156,7 @@ function glStart() {
   wrap.addEventListener('pointerdown', onDown); wrap.addEventListener('pointerup', onUp); wrap.addEventListener('pointercancel', onUp);
   addEventListener('keydown', onKey); addEventListener('keyup', onKeyUp); addEventListener('resize', size);
 
+  const coinGet = (n, x, y, bonus) => { st.got += n; navCoins(n); st.pop = { t: 1, txt: bonus ? '+1 moneda · ¡500 puntos!' : '+1 moneda', x: Math.max(60, Math.min(V.w - 60, x)), y }; glTone(1318, 0.07, 'triangle', 0.05); setTimeout(() => glTone(1975, 0.1, 'triangle', 0.05), 70); vib(14); };
   const spawn = () => {
     const sc = st.score; const kinds = [[1, 40], [1, 60], [1, 50]];
     if (sc > 150) kinds.push([2, 46]);
@@ -163,6 +164,8 @@ function glStart() {
     const [n, h] = kinds[Math.floor(Math.random() * kinds.length)];
     const gap = 44 + h * 0.3;
     for (let i = 0; i < n; i++) st.trees.push({ x: V.w + 40 + i * gap, h: h - i * 5 + (Math.random() * 8 - 4), seed: 'gt' + Math.random() });
+    if (Math.random() < 0.3) { const cxm = V.w + 40 + ((n - 1) * gap) / 2; st.coinsF.push({ x: cxm, y: h + 30 + Math.random() * 6, ph: Math.random() * 6 }); }
+    else if (Math.random() < 0.14) st.coinsF.push({ x: V.w + 40 + n * gap + 60, y: 22, ph: Math.random() * 6 });
     st.next = st.dist + Math.max(300, st.speed * (0.95 + Math.random() * 0.7)) + n * gap;
   };
 
@@ -173,7 +176,7 @@ function glStart() {
     GL.rank = null;
     glTone(180, 0.35, 'sawtooth', 0.08, 60); vib([220, 80, 220]);
     if (sc > st.hi) { st.hi = sc; glSaveBest(sc); }
-    wrap.querySelector('#glFin').textContent = `${sc} puntos${sc >= st.hi && sc > 0 ? ' · ¡nuevo récord!' : ` · récord ${st.hi}`}`; over.hidden = false;
+    wrap.querySelector('#glFin').textContent = `${sc} puntos${sc >= st.hi && sc > 0 ? ' · ¡nuevo récord!' : ` · récord ${st.hi}`}${st.got ? ` · +${st.got} ${st.got === 1 ? 'moneda' : 'monedas'} para tu árbol` : ''}`; over.hidden = false;
     over.classList.remove('show'); void over.offsetWidth; over.classList.add('show');
     if (REG.me && tokens()[REG.me] && sc > 0) {
       try {
@@ -184,7 +187,7 @@ function glStart() {
     }
   };
   const again = () => {
-    Object.assign(st, { state: 'run', score: 0, speed: 270, y: 0, vy: 0, air: false, dist: 0, trees: [], next: 360, flash: 0, night: 0, nightGoal: 0, nightT: 0, lastBlip: 0 });
+    Object.assign(st, { coinsF: [], got: 0, nextBonus: 500, state: 'run', score: 0, speed: 270, y: 0, vy: 0, air: false, dist: 0, trees: [], next: 360, flash: 0, night: 0, nightGoal: 0, nightT: 0, lastBlip: 0 });
     over.hidden = true; hint.hidden = true; st.last = performance.now(); st.t0 = performance.now();
   };
   wrap.querySelector('#glAgain').addEventListener('click', again);
@@ -218,6 +221,8 @@ function glStart() {
     // matas y flores que corren con el suelo
     for (const d of st.deco) { g.strokeStyle = d.f ? '#E9C0D0' : 'rgba(80,130,80,.85)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(d.x, gy + d.y); g.lineTo(d.x - 2, gy + d.y - 6); g.moveTo(d.x, gy + d.y); g.lineTo(d.x + 2, gy + d.y - 7); g.stroke(); if (d.f) { g.fillStyle = '#F4D36B'; g.beginPath(); g.arc(d.x + 2, gy + d.y - 7, 1.6, 0, 7); g.fill(); } }
     for (const t of st.trees) glDrawTree(g, t.x, gy, t.h, t.seed);
+    for (const c of st.coinsF) { const k = Math.abs(Math.cos(c.ph)), cy = gy - c.y; g.fillStyle = 'rgba(255,225,120,.28)'; g.beginPath(); g.arc(c.x, cy, 14, 0, Math.PI * 2); g.fill(); g.fillStyle = '#E8B23A'; g.strokeStyle = '#A8761A'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(c.x, cy, 2 + 7 * k, 8.5, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.fillStyle = '#FFE9A0'; g.beginPath(); g.ellipse(c.x, cy, 1 + 3.4 * k, 5.4, 0, 0, Math.PI * 2); g.fill(); }
+    if (st.pop && st.pop.t > 0) { st.pop.t = Math.max(0, st.pop.t - 0.016); g.save(); g.globalAlpha = Math.min(1, st.pop.t * 2); g.font = '700 14px system-ui, sans-serif'; g.textAlign = 'center'; g.fillStyle = '#C98E1C'; g.fillText(st.pop.txt, st.pop.x, st.pop.y - (1 - st.pop.t) * 26 - 12); g.restore(); }
     glDrawHorse(g, hx(), gy + st.y, st.phase, st.air, st.vy, false);
     // noche encima, sutil
     if (n > 0.02) { g.fillStyle = `rgba(8,14,32,${n * 0.22})`; g.fillRect(0, 0, V.w, V.h); }
@@ -250,6 +255,11 @@ function glStart() {
       if (st.air) { st.vy += (st.hold ? 1750 : 2600) * dt; st.y += st.vy * dt; if (st.y >= 0) { st.y = 0; st.vy = 0; st.air = false; } }
       // árboles
       for (const t of st.trees) t.x -= st.speed * dt; st.trees = st.trees.filter((t) => t.x > -90);
+      for (const c of st.coinsF) { c.x -= st.speed * dt; c.ph += dt * 7; }
+      { const px0 = hx(), py0 = V.gy + st.y;
+        for (const c of st.coinsF) if (!c.done && Math.abs(c.x - px0) < 26 && Math.abs((V.gy - c.y) - (py0 - 26)) < 30) { c.done = 1; coinGet(1, c.x, V.gy - c.y); } }
+      st.coinsF = st.coinsF.filter((c) => !c.done && c.x > -30);
+      if (st.score >= st.nextBonus) { st.nextBonus += 500; coinGet(1, hx(), V.gy - 70, true); }
       if (st.dist >= st.next) spawn();
       // colisión: el caballo es un rectángulo un poco más pequeño que su dibujo
       const px = hx(), py = V.gy + st.y;

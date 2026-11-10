@@ -153,5 +153,6 @@ function mergeVida(l, r) {
   out.claimed = { ...(r.claimed || {}), ...(l.claimed || {}) };
   if (l.focusDone || r.focusDone) out.focusDone = { ...(r.focusDone || {}), ...(l.focusDone || {}) };
   if (l.shop || r.shop) out.shop = { ...(r.shop || {}), ...(l.shop || {}), own: uni(l.shop?.own, r.shop?.own) };
+  if (l.nav || r.nav) { const a = l.nav || {}, b = r.nav || {}; out.nav = { ...b, ...a, lv: Math.max(a.lv | 0, b.lv | 0) }; }
   return out;
 }
