@@ -1,19 +1,20 @@
 /* Al Día — service worker: funciona sin internet y manda avisos. */
-const VERSION = 'aldia-v7.6.0';
+const VERSION = 'aldia-v7.7.0';
+const V = '?v=7.7.0';
 const SHELL = [
   './',
   './index.html',
-  './styles.css',
-  './app.js',
-  './glifos.js',
-  './linea.js',
-  './vida.js',
-  './extras.js',
-  './plus.js',
-  './brain.js',
-  './estilos.js',
-  './vivo.js',
-  './salones.js',
+  './a/styles.css' + V,
+  './a/app.js' + V,
+  './a/glifos.js' + V,
+  './a/linea.js' + V,
+  './a/vida.js' + V,
+  './a/extras.js' + V,
+  './a/plus.js' + V,
+  './a/brain.js' + V,
+  './a/estilos.js' + V,
+  './a/vivo.js' + V,
+  './a/salones.js' + V,
   './manifest.webmanifest',
   './fonts/schola-bold.woff',
   './fonts/schola-regular.woff',
@@ -26,7 +27,8 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)));
+  // la versión nueva entra en cuanto termina de descargarse: nunca se mezclan archivos de dos versiones
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -70,7 +72,8 @@ self.addEventListener('fetch', (e) => {
 
   // Archivos de la app: primero la copia guardada, y se actualiza en segundo plano.
   e.respondWith((async () => {
-    const cached = await caches.match(req, { ignoreSearch: true });
+    // cada archivo lleva la versión en su dirección (?v=…): se busca exacto, así una página nueva nunca usa un archivo viejo
+    const cached = await caches.match(req);
     const network = fetch(req).then(async (res) => {
       if (res && res.ok) { const c = await caches.open(VERSION); c.put(req, res.clone()); }
       return res;
