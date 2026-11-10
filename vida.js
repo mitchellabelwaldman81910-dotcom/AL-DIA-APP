@@ -354,16 +354,19 @@ function applyForests(remote) {
   for (const [fid, v] of Object.entries(remote.forests || {})) {
     const items = (v.items || []).slice();
     for (const o of REG.gout || []) if (o && o.fid === fid && !items.some((x) => x.id === o.item.id)) items.push(o.item);
-    f[fid] = { meta: v.meta, items };
+    f[fid] = { meta: v.meta, items, reqs: v.reqs || [] };
   }
   FOR.f = f;
   FOR.members = { ...FOR.members, ...(remote.members || {}) };
   FOR.trees = { ...FOR.trees, ...(remote.trees || {}) };
   const prevInv = new Set(FOR.invites.map((i) => i.forest));
   FOR.invites = remote.invites || [];
+  const prevReq = new Set((FOR.myreqs || []).map((r) => r.forest));
+  FOR.myreqs = (remote.myreqs || []).filter((r) => !f[r.forest]);
+  for (const fid of prevReq) if (f[fid] && !choosing) { toast(`Te aceptaron en ${f[fid].meta.name}. Ya puedes entrar.`, { action: 'Entrar', onAction: () => enterProfile('f:' + fid) }); if (typeof Snd !== 'undefined') Snd.chime(); }
   saveFOR();
   for (const i of FOR.invites) if (!prevInv.has(i.forest) && !(REG.invSeen ||= {})[i.forest] && !choosing) { REG.invSeen[i.forest] = 1; saveReg(); toast(`${i.fromName} te invitó al Salón ${i.forestName}. Míralo en Vida.`, { ms: 6000 }); Snd.chime(); }
-  const sig = Object.values(f).map((x) => x.meta.id + x.meta.name + x.meta.members.join() + x.items.map((i) => i.u || i.at).join()).join('|') + '#' + FOR.invites.map((i) => i.forest).join();
+  const sig = Object.values(f).map((x) => x.meta.id + x.meta.name + x.meta.members.join() + x.items.map((i) => i.u || i.at).join()).join('|') + '#' + FOR.invites.map((i) => i.forest).join() + '#' + Object.values(f).map((x) => (x.reqs || []).map((r) => r.user).join()).join() + '#' + (FOR.myreqs || []).map((r) => r.forest).join();
   const changed = sig !== forestSig; forestSig = sig;
   if (isForestId(REG.current) && !f[REG.current.slice(2)] && Object.keys(f).length >= 0 && !choosing && Object.keys(tokens()).length) { REG.current = REG.me; saveReg(); choosing = true; toast('Ya no eres parte de ese Salón.'); }
   return changed;
@@ -432,7 +435,7 @@ function viewVidaPersonal() {
   } else if (VUI.tab === 'jardin') body = gardenTabHTML(c);
   else if (VUI.tab === 'ranking') body = rankingHTML();
   else body = bosquesTabHTML();
-  return `${head}${card}${warn}${acts}${tabs}${body}`;
+  return VUI.tab === 'arbol' ? `${head}${tabs}${card}${warn}${acts}${body}` : `${head}${tabs}${body}`;
 }
 
 function rankingHTML() {

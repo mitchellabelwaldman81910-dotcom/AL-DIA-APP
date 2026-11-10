@@ -183,8 +183,12 @@ export default async (req, context) => {
             seen.add(fid);
             const gl = await store.list({ prefix: `${W}g/${fid}/` });
             const items = (await Promise.all(gl.blobs.slice(0, 1500).map((x) => store.get(x.key, { type: "json" })))).filter(Boolean);
-            out.forests[fid] = { meta: f, items };
+            const rq = await store.list({ prefix: `${W}req/${fid}/` });
+            const reqs = (await Promise.all(rq.blobs.slice(0, 60).map((x) => store.get(x.key, { type: "json" })))).filter(Boolean);
+            out.forests[fid] = { meta: f, items, reqs };
           }
+          const mr = await store.list({ prefix: `${W}myreq/${u}/` });
+          for (const b of mr.blobs) { const v = await store.get(b.key, { type: "json" }); if (v) (out.myreqs ||= []).push(v); }
           const iv = await store.list({ prefix: `${W}inv/${u}/` });
           for (const b of iv.blobs) { const v = await store.get(b.key, { type: "json" }); if (v) out.invites.push(v); }
         }
@@ -309,6 +313,7 @@ export default async (req, context) => {
           if (f) await store.set(`${W}mf/${as}/${fid}`, "1");
         }
         await store.delete(`${W}inv/${as}/${fid}`);
+        if (body.accept) { await store.delete(`${W}req/${fid}/${as}`); await store.delete(`${W}myreq/${as}/${fid}`); }
         { const f2 = await forestOf(fid); await bump(store, [as, ...(f2 ? f2.members : [])]); }
         return json({ ok: true });
       }
@@ -335,6 +340,43 @@ export default async (req, context) => {
         if (body.emoji) f.emoji = clip(body.emoji, 4);
         await store.setJSON(`${W}f/${f.id}`, f);
         await bump(store, f.members);
+        return json({ ok: true });
+      }
+      case "freq": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const code = String(body.code || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const f = await forestOf(code);
+        if (!f) return json({ error: "No encontramos ningún Salón con ese código. Revísalo con quien te lo compartió." }, 404);
+        if (f.members.includes(as)) return json({ error: `Ya eres parte de ${f.name}` }, 409);
+        if (f.members.length >= 40) return json({ error: "Ese Salón está lleno (40 integrantes)" }, 400);
+        const at = Date.now();
+        await store.setJSON(`${W}req/${f.id}/${as}`, { forest: f.id, user: as, name: auth[as].name, color: auth[as].color, at });
+        await store.setJSON(`${W}myreq/${as}/${f.id}`, { forest: f.id, forestName: f.name, color: f.color, members: f.members.length, at });
+        await bump(store, [as, ...f.members]);
+        if (context?.waitUntil) context.waitUntil(pushTo(store, f.members, url.origin, { title: `${auth[as].name} quiere unirse a ${f.name}`, body: "Ábrelo para aceptar o rechazar la solicitud.", url: "#/grupo", tag: `req-${f.id}-${as}` }, ""));
+        return json({ ok: true, forest: { id: f.id, name: f.name } });
+      }
+      case "fapprove": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const f = await memberOf(as, body.forest);
+        if (!f) return json({ error: "Ya no eres parte de este Salón" }, 403);
+        const who = String(body.user || "").toLowerCase();
+        const rq = await store.get(`${W}req/${f.id}/${who}`, { type: "json" });
+        if (!rq) return json({ error: "Esa solicitud ya fue atendida" }, 404);
+        if (body.accept && !f.members.includes(who)) {
+          if (f.members.length >= 40) return json({ error: "El Salón está lleno (40 integrantes)" }, 400);
+          f.members.push(who); await store.setJSON(`${W}f/${f.id}`, f); await store.set(`${W}mf/${who}/${f.id}`, "1");
+        }
+        await store.delete(`${W}req/${f.id}/${who}`); await store.delete(`${W}myreq/${who}/${f.id}`);
+        await bump(store, [who, ...f.members]);
+        return json({ ok: true });
+      }
+      case "fcancel": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const fid = String(body.forest || "");
+        if (!FID_RE.test(fid)) return json({ ok: true });
+        await store.delete(`${W}req/${fid}/${as}`); await store.delete(`${W}myreq/${as}/${fid}`);
+        const f = await forestOf(fid); await bump(store, [as, ...(f ? f.members : [])]);
         return json({ ok: true });
       }
       case "gitem": {

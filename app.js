@@ -1150,6 +1150,7 @@ function viewMateria(id) {
 /* ---------- Más ---------- */
 function viewMas() {
   const items = [
+    ['#/salones', 'users', 'Salones', 'Crea o únete a un grupo y compartan todo en tiempo real'],
     ['#/estilo', 'palette', 'Estilo de la app', 'Cambia los colores y el diseño: 7 plantillas con día y noche'],
     ['#/cerebro', 'network', 'Tu Cerebro', 'Todo lo que has hecho y pensado, conectado en una red viva'],
     ['#/panel', 'grid', 'Mi panel', 'Radar de carga, tiempo libre real, patrones y hábitos'],
@@ -1435,8 +1436,8 @@ function buildLeaves() {
   if (off) { box.innerHTML = ''; return; }
   if (box.childElementCount) return;
   let html = '';
-  for (let i = 0; i < 14; i++) {
-    const dur = 14 + Math.random() * 16, size = 14 + Math.random() * 16;
+  for (let i = 0; i < 7; i++) {
+    const dur = 18 + Math.random() * 16, size = 12 + Math.random() * 10;
     html += `<span class="leaf" style="left:${Math.random() * 100}%;--dur:${dur}s;--delay:${-Math.random() * dur}s;--size:${size}px;--drift:${(Math.random() * 2 - 1) * 70}px;--spin:${(Math.random() * 2 - 1) * 540}deg"><i style="--sway:${3 + Math.random() * 3}s">${leafSVG(LEAF_COLORS[i % LEAF_COLORS.length])}</i></span>`;
   }
   box.innerHTML = html;
@@ -1903,12 +1904,12 @@ function pushBanner() {
   if (!('PushManager' in window)) return isIOS() && !isStandalone() ? `<div class="banner">${icon('bell')}<p>Para recibir avisos del grupo en iPhone o iPad, instala la app en tu pantalla de inicio y ábrela desde el ícono.</p></div>` : '';
   return `<div class="banner">${icon('bell')}<p>Activa los avisos para enterarte al instante cuando alguien suba una tarea.</p><button class="btn primary" data-act="g-push">Activar</button></div>`;
 }
-function groupHead(title, sub) {
+function groupHead_v7(title, sub) {
   return `<section class="group-head"><div class="today-top"><div class="g-badge">${avatar(profile(), 'lg')}</div>
       <div class="head-actions"><button type="button" class="who-chip" data-act="profile-sheet">${mini(me(), 'xs')}<span>${esc(me())}</span></button></div></div>
     <h1 class="page-title" style="margin-top:12px">${title}</h1><p class="page-sub">${sub}</p>${groupStatus()}</section>`;
 }
-function viewGrupo() {
+function viewGrupo_v7() {
   const tasks = gAll('task').sort((a, b) => dueKey(a).localeCompare(dueKey(b)));
   const pend = tasks.filter((t) => !gDone()[t.id] && (!t.due || diffDays(today(), t.due) >= -3));
   const done = tasks.filter((t) => gDone()[t.id]);
@@ -2009,7 +2010,7 @@ function viewIdeas() {
       ${i.by === me() ? `<button class="icon-btn ghost" data-act="g-del" data-id="${i.id}" aria-label="Quitar idea">${icon('trash', 'sm')}</button>` : ''}</div></article>`; }).join('')
       : `<div class="empty"><h3>Sin ideas todavía</h3><p>La primera idea puede ser la que les ayude a todos.</p></div>`}</div>`;
 }
-function viewMasGrupo() {
+function viewMasGrupo_v7() {
   const p = profile(); const f = forestMeta(); const st = S.settings;
   if (!p || !f) return '<div class="empty"><h3>Este Salón ya no está</h3><p><button class="btn" data-act="profile-choose">Volver</button></p></div>';
   const mem = f.members.map((id) => ({ id, ...(FOR.members[id] || { name: cap(id), color: '#2F8A5B' }) }));
@@ -2381,7 +2382,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.5. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.6. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -2475,6 +2476,7 @@ function render() {
       case 'vida': html = viewVida(); break;
       case 'panel': html = viewPanel(); break;
       case 'cerebro': html = viewCerebro(); break;
+      case 'salones': html = viewSalones(); break;
       case 'estilo': setTimeout(() => { history.replaceState(null, '', '#/mas'); openEstilos(); }, 0); html = viewMas(); break;
       case 'carta': setTimeout(() => { history.replaceState(null, '', '#/mas'); writeLetter(); }, 0); html = viewMas(); break;
       default: html = viewHoy();
@@ -2489,7 +2491,7 @@ function render() {
   if (qv && $('#quickIn')) { $('#quickIn').value = qv; updateQuickPreview(); }
   if (hadFocus && ['quickIn', 'taskQ', 'notesQ'].includes(hadFocus)) { const el = $('#' + hadFocus); if (el) { el.focus(); const v = el.value; el.setSelectionRange?.(v.length, v.length); } }
 
-  const known = ['carta', 'estilo', 'panel', 'cerebro', 'vida', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
+  const known = ['carta', 'estilo', 'salones', 'panel', 'cerebro', 'vida', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
   const rn = known.includes(r.name) ? r.name : 'hoy';
   const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', vida: 'vida', mas: 'mas', instalar: 'mas' }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'mas', materias: 'mas', tareas: 'tareas', calendario: 'calendario', hoy: 'hoy', mente: 'mente', vida: 'vida' }[rn] || 'mas');
   $$('.nav a').forEach((a) => { if (a.dataset.nav === navName) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
