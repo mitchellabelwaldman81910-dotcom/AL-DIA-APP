@@ -227,7 +227,7 @@ function pinHTML() { const p = gGet(`pin-${curFid()}`); if (!p || p.deleted || !
     const html = baseGrupo(); const i = html.indexOf('</section>'); if (i < 0) return html;
     const up = gEvents().filter((e) => e.date >= today()).slice(0, 2);
     const strip = `${pinHTML()}<div class="g-strip">${pomoCardHTML()}
-      <a class="pomo-card" href="#/gcal"><span class="pomo-ico">${icon('cal')}</span><span class="txt"><b>Calendario del Bosque</b><span class="small">${up.length ? up.map((e) => `${esc(e.title)} · ${esc(relDay(e.date))}`).join(' · ') : 'Exámenes y entregas de todo el grupo.'}</span></span>${icon('chev', 'chev')}</a></div>
+      <a class="pomo-card" href="#/grupo" data-act="bos-tab" data-v="cal"><span class="pomo-ico">${icon('cal')}</span><span class="txt"><b>Calendario del Bosque</b><span class="small">${up.length ? up.map((e) => `${esc(e.title)} · ${esc(relDay(e.date))}`).join(' · ') : 'Exámenes y entregas de todo el grupo.'}</span></span>${icon('chev', 'chev')}</a></div>
       ${polls().slice(0, 2).map(pollHTML).join('')}
       <div class="btn-row g-mini">${gGet(`pin-${curFid()}`)?.text ? '' : `<button class="btn quiet" data-act="pin-edit">${icon('flag', 'sm')}Fijar anuncio</button>`}<button class="btn quiet" data-act="poll-new">${icon('bars', 'sm')}Nueva encuesta</button><button class="btn quiet" data-act="help-open">${icon('help', 'sm')}Pedir ayuda</button><button class="btn quiet" data-act="g-history">${icon('save', 'sm')}Copias</button></div>`;
     return html.slice(0, i + 10) + strip + html.slice(i + 10);
@@ -246,7 +246,7 @@ Object.assign(VIDA_ACTS, {
 });
 {
   const baseMas = viewMasGrupo;
-  viewMasGrupo = function () { const h = baseMas(); const i = h.indexOf('<h2 class="sec">Integrantes'); const add = `<ul class="rows" style="margin-bottom:14px"><li><a href="#/gcal"><span class="ico">${icon('cal')}</span><span class="txt"><b>Calendario del Bosque</b><span>Fechas de todos y archivos .ics</span></span>${icon('chev', 'chev')}</a></li><li><a href="#/estudio"><span class="ico">${icon('timer')}</span><span class="txt"><b>Estudia conmigo</b><span>Pomodoro sincronizado</span></span>${icon('chev', 'chev')}</a></li><li><a href="#/biblioteca"><span class="ico">${icon('globe')}</span><span class="txt"><b>Biblioteca General</b><span>La sala de todos</span></span>${icon('chev', 'chev')}</a></li><li><button type="button" class="rowbtn" data-act="g-history"><span class="ico">${icon('save')}</span><span class="txt"><b>Copias del Bosque</b><span>Recupera lo que se borró</span></span>${icon('chev', 'chev')}</button></li></ul>`; return i < 0 ? h + add : h.slice(0, i) + add + h.slice(i); };
+  viewMasGrupo = function () { const h = baseMas(); const i = h.indexOf('<h2 class="sec">Integrantes'); const add = `<ul class="rows" style="margin-bottom:14px"><li><a href="#/estudio"><span class="ico">${icon('timer')}</span><span class="txt"><b>Estudia conmigo</b><span>Pomodoro sincronizado</span></span>${icon('chev', 'chev')}</a></li><li><a href="#/biblioteca"><span class="ico">${icon('globe')}</span><span class="txt"><b>Biblioteca General</b><span>La sala de todos</span></span>${icon('chev', 'chev')}</a></li><li><button type="button" class="rowbtn" data-act="g-history"><span class="ico">${icon('save')}</span><span class="txt"><b>Copias del Bosque</b><span>Recupera lo que se borró</span></span>${icon('chev', 'chev')}</button></li></ul>`; return i < 0 ? h + add : h.slice(0, i) + add + h.slice(i); };
 }
 /* importar calendario personal */
 {
