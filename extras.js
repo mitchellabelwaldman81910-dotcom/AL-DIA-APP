@@ -80,7 +80,7 @@ const NOTE_PAPERS = [['liso', 'Lisa'], ['rayado', 'Rayada'], ['cuadros', 'Cuadr�
 const PAPER_COLORS = ['#FFFFFF', '#FFF8DC', '#EAF6EA', '#E6F1FB', '#FBEAF0', '#F1EAFB', '#2B332F'];
 const TEXT_COLORS = ['#1B3A2D', '#000000', '#C0392B', '#D35400', '#B7950B', '#1E8449', '#2471A3', '#7D3C98', '#5D6D7E', '#FFFFFF'];
 const HILITES = ['#FFF59D', '#C8E6C9', '#B3E5FC', '#F8BBD0', '#FFE0B2', '#E1BEE7', 'transparent'];
-const LIB_EMOJI = ['📒', '📗', '📘', '📙', '📕', '📓', '🌿', '✏️'];
+const LIB_EMOJI = [];
 const LIB_COLORS = ['#2F8A5B', '#3E9A93', '#5B7FD1', '#B07AC8', '#D27C5E', '#C9A55C', '#4F9A63', '#7A8CA8'];
 
 const OK_TAGS = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'S', 'STRIKE', 'SPAN', 'DIV', 'P', 'BR', 'H1', 'H2', 'H3', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'HR', 'FONT', 'SUB', 'SUP']);
@@ -110,21 +110,21 @@ function noteEditorStyle(d) {
 }
 function libretas() { return (S.libretas ||= []); }
 function noteEditorHTML(d) {
-  const sw = (arr, cmd, cur) => arr.map((c) => `<button type="button" class="sw" data-rt="${cmd}" data-v="${c}" style="--c:${c === 'transparent' ? '#fff' : c}" aria-label="${c === 'transparent' ? 'Quitar resaltado' : 'Color ' + c}">${c === 'transparent' ? '✕' : ''}</button>`).join('');
+  const sw = (arr, cmd, cur) => arr.map((c) => `<button type="button" class="sw" data-rt="${cmd}" data-v="${c}" style="--c:${c === 'transparent' ? '#fff' : c}" aria-label="${c === 'transparent' ? 'Quitar resaltado' : 'Color ' + c}">${c === 'transparent' ? icon('x', 'sm') : ''}</button>`).join('');
   return `<div class="rt-wrap">
     <div class="rt-bar" role="toolbar" aria-label="Formato del texto">
       <button type="button" data-rt="bold" aria-label="Negrita"><b>N</b></button><button type="button" data-rt="italic" aria-label="Cursiva"><i>C</i></button><button type="button" data-rt="underline" aria-label="Subrayado"><u>S</u></button><button type="button" data-rt="strikeThrough" aria-label="Tachado"><s>T</s></button>
       <button type="button" data-rt="formatBlock" data-v="h2" aria-label="Título">Título</button><button type="button" data-rt="formatBlock" data-v="p" aria-label="Párrafo normal">Párrafo</button>
       <button type="button" data-rt="insertUnorderedList" aria-label="Lista">• Lista</button><button type="button" data-rt="insertOrderedList" aria-label="Lista numerada">1. Lista</button>
       <button type="button" data-rt="justifyLeft" aria-label="Alinear a la izquierda">⇤</button><button type="button" data-rt="justifyCenter" aria-label="Centrar">↔</button><button type="button" data-rt="justifyRight" aria-label="Alinear a la derecha">⇥</button>
-      <button type="button" data-rt="undo" aria-label="Deshacer">↶</button><button type="button" data-rt="redo" aria-label="Rehacer">↷</button><button type="button" data-rt="removeFormat" aria-label="Quitar formato">Aa✕</button>
+      <button type="button" data-rt="undo" aria-label="Deshacer">↶</button><button type="button" data-rt="redo" aria-label="Rehacer">↷</button><button type="button" data-rt="removeFormat" aria-label="Quitar formato">Aa</button>
     </div>
     <div class="rt-bar rt-sel"><label>Letra<select data-rtsel="fontName" aria-label="Tipo de letra">${NOTE_FONTS.map(([n, f]) => `<option value="${esc(f)}" style="font-family:${esc(f)}">${n}</option>`).join('')}</select></label>
       <label>Tamaño<select data-rtsel="fontSize" aria-label="Tamaño del texto"><option value="2">Chica</option><option value="3" selected>Normal</option><option value="5">Grande</option><option value="6">Enorme</option><option value="7">Gigante</option></select></label></div>
     <div class="rt-bar rt-colors"><span class="tiny faint">Color</span>${sw(TEXT_COLORS, 'foreColor')}<span class="tiny faint">Resaltar</span>${sw(HILITES, 'hiliteColor')}</div>
     <div class="rt-edit paper-${d.paper || 'liso'}" id="nRich" contenteditable="true" spellcheck="true" lang="es" autocapitalize="sentences" autocorrect="on" role="textbox" aria-multiline="true" aria-label="Texto del apunte" data-ph="Escribe aquí o toca Dictar…" style="${noteEditorStyle(d)}">${noteHTMLof(d)}</div>
-    <div class="btn-row rt-tools"><button type="button" class="btn" data-rt="dictate" id="rtDictate">🎙️ Dictar</button><button type="button" class="btn" data-rt="spell">✨ Corregir ortografía</button><label class="btn" for="ocrIn">${icon('cam')}Foto a texto</label><input id="ocrIn" type="file" accept="image/*" class="sr" data-ocr-in></div>
-    <div class="row2" style="margin-top:12px"><div class="field"><label for="nLib">Libreta</label><select id="nLib" class="input" data-nf="libreta"><option value="">Sin libreta</option>${libretas().map((l) => `<option value="${l.id}" ${d.libreta === l.id ? 'selected' : ''}>${esc(l.emoji || '📒')} ${esc(l.name)}</option>`).join('')}<option value="__new">+ Nueva libreta…</option></select></div>
+    <div class="btn-row rt-tools"><button type="button" class="btn" data-rt="dictate" id="rtDictate">${icon('mic', 'sm')}Dictar</button><button type="button" class="btn" data-rt="spell">${icon('spark', 'sm')}Corregir ortografía</button><label class="btn" for="ocrIn">${icon('cam')}Foto a texto</label><input id="ocrIn" type="file" accept="image/*" class="sr" data-ocr-in></div>
+    <div class="row2" style="margin-top:12px"><div class="field"><label for="nLib">Libreta</label><select id="nLib" class="input" data-nf="libreta"><option value="">Sin libreta</option>${libretas().map((l) => `<option value="${l.id}" ${d.libreta === l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}<option value="__new">+ Nueva libreta…</option></select></div>
       <div class="field"><label for="nPaper">Hoja</label><select id="nPaper" class="input" data-nf="paper">${NOTE_PAPERS.map(([k, l]) => `<option value="${k}" ${(d.paper || 'liso') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div></div>
     <div class="row2"><div class="field"><label for="nFont">Letra de toda la hoja</label><select id="nFont" class="input" data-nf="font">${NOTE_FONTS.map(([n, f]) => `<option value="${esc(f)}" ${(d.font || NOTE_FONTS[0][1]) === f ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
       <div class="field"><label for="nSize">Tamaño base</label><select id="nSize" class="input" data-nf="size">${NOTE_SIZES.map(([n, s]) => `<option value="${s}" ${(d.size || '17px') === s ? 'selected' : ''}>${n}</option>`).join('')}</select></div></div>
@@ -156,11 +156,11 @@ function rtInsert(text) {
   else { const r = document.createRange(); r.selectNodeContents(ed); r.collapse(false); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
   document.execCommand('insertText', false, text); rtSync();
 }
-function stopDictation() { if (dictation) { try { dictation.stop(); } catch { /* */ } dictation = null; } const b = document.getElementById('rtDictate'); if (b) { b.classList.remove('rec'); b.textContent = '🎙️ Dictar'; } }
+function stopDictation() { if (dictation) { try { dictation.stop(); } catch { /* */ } dictation = null; } const b = document.getElementById('rtDictate'); if (b) { b.classList.remove('rec'); b.innerHTML = icon('mic', 'sm') + 'Dictar'; } }
 function toggleDictation() {
   if (dictation) { stopDictation(); const ed = document.getElementById('nRich'); if (ed) { const n = fixEditor(ed); rtSync(); if (n) toast(`Dictado listo. Corregí ${plural(n, 'detalle', 'detalles')} de ortografía.`); } return; }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { toast(isIOS() ? 'Para dictar en iPhone o iPad, usa el micrófono del teclado (🎙️ abajo a la derecha): también se escribe aquí.' : 'Este navegador no permite dictar. Prueba con Chrome o Safari.'); return; }
+  if (!SR) { toast(isIOS() ? 'Para dictar en iPhone o iPad, usa el micrófono del teclado (abajo a la derecha): también se escribe aquí.' : 'Este navegador no permite dictar. Prueba con Chrome o Safari.'); return; }
   const r = new SR(); r.lang = 'es-MX'; r.continuous = true; r.interimResults = false;
   r.onresult = (e) => { for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) rtInsert(e.results[i][0].transcript.trim() + ' '); };
   r.onerror = (e) => { if (e.error === 'not-allowed') toast('Permite el micrófono para poder dictar.'); stopDictation(); };
@@ -200,7 +200,7 @@ document.addEventListener('change', async (e) => {
   const k = el.dataset.nf; if (!k || !draft) return;
   if (k === 'libreta' && el.value === '__new') {
     const l = await newLibreta(); el.value = l ? l.id : ''; draft.libreta = l ? l.id : ''; draftDirty = true;
-    if (l) { const o = document.createElement('option'); o.value = l.id; o.textContent = `${l.emoji} ${l.name}`; el.insertBefore(o, el.querySelector('option[value="__new"]')); el.value = l.id; }
+    if (l) { const o = document.createElement('option'); o.value = l.id; o.textContent = l.name; el.insertBefore(o, el.querySelector('option[value="__new"]')); el.value = l.id; }
     return;
   }
   draft[k] = el.value; draftDirty = true; if (k !== 'libreta') applyNoteStyle();
@@ -217,14 +217,14 @@ document.addEventListener('paste', (e) => {
 async function newLibreta() {
   const name = await ask({ title: 'Nueva libreta', text: 'Una libreta junta apuntes de un mismo tema, como una materia o un proyecto.', input: { placeholder: 'Ej. Mercadotecnia' }, ok: 'Crear' });
   if (!name) return null;
-  const l = { id: uid(), name: name.slice(0, 30), emoji: LIB_EMOJI[libretas().length % LIB_EMOJI.length], color: LIB_COLORS[libretas().length % LIB_COLORS.length] };
+  const l = { id: uid(), name: name.slice(0, 30), color: LIB_COLORS[libretas().length % LIB_COLORS.length] };
   S.libretas.push(l); save(); Snd.chime(); return l;
 }
 function libretaBarHTML() {
   const ls = libretas(); const cur = UI.libreta || '';
   const cnt = (id) => S.notes.filter((n) => (n.libreta || '') === id).length;
-  return `<div class="lib-bar" role="group" aria-label="Libretas"><button type="button" class="lib ${!cur ? 'on' : ''}" data-act="lib-pick" data-v="">📚 Todas <b>${S.notes.length}</b></button>
-    ${ls.map((l) => `<button type="button" class="lib ${cur === l.id ? 'on' : ''}" style="--c:${l.color}" data-act="lib-pick" data-v="${l.id}">${esc(l.emoji)} ${esc(l.name)} <b>${cnt(l.id)}</b></button>`).join('')}
+  return `<div class="lib-bar" role="group" aria-label="Libretas"><button type="button" class="lib ${!cur ? 'on' : ''}" data-act="lib-pick" data-v="">Todas <b>${S.notes.length}</b></button>
+    ${ls.map((l) => `<button type="button" class="lib ${cur === l.id ? 'on' : ''}" style="--c:${l.color}" data-act="lib-pick" data-v="${l.id}"><i class="lib-dot"></i>${esc(l.name)} <b>${cnt(l.id)}</b></button>`).join('')}
     <button type="button" class="lib add" data-act="lib-new">+ Libreta</button></div>
     ${cur && ls.find((l) => l.id === cur) ? `<p class="small muted" style="margin:6px 0 0"><button class="link-btn" data-act="lib-edit" data-id="${cur}">Renombrar o borrar esta libreta</button></p>` : ''}`;
 }
@@ -233,29 +233,14 @@ function libretaBarHTML() {
    4. Jardín, semillas y misiones del día (el minijuego)
    ========================================================= */
 const GARDEN = [
-  { id: 'mush', name: 'Hongos mágicos', cost: 20, lvl: 2, emoji: '🍄' }, { id: 'bench', name: 'Banca de madera', cost: 35, lvl: 5, emoji: '🪑' },
-  { id: 'lantern', name: 'Farol de luz', cost: 45, lvl: 8, emoji: '🏮' }, { id: 'fence', name: 'Cerquita', cost: 55, lvl: 10, emoji: '🏡' },
-  { id: 'birdhouse', name: 'Casita de pájaros', cost: 60, lvl: 12, emoji: '🐦' }, { id: 'bunny', name: 'Conejito', cost: 90, lvl: 16, emoji: '🐰' },
-  { id: 'windmill', name: 'Molino', cost: 120, lvl: 22, emoji: '🌬️' }, { id: 'fox', name: 'Zorrito', cost: 150, lvl: 28, emoji: '🦊' },
-  { id: 'fountain', name: 'Fuente', cost: 200, lvl: 35, emoji: '⛲' }, { id: 'balloon', name: 'Globo aerostático', cost: 260, lvl: 45, emoji: '🎈' },
-  { id: 'tent', name: 'Casita de campaña', cost: 320, lvl: 55, emoji: '⛺' }, { id: 'chest', name: 'Cofre del tesoro', cost: 400, lvl: 70, emoji: '💎' },
+  { id: 'mush', name: 'Hongos mágicos', cost: 20, lvl: 2, emoji: 'mushroom' }, { id: 'bench', name: 'Banca de madera', cost: 35, lvl: 5, emoji: 'bench' },
+  { id: 'lantern', name: 'Farol de luz', cost: 45, lvl: 8, emoji: 'lamp' }, { id: 'fence', name: 'Cerquita', cost: 55, lvl: 10, emoji: 'home' },
+  { id: 'birdhouse', name: 'Casita de pájaros', cost: 60, lvl: 12, emoji: 'home' }, { id: 'bunny', name: 'Conejito', cost: 90, lvl: 16, emoji: 'paw' },
+  { id: 'windmill', name: 'Molino', cost: 120, lvl: 22, emoji: 'wind' }, { id: 'fox', name: 'Zorrito', cost: 150, lvl: 28, emoji: 'paw' },
+  { id: 'fountain', name: 'Fuente', cost: 200, lvl: 35, emoji: 'drop' }, { id: 'balloon', name: 'Globo aerostático', cost: 260, lvl: 45, emoji: 'balloon' },
+  { id: 'tent', name: 'Casita de campaña', cost: 320, lvl: 55, emoji: 'tent' }, { id: 'chest', name: 'Cofre del tesoro', cost: 400, lvl: 70, emoji: 'gem' },
 ];
-function gardenSVG(ids, id) {
-  const has = (k) => (ids || []).includes(k); let o = '<g transform="translate(0 -26)">';
-  if (has('windmill')) o += `<g transform="translate(26 252)"><path d="M-7 0 L-4 -34 H4 L7 0Z" fill="#E8DCC4"/><path d="M-5 -34 L0 -44 L5 -34Z" fill="#C97B5A"/><g class="g-spin" style="transform-box:fill-box;transform-origin:center"><g transform="translate(0 -33)"><path d="M0 0 L-3 -22 L3 -22Z M0 0 L22 -3 L22 3Z M0 0 L3 22 L-3 22Z M0 0 L-22 3 L-22 -3Z" fill="#fff" stroke="#C9B99A" stroke-width=".8"/></g></g></g>`;
-  if (has('fence')) { o += '<g transform="translate(0 270)"><rect x="0" y="-9" width="46" height="2.4" fill="#E9DDC4"/><rect x="0" y="-3" width="46" height="2.4" fill="#E9DDC4"/>'; for (let i = 0; i < 7; i++) o += `<path d="M${1 + i * 7} 2 V-13 l2.2 -3 l2.2 3 V2Z" fill="#F3E9D2" stroke="#D9CBAA" stroke-width=".6"/>`; o += '</g>'; }
-  if (has('birdhouse')) o += `<g transform="translate(336 262)"><rect x="-1.2" y="-22" width="2.4" height="24" fill="#8A5E3A"/><rect x="-8" y="-36" width="16" height="14" rx="1.5" fill="#E7B66B"/><path d="M-10 -35 L0 -44 L10 -35Z" fill="#C0674A"/><circle cy="-29" r="3" fill="#5E432E"/></g><g style="transform:translate(329px,224px)"><g class="g-hop"><ellipse rx="4" ry="3" fill="#5B7FD1"/><circle cx="3" cy="-2" r="2.2" fill="#5B7FD1"/><path d="M5 -2 l3 .6 l-3 .8Z" fill="#F2A33A"/></g></g>`;
-  if (has('mush')) o += `<g transform="translate(214 273)"><rect x="-1.5" y="-6" width="3" height="7" fill="#F3E9D2"/><path d="M-7 -5 a7 6 0 0 1 14 0z" fill="#E5645A"/><circle cx="-3" cy="-8" r="1.2" fill="#fff"/><circle cx="3" cy="-7" r="1" fill="#fff"/></g><g transform="translate(226 276) scale(.7)"><rect x="-1.5" y="-6" width="3" height="7" fill="#F3E9D2"/><path d="M-7 -5 a7 6 0 0 1 14 0z" fill="#F0A24B"/><circle cx="-2" cy="-8" r="1.2" fill="#fff"/></g>`;
-  if (has('bench')) o += `<g transform="translate(264 270)"><rect x="-15" y="-9" width="30" height="3" rx="1" fill="#B07A4E"/><rect x="-15" y="-16" width="30" height="3" rx="1" fill="#C08A5A"/><rect x="-13" y="-14" width="2.6" height="16" fill="#8A5E3A"/><rect x="10.4" y="-14" width="2.6" height="16" fill="#8A5E3A"/></g>`;
-  if (has('lantern')) o += `<g transform="translate(310 270)"><circle class="v-pulse" cy="-34" r="15" fill="url(#gl-${id})"/><rect x="-1" y="-30" width="2" height="32" fill="#4A4A55"/><rect x="-5" y="-40" width="10" height="10" rx="2" fill="#FFE9A0"/><path d="M-7 -40 h14 l-3 -5 h-8z" fill="#4A4A55"/></g>`;
-  if (has('tent')) o += `<g transform="translate(66 296)"><path d="M-20 0 L0 -26 L20 0Z" fill="#E98B5A"/><path d="M0 -26 L8 0 H-8Z" fill="#3B2F25" opacity=".85"/><path d="M-20 0 H20" stroke="#B5633A" stroke-width="1.6"/></g>`;
-  if (has('chest')) o += `<g transform="translate(198 296)"><rect x="-11" y="-10" width="22" height="11" rx="2" fill="#B07A4E"/><path d="M-11 -10 a11 7 0 0 1 22 0z" fill="#C8905C"/><rect x="-1.6" y="-9" width="3.2" height="5" fill="#FFD34E"/><circle class="v-pulse" cy="-12" r="12" fill="url(#gl-${id})"/></g>`;
-  if (has('fountain')) o += `<g transform="translate(100 296)"><ellipse rx="19" ry="5" fill="#C9C2B4"/><ellipse rx="15" ry="3.6" fill="#8FD3F4"/><rect x="-2" y="-14" width="4" height="12" fill="#C9C2B4"/><circle class="v-fly" cy="-18" r="1.8" fill="#BFE7F7" style="--d:0s"/><circle class="v-fly" cx="-6" cy="-12" r="1.6" fill="#BFE7F7" style="--d:1s"/><circle class="v-fly" cx="6" cy="-12" r="1.6" fill="#BFE7F7" style="--d:2s"/></g>`;
-  if (has('fox')) o += `<g transform="translate(150 296)"><ellipse rx="9" ry="5" fill="#E5894A"/><path d="M-8 -1 q-9 -2 -10 6 q8 0 10 -4Z" fill="#E5894A"/><path d="M-17 4 q3 -2 3 1 q-2 2 -3 -1Z" fill="#fff"/><circle cx="8" cy="-5" r="5" fill="#E5894A"/><path d="M5 -8 l-1 -5 l4 3Z M10 -9 l2 -5 l1 6Z" fill="#E5894A"/><circle cx="10" cy="-5" r="1" fill="#3B2F25"/><path d="M12 -4 h4 l-3 3Z" fill="#fff"/></g>`;
-  if (has('bunny')) o += `<g style="transform:translate(240px,288px)"><g class="g-hop"><ellipse rx="7" ry="5" fill="#fff"/><circle cx="6" cy="-4" r="4" fill="#fff"/><ellipse cx="5" cy="-12" rx="1.6" ry="5" fill="#fff"/><ellipse cx="8.5" cy="-11.5" rx="1.6" ry="5" fill="#fff"/><circle cx="7.5" cy="-4.5" r=".9" fill="#3B2F25"/><circle cx="-7" cy="0" r="2.4" fill="#fff"/></g></g>`;
-  if (has('balloon')) o += `<g style="transform:translate(128px,80px)"><g class="g-float"><ellipse rx="13" ry="16" fill="#E5645A"/><path d="M-13 0 q13 24 26 0" fill="#F5B06A" opacity=".9"/><path d="M-5 14 L-4 24 M5 14 L4 24" stroke="#8A5E3A" stroke-width="1"/><rect x="-5" y="24" width="10" height="6" rx="1" fill="#B07A4E"/></g></g>`;
-  return o + '</g>';
-}
+/* gardenSVG: ver linea.js */
 function vidaData() { return (S.vida ||= { garden: [], bonus: 0, claimed: {} }); }
 function seedsOf(c) { const v = vidaData(); const spent = (v.garden || []).reduce((a, k) => a + (GARDEN.find((g) => g.id === k)?.cost || 0), 0); return Math.max(0, Math.floor(c.life / 2) + (v.bonus || 0) - spent); }
 function questsToday() {
@@ -263,27 +248,27 @@ function questsToday() {
   const sameDay = (ms) => ms && toISO(new Date(ms)) === t0;
   const dueToday = S.tasks.filter((t) => t.due === t0);
   const Q = [
-    { id: 'entrega', icon: '✅', text: 'Entrega una tarea', ok: S.tasks.some((t) => t.done && sameDay(t.doneAt)), reward: 6 },
-    { id: 'nueva', icon: '📝', text: 'Sube una tarea nueva', ok: S.tasks.some((t) => sameDay(t.created)), reward: 3 },
-    { id: 'apunte', icon: '📒', text: 'Escribe un apunte o pensamiento', ok: S.notes.some((n) => sameDay(n.updated)) || S.thoughts.some((x) => sameDay(x.at)), reward: 4 },
-    { id: 'hoy', icon: '🌟', text: 'Termina todo lo de hoy', ok: dueToday.length > 0 && dueToday.every((t) => t.done), reward: 8 },
+    { id: 'entrega', icon: 'checkc', text: 'Entrega una tarea', ok: S.tasks.some((t) => t.done && sameDay(t.doneAt)), reward: 6 },
+    { id: 'nueva', icon: 'plus', text: 'Sube una tarea nueva', ok: S.tasks.some((t) => sameDay(t.created)), reward: 3 },
+    { id: 'apunte', icon: 'notebook', text: 'Escribe un apunte o pensamiento', ok: S.notes.some((n) => sameDay(n.updated)) || S.thoughts.some((x) => sameDay(x.at)), reward: 4 },
+    { id: 'hoy', icon: 'target', text: 'Termina todo lo de hoy', ok: dueToday.length > 0 && dueToday.every((t) => t.done), reward: 8 },
   ];
   return Q.map((q) => ({ ...q, claimed: !!v.claimed[`${t0}:${q.id}`] }));
 }
 function questsHTML() {
   const Q = questsToday(); const done = Q.filter((q) => q.claimed).length;
   return `<div class="card quests"><div class="q-head"><b class="serif">Misiones de hoy</b><span class="chip ${done === Q.length ? 'pen' : ''}">${done}/${Q.length}</span></div>
-    ${Q.map((q) => `<div class="quest ${q.ok ? 'ok' : ''}"><span class="q-ico">${q.icon}</span><span class="q-t">${esc(q.text)}</span>${q.claimed ? '<span class="chip pen">Listo ✓</span>' : q.ok ? `<button class="btn primary" data-act="quest-claim" data-id="${q.id}">+${q.reward} 🌰</button>` : `<span class="small muted">+${q.reward} 🌰</span>`}</div>`).join('')}</div>`;
+    ${Q.map((q) => `<div class="quest ${q.ok ? 'ok' : ''}"><span class="q-ico">${icon(q.icon)}</span><span class="q-t">${esc(q.text)}</span>${q.claimed ? '<span class="chip pen">Listo</span>' : q.ok ? `<button class="btn primary" data-act="quest-claim" data-id="${q.id}">+${q.reward} semillas</button>` : `<span class="small muted">+${q.reward} semillas</span>`}</div>`).join('')}</div>`;
 }
 function gardenTabHTML(c) {
   const v = vidaData(); const bal = seedsOf(c);
-  return `<div class="card seeds"><span class="seed-n">🌰 <b id="seedBal">${bal}</b></span><span class="small muted">semillas para decorar tu jardín. Ganas 1 por cada 2 puntos del árbol y con las misiones.</span></div>
+  return `<div class="card seeds"><span class="seed-n">${icon('seed', 'sm')} <b id="seedBal">${bal}</b></span><span class="small muted">semillas para decorar tu jardín. Ganas 1 por cada 2 puntos del árbol y con las misiones.</span></div>
     ${questsHTML()}
     <h2 class="sec">Tienda del jardín <small>${(v.garden || []).length}/${GARDEN.length} en tu jardín</small></h2>
     <div class="shop">${GARDEN.map((g) => {
       const own = (v.garden || []).includes(g.id); const locked = c.level < g.lvl; const can = !own && !locked && bal >= g.cost;
-      return `<div class="shop-i ${own ? 'own' : ''} ${locked ? 'locked' : ''}"><span class="s-ico">${locked ? '🔒' : g.emoji}</span><b>${esc(g.name)}</b>
-        ${own ? '<span class="chip pen">En tu jardín</span>' : locked ? `<span class="small muted">Nivel ${g.lvl}</span>` : `<button class="btn ${can ? 'primary' : ''}" data-act="garden-buy" data-id="${g.id}" ${can ? '' : 'aria-disabled="true"'}>${g.cost} 🌰</button>`}</div>`;
+      return `<div class="shop-i ${own ? 'own' : ''} ${locked ? 'locked' : ''}"><span class="s-ico">${locked ? icon('lock') : icon(g.emoji)}</span><b>${esc(g.name)}</b>
+        ${own ? '<span class="chip pen">En tu jardín</span>' : locked ? `<span class="small muted">Nivel ${g.lvl}</span>` : `<button class="btn ${can ? 'primary' : ''}" data-act="garden-buy" data-id="${g.id}" ${can ? '' : 'aria-disabled="true"'}>${g.cost} semillas</button>`}</div>`;
     }).join('')}</div>`;
 }
 Object.assign(VIDA_ACTS, {
@@ -291,7 +276,7 @@ Object.assign(VIDA_ACTS, {
     const q = questsToday().find((x) => x.id === el.dataset.id); if (!q || !q.ok || q.claimed) return;
     const v = vidaData(); v.claimed[`${today()}:${q.id}`] = 1; v.bonus = (v.bonus || 0) + q.reward;
     for (const k of Object.keys(v.claimed)) if (k.slice(0, 10) < addDays(today(), -14)) delete v.claimed[k];
-    commit(); Snd.chime(); leafBurst(el); toast(`+${q.reward} semillas 🌰`);
+    commit(); Snd.chime(); leafBurst(el); toast(`+${q.reward} semillas`);
   },
   'garden-buy': (el) => {
     const g = GARDEN.find((x) => x.id === el.dataset.id); if (!g) return;
@@ -300,13 +285,13 @@ Object.assign(VIDA_ACTS, {
     if (c.level < g.lvl) { toast(`Se desbloquea en el nivel ${g.lvl}.`); return; }
     if (seedsOf(c) < g.cost) { toast(`Te faltan ${g.cost - seedsOf(c)} semillas. Entrega tareas y completa misiones.`); return; }
     (v.garden ||= []).push(g.id); VUI.tab = 'arbol'; VUI.pour = Date.now() + 3000; commit(); Snd.chime(); setTimeout(() => leafBurst($('.vscene')), 250);
-    toast(`${g.emoji} ${g.name} ya vive en tu jardín.`);
+    toast(`${g.name} ya vive en tu jardín.`);
   },
   'lib-pick': (el) => { UI.libreta = el.dataset.v || ''; render(); },
   'lib-new': async () => { const l = await newLibreta(); if (l) { UI.libreta = l.id; render(); } },
   'lib-edit': async (el) => {
     const l = libretas().find((x) => x.id === el.dataset.id); if (!l) return;
-    const v = await ask({ title: `${l.emoji} ${l.name}`, cancel: 'Cerrar', options: [{ value: 'rename', label: 'Cambiar nombre', icon: 'edit' }, { value: 'del', label: 'Borrar libreta (los apuntes se quedan)', icon: 'trash' }] });
+    const v = await ask({ title: l.name, cancel: 'Cerrar', options: [{ value: 'rename', label: 'Cambiar nombre', icon: 'edit' }, { value: 'del', label: 'Borrar libreta (los apuntes se quedan)', icon: 'trash' }] });
     if (v === 'rename') { const n = await ask({ title: 'Nombre de la libreta', input: { value: l.name }, ok: 'Guardar' }); if (n) { l.name = n.slice(0, 30); commit(); } }
     else if (v === 'del') { const ok = await ask({ title: '¿Borrar la libreta?', text: 'Los apuntes no se borran: solo quedan sin libreta.', ok: 'Borrar', danger: true }); if (ok) { S.notes.forEach((n) => { if (n.libreta === l.id) n.libreta = ''; }); S.libretas = S.libretas.filter((x) => x.id !== l.id); UI.libreta = ''; commit(); } }
   },
@@ -372,36 +357,15 @@ const gDoneBy = (id) => gAll('done').filter((x) => x.task === id && !x.deleted);
    6. Efectos llamativos: confeti, puntos flotantes, podio, tarjeta de Hoy
    ========================================================= */
 const CONF_COLORS = ['#2F8A5B', '#7CC07A', '#F2C94C', '#F2994A', '#EB5757', '#56CCF2', '#BB6BD9', '#FF8FB1'];
-function confetti(x, y, n = 28) {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  n = Math.min(n, 90);
-  for (let i = 0; i < n; i++) {
-    const d = document.createElement('span'); d.className = 'confetti';
-    const c = CONF_COLORS[i % CONF_COLORS.length]; const w = 6 + Math.random() * 6;
-    d.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${w * (Math.random() < .5 ? 1 : 1.8)}px;background:${c};border-radius:${Math.random() < .35 ? '50%' : '2px'}`;
-    document.body.appendChild(d);
-    const a = Math.random() * Math.PI * 2, dist = 70 + Math.random() * 190;
-    const dx = Math.cos(a) * dist, dy = Math.sin(a) * dist - 90;
-    d.animate([
-      { transform: 'translate(-50%,-50%) rotate(0deg)', opacity: 1 },
-      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${Math.random() * 540}deg)`, opacity: 1, offset: .45 },
-      { transform: `translate(calc(-50% + ${dx * 1.15}px), calc(-50% + ${dy + 260}px)) rotate(${Math.random() * 900}deg)`, opacity: 0 },
-    ], { duration: 1500 + Math.random() * 900, easing: 'cubic-bezier(.2,.7,.3,1)' }).onfinish = () => d.remove();
-  }
-}
-function floatText(el, text, cls = '') {
-  if (!el || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const r = el.getBoundingClientRect(); const d = document.createElement('span');
-  d.className = 'float-pts ' + cls; d.textContent = text; d.style.left = (r.left + r.width / 2) + 'px'; d.style.top = (r.top + r.height / 2) + 'px';
-  document.body.appendChild(d); setTimeout(() => d.remove(), 1700);
-}
+/* confetti: ver linea.js */
+/* floatText: ver linea.js */
 function podiumHTML(items) {
   if (!items || items.length < 1) return '';
   const order = [1, 0, 2].filter((i) => items[i]);
-  const medals = ['🥇', '🥈', '🥉'];
+  const medals = ['1', '2', '3'];
   return `<div class="podium" aria-label="Los tres primeros lugares">${order.map((i) => {
     const it = items[i];
-    return `<div class="pod pod-${i + 1}"><span class="pod-crown">${i === 0 ? '👑' : ''}</span><span class="pod-av" style="--pc:${it.color || '#2F8A5B'}">${it.icon}</span><b class="pod-name">${esc(it.name)}${it.me ? ' (tú)' : ''}</b><span class="pod-lv">Nivel <b>${it.level}</b></span><span class="pod-step"><span>${medals[i]}</span></span></div>`;
+    return `<div class="pod pod-${i + 1}"><span class="pod-crown">${i === 0 ? icon('crown', 'sm') : ''}</span><span class="pod-av" style="--pc:${it.color || '#2F8A5B'}">${it.icon}</span><b class="pod-name">${esc(it.name)}${it.me ? ' (tú)' : ''}</b><span class="pod-lv">Nivel <b>${it.level}</b></span><span class="pod-step"><span>${medals[i]}</span></span></div>`;
   }).join('')}</div>`;
 }
 function homeTreeHTML() {
@@ -411,9 +375,9 @@ function homeTreeHTML() {
   const bal = seedsOf(c); const qs = questsToday(); const ready = qs.filter((q) => q.ok && !q.claimed).length;
   return `<a class="home-tree ${c.wet ? '' : 'thirsty'}" href="#/vida" aria-label="Tu árbol, nivel ${c.level}. Abrir Vida">
     <span class="ht-ico">${treeIcon(c.level)}<span class="ht-lv">${c.level}</span></span>
-    <span class="ht-main"><b>${esc(stageName(c.level))}${c.streak ? ` · 🔥 ${c.streak}` : ''}</b>
+    <span class="ht-main"><b>${esc(stageName(c.level))}${c.streak ? ` · racha ${c.streak}` : ''}</b>
       <span class="ht-bar"><i style="width:${pct}%"></i></span>
-      <span class="small">${c.wet ? '💧 Regado hoy' : '🥀 Tiene sed: súbele algo hoy'} · 🌰 ${bal}${ready ? ` · <b class="ht-ready">${plural(ready, 'misión lista', 'misiones listas')}</b>` : ''}</span></span>${icon('chev', 'chev')}</a>`;
+      <span class="small">${c.wet ? 'Regado hoy' : 'Tiene sed: súbele algo hoy'} · ${bal} semillas${ready ? ` · <b class="ht-ready">${plural(ready, 'misión lista', 'misiones listas')}</b>` : ''}</span></span>${icon('chev', 'chev')}</a>`;
 }
 
 /* =========================================================
@@ -430,7 +394,7 @@ let focusUI = { ghost: false, mins: 25, topic: '' };
 function focusCardHTML() {
   if (focusMine()) focusWatch();
   const n = focusList().length;
-  return `<button type="button" class="focus-card ${n ? 'live' : ''}" data-act="focus-open"><span class="fc-ico">${n ? '🎧' : '🕯️'}</span>
+  return `<button type="button" class="focus-card ${n ? 'live' : ''}" data-act="focus-open"><span class="fc-ico">${icon('headphones')}</span>
     <span class="fc-t"><b>Sala de enfoque</b><span class="small">${n ? `${plural(n, 'persona concentrada', 'personas concentradas')} ahora. ¡Únete en silencio!` : 'Estudien juntos en silencio, solo viéndose concentrados.'}</span></span>${icon('chev', 'chev')}</button>`;
 }
 function focusSheetBody() {
@@ -440,30 +404,30 @@ function focusSheetBody() {
   if (mine) {
     const total = mine.mins * 60000; const left = focusEnd(mine) - now; const pct = Math.max(0, Math.min(1, left / total)); const C = 2 * Math.PI * 70;
     top = `<div class="focus-me"><div class="focus-ring"><svg viewBox="0 0 160 160" aria-hidden="true"><circle cx="80" cy="80" r="70" class="fr-bg"/><circle cx="80" cy="80" r="70" class="fr-fg" id="frFg" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct)).toFixed(1)}"/></svg>
-      <div class="fr-mid"><b id="focusClock">${mmss(left)}</b><span class="small">${mine.ghost ? '👻 Modo fantasma' : 'Concentrado'}</span></div></div>
+      <div class="fr-mid"><b id="focusClock">${mmss(left)}</b><span class="small">${mine.ghost ? 'Modo fantasma' : 'Concentrado'}</span></div></div>
       <p class="muted" style="text-align:center;margin:6px 0 12px">${mine.title ? esc(mine.title) : 'Sin hablar. Solo tú y lo que estás haciendo.'}</p>
       <div class="btn-row" style="justify-content:center"><button class="btn" data-act="focus-stop">Terminar ahora</button></div></div>`;
   } else {
     top = `<div class="focus-new"><p class="muted" style="margin:0 0 10px">Elige cuánto tiempo y empieza. Tus compañeros ven que estás concentrado, sin chat ni distracciones.</p>
       <div class="seg full" role="group" aria-label="Duración">${FOCUS_MINS.map((m) => `<button type="button" data-act="focus-mins" data-v="${m}" aria-pressed="${focusUI.mins === m}">${m} min</button>`).join('')}</div>
       <div class="field" style="margin-top:12px"><label for="focusTopic" class="sr">¿En qué trabajas?</label><input id="focusTopic" class="input" maxlength="80" placeholder="¿En qué vas a trabajar? (opcional)" value="${esc(focusUI.topic)}"></div>
-      <label class="toggle ghost-tg"><span class="t">👻 Modo fantasma <span class="small muted" style="display:block">Los demás ven que alguien se concentra, pero no quién.</span></span><span class="switch"><input type="checkbox" id="focusGhost" ${focusUI.ghost ? 'checked' : ''} aria-label="Modo fantasma"><span></span></span></label>
-      <div class="btn-row" style="margin-top:14px"><button class="btn primary block" data-act="focus-start">🎧 Empezar a concentrarme</button></div></div>`;
+      <label class="toggle ghost-tg"><span class="t">Modo fantasma <span class="small muted" style="display:block">Los demás ven que alguien se concentra, pero no quién.</span></span><span class="switch"><input type="checkbox" id="focusGhost" ${focusUI.ghost ? 'checked' : ''} aria-label="Modo fantasma"><span></span></span></label>
+      <div class="btn-row" style="margin-top:14px"><button class="btn primary block" data-act="focus-start">Empezar a concentrarme</button></div></div>`;
   }
   const room = others.length ? `<h3 class="sec" style="margin-top:18px">Concentrados ahora <small>${others.length}</small></h3><div class="focus-room">${others.map((x) => {
     const name = x.ghost ? 'Fantasma' : x.by;
-    return `<div class="focus-p ${x.ghost ? 'ghost' : ''}"><span class="fp-av" style="--pc:${x.ghost ? '#8A97A8' : nameColor(x.by)}">${x.ghost ? '👻' : esc(initials(x.by))}<i class="fp-dot"></i></span>
+    return `<div class="focus-p ${x.ghost ? 'ghost' : ''}"><span class="fp-av" style="--pc:${x.ghost ? '#8A97A8' : nameColor(x.by)}">${x.ghost ? icon('eyeoff', 'sm') : esc(initials(x.by))}<i class="fp-dot"></i></span>
       <span class="fp-t"><b>${esc(name)}</b><span class="small muted">${x.title && !x.ghost ? esc(x.title) : 'Concentrado'}</span></span><span class="fp-time" data-end="${focusEnd(x)}">${mmss(focusEnd(x) - now)}</span>
       ${mine ? '' : `<button class="btn" data-act="focus-join" data-id="${x.id}">Unirme</button>`}</div>`;
   }).join('')}</div>` : (mine ? '<p class="small muted" style="text-align:center;margin-top:14px">Eres la única persona concentrada ahora. Invita a alguien a unirse.</p>' : '');
   return `${top}${room}<div class="btn-row" style="margin-top:16px;justify-content:center"><button class="btn quiet" data-act="forest-invite">${icon('plus')}Invitar a alguien a este Salón</button></div>
-    <p class="small muted" style="text-align:center;margin:10px 0 0">Al terminar ganas 🌰 semillas y tu árbol se riega.</p>`;
+    <p class="small muted" style="text-align:center;margin:10px 0 0">Al terminar ganas semillas y tu árbol se riega.</p>`;
 }
 let focusTimer = null;
 function paintFocusSheet() { const b = document.getElementById('focusBox'); if (b) b.innerHTML = focusSheetBody(); }
 function openFocusSheet() {
   if (!curFid()) return;
-  openSheet(`${sheetHead('🎧 Sala de enfoque')}<div class="sheet-body"><div id="focusBox"></div></div>`, () => { clearInterval(focusTimer); focusTimer = null; });
+  openSheet(`${sheetHead('Sala de enfoque')}<div class="sheet-body"><div id="focusBox"></div></div>`, () => { clearInterval(focusTimer); focusTimer = null; });
   paintFocusSheet();
   let k = 0; clearInterval(focusTimer);
   focusTimer = setInterval(() => {
@@ -496,7 +460,7 @@ function focusWatch() {
       if (!R[key]) {
         R[key] = 1; const reward = Math.max(3, Math.round(it.mins / 5)); const v = vidaData(); v.bonus = (v.bonus || 0) + reward; v.focusMin = (v.focusMin || 0) + it.mins;
         for (const k of Object.keys(R)) if (R[k] && Object.keys(R).length > 30) delete R[k];
-        save(); waterToday(); Snd.chime(); confetti(innerWidth / 2, innerHeight / 3, 60); toast(`🎉 ¡Sesión completada! +${reward} 🌰 y tu árbol se regó.`, { ms: 6000 });
+        save(); waterToday(); Snd.chime(); confetti(innerWidth / 2, innerHeight / 3, 60); toast(`Sesión completada: +${reward} semillas y tu árbol se regó.`, { ms: 6000 });
         gput({ ...it, deleted: true, start: it.start }).catch(() => {});
       }
       paintFocusSheet();

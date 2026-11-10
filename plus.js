@@ -18,35 +18,35 @@ const PL = (n, a, b) => (n === 1 ? a : b);
    ========================================================= */
 const RNG = (n) => Array.from({ length: n }, (_, i) => i + 1);
 const MICRO = {
-  ensayo: { label: 'Ensayo', emoji: '✍️', type: 'tarea', kw: /ensayo|redacci|composici|art[ií]culo|opini[oó]n/,
+  ensayo: { label: 'Ensayo', emoji: 'pen', type: 'tarea', kw: /ensayo|redacci|composici|art[ií]culo|opini[oó]n/,
     q: [{ k: 'src', t: '¿Cuántas fuentes necesitas?', opts: [1, 2, 3, 4], def: 2 }, { k: 'pag', t: '¿De cuántas páginas?', opts: [1, 2, 3, 5], def: 2 }],
     build: (p) => [['Abrir el documento y ponerle título', 5], ['Leer las instrucciones y subrayar lo que piden', 5],
       ...RNG(p.src).map((i) => [`Buscar la fuente ${i} de ${p.src}`, 5]), ['Anotar 3 ideas principales', 5], ['Escribir la introducción', 5],
       ...RNG(p.pag).flatMap((i) => [[`Escribir el desarrollo, página ${i} (primera mitad)`, 5], [`Escribir el desarrollo, página ${i} (segunda mitad)`, 5]]),
       ['Escribir la conclusión', 5], ['Revisar ortografía', 5], ['Poner referencias y portada', 5], ['Entregar', 5]] },
-  exposicion: { label: 'Exposición', emoji: '🎤', type: 'exposicion', kw: /exposici|presentaci|exponer|diapositiva|equipo/,
+  exposicion: { label: 'Exposición', emoji: 'mic', type: 'exposicion', kw: /exposici|presentaci|exponer|diapositiva|equipo/,
     q: [{ k: 'sl', t: '¿Cuántas diapositivas?', opts: [5, 8, 10, 15], def: 8 }],
     build: (p) => [['Abrir la presentación y ponerle título', 5], ['Anotar los puntos que hay que cubrir', 5], ['Buscar 2 fuentes o datos', 5],
       ...RNG(Math.ceil(p.sl / 2)).map((i) => [`Hacer las diapositivas ${i * 2 - 1}–${Math.min(p.sl, i * 2)}`, 5]), ['Agregar imágenes o gráficas', 5], ['Escribir lo que vas a decir en cada una', 5],
       ['Ensayar en voz alta una vez', 5], ['Ensayar con cronómetro', 5], ['Guardar respaldo (USB o correo)', 5]] },
-  examen: { label: 'Examen', emoji: '📝', type: 'examen', kw: /examen|parcial|prueba|quiz|evaluaci/,
+  examen: { label: 'Examen', emoji: 'clipboard', type: 'examen', kw: /examen|parcial|prueba|quiz|evaluaci/,
     q: [{ k: 'tem', t: '¿Cuántos temas entran?', opts: [2, 3, 4, 6], def: 3 }],
     build: (p) => [['Juntar apuntes y temario', 5], ['Marcar lo que no entiendes', 5], ...RNG(p.tem).flatMap((i) => [[`Tema ${i}: leer el resumen`, 5], [`Tema ${i}: hacer 3 preguntas y responderlas`, 5]]),
       ['Repasar lo difícil', 5], ['Hacer un mini-simulacro de 5 preguntas', 5], ['Repaso final ligero y a dormir temprano', 5]] },
-  proyecto: { label: 'Proyecto', emoji: '🧩', type: 'proyecto', kw: /proyecto|trabajo final|investigaci[oó]n|reporte|informe|tesis|maqueta/,
+  proyecto: { label: 'Proyecto', emoji: 'layers', type: 'proyecto', kw: /proyecto|trabajo final|investigaci[oó]n|reporte|informe|tesis|maqueta/,
     q: [{ k: 'part', t: '¿En cuántas partes lo dividirás?', opts: [3, 4, 5, 6], def: 4 }],
     build: (p) => [['Leer la rúbrica y anotar qué piden', 5], ['Decidir el tema o enfoque', 5], ['Hacer un esquema de una página', 5], ['Buscar 2 fuentes', 5],
       ...RNG(p.part).flatMap((i) => [[`Parte ${i}: primer borrador`, 5], [`Parte ${i}: mejorarla`, 5]]), ['Armar todo en un solo archivo', 5], ['Revisar formato y ortografía', 5], ['Portada, referencias y entrega', 5]] },
-  lectura: { label: 'Lectura', emoji: '📖', type: 'lectura', kw: /lectur|leer|cap[ií]tulo|libro|resumen del/,
+  lectura: { label: 'Lectura', emoji: 'bookopen', type: 'lectura', kw: /lectur|leer|cap[ií]tulo|libro|resumen del/,
     q: [{ k: 'pg', t: '¿Cuántas páginas son?', opts: [5, 10, 20, 40], def: 10 }],
     build: (p) => [['Ojear títulos y subtítulos', 5], ...RNG(Math.ceil(p.pg / 5)).map((i) => [`Leer páginas ${(i - 1) * 5 + 1}–${Math.min(p.pg, i * 5)}`, 5]), ['Subrayar 5 ideas clave', 5], ['Escribir un resumen de 3 líneas', 5]] },
-  mate: { label: 'Ejercicios', emoji: '➗', type: 'practica', kw: /matem|ejercicio|problema|c[aá]lculo|[aá]lgebra|f[ií]sica|qu[ií]mica|estad[ií]stica|operaci/,
+  mate: { label: 'Ejercicios', emoji: 'calc', type: 'practica', kw: /matem|ejercicio|problema|c[aá]lculo|[aá]lgebra|f[ií]sica|qu[ií]mica|estad[ií]stica|operaci/,
     q: [{ k: 'ej', t: '¿Cuántos ejercicios son?', opts: [5, 10, 15, 20], def: 10 }],
     build: (p) => [['Repasar la fórmula o el ejemplo de clase', 5], ...RNG(Math.ceil(p.ej / 3)).map((i) => [`Resolver ejercicios ${(i - 1) * 3 + 1}–${Math.min(p.ej, i * 3)}`, 5]), ['Revisar los que te salieron raros', 5], ['Pasar en limpio y entregar', 5]] },
-  mapa: { label: 'Mapa o resumen', emoji: '🗺️', type: 'tarea', kw: /mapa|resumen|cuadro|esquema|infograf|cartel|poster|collage/,
+  mapa: { label: 'Mapa o resumen', emoji: 'map', type: 'tarea', kw: /mapa|resumen|cuadro|esquema|infograf|cartel|poster|collage/,
     q: [{ k: 'idea', t: '¿Cuántas ideas principales?', opts: [3, 5, 7, 10], def: 5 }],
     build: (p) => [['Leer el material una vez completo', 5], ['Subrayar las ideas principales', 5], ...RNG(Math.ceil(p.idea / 2)).map((i) => [`Anotar ideas ${i * 2 - 1}–${Math.min(p.idea, i * 2)} con sus conceptos`, 5]), ['Dibujar o armar el mapa en borrador', 5], ['Pasarlo en limpio y ponerle color', 5], ['Tomar foto o entregar', 5]] },
-  tarea: { label: 'Tarea general', emoji: '📚', type: 'tarea', kw: /.*/,
+  tarea: { label: 'Tarea general', emoji: 'notebook', type: 'tarea', kw: /.*/,
     q: [{ k: 'n', t: '¿En cuántos bloques de 5 min?', opts: [3, 4, 6, 8], def: 4 }],
     build: (p) => [['Abrir el material y leer las instrucciones', 5], ...RNG(p.n).map((i) => [`Avanzar, bloque ${i} de ${p.n}`, 5]), ['Revisar que cumple todo', 5], ['Entregar', 5]] },
 };
@@ -66,7 +66,7 @@ function microPanelHTML() {
   return `<div class="micro card" id="microCard">
     <div class="micro-h"><b class="serif">Desglosar en pasos de 5 minutos</b><button type="button" class="icon-btn ghost" data-act="micro-close" aria-label="Cerrar">${icon('x', 'sm')}</button></div>
     <p class="small muted" style="margin:0 0 8px">Elige qué tipo de tarea es y contesta. Yo armo los pasos y tú quitas los que no necesites.</p>
-    <div class="pick" role="group" aria-label="Tipo de tarea">${Object.entries(MICRO).map(([k, v]) => `<button type="button" data-act="micro-kind" data-v="${k}" aria-pressed="${m.kind === k}">${v.emoji} ${v.label}</button>`).join('')}</div>
+    <div class="pick" role="group" aria-label="Tipo de tarea">${Object.entries(MICRO).map(([k, v]) => `<button type="button" data-act="micro-kind" data-v="${k}" aria-pressed="${m.kind === k}">${icon(v.emoji, 'sm')}${v.label}</button>`).join('')}</div>
     ${MICRO[m.kind].q.map((q) => `<div class="field" style="margin-top:10px"><span class="lbl">${q.t}</span><div class="pick" role="group">${q.opts.map((o) => `<button type="button" data-act="micro-opt" data-k="${q.k}" data-v="${o}" aria-pressed="${m.p[q.k] === o}">${o}</button>`).join('')}</div></div>`).join('')}
     <ul class="micro-list">${steps.map((s, i) => `<li class="${m.off.has(i) ? 'off' : ''}"><button type="button" class="chk" data-act="micro-toggle" data-i="${i}" role="checkbox" aria-checked="${!m.off.has(i)}" aria-label="Incluir paso"><span class="box">${icon('check')}</span></button><span class="mt">${esc(s.text)}</span><span class="chip">${s.min} min</span></li>`).join('')}</ul>
     <div class="btn-row"><button type="button" class="btn primary" data-act="micro-add">${icon('plus')}Agregar ${steps.length - m.off.size} pasos · ${fmtMinutes(total)}</button></div></div>`;
@@ -88,9 +88,24 @@ function applyMicro(kind, p, off = new Set()) {
 }
 function plusTopHTML(t) {
   if (t.id) return '';
-  return `<div class="tpl-row"><span class="tiny faint">Empieza desde una plantilla</span><div class="tpl-chips">${Object.entries(MICRO).filter(([k]) => k !== 'tarea').map(([k, v]) => `<button type="button" class="tpl-chip" data-act="tpl-start" data-v="${k}">${v.emoji} ${v.label}</button>`).join('')}</div></div>`;
+  return `<div id="microHint" class="micro-hint" hidden></div><div class="tpl-row"><span class="tiny faint">Empieza desde una plantilla</span><div class="tpl-chips">${Object.entries(MICRO).filter(([k]) => k !== 'tarea').map(([k, v]) => `<button type="button" class="tpl-chip" data-act="tpl-start" data-v="${k}">${icon(v.emoji, 'sm')}${v.label}</button>`).join('')}</div></div>`;
 }
+/* Al escribir el título, propone el desglose automático en pasos de 5 minutos */
+let microHintT = null;
+document.addEventListener('input', (e) => {
+  if (e.target.id !== 'fTitle' || typeof draft === 'undefined' || !draft) return;
+  clearTimeout(microHintT);
+  microHintT = setTimeout(() => {
+    const box = document.getElementById('microHint'); if (!box) return;
+    const k = detectMicro(e.target.value, draft.type);
+    if (k === 'tarea' || (draft.steps || []).length || e.target.value.trim().length < 4) { box.hidden = true; return; }
+    const M = MICRO[k]; const steps = microBuild(k, microDefaults(k));
+    box.innerHTML = `<span class="mh-i">${icon(M.emoji)}</span><span class="mh-t"><b>Parece ${M.label.toLowerCase() === 'ejercicios' ? 'una práctica de ejercicios' : M.label.toLowerCase() === 'mapa o resumen' ? 'un mapa o resumen' : (['exposición', 'lectura', 'tarea general'].includes(M.label.toLowerCase()) ? 'una ' : 'un ') + M.label.toLowerCase()}</b><span class="small muted">Lo divido en ${steps.length} pasos de unos 5 minutos.</span></span><button type="button" class="btn primary" data-act="micro-auto" data-v="${k}">Dividir</button>`;
+    box.hidden = false;
+  }, 320);
+});
 Object.assign(PLUS_ACTS, {
+  'micro-auto': (el) => { const k = el.dataset.v; const M = MICRO[k]; if (!M) return; if (draft.type === 'tarea' && M.type) draft.type = M.type; applyMicro(k, microDefaults(k)); draftDirty = true; renderTaskSheet(); toast(`Listo: ${draft.steps.length} pasos de 5 minutos. Puedes moverlos o borrarlos.`); },
   'micro-open': () => microOpen(),
   'micro-close': () => { PUI.micro = null; paintMicro(); },
   'micro-kind': (el) => { const k = el.dataset.v; PUI.micro = { kind: k, p: microDefaults(k), off: new Set() }; paintMicro(); },
@@ -106,7 +121,7 @@ Object.assign(PLUS_ACTS, {
     const k = el.dataset.v; const M = MICRO[k];
     draft.type = M.type; if (!draft.title.trim()) draft.title = M.label;
     applyMicro(k, microDefaults(k)); draftDirty = true; renderTaskSheet();
-    toast(`${M.emoji} Plantilla de ${M.label.toLowerCase()} lista. Ajusta el título y los pasos.`);
+    toast(`Plantilla de ${M.label.toLowerCase()} lista. Ajusta el título y los pasos.`);
   },
 });
 
@@ -123,8 +138,9 @@ function estStats() {
   const insights = [];
   for (const [k, g] of Object.entries(groups)) {
     const avg = Math.round(g.reduce((a, r) => a + r.err, 0) / g.length); const [type, sn] = k.split('|');
-    if (Math.abs(avg) < 10) continue;
-    const label = `${(TYPES[type]?.label || 'tareas').toLowerCase()}${sn ? ` de ${sn}` : ''}`;
+    if (Math.abs(avg) < 10 || (g.length < 2 && Math.abs(avg) < 25)) continue;
+    const PLU = { tarea: 'las tareas', proyecto: 'los proyectos', examen: 'los exámenes', exposicion: 'las exposiciones', lectura: 'las lecturas', practica: 'las prácticas', otro: 'las entregas' };
+    const label = `${PLU[type] || 'las tareas'}${sn ? ` de ${sn}` : ''}`;
     insights.push({ avg, n: g.length, text: avg > 0 ? `Sueles subestimar ${label} por ${fmtMinutes(avg)}.` : `Sueles calcular de más ${label}: terminas ${fmtMinutes(-avg)} antes.` });
   }
   insights.sort((a, b) => Math.abs(b.avg) - Math.abs(a.avg));
@@ -137,15 +153,15 @@ function adviceFor(t) {
   const use = same.length >= 1 ? same : rows;
   if (!use.length || !+t.estimate) return '';
   const avg = Math.round(use.reduce((a, r) => a + r.err, 0) / use.length);
-  if (Math.abs(avg) < 10) return `<p class="small muted" style="margin:6px 0 0">Tus cálculos para este tipo de tarea suelen ser buenos. 👌</p>`;
+  if (Math.abs(avg) < 10) return `<p class="small muted" style="margin:6px 0 0">Tus cálculos para este tipo de tarea suelen ser buenos.</p>`;
   const adj = Math.max(5, +t.estimate + avg);
-  return `<p class="small" style="margin:6px 0 0">💡 ${avg > 0 ? `Tiendes a tardarte ${fmtMinutes(avg)} más` : `Sueles terminar ${fmtMinutes(-avg)} antes`}. Calcula unos <b>${fmtMinutes(adj)}</b>.</p>`;
+  return `<p class="small" style="margin:6px 0 0">${avg > 0 ? `Tiendes a tardarte ${fmtMinutes(avg)} más` : `Sueles terminar ${fmtMinutes(-avg)} antes`}. Calcula unos <b>${fmtMinutes(adj)}</b>.</p>`;
 }
 function trackerHTML(t) {
   if (!t.id) return `<div class="field"><span class="lbl">Tiempo real</span><p class="small muted" style="margin:0">Guarda la tarea para poder medir cuánto te toma de verdad.</p></div>`;
   const real = realMin(t); const est = +t.estimate || 0;
   let cmp = '';
-  if (est && real >= 1) { const d = real - est; cmp = d > 5 ? `<span class="chip warn">+${fmtMinutes(d)} sobre lo calculado</span>` : d < -5 ? `<span class="chip pen">${fmtMinutes(-d)} menos de lo calculado</span>` : '<span class="chip pen">Justo lo que calculaste 🎯</span>'; }
+  if (est && real >= 1) { const d = real - est; cmp = d > 5 ? `<span class="chip warn">+${fmtMinutes(d)} sobre lo calculado</span>` : d < -5 ? `<span class="chip pen">${fmtMinutes(-d)} menos de lo calculado</span>` : '<span class="chip pen">Justo lo que calculaste</span>'; }
   return `<div class="field"><span class="lbl">Tiempo real <span class="faint">(aprende a calcular mejor)</span></span><div class="card trk-card" style="background:var(--paper)">
     <div class="trk-top"><b id="trkClock" class="trk-clock">${fmtClockMin(real, !!t.trk)}</b><button type="button" class="btn ${t.trk ? 'danger' : 'primary'}" data-act="trk-toggle">${t.trk ? `${icon('pause')}Detener` : `${icon('play')}Medir mi tiempo`}</button></div>
     <p class="small muted" style="margin:6px 0 0">${est ? `Calculaste ${fmtMinutes(est)}.` : 'Aún no calculas cuánto te tomará.'} ${cmp}</p>${adviceFor(t)}</div></div>`;
@@ -181,7 +197,7 @@ Object.assign(PLUS_ACTS, {
 /* =========================================================
    3. Energía del día y ruta crítica
    ========================================================= */
-const ENERGIES = { alta: ['⚡', 'Con mucha energía', 'Ataca primero lo más pesado y de más valor.'], normal: ['🙂', 'Normal', 'Ritmo parejo: mezcla lo difícil con lo fácil.'], baja: ['😴', 'Cansado/a', 'Empieza por lo más fácil y rápido para avanzar sin agotarte.'] };
+const ENERGIES = { alta: ['bolt', 'Con energía', 'Ataca primero lo más pesado y de más valor.'], normal: ['gauge', 'Normal', 'Ritmo parejo: mezcla lo difícil con lo fácil.'], baja: ['battery', 'Cansado/a', 'Empieza por lo más fácil y rápido para avanzar sin agotarte.'] };
 const energyNow = () => { const e = S.settings.energy; return e && e.d === today() ? e.v : 'normal'; };
 function habitToday() { const h = (S.habits ||= {}); return (h[today()] ||= { sleep: 0, water: 0, move: 0 }); }
 function blockRec() {
@@ -213,9 +229,9 @@ function plusHomeHTML() {
   const e = energyNow(); const br = blockRec();
   const sleep = (S.habits || {})[today()]?.sleep;
   return `<section class="plus-home"><div class="energy" role="group" aria-label="¿Cómo te sientes hoy?"><span class="tiny faint">¿Cómo te sientes hoy?</span>
-    <div class="energy-row">${Object.entries(ENERGIES).map(([k, [ic, l]]) => `<button type="button" data-act="energy" data-v="${k}" aria-pressed="${e === k}"><span>${ic}</span>${l}</button>`).join('')}</div>
+    <div class="energy-row">${Object.entries(ENERGIES).map(([k, [ic, l]]) => `<button type="button" data-act="energy" data-v="${k}" aria-pressed="${e === k}">${icon(ic, 'sm')}<span>${l}</span></button>`).join('')}</div>
     <p class="small muted" style="margin:6px 0 0">${ENERGIES[e][2]}${sleep ? ` ${esc(br.why)}` : ''}</p></div>
-    <div class="plus-links"><a class="plus-link" href="#/panel"><span>📊</span><b>Mi semana</b><small>Carga y tiempo libre</small></a><button type="button" class="plus-link sos" data-act="sos-open"><span>🆘</span><b>Emergencia</b><small>Plan de daños mínimos</small></button><button type="button" class="plus-link" data-act="lobby-open"><span>🌍</span><b>Biblioteca</b><small>Estudia en silencio</small></button></div>
+    <div class="plus-links"><a class="plus-link" href="#/panel"><span>${icon('bars')}</span><b>Mi semana</b><small>Carga y tiempo libre</small></a><button type="button" class="plus-link sos" data-act="sos-open"><span>${icon('flag')}</span><b>Emergencia</b><small>Plan de daños mínimos</small></button><button type="button" class="plus-link" data-act="lobby-open"><span>${icon('globe')}</span><b>Biblioteca</b><small>Estudia en silencio</small></button></div>
     <a class="brain-link" href="#/cerebro"><span class="bl-orb"></span><span class="bl-t"><b>Tu Cerebro</b><small>Mira todo lo que has construido, conectado</small></span><span class="bl-arrow">→</span></a></section>`;
 }
 Object.assign(PLUS_ACTS, {
@@ -317,12 +333,12 @@ function critHTML() {
   if (!list.length) return '';
   return `<section class="pn-card"><h2 class="serif">Ruta crítica <small>qué atacar primero</small></h2>
     <p class="small muted" style="margin:0 0 8px">Ordeno tus pendientes por fecha límite, dificultad y lo que vale la materia en tu promedio.</p>
-    <ol class="crit">${list.map(({ t, c }, i) => `<li><span class="crit-n">${i + 1}</span><span class="crit-t"><b>${esc(t.title)}</b><span class="crit-ch"><span class="chip">${c.d < 0 ? 'Atrasada' : c.d === 0 ? 'Hoy' : `En ${c.d} d`}</span><span class="chip">${c.diff > 1.6 ? 'Difícil' : c.diff > 1.25 ? 'Media' : 'Ligera'}</span>${subjName(t) ? `<span class="chip">${esc(subjName(t))}${subj(t.subjectId)?.important ? ' ★' : ''}</span>` : ''}${+t.value ? `<span class="chip">Vale ${+t.value}%</span>` : ''}</span></span><button class="btn" data-act="open-task" data-id="${t.id}">Abrir</button></li>`).join('')}</ol></section>`;
+    <ol class="crit">${list.map(({ t, c }, i) => `<li><span class="crit-n">${i + 1}</span><span class="crit-t"><b>${esc(t.title)}</b><span class="crit-ch"><span class="chip">${c.d < 0 ? 'Atrasada' : c.d === 0 ? 'Hoy' : `En ${c.d} d`}</span><span class="chip">${c.diff > 1.6 ? 'Difícil' : c.diff > 1.25 ? 'Media' : 'Ligera'}</span>${subjName(t) ? `<span class="chip">${esc(subjName(t))}${subj(t.subjectId)?.important ? ' · importante' : ''}</span>` : ''}${+t.value ? `<span class="chip">Vale ${+t.value}%</span>` : ''}</span></span><button class="btn" data-act="open-task" data-id="${t.id}">Abrir</button></li>`).join('')}</ol></section>`;
 }
 function estHTML() {
   const st = estStats();
-  return `<section class="pn-card"><h2 class="serif">Estimado vs. real</h2>${st.rows.length ? `<p class="est-big">${st.avg > 5 ? `En promedio te tardas <b>${fmtMinutes(st.avg)} más</b> de lo que calculas.` : st.avg < -5 ? `En promedio terminas <b>${fmtMinutes(-st.avg)} antes</b> de lo que calculas.` : 'Tus cálculos son muy buenos. 🎯'}</p>
-    ${st.insights.length ? `<ul class="ins">${st.insights.slice(0, 4).map((i) => `<li>${i.avg > 0 ? '⏳' : '🕊️'} ${esc(i.text)} <span class="tiny faint">(${plural(i.n, 'tarea', 'tareas')})</span></li>`).join('')}</ul>` : ''}`
+  return `<section class="pn-card"><h2 class="serif">Estimado vs. real</h2>${st.rows.length ? `<p class="est-big">${st.avg > 5 ? `En promedio te tardas <b>${fmtMinutes(st.avg)} más</b> de lo que calculas.` : st.avg < -5 ? `En promedio terminas <b>${fmtMinutes(-st.avg)} antes</b> de lo que calculas.` : 'Tus cálculos son muy buenos.'}</p>
+    ${st.insights.length ? `<ul class="ins">${st.insights.slice(0, 4).map((i) => `<li>${esc(i.text)} <span class="tiny faint">(${plural(i.n, 'tarea', 'tareas')})</span></li>`).join('')}</ul>` : ''}`
     : '<p class="muted" style="margin:0">Calcula cuánto te tomará una tarea y mide tu tiempo con “Medir mi tiempo” dentro de la tarea. Después de 2 o 3 tareas te muestro tu margen de error.</p>'}</section>`;
 }
 
@@ -347,9 +363,9 @@ function patternsHTML() {
   if (p.total < 3 && !(S.focus || []).length) return `<section class="pn-card"><h2 class="serif">Patrones de fuga de tiempo</h2><p class="muted" style="margin:0">Entrega unas tareas y usa el modo enfoque. Con unos días de datos te muestro cuándo eres más productivo y cuándo pospones más.</p></section>`;
   const ranked = p.score.map((s, i) => ({ s, i })).filter((x) => x.s > 0).sort((a, b) => b.s - a.s);
   let ins = '';
-  if (ranked.length >= 2) { const best = ranked[0], worst = ranked[ranked.length - 1]; const pct = Math.round((1 - worst.s / best.s) * 100); if (pct >= 15) ins += `<li>📉 Tus <b>${DIAS[worst.i]}s</b> son ${pct}% menos productivos que tus <b>${DIAS[best.i]}s</b>.</li>`; }
-  if (p.total >= 3) { const lp = Math.round((p.last / p.total) * 100); ins += lp >= 50 ? `<li>⏰ Entregas el ${lp}% de tus tareas el mismo día de la fecha límite. Prueba adelantar un pedacito cada día.</li>` : `<li>✅ Solo el ${lp}% de tus entregas son a último momento. ¡Vas bien!</li>`; }
-  const bk = Object.entries(p.blocks).sort((a, b) => b[1] - a[1])[0]; if (bk && bk[1] > 0) ins += `<li>🕒 Tu mejor momento para entregar es la <b>${bk[0].toLowerCase()}</b>.</li>`;
+  if (ranked.length >= 2) { const best = ranked[0], worst = ranked[ranked.length - 1]; const pct = Math.round((1 - worst.s / best.s) * 100); if (pct >= 15) ins += `<li>Tus <b>${DIAS[worst.i]}s</b> son ${pct}% menos productivos que tus <b>${DIAS[best.i]}s</b>.</li>`; }
+  if (p.total >= 3) { const lp = Math.round((p.last / p.total) * 100); ins += lp >= 50 ? `<li>Entregas el ${lp}% de tus tareas el mismo día de la fecha límite. Prueba adelantar un pedacito cada día.</li>` : `<li>Solo el ${lp}% de tus entregas son a último momento. ¡Vas bien!</li>`; }
+  const bk = Object.entries(p.blocks).sort((a, b) => b[1] - a[1])[0]; if (bk && bk[1] > 0) ins += `<li>Tu mejor momento para entregar es la <b>${bk[0].toLowerCase()}</b>.</li>`;
   const order = [1, 2, 3, 4, 5, 6, 0];
   const sel = PUI.patDay;
   const det = sel == null ? 'Toca un día para ver el detalle.' : (() => { const x = p.dows[sel]; return `<b>${cap(DIAS[sel])}</b>: ${plural(x.n, 'entrega', 'entregas')}, ${fmtMinutes(x.focus)} de enfoque${x.n ? `, ${x.last} a último momento` : ''}.`; })();
@@ -366,13 +382,13 @@ Object.assign(PLUS_ACTS, { 'pat-day': (el) => { PUI.patDay = PUI.patDay === +el.
    ========================================================= */
 function habitsHTML() {
   const h = habitToday(); const br = blockRec();
-  const row = (k, ic, l, v, unit, step) => `<div class="hab"><span class="hab-i">${ic}</span><span class="hab-t"><b>${l}</b><span class="small muted">${v} ${unit}</span></span><span class="hab-c"><button class="btn ico" data-act="hab" data-k="${k}" data-d="-${step}" aria-label="Menos ${l}">−</button><button class="btn ico" data-act="hab" data-k="${k}" data-d="${step}" aria-label="Más ${l}">+</button></span></div>`;
+  const row = (k, ic, l, v, unit, step) => `<div class="hab"><span class="hab-i">${icon(ic)}</span><span class="hab-t"><b>${l}</b><span class="small muted">${v} ${unit}</span></span><span class="hab-c"><button class="btn ico" data-act="hab" data-k="${k}" data-d="-${step}" aria-label="Menos ${l}">−</button><button class="btn ico" data-act="hab" data-k="${k}" data-d="${step}" aria-label="Más ${l}">+</button></span></div>`;
   const rec = (S.habits || {}); const days = Object.entries(rec).filter(([, x]) => x.sleep > 0);
   let corr = '';
   const done = (d) => S.tasks.filter((t) => t.done && t.doneAt && toISO(new Date(t.doneAt)) === d).length;
   const good = days.filter(([, x]) => x.sleep >= 7), bad = days.filter(([, x]) => x.sleep < 7);
-  if (good.length >= 2 && bad.length >= 2) { const a = good.reduce((s, [d]) => s + done(d), 0) / good.length, b = bad.reduce((s, [d]) => s + done(d), 0) / bad.length; if (a > b) corr = `<p class="small" style="margin:8px 0 0">📈 Los días que duermes 7 h o más entregas ${(a).toFixed(1)} tareas, contra ${b.toFixed(1)} cuando duermes menos.</p>`; }
-  return `<section class="pn-card"><h2 class="serif">Hábitos de hoy</h2>${row('sleep', '😴', 'Horas de sueño', h.sleep, 'h', 0.5)}${row('water', '💧', 'Vasos de agua', h.water, PL(h.water, 'vaso', 'vasos'), 1)}${row('move', '🏃', 'Ejercicio', h.move, 'min', 10)}
+  if (good.length >= 2 && bad.length >= 2) { const a = good.reduce((s, [d]) => s + done(d), 0) / good.length, b = bad.reduce((s, [d]) => s + done(d), 0) / bad.length; if (a > b) corr = `<p class="small" style="margin:8px 0 0">Los días que duermes 7 h o más entregas ${(a).toFixed(1)} tareas, contra ${b.toFixed(1)} cuando duermes menos.</p>`; }
+  return `<section class="pn-card"><h2 class="serif">Hábitos de hoy</h2>${row('sleep', 'moon', 'Horas de sueño', h.sleep, 'h', 0.5)}${row('water', 'drop', 'Vasos de agua', h.water, PL(h.water, 'vaso', 'vasos'), 1)}${row('move', 'pulse', 'Ejercicio', h.move, 'min', 10)}
     <div class="rec-box"><b>Bloques recomendados: ${br.preset[0]} / ${br.preset[1]} min</b><span class="small muted">${esc(br.why)}</span><button class="btn" data-act="use-blocks">Usar en modo enfoque</button></div>${corr}</section>`;
 }
 Object.assign(PLUS_ACTS, {
@@ -394,18 +410,23 @@ function skillTreeHTML() {
   const subs = S.subjects.slice(0, 8);
   if (!subs.length) return `<section class="pn-card"><h2 class="serif">Árbol de habilidades</h2><p class="muted" style="margin:0">Agrega tus materias y cada una será una rama que se ilumina conforme avanzas.</p></section>`;
   const W = 360, H = 300, cx = 180, base = 286; let g = '';
-  g += `<path d="M${cx} ${base} C${cx - 6} 240 ${cx + 6} 200 ${cx} 160" stroke="#8A6A4E" stroke-width="9" fill="none" stroke-linecap="round"/>`;
+  g += `<path class="ln s" stroke-width=".8" d="M${cx - 70} ${base + 2}C${cx - 30} ${base - 6} ${cx + 30} ${base - 6} ${cx + 70} ${base + 2}"/>`;
+  g += `<path class="ln" stroke-width="2.4" d="M${cx} ${base - 2}C${cx - 4} 240 ${cx + 4} 200 ${cx} 160"/><path class="ln s" stroke-width=".6" d="M${cx - 4} ${base - 4}C${cx - 7} 246 ${cx - 2} 206 ${cx - 3} 172M${cx} ${base - 2}q-9 2 -16 7M${cx} ${base - 2}q9 2 16 7"/>`;
   const infos = subs.map((s, i) => {
     const xp = skillXP(s.id); const lv = skillLv(xp); const n = subs.length;
     const ang = (-80 + (160 * (n === 1 ? 0.5 : i / (n - 1)))) * Math.PI / 180; const c = safeColor(s.color);
     const sx = cx, sy = 170 + (i % 2) * 18; const len = 120; const ex = sx + Math.sin(ang) * len * 1.25, ey = sy - Math.cos(ang) * len;
-    g += `<path d="M${sx} ${sy} Q${(sx + ex) / 2 + Math.sin(ang) * 10} ${(sy + ey) / 2 + 12} ${ex} ${ey}" stroke="${lv > 0 ? c : '#C9C2B4'}" stroke-width="${lv > 0 ? 5 : 3}" fill="none" stroke-linecap="round" opacity="${lv > 0 ? 1 : .6}"/>`;
-    for (let k = 1; k <= 5; k++) { const u = k / 5; const nx = sx + (ex - sx) * u + Math.sin(ang) * 10 * Math.sin(u * Math.PI) * .5, ny = sy + (ey - sy) * u + 12 * Math.sin(u * Math.PI) * .5; const on = lv >= k;
-      g += `<circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="${on ? 7 : 5}" fill="${on ? c : '#E7E2D6'}" stroke="${on ? '#fff' : '#C9C2B4'}" stroke-width="2"${on ? ` class="sk-on" style="--c:${c}"` : ''}/>`; }
+    const qx = (sx + ex) / 2 + Math.sin(ang) * 10, qy = (sy + ey) / 2 + 12;
+    g += `<path class="ln ${lv > 0 ? '' : 's'}" stroke-width="${lv > 0 ? 1.5 : 1}" ${lv > 0 ? `style="stroke:${c}"` : 'stroke-dasharray="3 4"'} d="M${sx} ${sy}Q${qx.toFixed(1)} ${qy.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}"/>`;
+    for (let k = 1; k <= 5; k++) { const u = k / 5; const nx = (1 - u) * (1 - u) * sx + 2 * (1 - u) * u * qx + u * u * ex, ny = (1 - u) * (1 - u) * sy + 2 * (1 - u) * u * qy + u * u * ey; const on = lv >= k;
+      g += on ? `<circle class="sk-on" cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="6" style="--c:${c};fill:var(--sheet);stroke:${c};stroke-width:1.3"/><circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="2.2" style="fill:${c}"/>`
+        : `<circle class="ln s" stroke-width=".9" cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="3.6" style="fill:var(--sheet)"/>`; }
+    if (lv >= 3) { const deg = Math.atan2(ey - qy, ex - qx) * 180 / Math.PI; g += lnLeaf(ex, ey, deg - 35, 13) + lnLeaf(ex, ey, deg + 35, 12, 'lf2'); }
+    if (lv >= 5) g += `<g transform="translate(${ex.toFixed(1)} ${(ey - 10).toFixed(1)})">${lnFlower(0, 0, 1.6)}</g>`;
     return { s, xp, lv, c };
   });
   return `<section class="pn-card"><h2 class="serif">Árbol de habilidades</h2><p class="small muted" style="margin:0 0 6px">Cada materia es una rama. Entregar tareas, sacar buenas notas y enfocarte la ilumina.</p>
-    <svg viewBox="0 0 ${W} ${H}" class="skill-svg" role="img" aria-label="Árbol de habilidades por materia">${g}</svg>
+    <svg viewBox="0 0 ${W} ${H}" class="skill-svg ln-ico" role="img" aria-label="Árbol de habilidades por materia">${g}</svg>
     <ul class="skill-leg">${infos.map(({ s, xp, lv, c }) => { const nxt = SKILL_T[Math.min(5, lv + 1)]; const pct = lv >= 5 ? 100 : Math.round(((xp - SKILL_T[lv]) / (nxt - SKILL_T[lv])) * 100); return `<li><span class="dot" style="background:${c}"></span><span class="sk-t"><b>${esc(s.name)}</b><span class="small muted">${SKILL_N[lv]} · nivel ${lv}/5 · ${xp} XP</span><span class="v-bar sm"><i style="width:${pct}%"></i></span></span></li>`; }).join('')}</ul></section>`;
 }
 
@@ -415,7 +436,7 @@ function skillTreeHTML() {
 const SOS = { time: 0, energy: '', focus: '' };
 function sosOpen() {
   SOS.time = 0; SOS.energy = ''; SOS.focus = '';
-  openSheet(`${sheetHead('🆘 Nube de emergencia')}<div class="sheet-body" id="sosBody"></div>`); sosPaint();
+  openSheet(`${sheetHead('Nube de emergencia')}<div class="sheet-body" id="sosBody"></div>`); sosPaint();
 }
 function sosPaint() {
   const b = document.getElementById('sosBody'); if (!b) return;
@@ -423,8 +444,8 @@ function sosPaint() {
   const ready = SOS.time && SOS.energy && SOS.focus;
   b.innerHTML = `<p class="muted" style="margin:0 0 12px">Respira. Contesta 3 preguntas y te armo un plan de daños mínimos para salvar lo importante.</p>
     <div class="field"><span class="lbl">1. ¿Cuánto tiempo real tienes ahora?</span>${chips('time', [[30, '30 min'], [60, '1 hora'], [120, '2 horas'], [180, '3 horas o más']])}</div>
-    <div class="field"><span class="lbl">2. ¿Cómo estás de energía?</span>${chips('energy', [['agotado', '😵 Agotado/a'], ['normal', '🙂 Normal'], ['ganas', '💪 Con ganas']])}</div>
-    <div class="field"><span class="lbl">3. ¿Qué te preocupa más?</span>${chips('focus', [['fecha', '⏰ Lo que vence primero'], ['valor', '🎯 Lo que más vale'], ['dificil', '🧱 Lo más difícil']])}</div>
+    <div class="field"><span class="lbl">2. ¿Cómo estás de energía?</span>${chips('energy', [['agotado', 'Agotado/a'], ['normal', 'Normal'], ['ganas', 'Con ganas']])}</div>
+    <div class="field"><span class="lbl">3. ¿Qué te preocupa más?</span>${chips('focus', [['fecha', 'Lo que vence primero'], ['valor', 'Lo que más vale'], ['dificil', 'Lo más difícil']])}</div>
     <div class="btn-row"><button class="btn primary block" data-act="sos-go" ${ready ? '' : 'aria-disabled="true"'}>Armar mi plan</button></div><div id="sosOut"></div>`;
 }
 function sosPlan() {
@@ -447,13 +468,13 @@ function teacherMsg(t) {
   return `Hola, ${prof}. Soy ${profile()?.name || ''}${s ? ` de ${s.name}` : ''}. Esta semana se me juntaron varias entregas y quería pedirle de la manera más atenta si podría entregar “${t.title}” un poco después, o recibir una versión resumida. Le agradezco mucho su comprensión.`;
 }
 function sosOutHTML() {
-  const p = sosPlan(); if (!p.must.length && !p.rescue) return '<p class="muted">No tienes pendientes. ¡Respira y descansa! 🌿</p>';
+  const p = sosPlan(); if (!p.must.length && !p.rescue) return '<p class="muted">No tienes pendientes. Respira y descansa.</p>';
   const first = (t) => (t.steps || []).find((s) => !s.done)?.text || 'Abre el archivo y haz la parte más importante';
-  return `<h3 class="serif" style="margin:16px 0 6px">✅ Haz esto sí o sí <small class="faint">(${fmtMinutes(p.used)})</small></h3>
+  return `<h3 class="serif" style="margin:16px 0 6px">Haz esto sí o sí <small class="faint">(${fmtMinutes(p.used)})</small></h3>
     <ol class="sos-list">${p.must.map(({ t, min }) => `<li><b>${esc(t.title)}</b><span class="small muted">Versión mínima de ${min} min · empieza con: ${esc(first(t))}</span></li>`).join('')}</ol>
-    ${p.nego.length ? `<h3 class="serif" style="margin:16px 0 6px">🤝 Negocia estas</h3><ul class="sos-list">${p.nego.map((t) => `<li><b>${esc(t.title)}</b><span class="small muted">Pide unas horas más o una versión corta.</span><button class="btn" data-act="sos-copy" data-id="${t.id}">Copiar mensaje al profe</button></li>`).join('')}</ul>` : ''}
-    ${p.rescue ? `<h3 class="serif" style="margin:16px 0 6px">⏱️ 15 minutos para una nota aceptable</h3><div class="card" style="background:var(--paper)"><b>${esc(p.rescue.title)}</b><p class="small muted" style="margin:4px 0 10px">Haz solo lo esencial: ${esc(first(p.rescue))}. Entregar algo suma más que no entregar nada.</p><button class="btn primary" data-act="sos-start" data-id="${p.rescue.id}">${icon('play')}Empezar 15 min ahora</button></div>` : ''}
-    <p class="small muted" style="margin-top:14px">Mañana descansa un poco y reparte mejor la semana con el Radar de carga. Esto también pasa. 💚</p>`;
+    ${p.nego.length ? `<h3 class="serif" style="margin:16px 0 6px">Negocia estas</h3><ul class="sos-list">${p.nego.map((t) => `<li><b>${esc(t.title)}</b><span class="small muted">Pide unas horas más o una versión corta.</span><button class="btn" data-act="sos-copy" data-id="${t.id}">Copiar mensaje al profe</button></li>`).join('')}</ul>` : ''}
+    ${p.rescue ? `<h3 class="serif" style="margin:16px 0 6px">15 minutos para una nota aceptable</h3><div class="card" style="background:var(--paper)"><b>${esc(p.rescue.title)}</b><p class="small muted" style="margin:4px 0 10px">Haz solo lo esencial: ${esc(first(p.rescue))}. Entregar algo suma más que no entregar nada.</p><button class="btn primary" data-act="sos-start" data-id="${p.rescue.id}">${icon('play')}Empezar 15 min ahora</button></div>` : ''}
+    <p class="small muted" style="margin-top:14px">Mañana descansa un poco y reparte mejor la semana con el Radar de carga. Esto también pasa.</p>`;
 }
 Object.assign(PLUS_ACTS, {
   'sos-open': () => sosOpen(),
@@ -481,6 +502,15 @@ function buildQuiz(t) {
     const dist = shuffle(all.filter((w) => normChars(w) !== normChars(ans) && Math.abs(w.length - ans.length) <= 4)).slice(0, 2); if (dist.length < 2) continue;
     qs.push({ q: s.replace(ans, '_____'), ans, opts: shuffle([ans, ...dist]) }); if (qs.length === 3) break;
   }
+  // con los pasos (subtareas): ¿qué sigue después de…?
+  const st = (t.steps || []).map((x) => String(x.text || '').trim()).filter(Boolean);
+  if (qs.length < 3 && st.length >= 3) {
+    const idx = shuffle(st.slice(0, -1).map((_, i) => i));
+    for (const i of idx) {
+      const ans = st[i + 1]; const dist = shuffle(st.filter((x, j) => j !== i + 1 && j !== i)).slice(0, 2); if (dist.length < 2) continue;
+      qs.push({ q: `Según tu plan, ¿qué sigue después de «${st[i]}»?`, ans, opts: shuffle([ans, ...dist]) }); if (qs.length === 3) break;
+    }
+  }
   return qs;
 }
 function quizGate(t) {
@@ -493,14 +523,14 @@ function quizPaint(open) {
   let body;
   if (q.i >= q.qs.length) {
     const pass = q.ok >= Math.ceil(q.qs.length * 0.66);
-    body = pass ? `<div class="quiz-end ok"><div class="qe-i">🎉</div><h3 class="serif">¡Lo dominas! ${q.ok}/${q.qs.length}</h3><p class="muted">Ya puedes entregarla con tranquilidad.</p><button class="btn primary block" data-act="quiz-deliver">Entregar tarea</button></div>`
-      : `<div class="quiz-end"><div class="qe-i">📚</div><h3 class="serif">${q.ok}/${q.qs.length}: repasa un poquito</h3><p class="muted">Vuelve a tus apuntes y entrega cuando te sientas listo/a.</p><div class="btn-row" style="justify-content:center"><button class="btn" data-act="sheet-close">Repasar</button><button class="btn" data-act="quiz-deliver">Entregar así</button></div><button class="link-btn" data-act="quiz-off">No volver a preguntarme</button></div>`;
+    body = pass ? `<div class="quiz-end ok"><div class="qe-i">${icon('checkc')}</div><h3 class="serif">¡Lo dominas! ${q.ok}/${q.qs.length}</h3><p class="muted">Ya puedes entregarla con tranquilidad.</p><button class="btn primary block" data-act="quiz-deliver">Entregar tarea</button></div>`
+      : `<div class="quiz-end"><div class="qe-i">${icon('bookopen')}</div><h3 class="serif">${q.ok}/${q.qs.length}: repasa un poquito</h3><p class="muted">Vuelve a tus apuntes y entrega cuando te sientas listo/a.</p><div class="btn-row" style="justify-content:center"><button class="btn" data-act="sheet-close">Repasar</button><button class="btn" data-act="quiz-deliver">Entregar así</button></div><button class="link-btn" data-act="quiz-off">No volver a preguntarme</button></div>`;
   } else {
     const c = q.qs[q.i];
     body = `<p class="tiny faint">Pregunta ${q.i + 1} de ${q.qs.length}</p><p class="quiz-q">${esc(c.q)}</p><div class="quiz-opts">${c.opts.map((o, i) => `<button type="button" class="btn quiz-o" data-act="quiz-ans" data-i="${i}">${esc(o)}</button>`).join('')}</div>
       <div class="btn-row" style="margin-top:12px"><button class="link-btn" data-act="quiz-deliver">Saltar y entregar</button></div>`;
   }
-  const html = `${sheetHead('🧠 Antes de entregar')}<div class="sheet-body" id="quizBody">${q.i < q.qs.length ? '<p class="muted" style="margin:0 0 10px">Tres preguntas rápidas con tus propios apuntes para confirmar que aprendiste.</p>' : ''}${body}</div>`;
+  const html = `${sheetHead('Antes de entregar')}<div class="sheet-body" id="quizBody">${q.i < q.qs.length ? '<p class="muted" style="margin:0 0 10px">Tres preguntas rápidas con tus propios apuntes para confirmar que aprendiste.</p>' : ''}${body}</div>`;
   openSheet(html, () => { PUI.quiz = null; });
 }
 Object.assign(PLUS_ACTS, {
@@ -534,7 +564,7 @@ function tplListHTML(list) {
 }
 function tplCardHTML() {
   const n = allTpls(curFid()).length;
-  return `<button type="button" class="focus-card tplcard" data-act="tpl-open"><span class="fc-ico">📋</span><span class="fc-t"><b>Plantillas de estudio</b><span class="small">${n ? `${plural(n, 'plantilla compartida', 'plantillas compartidas')}. Clónalas con un toque.` : 'Comparte cómo desglosaste una tarea pesada.'}</span></span>${icon('chev', 'chev')}</button>`;
+  return `<button type="button" class="focus-card tplcard" data-act="tpl-open"><span class="fc-ico">${icon('clipboard')}</span><span class="fc-t"><b>Plantillas de estudio</b><span class="small">${n ? `${plural(n, 'plantilla compartida', 'plantillas compartidas')}. Clónalas con un toque.` : 'Comparte cómo desglosaste una tarea pesada.'}</span></span>${icon('chev', 'chev')}</button>`;
 }
 function cloneTpl(fid, id) {
   const f = FOR.f[fid]; const it = (f?.items || []).find((x) => x.id === id); if (!it) { toast('Esa plantilla ya no está.'); return; }
@@ -548,15 +578,15 @@ function cloneTpl(fid, id) {
   Snd.chime();
 }
 Object.assign(PLUS_ACTS, {
-  'tpl-open': () => { openSheet(`${sheetHead('📋 Plantillas de estudio')}<div class="sheet-body">${tplListHTML(allTpls(curFid()))}</div>`); },
+  'tpl-open': () => { openSheet(`${sheetHead('Plantillas de estudio')}<div class="sheet-body">${tplListHTML(allTpls(curFid()))}</div>`); },
   'tpl-clone': (el) => { cloneTpl(el.dataset.fid, el.dataset.id); if (sheet().open && isGroup()) closeSheet(false); },
   'tpl-share': async () => {
     if (!draft || (draft.steps || []).length < 2) { toast('Agrega al menos 2 pasos para compartir.'); return; }
     const fs = myForests(); if (!REG.me || !tokens()[REG.me] || !fs.length) { toast('Para compartir, primero únete a un Salón con tus compañeros.'); return; }
     let fid = fs[0].meta.id;
-    if (fs.length > 1) { const v = await ask({ title: '¿En qué Salón la compartes?', options: fs.map((f) => ({ value: f.meta.id, label: `${f.meta.emoji || '🌳'} ${f.meta.name}` })) }); if (!v) return; fid = v; }
+    if (fs.length > 1) { const v = await ask({ title: '¿En qué Salón la compartes?', options: fs.map((f) => ({ value: f.meta.id, label: `${f.meta.name}` })) }); if (!v) return; fid = v; }
     const item = { id: gid(), type: 'tpl', title: draft.title.trim() || 'Plantilla', kind: draft.type, est: +draft.estimate || 0, steps: draft.steps.slice(0, 30).map((s) => ({ text: String(s.text).slice(0, 120), min: +s.min || 0 })), at: Date.now(), by: me() };
-    try { await cloudFetch('POST', { kind: 'gitem', as: REG.me, forest: fid, item, device: CLOUD.device }); (FOR.f[fid].items ||= []).push(item); saveFOR(); Snd.chime(); toast('Plantilla compartida con tu Salón. 🎉'); }
+    try { await cloudFetch('POST', { kind: 'gitem', as: REG.me, forest: fid, item, device: CLOUD.device }); (FOR.f[fid].items ||= []).push(item); saveFOR(); Snd.chime(); toast('Plantilla compartida con tu Salón.'); }
     catch (e) { toast(`No se pudo compartir: ${e.message}`); }
   },
 });
@@ -577,18 +607,19 @@ function lobbyBody() {
   const s = slotInfo(); const D = LOB.data; const mineJ = (S.vida || {}).lobby && S.vida.lobby.end > Date.now();
   const left = (s.phase === 'focus' ? s.fEnd : s.end) - Date.now();
   const room = (D?.room || []); const cells = [];
-  for (let i = 0; i < 6; i++) { const m = room[i]; cells.push(m ? `<div class="lob-c on ${m.id === REG.me ? 'me' : ''}"><span class="lob-av" style="--pc:${m.ghost ? '#8A97A8' : (m.color || '#2F8A5B')}">${m.ghost ? '👻' : esc(initials(m.name))}<i class="fp-dot"></i></span><span class="tiny">${m.id === REG.me ? 'Tú' : m.ghost ? 'Fantasma' : esc(String(m.name).split(' ')[0])}</span></div>` : `<div class="lob-c"><span class="lob-av empty">·</span><span class="tiny faint">Libre</span></div>`); }
-  return `<div class="lob-top"><span class="lob-ph">${s.phase === 'focus' ? '🎧 Sesión de enfoque compartida' : '☕ Descanso compartido'}</span><b id="lobClock" class="lob-clock">${mmss(left)}</b><span class="small muted">${s.phase === 'focus' ? 'Todos en la sala ven este mismo contador.' : 'En unos minutos empieza la siguiente sesión.'}</span></div>
+  for (let i = 0; i < 6; i++) { const m = room[i]; cells.push(m ? `<div class="lob-c on ${m.id === REG.me ? 'me' : ''}"><span class="lob-av" style="--pc:${m.ghost ? '#8A97A8' : (m.color || '#2F8A5B')}">${m.ghost ? icon('eyeoff', 'sm') : esc(initials(m.name))}<i class="fp-dot"></i></span><span class="tiny">${m.id === REG.me ? 'Tú' : m.ghost ? 'Fantasma' : esc(String(m.name).split(' ')[0])}</span></div>` : `<div class="lob-c"><span class="lob-av empty">·</span><span class="tiny faint">Libre</span></div>`); }
+  return `<div class="lob-top"><span class="lob-ph">${s.phase === 'focus' ? 'Sesión de enfoque compartida' : 'Descanso compartido'}</span><b id="lobClock" class="lob-clock">${mmss(left)}</b><span class="small muted">${s.phase === 'focus' ? 'Todos en la sala ven este mismo contador.' : 'En unos minutos empieza la siguiente sesión.'}</span></div>
     <div class="lob-grid">${cells.join('')}</div>
-    <p class="small muted" style="text-align:center;margin:8px 0">🌍 ${D ? `${plural(D.total || 0, 'persona estudiando ahora', 'personas estudiando ahora')} en todo el mundo` : (LOB.err || 'Buscando personas…')}</p>
+    <p class="small muted" style="text-align:center;margin:8px 0">${D ? `${plural(D.total || 0, 'persona estudiando ahora', 'personas estudiando ahora')} en todo el mundo` : (LOB.err || 'Buscando personas…')}</p>
     ${LOB.err && D ? `<p class="small" style="color:var(--red);text-align:center">${esc(LOB.err)}</p>` : ''}
-    <label class="toggle ghost-tg"><span class="t">👻 Modo fantasma <span class="small muted" style="display:block">Solo verán que alguien estudia.</span></span><span class="switch"><input type="checkbox" id="lobGhost" ${PUI.lobGhost ? 'checked' : ''} aria-label="Modo fantasma"><span></span></span></label>
-    <div class="btn-row" style="margin-top:12px;justify-content:center">${mineJ ? '<button class="btn" data-act="lobby-leave">Salir de la sala</button>' : (s.phase === 'focus' ? '<button class="btn primary block" data-act="lobby-join">🎧 Entrar a estudiar en silencio</button>' : '<span class="muted small">Podrás entrar cuando empiece la siguiente sesión.</span>')}</div>
-    <p class="tiny faint" style="text-align:center;margin-top:10px">Sin chat ni video: solo ves a los demás concentrados. Al terminar ganas semillas 🌰.</p>`;
+    <label class="toggle ghost-tg"><span class="t">Modo fantasma <span class="small muted" style="display:block">Solo verán que alguien estudia.</span></span><span class="switch"><input type="checkbox" id="lobGhost" ${PUI.lobGhost ? 'checked' : ''} aria-label="Modo fantasma"><span></span></span></label>
+    <div class="btn-row" style="margin-top:12px;justify-content:center">${mineJ ? '<button class="btn" data-act="lobby-leave">Salir de la sala</button>' : (s.phase === 'focus' ? '<button class="btn primary block" data-act="lobby-join">Entrar a estudiar en silencio</button>' : '<span class="muted small">Podrás entrar cuando empiece la siguiente sesión.</span>')}</div>
+    <p class="tiny faint" style="text-align:center;margin-top:10px">Sin chat ni video: solo ves a los demás concentrados. Al terminar ganas semillas.</p>`;
 }
 function lobbyPaint() { const b = document.getElementById('lobBox'); if (b) b.innerHTML = lobbyBody(); }
 function lobbyOpen() {
-  openSheet(`${sheetHead('🌍 Biblioteca global')}<div class="sheet-body"><div id="lobBox"></div></div>`, () => { clearInterval(LOB.t); LOB.t = null; });
+  if (typeof LIVE !== 'undefined') { LIVE.lob = ''; liveKick(); }
+  openSheet(`${sheetHead('Biblioteca global')}<div class="sheet-body"><div id="lobBox"></div></div>`, () => { clearInterval(LOB.t); LOB.t = null; });
   lobbyPaint(); lobbyFetch(); let k = 0; clearInterval(LOB.t);
   LOB.t = setInterval(() => {
     if (!document.getElementById('lobBox')) { clearInterval(LOB.t); LOB.t = null; return; }
@@ -601,7 +632,7 @@ function lobbyOpen() {
 function lobbyCheck() {
   const L = (S.vida || {}).lobby; if (!L || L.rewarded || Date.now() < L.end) return;
   L.rewarded = true; const mins = Math.round((L.end - L.start) / 60000);
-  if (mins >= 5) { const v = vidaData(); const r = Math.max(2, Math.round(mins / 5)); v.bonus = (v.bonus || 0) + r; save(); Snd.chime(); confetti(innerWidth / 2, innerHeight / 3, 50); toast(`🎉 Terminaste tu sesión en la biblioteca: +${r} 🌰`, { ms: 6000 }); } else save();
+  if (mins >= 5) { const v = vidaData(); const r = Math.max(2, Math.round(mins / 5)); v.bonus = (v.bonus || 0) + r; save(); Snd.chime(); confetti(innerWidth / 2, innerHeight / 3, 50); toast(`Terminaste tu sesión en la biblioteca: +${r} semillas`, { ms: 6000 }); } else save();
   lobbyPaint();
 }
 Object.assign(PLUS_ACTS, {
@@ -623,10 +654,10 @@ function viewPanel() {
   lobbyCheck();
   return `<a class="back" href="#/mas">${icon('back')}Más</a><h1 class="page-title">Mi panel</h1>
     <p class="page-sub">Entiende tu semana, cuida tu energía y aprende a organizarte mejor.</p>
-    <div class="btn-row" style="margin-bottom:12px"><button class="btn danger block" data-act="sos-open">🆘 Nube de emergencia</button><button class="btn block" data-act="lobby-open">🌍 Biblioteca global</button></div>
+    <div class="btn-row" style="margin-bottom:12px"><button class="btn danger block" data-act="sos-open">Nube de emergencia</button><button class="btn block" data-act="lobby-open">Biblioteca global</button></div>
     ${radarHTML()}${freeHTML()}${critHTML()}${estHTML()}${patternsHTML()}${habitsHTML()}${skillTreeHTML()}
     ${myForests().length ? `<section class="pn-card"><h2 class="serif">Plantillas de mis Salones</h2>${tplListHTML(allTpls())}</section>` : ''}
-    <section class="pn-card"><h2 class="serif">Quiz antes de entregar</h2><div class="toggle"><span><span class="t">Preguntarme 3 cosas con mis apuntes</span><span class="d" style="display:block">Solo si tienes apuntes de esa materia.</span></span><label class="switch"><input type="checkbox" data-quiz-set ${S.settings.quizOff ? '' : 'checked'} aria-label="Quiz antes de entregar"><span></span></label></div></section>`;
+    <section class="pn-card"><h2 class="serif">Quiz antes de entregar</h2><div class="toggle"><span><span class="t">Preguntarme 3 cosas con mis apuntes</span><span class="d" style="display:block">Usa tus apuntes de la materia o los pasos de la tarea.</span></span><label class="switch"><input type="checkbox" data-quiz-set ${S.settings.quizOff ? '' : 'checked'} aria-label="Quiz antes de entregar"><span></span></label></div></section>`;
 }
 document.addEventListener('change', (e) => { if (e.target.dataset.quizSet !== undefined) { S.settings.quizOff = !e.target.checked; save(); toast(e.target.checked ? 'Quiz activado.' : 'Quiz desactivado.'); } });
 Object.assign(VIDA_ACTS, PLUS_ACTS);

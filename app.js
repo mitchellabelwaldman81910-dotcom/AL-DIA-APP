@@ -10,7 +10,7 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
-const icon = (id, cls = '') => `<svg class="i ${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+const icon = (id, cls = '') => (typeof GLIFOS !== 'undefined' && GLIFOS[id]) ? glifo(id, cls) : `<svg class="i ${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
 const pad = (n) => String(n).padStart(2, '0');
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
@@ -181,7 +181,7 @@ const isForestId = (id) => String(id || '').startsWith('f:');
 const initials2 = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 const profile = (id = REG.current) => {
   if (!id) return null;
-  if (isForestId(id)) { const f = FOR.f[id.slice(2)]?.meta; return f ? { id, fid: f.id, name: f.name, initials: f.emoji || '🌳', color: f.color || '#2F8A5B', group: true } : null; }
+  if (isForestId(id)) { const f = FOR.f[id.slice(2)]?.meta; return f ? { id, fid: f.id, name: f.name, initials: String(f.name || '?').trim().charAt(0).toUpperCase(), color: f.color || '#2F8A5B', group: true } : null; }
   const u = (REG.users || []).find((x) => x.id === id);
   return u ? { ...u, initials: initials2(u.name) } : null;
 };
@@ -886,11 +886,11 @@ function voiceSettingsHTML() {
   return `<h2 class="sec">Voz de lectura</h2>
     <div class="card">
       <div class="field"><label for="voiceSel">Voz</label>
-        <select id="voiceSel" class="input" data-voice>${VOICE.list.length ? VOICE.list.map((v) => `<option value="${esc(v.name)}" ${v.name === cur ? 'selected' : ''}>${esc(v.name.replace(/\s*\(.*\)$/, ''))} · ${esc(v.lang)}${/premium|enhanced|mejorada/i.test(v.name) ? ' ★' : ''}</option>`).join('') : '<option>Voz del sistema</option>'}</select></div>
+        <select id="voiceSel" class="input" data-voice>${VOICE.list.length ? VOICE.list.map((v) => `<option value="${esc(v.name)}" ${v.name === cur ? 'selected' : ''}>${esc(v.name.replace(/\s*\(.*\)$/, ''))} · ${esc(v.lang)}${/premium|enhanced|mejorada/i.test(v.name) ? ' (mejor)' : ''}</option>`).join('') : '<option>Voz del sistema</option>'}</select></div>
       <div class="field"><label for="voiceRate">Velocidad: <span id="rateLbl">${VOICE.prefs().rate < 0.85 ? 'muy calmada' : VOICE.prefs().rate < 0.95 ? 'calmada' : VOICE.prefs().rate < 1.05 ? 'normal' : 'rápida'}</span></label>
         <input id="voiceRate" type="range" min="0.7" max="1.15" step="0.01" value="${VOICE.prefs().rate}" data-voice-rate style="accent-color:var(--pen)"></div>
       <button class="btn" data-act="voice-test">${icon('play')}Probar voz</button>
-      <p class="small muted" style="margin:12px 0 0">Para una voz más natural en iPhone o iPad: Configuración, Accesibilidad, Contenido leído, Voces, Español (México) y descarga una voz <b>Mejorada</b> (por ejemplo Paulina). Luego elígela aquí; tiene ★.</p>
+      <p class="small muted" style="margin:12px 0 0">Para una voz más natural en iPhone o iPad: Configuración, Accesibilidad, Contenido leído, Voces, Español (México) y descarga una voz <b>Mejorada</b> (por ejemplo Paulina). Luego elígela aquí; es la mejor.</p>
     </div>`;
 }
 
@@ -1150,7 +1150,8 @@ function viewMateria(id) {
 /* ---------- Más ---------- */
 function viewMas() {
   const items = [
-    ['#/cerebro', 'spark', 'Tu Cerebro', 'Todo lo que has hecho y pensado, conectado en una red viva'],
+    ['#/estilo', 'palette', 'Estilo de la app', 'Cambia los colores y el diseño: 7 plantillas con día y noche'],
+    ['#/cerebro', 'network', 'Tu Cerebro', 'Todo lo que has hecho y pensado, conectado en una red viva'],
     ['#/panel', 'grid', 'Mi panel', 'Radar de carga, tiempo libre real, patrones y hábitos'],
     ['#/materias', 'book', 'Materias', 'Tus materias, horarios y calificaciones'],
     ['#/escanear', 'cam', 'Escanear foto', 'Saca pendientes y fechas de una foto o resuelve ejercicios de mate'],
@@ -1427,7 +1428,7 @@ async function runScan(file, mode) {
 const LEAF_PATH = 'M12 2C7 5 3.5 10 5 18c.3 1.6 1 2.8 1.8 3.6C15 20.5 20 15 19.5 6.5 17.5 3.8 15 2.5 12 2z';
 const LEAF_VEIN = 'M6.8 21.6C9 16 12 10 17 5';
 const LEAF_COLORS = ['#7DBE7A', '#5DA36A', '#A8D08D', '#3F8F5F', '#C9DE8C', '#94C9A0'];
-const leafSVG = (c) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${LEAF_PATH}" fill="${c}"/><path d="${LEAF_VEIN}" stroke="rgba(255,255,255,.55)" stroke-width="1" fill="none"/></svg>`;
+const leafSVG = () => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${LEAF_PATH}" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/><path d="${LEAF_VEIN}" stroke="currentColor" stroke-width=".7" fill="none" opacity=".7"/></svg>`;
 function buildLeaves() {
   const box = $('#leaves'); if (!box) return;
   const off = S.settings.leaves === false || matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1600,18 +1601,7 @@ function plantInfo() {
   const stage = done === 0 ? 0 : ratio < 0.34 ? 1 : ratio < 0.67 ? 2 : ratio < 1 ? 3 : 4;
   return { done, total, stage };
 }
-function plantSVG(stage) {
-  const leaf = (x, y, r, s, c, d) => `<path class="pl-leaf" style="--d:${d}ms" transform="translate(${x} ${y}) rotate(${r}) scale(${s})" d="M0 0 C6 -10 18 -12 26 -6 C18 2 8 4 0 0Z" fill="${c}"/>`;
-  return `<svg viewBox="0 0 120 130" class="plant st${stage}" aria-hidden="true">
-    <ellipse cx="60" cy="122" rx="34" ry="5" fill="rgba(22,58,43,.12)"/>
-    <path d="M36 96 H84 L78 122 H42Z" fill="#C98E62"/><rect x="32" y="90" width="56" height="10" rx="4" fill="#B47A50"/>
-    <path class="pl-stem" d="M60 92 C60 76 58 62 61 ${stage >= 3 ? 30 : stage === 2 ? 46 : stage === 1 ? 64 : 84}" stroke="#4F9A63" stroke-width="4" fill="none" stroke-linecap="round"/>
-    ${stage >= 1 ? leaf(60, 78, -150, 0.9, '#7CC07A', 100) + leaf(61, 76, -30, 0.9, '#5DAE74', 200) : `<ellipse cx="60" cy="88" rx="6" ry="4" fill="#8A6A4E"/>`}
-    ${stage >= 2 ? leaf(60, 60, -160, 1, '#5DAE74', 300) + leaf(61, 56, -20, 1.05, '#8CCB8A', 400) : ''}
-    ${stage >= 3 ? leaf(60, 42, -150, 0.95, '#8CCB8A', 500) + leaf(61, 38, -35, 0.9, '#3E9563', 600) : ''}
-    ${stage >= 4 ? `<g class="pl-flower" transform="translate(61 26)">${[0, 72, 144, 216, 288].map((r) => `<ellipse rx="6" ry="10" transform="rotate(${r}) translate(0 -9)" fill="#F4A9BE"/>`).join('')}<circle r="6" fill="#F6D06B"/></g>` : ''}
-  </svg>`;
-}
+/* plantSVG: ver linea.js */
 function plantHTML() {
   const p = plantInfo();
   if (!p.total) return '';
@@ -1726,7 +1716,8 @@ async function cloudFetch(method, body, query = '') {
 }
 
 async function cloudSync(opts = {}) {
-  if (CLOUD.busy || !navigator.onLine || !Object.keys(tokens()).length) return;
+  if (CLOUD.busy) { CLOUD.again = true; return; }
+  if (!navigator.onLine || !Object.keys(tokens()).length) return;
   CLOUD.busy = true; CLOUD.error = '';
   try {
     const remote = await cloudFetch('GET');
@@ -1780,19 +1771,19 @@ async function cloudSync(opts = {}) {
     await postTrees(live);
     CLOUD.last = Date.now();
     if (lost) { choosing = true; render(); toast('Tu contraseña cambió en otro dispositivo. Vuelve a entrar.'); }
-    else if (changedCurrent && !sheet().open && !choosing) { render(); applyTheme(); }
-    else if (forestChanged && !sheet().open && !choosing && !['gTaskIn', 'gPostIn', 'gIdeaIn', 'gPartIn'].includes(document.activeElement?.id)) render();
-    else if (route().name === 'hoy' && !sheet().open && !choosing && (remote.letters || []).some((l) => l.to === REG.current && !l.read)) render();
+    else if (changedCurrent && !choosing) { if (softRender()) applyTheme(); }
+    else if (forestChanged && !choosing) softRender();
+    else if (route().name === 'hoy' && !choosing && (remote.letters || []).some((l) => l.to === REG.current && !l.read)) softRender();
     updateCloudBadge();
   } catch (e) {
     CLOUD.error = /fetch|network|Failed|Load failed/i.test(e.message) ? 'Sin conexión con la nube' : e.message;
     updateCloudBadge();
-  } finally { CLOUD.busy = false; }
+  } finally { CLOUD.busy = false; if (CLOUD.again) { CLOUD.again = false; setTimeout(() => cloudSync(), 0); } }
 }
 function queueCloud() {
   if (!dataOwner()) return;
   setDirty(dataOwner(), true);
-  clearTimeout(CLOUD.timer); CLOUD.timer = setTimeout(cloudSync, 1500);
+  clearTimeout(CLOUD.timer); CLOUD.timer = setTimeout(cloudSync, 120);
 }
 function updateCloudBadge() {
   const el = $('#cloudState'); if (!el) return;
@@ -1884,7 +1875,7 @@ function groupStatus() {
   if (!REG.me || !tokens()[REG.me]) return `<button class="gstat warn" data-act="profile-choose">${icon('lock', 'sm')}Sesión cerrada: toca para entrar</button>`;
   if (pend) return `<button class="gstat warn" data-act="g-retry">${icon('reset', 'sm')}${plural(pend, 'cambio sin guardar', 'cambios sin guardar')}: toca para reintentar</button>`;
   if (CLOUD.error) return `<span class="gstat warn">${icon('bell', 'sm')}${esc(CLOUD.error)}</span>`;
-  return `<span class="gstat ok">${icon('check', 'sm')}Guardado en la nube${CLOUD.last ? ` · ${new Date(CLOUD.last).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` : ''}</span>`;
+  return `<span class="gstat ok"><i id="liveDot" class="live-dot" data-on="${typeof LIVE !== 'undefined' && LIVE.live ? 1 : 0}"></i>En vivo · guardado al instante${CLOUD.last ? ` · ${new Date(CLOUD.last).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` : ''}</span>`;
 }
 const gid = () => uid() + Math.random().toString(36).slice(2, 5);
 const gDone = () => (REG.gdone ||= {});
@@ -2305,7 +2296,7 @@ function noteCard(n) {
   const s = subj(n.subjectId);
   return `<button type="button" class="note ${n.pinned ? 'pinned' : ''}" data-act="open-note" data-id="${n.id}" style="--c:${(libretas().find((l) => l.id === n.libreta)?.color) || (s ? safeColor(s.color) : 'transparent')}">
     <b>${n.pinned ? '<svg class="i sm star" aria-label="Fijado"><use href="#i-star"/></svg> ' : ''}${esc(n.title || 'Sin título')}</b>${n.photos?.length ? `<span class="tiny faint">${plural(n.photos.length, 'foto', 'fotos')}</span>` : ''}<p>${esc((n.body || '').slice(0, 280))}</p>
-    <span class="tiny faint">${libretas().find((l) => l.id === n.libreta) ? esc(libretas().find((l) => l.id === n.libreta).emoji) + ' ' : ''}${s ? esc(s.name) + ', ' : ''}${relDay(toISO(new Date(n.updated || Date.now())))}</span></button>`;
+    <span class="tiny faint">${libretas().find((l) => l.id === n.libreta) ? esc(libretas().find((l) => l.id === n.libreta).name) + ', ' : ''}${s ? esc(s.name) + ', ' : ''}${relDay(toISO(new Date(n.updated || Date.now())))}</span></button>`;
 }
 function viewNotas() {
   const q = normChars(UI.notesQ.trim());
@@ -2360,6 +2351,7 @@ function viewAjustes() {
     </div>
     ${accountCardHTML()}
     <div class="card" style="margin-top:12px">
+      ${estilosRowHTML()}
       <div class="field"><label for="setName">Cómo te saludo</label><input id="setName" class="input" data-set="name" value="${esc(st.name)}" placeholder="Para saludarte"></div>
       <div class="field" style="margin:0"><span class="lbl">Tema</span><div class="seg" role="group">${[['light', 'Bosque de día'], ['dark', 'Bosque de noche']].map(([k, l]) => `<button type="button" data-act="theme" data-v="${k}" aria-pressed="${(st.theme === 'dark' ? 'dark' : 'light') === k}">${l}</button>`).join('')}</div></div>
     </div>
@@ -2389,7 +2381,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.3. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.5. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -2483,6 +2475,7 @@ function render() {
       case 'vida': html = viewVida(); break;
       case 'panel': html = viewPanel(); break;
       case 'cerebro': html = viewCerebro(); break;
+      case 'estilo': setTimeout(() => { history.replaceState(null, '', '#/mas'); openEstilos(); }, 0); html = viewMas(); break;
       case 'carta': setTimeout(() => { history.replaceState(null, '', '#/mas'); writeLetter(); }, 0); html = viewMas(); break;
       default: html = viewHoy();
     }
@@ -2496,7 +2489,7 @@ function render() {
   if (qv && $('#quickIn')) { $('#quickIn').value = qv; updateQuickPreview(); }
   if (hadFocus && ['quickIn', 'taskQ', 'notesQ'].includes(hadFocus)) { const el = $('#' + hadFocus); if (el) { el.focus(); const v = el.value; el.setSelectionRange?.(v.length, v.length); } }
 
-  const known = ['carta', 'panel', 'cerebro', 'vida', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
+  const known = ['carta', 'estilo', 'panel', 'cerebro', 'vida', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
   const rn = known.includes(r.name) ? r.name : 'hoy';
   const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', vida: 'vida', mas: 'mas', instalar: 'mas' }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'mas', materias: 'mas', tareas: 'tareas', calendario: 'calendario', hoy: 'hoy', mente: 'mente', vida: 'vida' }[rn] || 'mas');
   $$('.nav a').forEach((a) => { if (a.dataset.nav === navName) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
@@ -2738,14 +2731,14 @@ function toggleTask(id, rowEl) {
     if (typeof quizGate === 'function' && quizGate(t)) return;
     t.done = true; t.made = true; t.doneAt = Date.now();
     save(); Snd.chime();
-    if (rowEl) { floatText(rowEl, `+${t.priority === 3 ? 14 : 10} ✨`); leafBurst(rowEl); }
+    if (rowEl) { floatText(rowEl, `+${t.priority === 3 ? 14 : 10}`); leafBurst(rowEl); }
     if (rowEl && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
       rowEl.classList.add('done', 'leaving');
       rowEl.insertAdjacentHTML('beforeend', '<span class="stamp" aria-hidden="true">Entregado</span>');
       setTimeout(render, 900);
     } else render();
     leafBurst(rowEl?.querySelector('.chk'));
-    if (+t.estimate > 0 && typeof realMin === 'function' && realMin(t) >= 3) { const d = realMin(t) - +t.estimate; toast(d > 5 ? `Entregada. Te tomó ${fmtMinutes(realMin(t))}: ${fmtMinutes(d)} más de lo que calculaste.` : d < -5 ? `Entregada. Terminaste ${fmtMinutes(-d)} antes de lo calculado. 🎯` : 'Entregada. Calculaste casi perfecto. 🎯', { ms: 5500, action: 'Deshacer', onAction: () => commit(() => { t.done = false; t.doneAt = null; }) }); }
+    if (+t.estimate > 0 && typeof realMin === 'function' && realMin(t) >= 3) { const d = realMin(t) - +t.estimate; toast(d > 5 ? `Entregada. Te tomó ${fmtMinutes(realMin(t))}: ${fmtMinutes(d)} más de lo que calculaste.` : d < -5 ? `Entregada. Terminaste ${fmtMinutes(-d)} antes de lo calculado.` : 'Entregada. Calculaste casi perfecto.', { ms: 5500, action: 'Deshacer', onAction: () => commit(() => { t.done = false; t.doneAt = null; }) }); }
     else toast(`Entregada: ${t.title}`, { action: 'Deshacer', onAction: () => commit(() => { t.done = false; t.doneAt = null; }) });
     if (navigator.vibrate) navigator.vibrate(18);
   } else {
@@ -3565,8 +3558,8 @@ function applyTheme() {
   buildLeaves(); applyDaypart();
   if (REG.current) document.documentElement.setAttribute('data-profile', REG.current);
   document.documentElement.setAttribute('data-theme', th);
+  if (typeof applyStyle === 'function') applyStyle();
   const dark = th === 'dark' || (th === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
-  $$('meta[name="theme-color"]').forEach((m) => { if (th === 'auto') m.setAttribute('content', m.media.includes('dark') ? '#0B1A14' : '#F3FAF5'); else m.setAttribute('content', th === 'dark' ? '#0B1A14' : '#F3FAF5'); });
 }
 
 /* =========================================================
@@ -3598,7 +3591,8 @@ if (window.visualViewport) {
   if (params.has('nueva') || params.has('app')) history.replaceState(null, '', location.pathname + location.hash);
   if (!choosing && S.settings.onboarded) intro();
   setTimeout(cloudSync, 400); setTimeout(presenceTick, 1500); setTimeout(treeCheck, 1800);
-  setInterval(() => { if (document.visibilityState === 'visible') cloudSync(); }, 20000);
+  setInterval(() => { if (document.visibilityState === 'visible') cloudSync(); }, 30000);
+  liveLoop();
   window.addEventListener('online', () => cloudSync());
   updateBadge(); queueSync(); if (!choosing) { dailyDigest(); scheduleReminders(); setTimeout(checkDueReminders, 800); }
   setInterval(() => { if (!choosing) checkDueReminders(); }, 60000);

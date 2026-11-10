@@ -94,7 +94,7 @@ function treeCheck() {
   if (c.wet && st.wetDay !== today()) {
     st.wetDay = today(); saveReg();
     VUI.pour = Date.now() + 7000;
-    if (!choosing) { toast('💧 ¡Regaste tu árbol! Hoy crecerá más.'); if (Snd.on()) { Snd.drop(); } if (route().name === 'vida') render(); }
+    if (!choosing) { toast('¡Regaste tu árbol! Hoy crecerá más.'); if (Snd.on()) { Snd.drop(); } if (route().name === 'vida') render(); }
   }
   if (c.level > st.level) {
     st.level = c.level; saveReg();
@@ -107,7 +107,7 @@ function treeCheck() {
   }
 }
 let cloudSoonT = null;
-function cloudSoon() { clearTimeout(cloudSoonT); cloudSoonT = setTimeout(() => cloudSync(), 1200); }
+function cloudSoon() { clearTimeout(cloudSoonT); cloudSoonT = setTimeout(() => cloudSync(), 80); }
 function levelUp(level) {
   const ms = MILESTONES.find((m) => m[0] === level);
   Snd.chime();
@@ -120,7 +120,7 @@ function levelUp(level) {
       <h3 class="serif">¡Nivel ${level}!</h3><p><b>${esc(stageName(level))}${ms ? ` · ${esc(ms[1])}` : ''}</b></p><p>${esc(ms ? ms[2] : 'Tu árbol sigue creciendo gracias a ti.')}</p>
       <div class="btn-row" style="justify-content:center"><button class="btn primary" value="ok">Seguir creciendo</button></div></form>`;
     if (!d.open) { d.showModal(); setTimeout(() => leafBurst(d.querySelector('.lu-tree')), 300); }
-  } else toast(`🌱 ¡Tu árbol subió al nivel ${level}!`);
+  } else toast(`¡Tu árbol subió al nivel ${level}!`);
 }
 
 /* Publica el nivel de cada persona para el ranking */
@@ -147,137 +147,10 @@ const seedOf = (s) => { let h = 2166136261; for (const ch of String(s)) { h ^= c
 const rnd = (seed) => { let s = seed || 1; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); };
 const r1 = (n) => Math.round(n * 10) / 10;
 
-function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pour = false, garden = null }) {
-  const v = max === 100 ? Math.max(0, Math.min(100, level)) : Math.max(0, Math.min(100, Math.round(100 * Math.sqrt(level / max))));
-  const p = v / 100;
-  const R = rnd(seedOf(seed + ':' + id));
-  const W = 360, H = 300, GY = 252;
-  const sky1 = mixHex('#D5E6DA', '#78C4EE', Math.pow(p, 0.6)), sky2 = mixHex('#F3FAF5', '#FFE8BE', p);
-  const grass = mixHex('#A9CF92', '#4DAA62', p), grass2 = mixHex('#8DBE7E', '#2F8A5B', p);
-  const hillA = mixHex('#CFE4D3', '#8ED0A2', p), hillB = mixHex('#B9D9BF', '#62B87C', p);
-  const leafA = wet ? mixHex('#A9D98A', '#2FA05F', p) : mixHex('#C3C88A', '#8E9A5A', p * 0.6);
-  const leafB = wet ? mixHex('#7DBE7A', '#1F7F52', p) : mixHex('#A9AD72', '#76804A', p * 0.6);
-  const leafC = wet ? mixHex('#C6E8A0', '#7EE0A0', p) : mixHex('#D4D194', '#A9AC6C', p * 0.5);
-  const bark = mixHex('#8A6A4E', '#6B4A33', p);
-  let o = `<svg viewBox="0 0 ${W} ${H}" class="vscene-svg ${wet ? 'is-wet' : 'is-dry'} ${pour ? 'is-pour' : ''}" role="img" aria-label="Tu árbol, nivel ${level}" preserveAspectRatio="xMidYMid slice">`;
-  o += `<defs>
-    <linearGradient id="sk-${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky1}"/><stop offset="1" stop-color="${sky2}"/></linearGradient>
-    <radialGradient id="sun-${id}"><stop offset="0" stop-color="#FFF6C8"/><stop offset=".45" stop-color="#FFE48A" stop-opacity=".9"/><stop offset="1" stop-color="#FFE48A" stop-opacity="0"/></radialGradient>
-    <linearGradient id="wa-${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9AD8F0"/><stop offset="1" stop-color="#5FB5DE"/></linearGradient>
-    <radialGradient id="gl-${id}"><stop offset="0" stop-color="#FFE9A0" stop-opacity=".85"/><stop offset="1" stop-color="#FFE9A0" stop-opacity="0"/></radialGradient>
-    <linearGradient id="au-${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7CF0C0" stop-opacity="0"/><stop offset=".4" stop-color="#7CF0C0" stop-opacity=".5"/><stop offset=".7" stop-color="#B58CF5" stop-opacity=".45"/><stop offset="1" stop-color="#B58CF5" stop-opacity="0"/></linearGradient>
-  </defs>`;
-  o += `<rect width="${W}" height="${H}" fill="url(#sk-${id})"/>`;
-  if (v >= 90) { o += '<g class="v-stars">'; for (let i = 0; i < 26; i++) o += `<circle cx="${r1(R() * W)}" cy="${r1(R() * 120)}" r="${r1(0.7 + R() * 1.3)}" fill="#fff" style="--d:${r1(R() * 4)}s"/>`; o += '</g>'; }
-  if (v >= 96) o += `<g class="v-aurora"><path d="M-20 70 C60 20 140 100 220 50 S340 30 400 70 V110 C320 80 240 130 160 90 S40 120 -20 100Z" fill="url(#au-${id})"/><path d="M-20 100 C70 60 150 130 240 80 S340 70 400 100 V130 C320 110 230 150 150 120 S30 140 -20 125Z" fill="url(#au-${id})" opacity=".6"/></g>`;
-  // sol
-  if (v >= 12) {
-    const sr = 14 + 7 * p;
-    o += `<g class="v-sun" transform="translate(292 58)"><circle r="${r1(sr * 3)}" fill="url(#sun-${id})"/>${v >= 30 ? `<g class="v-rays">${Array.from({ length: 12 }, (_, i) => `<path d="M0 ${-sr - 5} L0 ${-sr - 13}" stroke="#FFD66B" stroke-width="2.4" stroke-linecap="round" transform="rotate(${i * 30})"/>`).join('')}</g>` : ''}<circle r="${r1(sr)}" fill="#FFE27A"/></g>`;
-  }
-  // arcoíris
-  if (v >= 80) o += `<g class="v-rainbow" fill="none" stroke-width="5" stroke-linecap="round">${['#F07C7C', '#F5B06A', '#F2DD6E', '#7CCB8B', '#6DB4EA', '#A58BE0'].map((c, i) => `<path d="M${28 + i * 5} ${GY - 6} C ${34 + i * 5} ${96 + i * 7}, ${326 - i * 5} ${96 + i * 7}, ${332 - i * 5} ${GY - 6}" stroke="${c}" opacity=".4"/>`).join('')}</g>`;
-  // nubes
-  o += `<g class="v-cloud c1" fill="#fff" opacity="${v >= 20 ? 0.95 : 0.75}"><ellipse cx="70" cy="52" rx="28" ry="10"/><ellipse cx="88" cy="46" rx="20" ry="11"/><ellipse cx="54" cy="47" rx="15" ry="8"/></g>`;
-  if (v >= 10) o += `<g class="v-cloud c2" fill="#fff" opacity=".85"><ellipse cx="210" cy="36" rx="22" ry="8"/><ellipse cx="226" cy="31" rx="15" ry="8.5"/></g>`;
-  // colinas
-  o += `<path d="M0 200 C60 168 120 190 190 176 S320 160 360 184 V${H} H0Z" fill="${hillA}"/>`;
-  if (v >= 30) {
-    const n = Math.min(9, 3 + Math.floor((v - 30) / 8));
-    for (let i = 0; i < n; i++) { const x = 15 + R() * 330, y = 178 + R() * 14, s = 0.6 + R() * 0.5; o += `<g transform="translate(${r1(x)} ${r1(y)}) scale(${r1(s)})" opacity=".9"><rect x="-1.5" y="-4" width="3" height="12" fill="${bark}"/><circle cy="-10" r="9" fill="${leafB}"/><circle cx="6" cy="-6" r="6" fill="${leafA}"/></g>`; }
-  }
-  o += `<path d="M0 222 C70 204 140 226 220 212 S330 200 360 214 V${H} H0Z" fill="${hillB}"/>`;
-  // suelo
-  o += `<path d="M0 ${GY - 8} C 80 ${GY - 16} 150 ${GY - 4} 230 ${GY - 10} S 340 ${GY - 16} 360 ${GY - 8} V ${H} H0Z" fill="${grass}"/><path d="M0 ${GY + 8} C 100 ${GY + 2} 200 ${GY + 14} 360 ${GY + 4} V ${H} H0Z" fill="${grass2}" opacity=".7"/>`;
-  // estanque y río
-  if (v >= 35) {
-    o += `<g class="v-pond"><ellipse cx="76" cy="${GY + 14}" rx="${r1(30 + 18 * p)}" ry="8" fill="url(#wa-${id})"/><ellipse cx="68" cy="${GY + 12}" rx="10" ry="2.4" fill="#fff" opacity=".5" class="v-glint"/></g>`;
-  }
-  if (v >= 70) o += `<path class="v-river" d="M76 ${GY + 22} C 120 ${GY + 30}, 150 ${GY + 38}, 200 ${GY + 34} S 300 ${GY + 40}, 372 ${GY + 30} V ${GY + 44} C 300 ${GY + 52}, 220 ${GY + 48}, 190 ${GY + 48} S 110 ${GY + 40}, 76 ${GY + 30}Z" fill="url(#wa-${id})" opacity=".92"/>`;
-  // flores y pasto
-  const nGrass = Math.min(46, Math.floor(8 + v * 0.55));
-  for (let i = 0; i < nGrass; i++) {
-    const x = R() * W, y = GY - 4 + R() * 36; if (v >= 35 && x > 38 && x < 118 && y > GY + 6 && y < GY + 24) continue;
-    const h = 4 + R() * 6;
-    o += `<path d="M${r1(x)} ${r1(y)} q-2 -${r1(h * 0.6)} -3 -${r1(h)} M${r1(x)} ${r1(y)} q1 -${r1(h * 0.7)} 2 -${r1(h)}" stroke="${grass2}" stroke-width="1.4" fill="none" stroke-linecap="round"/>`;
-  }
-  const nFl = v < 8 ? 0 : Math.min(34, Math.floor(v / 3));
-  const fcol = ['#F4A9BE', '#FFD86B', '#FFFFFF', '#B8A2F0', '#FF9E80', '#8FD3F4'];
-  for (let i = 0; i < nFl; i++) {
-    const x = 8 + R() * (W - 16), y = GY + 2 + R() * 34; if (v >= 35 && x > 38 && x < 118 && y > GY + 4 && y < GY + 26) continue;
-    const c = fcol[Math.floor(R() * fcol.length)], s = 0.7 + R() * 0.5;
-    o += `<g transform="translate(${r1(x)} ${r1(y)}) scale(${r1(s)})" class="v-flower"><path d="M0 0 V-7" stroke="${grass2}" stroke-width="1.3"/>${[0, 72, 144, 216, 288].map((a) => `<ellipse rx="2" ry="3.2" cy="-10" fill="${c}" transform="rotate(${a} 0 -8)"/>`).join('')}<circle cy="-8" r="1.6" fill="#F6C94F"/></g>`;
-  }
-  // ---- el árbol ----
-  const cx = 180;
-  if (v === 0) {
-    o += `<g class="v-seed"><ellipse cx="${cx}" cy="${GY + 2}" rx="26" ry="7" fill="#8A6A4E"/><ellipse cx="${cx}" cy="${GY - 1}" rx="18" ry="5" fill="#A98664"/><ellipse cx="${cx}" cy="${GY - 3}" rx="5" ry="3.4" fill="#5E432E"/><circle cx="${cx}" cy="${GY - 14}" r="14" fill="url(#gl-${id})" class="v-pulse"/></g>`;
-  } else if (v < 3) {
-    const h = 14 + v * 9;
-    o += `<g class="vt-sway"><ellipse cx="${cx}" cy="${GY + 2}" rx="20" ry="5" fill="#8A6A4E"/><path d="M${cx} ${GY} C ${cx} ${GY - h * 0.5} ${cx + 2} ${GY - h * 0.8} ${cx} ${GY - h}" stroke="${leafB}" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M${cx} ${GY - h} C ${cx - 14} ${GY - h - 12} ${cx - 24} ${GY - h - 2} ${cx - 22} ${GY - h + 4} C ${cx - 14} ${GY - h + 6} ${cx - 4} ${GY - h + 2} ${cx} ${GY - h}Z" fill="${leafA}"/><path d="M${cx} ${GY - h} C ${cx + 14} ${GY - h - 12} ${cx + 24} ${GY - h - 2} ${cx + 22} ${GY - h + 4} C ${cx + 14} ${GY - h + 6} ${cx + 4} ${GY - h + 2} ${cx} ${GY - h}Z" fill="${leafC}"/></g>`;
-  } else {
-    const depthMax = v < 8 ? 2 : v < 16 ? 3 : v < 28 ? 4 : v < 45 ? 5 : v < 65 ? 6 : v < 85 ? 7 : 8;
-    const trunkLen = 15 + 31 * Math.pow(p, 0.6), trunkW = 2.6 + 10 * Math.pow(p, 0.8);
-    const paths = [], ends = [];
-    const leafR = 4.2 + 6 * Math.pow(p, 0.55);
-    const grow = (x, y, ang, len, w, d) => {
-      const x2 = x + Math.sin(ang) * len, y2 = y - Math.cos(ang) * len;
-      const mx = x + Math.sin(ang + (R() - 0.5) * 0.3) * len * 0.5, my = y - Math.cos(ang) * len * 0.5;
-      paths.push(`<path d="M${r1(x)} ${r1(y)} Q${r1(mx)} ${r1(my)} ${r1(x2)} ${r1(y2)}" stroke-width="${r1(Math.max(0.9, w))}"/>`);
-      if (d >= 1) ends.push([x2, y2, leafR * (d >= depthMax ? 1 : 0.7)]);
-      if (d >= depthMax) return;
-      const kids = d === 0 ? (v >= 40 ? 3 : 2) : (d < 5 && v >= 60 && R() < 0.3 ? 3 : 2);
-      const spread = 0.34 + 0.12 * R();
-      for (let i = 0; i < kids; i++) grow(x2, y2, ang + (i - (kids - 1) / 2) * spread * 1.5 + (R() - 0.5) * 0.14, len * (0.68 + R() * 0.07), w * 0.66, d + 1);
-    };
-    grow(cx, GY, (R() - 0.5) * 0.08, trunkLen, trunkW, 0);
-    if (v >= 25) for (const s of [-1, 1]) paths.push(`<path d="M${cx} ${GY - 2} q${s * 8} 2 ${s * (14 + 10 * p)} 6" stroke-width="${r1(trunkW * 0.5)}"/>`);
-    o += `<g class="vt-sway"><ellipse cx="${cx}" cy="${GY + 3}" rx="${r1(22 + 30 * p)}" ry="5.5" fill="rgba(30,60,40,.18)"/><g stroke="${bark}" fill="none" stroke-linecap="round">${paths.join('')}</g><g class="vt-leaves">`;
-    const gold = v >= 100;
-    ends.forEach(([x, y, r], i) => {
-      const col = gold && R() < 0.3 ? '#F6D36B' : [leafA, leafB, leafC][i % 3];
-      o += `<circle cx="${r1(x)}" cy="${r1(y)}" r="${r1(r)}" fill="${col}" opacity=".94"/>`;
-      if (R() < 0.45) o += `<circle cx="${r1(x + (R() - 0.5) * r * 1.2)}" cy="${r1(y + (R() - 0.7) * r)}" r="${r1(r * 0.7)}" fill="${[leafC, leafA][i % 2]}" opacity=".9"/>`;
-    });
-    o += '</g>';
-    if (!wet) o += '<g class="vt-thirst"><path d="M0 0C-5 8-7 12-3 15 1 17 5 15 6 11 7 7 3 3 0 0Z" fill="none" stroke="#5FB5DE" stroke-width="2" transform="translate(180 ' + (GY - trunkLen - 40) + ')"/></g>';
-    if (wet && v >= 38) {
-      const nF = Math.min(40, Math.floor((v - 36) / 2)); const fc = ['#F9B9CB', '#FFFFFF', '#FFD9E4', '#FFE9A8'];
-      for (let i = 0; i < nF && ends.length; i++) { const [x, y, r] = ends[Math.floor(R() * ends.length)]; const c = fc[i % fc.length]; o += `<g transform="translate(${r1(x + (R() - 0.5) * r)} ${r1(y + (R() - 0.5) * r)})" class="v-flower">${[0, 72, 144, 216, 288].map((a) => `<ellipse rx="1.8" ry="3" cy="-3" fill="${c}" transform="rotate(${a})"/>`).join('')}<circle r="1.3" fill="#F6C94F"/></g>`; }
-    }
-    if (wet && v >= 55) {
-      const nF = Math.min(34, Math.floor((v - 52) * 0.8)); const gc = v >= 95;
-      for (let i = 0; i < nF && ends.length; i++) { const [x, y, r] = ends[Math.floor(R() * ends.length)]; const c = gc ? '#FFD34E' : ['#E5645A', '#F08A4B', '#E5645A'][i % 3]; o += `<circle cx="${r1(x + (R() - 0.5) * r)}" cy="${r1(y + r * 0.5)}" r="${gc ? 3.2 : 2.7}" fill="${c}" class="${gc ? 'v-fruit-gold' : ''}" style="--d:${r1(R() * 3)}s"/>`; }
-    }
-    if (v >= 100) o += `<circle cx="${cx}" cy="${r1(GY - trunkLen * 2.1)}" r="${r1(trunkLen * 1.9)}" fill="url(#gl-${id})" class="v-pulse"/>`;
-    o += '</g>';
-  }
-  // visitantes
-  if (v >= 45) { const n = Math.min(6, 1 + Math.floor((v - 45) / 10)); for (let i = 0; i < n; i++) { const c = ['#F4A9BE', '#FFD86B', '#8FD3F4', '#B8A2F0', '#FF9E80', '#F4A9BE'][i]; o += `<g class="v-bfly" style="--d:${r1(i * 1.7)}s;--x:${r1(40 + R() * 280)}px;--y:${r1(110 + R() * 90)}px"><path d="M0 0 C-5 -6 -9 -2 -6 2 C-4 4 -1 3 0 0 C1 3 4 4 6 2 C9 -2 5 -6 0 0Z" fill="${c}"/></g>`; } }
-  if (v >= 60) { const n = Math.min(4, 1 + Math.floor((v - 60) / 14)); for (let i = 0; i < n; i++) o += `<g class="v-bird" style="--d:${r1(i * 2.3)}s;--y:${r1(30 + R() * 60)}px"><path d="M0 0 q4 -5 8 0 q4 -5 8 0" stroke="#4A5A55" stroke-width="1.6" fill="none" stroke-linecap="round"/></g>`; }
-  if (v >= 70) { const n = Math.min(16, 4 + Math.floor((v - 70) / 2.5)); for (let i = 0; i < n; i++) o += `<circle class="v-fly" cx="${r1(20 + R() * 320)}" cy="${r1(150 + R() * 100)}" r="1.8" fill="#FFF3A0" style="--d:${r1(R() * 4)}s"/>`; }
-  if (v >= 75) { const n = Math.min(14, 4 + Math.floor((v - 75) / 2.5)); for (let i = 0; i < n; i++) o += `<ellipse class="v-petal" cx="${r1(R() * W)}" cy="-10" rx="2.4" ry="1.4" fill="${['#F9B9CB', '#FFFFFF', '#FFD9E4'][i % 3]}" style="--d:${r1(R() * 8)}s;--dur:${r1(7 + R() * 5)}s;--dx:${r1((R() - 0.5) * 70)}px"/>`; }
-  // riego
-  if (pour) {
-    o += `<g class="v-rain"><g class="v-raincloud" fill="#9DB5C4"><ellipse cx="180" cy="36" rx="46" ry="14"/><ellipse cx="204" cy="28" rx="26" ry="14"/><ellipse cx="156" cy="30" rx="22" ry="11"/></g>`;
-    for (let i = 0; i < 22; i++) o += `<path class="v-drop" d="M${r1(130 + R() * 100)} 48 v7" stroke="#5FB5DE" stroke-width="2" stroke-linecap="round" style="--d:${r1(R() * 1.2)}s;--h:${r1(150 + R() * 70)}px"/>`;
-    o += '</g>';
-  }
-  if (garden && garden.length && typeof gardenSVG === 'function') o += gardenSVG(garden, id);
-  o += '</svg>';
-  return o;
-}
+/* treeScene: ver linea.js */
 
 /* Arbolito para las listas */
-function treeIcon(level, max = 100) {
-  const v = max === 100 ? level : Math.round(100 * Math.sqrt(level / max));
-  const s = v === 0 ? 0 : v < 10 ? 1 : v < 30 ? 2 : v < 60 ? 3 : v < 90 ? 4 : 5;
-  const c1 = ['#8A6A4E', '#7CC07A', '#5DAE74', '#3E9563', '#2F8A5B', '#E8B84A'][s];
-  const crown = [0, 6, 10, 13, 15, 16][s];
-  return `<svg viewBox="0 0 40 40" class="tree-ico" aria-hidden="true"><ellipse cx="20" cy="35" rx="13" ry="3" fill="rgba(30,60,40,.15)"/>${s === 0
-    ? '<ellipse cx="20" cy="32" rx="6" ry="3.5" fill="#8A6A4E"/><circle cx="20" cy="31" r="1.8" fill="#5E432E"/>'
-    : `<rect x="18.4" y="${34 - 6 - s * 2}" width="3.2" height="${6 + s * 2}" rx="1.4" fill="#8A6A4E"/><circle cx="20" cy="${26 - s * 2}" r="${crown}" fill="${c1}"/><circle cx="${14 - s * 0.4}" cy="${28 - s * 1.6}" r="${crown * 0.62}" fill="#7CC07A" opacity=".9"/><circle cx="${26 + s * 0.4}" cy="${28 - s * 1.6}" r="${crown * 0.58}" fill="#9AD27C" opacity=".9"/>${s >= 3 ? '<circle cx="16" cy="19" r="1.6" fill="#F9B9CB"/><circle cx="25" cy="17" r="1.6" fill="#F9B9CB"/>' : ''}${s >= 4 ? '<circle cx="22" cy="24" r="1.6" fill="#E5645A"/>' : ''}${s === 5 ? '<circle cx="20" cy="14" r="2" fill="#FFD34E"/>' : ''}`}</svg>`;
-}
+/* treeIcon: ver linea.js */
 
 /* =========================================================
    3. Cuentas: crear usuario, entrar, contraseña
@@ -446,7 +319,7 @@ function viewQuien() {
         ${on && p.id === REG.me ? '' : `<span class="lock">${icon('lock')}</span>`}</button>`;
     }).join('')}
     ${forests.length ? `<h2 class="sec">Mis Salones ${inv ? `<small class="chip pen">${plural(inv, 'invitación', 'invitaciones')}</small>` : ''}</h2>${forests.map((f) => forestCardHTML(f, 'profile-pick')).join('')}` : ''}
-    <button type="button" class="who-btn rank-btn" data-act="rank-open"><span class="avatar lg" style="--pc:#C9A55C">🏆</span><span style="flex:1"><b>Ranking de árboles</b><span class="d">Mira quién tiene el árbol más alto, sin necesidad de entrar</span></span>${icon('chev', 'chev')}</button>
+    <button type="button" class="who-btn rank-btn" data-act="rank-open"><span class="avatar lg" style="--pc:#C9A55C">${icon('trophy')}</span><span style="flex:1"><b>Ranking de árboles</b><span class="d">Mira quién tiene el árbol más alto, sin necesidad de entrar</span></span>${icon('chev', 'chev')}</button>
     <div class="who-actions"><button type="button" class="btn primary block" data-act="user-new">${icon('plus')}Crear mi usuario</button>
     <button type="button" class="btn block" data-act="user-login">Ya tengo usuario: entrar</button></div>
     <p style="text-align:center;margin-top:18px"><span class="small muted">${icon('spark', 'sm')} Tus cosas se guardan solas en la nube</span></p>
@@ -454,7 +327,7 @@ function viewQuien() {
 }
 function forestCardHTML(f, act) {
   const m = f.meta; const life = forestLife(m.id); const lv = levelOf(life, FOREST_T, 1000);
-  return `<button type="button" class="who-btn forest-btn" data-act="${act}" data-id="f:${m.id}"><span class="avatar lg" style="--pc:${m.color || '#2F8A5B'}">${esc(m.emoji || '🌳')}</span>
+  return `<button type="button" class="who-btn forest-btn" data-act="${act}" data-id="f:${m.id}"><span class="avatar lg" style="--pc:${m.color || '#2F8A5B'}">${esc(String(m.name || '?').trim().charAt(0).toUpperCase())}</span>
     <span style="flex:1"><b>${esc(m.name)}</b><span class="d">${plural(m.members.length, 'integrante', 'integrantes')} · nivel ${lv} de 1000</span></span>${icon('chev', 'chev')}</button>`;
 }
 function openProfileSheet() {
@@ -474,7 +347,7 @@ function openProfileSheet() {
 /* =========================================================
    4. Salones (grupos colaborativos)
    ========================================================= */
-const FOREST_EMOJI = ['🌳', '🌲', '🌴', '🌿', '🍀', '🌸', '🌻', '🍃'];
+const FOREST_EMOJI = [''];
 let forestSig = '';
 function applyForests(remote) {
   const f = {};
@@ -520,7 +393,7 @@ async function fetchRank(force) {
 }
 const rankBox = () => document.getElementById('rankBox');
 function paintRankBox() { const b = rankBox(); if (b) b.innerHTML = rankingHTML(); }
-function openRankSheet() { openSheet(`${sheetHead('🏆 Ranking de árboles')}<div class="sheet-body"><div id="rankBox"></div></div>`); paintRankBox(); fetchRank(true); }
+function openRankSheet() { openSheet(`${sheetHead('Ranking de árboles')}<div class="sheet-body"><div id="rankBox"></div></div>`); paintRankBox(); fetchRank(true); }
 function sceneBlock({ level, max, wet, id, seed, title, sub, pts, cur, need, extra = '', garden = null }) {
   const pour = Date.now() < VUI.pour;
   const pct = need > cur ? Math.max(0, Math.min(100, Math.round(((pts - cur) / (need - cur)) * 100))) : 100;
@@ -528,7 +401,7 @@ function sceneBlock({ level, max, wet, id, seed, title, sub, pts, cur, need, ext
   return `<section class="vida-card ${wet ? '' : 'thirsty'}">
     <div class="vscene">${treeScene({ level, max, wet, id, seed, pour, garden })}
       <div class="v-badge"><span class="v-lv">${level}</span><span class="v-of">${max === 100 ? 'de 100' : 'de 1000'}</span></div>
-      <div class="v-water ${wet ? 'ok' : 'low'}">${wet ? '💧 Regado hoy' : '🥀 Tiene sed'}</div></div>
+      <div class="v-water ${wet ? 'ok' : 'low'}">${wet ? 'Regado hoy' : 'Tiene sed'}</div></div>
     <div class="v-info"><h2 class="serif">${title}</h2><p class="muted" style="margin:0 0 10px">${sub}</p>
       <div class="v-bar" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${top ? 100 : pct}%"></i></div>
       <p class="tiny faint" style="margin:6px 0 0">${top ? 'Nivel máximo alcanzado' : `${Math.max(0, pts - cur)} de ${need - cur} puntos para el nivel ${level + 1}`}</p>${extra}</div></section>`;
@@ -547,12 +420,12 @@ function viewVidaPersonal() {
   let body = '';
   if (VUI.tab === 'arbol') {
     const next = MILESTONES.find((m) => m[0] > c.level);
-    body = `${next ? `<div class="card next-ms"><span class="tiny faint">Lo próximo en tu paraíso · nivel ${next[0]}</span><b class="serif">${esc(next[1])}</b><span class="muted">${esc(next[2])}</span></div>` : '<div class="card next-ms"><b class="serif">Tu paraíso está completo ✨</b><span class="muted">Mantenlo regado para conservar el nivel 100.</span></div>'}
+    body = `${next ? `<div class="card next-ms"><span class="tiny faint">Lo próximo en tu paraíso · nivel ${next[0]}</span><b class="serif">${esc(next[1])}</b><span class="muted">${esc(next[2])}</span></div>` : '<div class="card next-ms"><b class="serif">Tu paraíso está completo</b><span class="muted">Mantenlo regado para conservar el nivel 100.</span></div>'}
       <h2 class="sec">Cómo crece <small>reglas simples</small></h2>
       <ul class="rows v-rules">
         <li><div class="rowline"><span class="ico">${icon('check')}</span><span class="txt"><b>Entrega a tiempo</b><span>+10 puntos por cada tarea entregada antes de su fecha (+3 si es tarde).</span></span></div></li>
-        <li><div class="rowline"><span class="ico">💧</span><span class="txt"><b>Riega cada día</b><span>Sube una tarea, escribe un apunte o un pensamiento. Con eso tu árbol queda regado hoy.</span></span></div></li>
-        <li><div class="rowline"><span class="ico">🥀</span><span class="txt"><b>Sin riego, baja</b><span>Cada día sin regar pierde puntos y puede bajar de nivel.</span></span></div></li>
+        <li><div class="rowline"><span class="ico">${icon('drop')}</span><span class="txt"><b>Riega cada día</b><span>Sube una tarea, escribe un apunte o un pensamiento. Con eso tu árbol queda regado hoy.</span></span></div></li>
+        <li><div class="rowline"><span class="ico">${icon('drop')}</span><span class="txt"><b>Sin riego, baja</b><span>Cada día sin regar pierde puntos y puede bajar de nivel.</span></span></div></li>
         <li><div class="rowline"><span class="ico">${icon('spark')}</span><span class="txt"><b>Racha</b><span>Entre más días seguidos riegues, más puntos ganas por tus entregas.</span></span></div></li></ul>
       <h2 class="sec">Tu camino al nivel 100</h2>
       <ol class="milestones">${MILESTONES.map((m) => `<li class="${c.level >= m[0] ? 'done' : ''}"><span class="ms-dot">${c.level >= m[0] ? icon('check', 'sm') : m[0]}</span><span><b>${esc(m[1])}</b><span class="small muted"> · nivel ${m[0]}</span><span class="small muted" style="display:block">${esc(m[2])}</span></span></li>`).join('')}</ol>`;
@@ -567,14 +440,14 @@ function rankingHTML() {
   const R = RANK.data;
   const note = VUI.rank === 'personas' ? 'Árboles de personas, del 0 al 100.' : 'Los Salones compiten solo con otros Salones, hasta el nivel 1000.';
   if (!R) return `${seg}<p class="small muted">${note}</p>${RANK.err ? `<div class="banner warn">${icon('bell')}<p>${esc(RANK.err)}</p><button class="btn" data-act="rank-refresh">Reintentar</button></div>` : '<p class="muted" style="text-align:center;padding:24px 0">Buscando a los mejores árboles…</p>'}`;
-  const medal = (i) => (i < 3 ? ['🥇', '🥈', '🥉'][i] : `<span class="rk-n">${i + 1}</span>`);
+  const medal = (i) => (i < 3 ? `<span class="rk-n rk-m${i + 1}">${i + 1}</span>` : `<span class="rk-n">${i + 1}</span>`);
   let list;
   if (VUI.rank === 'personas') {
-    list = R.people.map((u, i) => `<li class="rk ${u.id === REG.me ? 'me' : ''}"><span class="rk-pos">${medal(i)}</span>${treeIcon(u.level)}<span class="rk-name"><b>${esc(u.name)}${u.id === REG.me ? ' (tú)' : ''}</b><span class="tiny faint">${esc(stageName(u.level))}${u.streak ? ` · 🔥 ${u.streak}` : ''}</span></span><span class="rk-lv">Nivel <b>${u.level}</b></span></li>`).join('');
+    list = R.people.map((u, i) => `<li class="rk ${u.id === REG.me ? 'me' : ''}"><span class="rk-pos">${medal(i)}</span>${treeIcon(u.level)}<span class="rk-name"><b>${esc(u.name)}${u.id === REG.me ? ' (tú)' : ''}</b><span class="tiny faint">${esc(stageName(u.level))}${u.streak ? ` · racha ${u.streak}` : ''}</span></span><span class="rk-lv">Nivel <b>${u.level}</b></span></li>`).join('');
   } else {
-    list = R.forests.map((f, i) => `<li class="rk ${FOR.f[f.id]?.meta.members.includes(REG.me) ? 'me' : ''}"><span class="rk-pos">${medal(i)}</span><span class="rk-emoji" style="--pc:${f.color || '#2F8A5B'}">${esc(f.emoji || '🌳')}</span><span class="rk-name"><b>${esc(f.name)}</b><span class="tiny faint">${plural(f.members, 'integrante', 'integrantes')}</span></span><span class="rk-lv">Nivel <b>${f.level}</b></span></li>`).join('');
+    list = R.forests.map((f, i) => `<li class="rk ${FOR.f[f.id]?.meta.members.includes(REG.me) ? 'me' : ''}"><span class="rk-pos">${medal(i)}</span><span class="rk-emoji" style="--pc:${f.color || '#2F8A5B'}">${esc(String(f.name || '?').trim().charAt(0).toUpperCase())}</span><span class="rk-name"><b>${esc(f.name)}</b><span class="tiny faint">${plural(f.members, 'integrante', 'integrantes')}</span></span><span class="rk-lv">Nivel <b>${f.level}</b></span></li>`).join('');
   }
-  const top3 = VUI.rank === 'personas' ? R.people.slice(0, 3).map((u) => ({ name: u.name, level: u.level, color: u.color, icon: esc(initials(u.name)), me: u.id === REG.me })) : R.forests.slice(0, 3).map((f) => ({ name: f.name, level: f.level, color: f.color, icon: esc(f.emoji || '🌳'), me: !!FOR.f[f.id]?.meta.members.includes(REG.me) }));
+  const top3 = VUI.rank === 'personas' ? R.people.slice(0, 3).map((u) => ({ name: u.name, level: u.level, color: u.color, icon: esc(initials(u.name)), me: u.id === REG.me })) : R.forests.slice(0, 3).map((f) => ({ name: f.name, level: f.level, color: f.color, icon: esc(String(f.name || '?').trim().charAt(0).toUpperCase()), me: !!FOR.f[f.id]?.meta.members.includes(REG.me) }));
   const podium = podiumHTML(top3);
   const mine = VUI.rank === 'personas' ? R.people.findIndex((u) => u.id === REG.me) : -1;
   return `${seg}<p class="small muted" style="margin:0 0 10px">${note}${mine >= 0 ? ` Vas en el lugar <b>${mine + 1}</b>.` : ''}</p>
@@ -585,7 +458,7 @@ function rankingHTML() {
 
 function bosquesTabHTML() {
   const mine = Object.values(FOR.f).filter((f) => f.meta.members.includes(REG.me));
-  return `${FOR.invites.length ? `<h2 class="sec" style="margin-top:6px">Invitaciones</h2>${FOR.invites.map((i) => `<div class="card inv"><span class="avatar" style="--pc:#2F8A5B">${esc(i.emoji || '🌳')}</span><span class="inv-t"><b>${esc(i.forestName)}</b><span class="small muted">${esc(i.fromName)} te invita a su Salón</span></span>
+  return `${FOR.invites.length ? `<h2 class="sec" style="margin-top:6px">Invitaciones</h2>${FOR.invites.map((i) => `<div class="card inv"><span class="avatar" style="--pc:#2F8A5B">${esc(String(i.name || '?').trim().charAt(0).toUpperCase())}</span><span class="inv-t"><b>${esc(i.forestName)}</b><span class="small muted">${esc(i.fromName)} te invita a su Salón</span></span>
         <span class="inv-b"><button class="btn primary" data-act="invite-yes" data-id="${i.forest}">Unirme</button><button class="btn quiet" data-act="invite-no" data-id="${i.forest}">No</button></span></div>`).join('')}` : ''}
     <h2 class="sec">Mis Salones</h2>
     ${mine.length ? mine.map((f) => forestCardHTML(f, 'profile-pick')).join('') : '<div class="empty"><h3>Todavía no estás en un Salón</h3><p>Un Salón es un grupo colaborativo: comparten pendientes, trabajos en equipo e ideas, y su árbol crece con el esfuerzo de todos.</p></div>'}
@@ -598,14 +471,14 @@ function viewVidaBosque() {
   const life = forestLife(m.id); const lv = levelOf(life, FOREST_T, 1000);
   const wetToday = gItems().some((x) => !x.deleted && toISO(new Date(x.u || x.at)) === today()) || Object.keys(tokens()).some((u) => FOR.f[m.id].meta.members.includes(u) && treeNow(u).wet);
   const tabs = `<div class="seg full" role="group" style="margin:16px 0">${[['arbol', 'Nuestro árbol'], ['ranking', 'Ranking']].map(([k, l]) => `<button type="button" data-act="vtab" data-v="${k}" aria-pressed="${VUI.tab === k}">${l}</button>`).join('')}</div>`;
-  const card = sceneBlock({ level: lv, max: 1000, wet: wetToday, id: 'bosque', seed: m.id, title: `${esc(m.emoji || '🌳')} ${esc(m.name)}`, sub: `${esc(stageName(Math.round(100 * Math.sqrt(lv / 1000))))} · ${plural(m.members.length, 'integrante', 'integrantes')}`, pts: life, cur: FOREST_T(lv), need: lv >= 1000 ? FOREST_T(1000) : FOREST_T(lv + 1) });
+  const card = sceneBlock({ level: lv, max: 1000, wet: wetToday, id: 'bosque', seed: m.id, title: `${esc(m.name)}`, sub: `${esc(stageName(Math.round(100 * Math.sqrt(lv / 1000))))} · ${plural(m.members.length, 'integrante', 'integrantes')}`, pts: life, cur: FOREST_T(lv), need: lv >= 1000 ? FOREST_T(1000) : FOREST_T(lv + 1) });
   let body = '';
   if (VUI.tab === 'ranking') body = rankingHTML();
   else {
     const rows = m.members.map((u) => { const name = FOR.members[u]?.name || cap(u); const t = u === REG.me ? treeNow(u) : FOR.trees[u] || { level: 0, life: 0 }; return { u, name, level: t.level || 0, life: t.life || 0 }; }).sort((a, b) => b.life - a.life);
     body = `<p class="small muted" style="margin:0 0 10px">El árbol del Salón crece con todo lo que cumplen sus integrantes. Mientras más colaboran, más alto sube.</p>
       <h2 class="sec" style="margin-top:6px">Quién hace crecer el Salón</h2>
-      <ol class="ranking">${rows.map((r, i) => `<li class="rk ${r.u === REG.me ? 'me' : ''}"><span class="rk-pos">${i === 0 ? '🥇' : `<span class="rk-n">${i + 1}</span>`}</span>${mini(r.name)}<span class="rk-name"><b>${esc(r.name)}${r.u === REG.me ? ' (tú)' : ''}</b><span class="tiny faint">${r.life} puntos aportados</span></span><span class="rk-lv">Árbol <b>${r.level}</b></span></li>`).join('')}</ol>
+      <ol class="ranking">${rows.map((r, i) => `<li class="rk ${r.u === REG.me ? 'me' : ''}"><span class="rk-pos"><span class="rk-n ${i === 0 ? 'rk-m1' : ''}">${i + 1}</span></span>${mini(r.name)}<span class="rk-name"><b>${esc(r.name)}${r.u === REG.me ? ' (tú)' : ''}</b><span class="tiny faint">${r.life} puntos aportados</span></span><span class="rk-lv">Árbol <b>${r.level}</b></span></li>`).join('')}</ol>
       <p style="margin-top:14px"><button class="btn primary" data-act="forest-invite">${icon('plus')}Invitar a alguien</button></p>`;
   }
   return `<h1 class="page-title">Vida del Salón</h1><p class="page-sub">Juntos hacen crecer el árbol hasta el nivel 1000.</p>${groupStatus()}${card}${tabs}${body}`;
