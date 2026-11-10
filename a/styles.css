@@ -2682,3 +2682,16 @@ body.lb-open { overflow: hidden; }
 .shp-mem { display: flex; flex-wrap: wrap; gap: 8px; }
 .shp-chip { padding: 6px 12px; border-radius: 999px; background: rgba(214,174,98,.14); color: #6B4E22; font-weight: 600; font-size: 13px; }
 .shp-h { margin: 6px 0 8px; font-size: 15px; }
+
+/* 7.19 Galope */
+.gl-stage { position: fixed; inset: 0; z-index: 900; touch-action: none; user-select: none; -webkit-user-select: none; background: #cfe6f2; }
+.gl-stage canvas { display: block; position: absolute; inset: 0; }
+.gl-x { position: absolute; top: calc(12px + env(safe-area-inset-top)); left: 14px; z-index: 2; }
+.gl-hint { position: absolute; left: 0; right: 0; top: 34%; text-align: center; font: 600 15px/1.2 var(--font, system-ui); color: #3A4A36; letter-spacing: .04em; pointer-events: none; animation: glPulse 1.6s ease-in-out infinite; }
+@keyframes glPulse { 50% { opacity: .35; } }
+.gl-over { position: absolute; left: 50%; top: 32%; transform: translateX(-50%); z-index: 3; display: grid; gap: 10px; justify-items: center; padding: 20px 26px; border-radius: 20px; background: rgba(255,255,255,.88); backdrop-filter: blur(8px); box-shadow: 0 14px 40px rgba(30,50,30,.22); text-align: center; }
+.gl-over[hidden] { display: none; }
+.gl-over b { font-size: 18px; color: #2c3a28; }
+.gl-over span { color: #4a5a46; font-size: 14px; }
+.gl-over.show { animation: glIn .28s ease-out; }
+@keyframes glIn { from { opacity: 0; transform: translate(-50%, 8px); } }

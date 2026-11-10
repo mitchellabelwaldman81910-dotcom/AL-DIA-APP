@@ -1174,6 +1174,7 @@ function viewMas() {
   const items = [
     ['#/compartir', 'share', 'Compartir app', 'Mándala por WhatsApp o compártela con quien quieras'],
     ['#/juego', 'trophy', 'Cosecha · el juego', 'Atrapa manzanas, gana el podio del día y la semana'],
+    ['#/galope', 'trophy', 'Galope · el caballo', 'Salta los manzanos y supera tu récord'],
     ['#/libretas', 'book', 'Libretas', 'Una libreta por materia: notas, tareas, fotos y más'],
     ['#/quiz', 'spark', 'Quiz inteligente', 'Preguntas hechas con tus propios apuntes'],
     ['#/consejos', 'bulb', 'Consejos para mejorar', 'Cómo estudiar para exámenes y subir tus calificaciones'],
