@@ -678,7 +678,8 @@ function viewHoy() {
 
   // plan
   const plan = planHoy();
-  const top = pend.length >= 2 ? plan.top : [];
+  const urgentIds = new Set(pend.filter((t) => { const ms = deadlineMs(t); return ms != null && ms > Date.now() && ms - Date.now() <= 24 * 3600000; }).map((t) => t.id));
+  const top = (pend.length >= 2 ? plan.top : []).filter((p) => !urgentIds.has(p.t.id));
   const planIds = new Set(top.map((p) => p.t.id));
   let planHTML = '';
   if (plan.steps.length || top.length) {
@@ -704,7 +705,7 @@ function viewHoy() {
   const heavyHTML = heavy.length ? `<div class="banner warn">${icon('bell')}<p>${cap(relDay(heavy[0][0]))} tienes ${heavy[0][1]} entregas. Adelanta alguna desde hoy para no juntarte.</p></div>` : '';
 
   // lista
-  const rest = pend.filter((t) => !planIds.has(t.id));
+  const rest = pend.filter((t) => !planIds.has(t.id) && !urgentIds.has(t.id));
   let soon = rest.filter((t) => ['late', 'today', 'tomorrow', 'week'].includes(bucketOf(t)));
   if (soon.length < 3) soon = rest.slice(0, Math.max(3, soon.length));
   const later = rest.length - soon.length;
@@ -732,23 +733,15 @@ function viewHoy() {
       <h1 class="bigdate"><span class="wd">${cap(DIAS[d.getDay()])}</span>${d.getDate()} de ${MESES[d.getMonth()]}</h1>
       <p class="summary">${summary}</p>
       ${suggestion() ? `<p class="smart">${icon('spark', 'sm')}<span>${esc(suggestion())}</span></p>` : ''}
-      <p class="phrase">${leafSVG('#7DBE7A')}<span>${esc(phraseOfDay())}</span></p>
     </div></section>
     ${inviteBannerHTML()}
-    ${homeTreeHTML()}
-    ${plusHomeHTML()}
     ${lettersHTML()}
     ${!isGroup() && otherProfile() ? `<button type="button" class="letter-write" data-act="letter-write">${icon('heart', 'sm')}<span>Escribirle a ${esc(otherProfile().name)}</span>${(REG.letters || []).some((l) => l.from === REG.current && l.to === otherProfile().id && !l.read) ? `<span class="tiny faint">· tu mensaje aún no lo abre</span>` : ''}</button>` : ''}
-    <form class="quick" id="quickForm" autocomplete="off">
-      <div class="quick-row">
-        <label for="quickIn" class="sr">Nueva tarea rápida</label>
-        <input id="quickIn" enterkeyhint="done" placeholder="Ej. exposición de inglés el martes">
-        <button class="quick-go" id="quickGo" disabled>${icon('plus', 'sm')}Agregar</button>
-      </div>
-      <div class="quick-preview" id="quickPrev"></div>
-    </form>
-    <div class="btn-row" style="margin-top:10px"><a class="btn" href="#/escanear">${icon('cam')}Escanear foto de tarea</a><button class="btn" data-act="speak-day">${icon('play')}Escuchar mi día</button></div>
-    ${installHTML}${nowHTML}${emergencyHTML}${plantHTML()}${S.tasks.length ? loadMeterHTML() : ''}${heavyHTML}${planHTML}${listHTML}${emptyHTML}`;
+    ${hoyArtHTML()}
+    ${S.tasks.length ? hoyStatsHTML(pend, dueToday, late) : ''}
+    ${hoyCaptureHTML()}
+    ${emergencyHTML}${hoyDayHTML(nowHTML)}${heavyHTML}${planHTML}${listHTML}${emptyHTML}
+    ${hoyToolsHTML()}${installHTML}${hoyEpigraphHTML()}`;
 }
 function quickPreviewHTML(p) {
   if (!$('#quickIn')?.value.trim()) return '';
@@ -2382,7 +2375,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.8. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.9. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
