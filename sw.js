@@ -1,6 +1,6 @@
 /* Al Día — service worker: funciona sin internet y manda avisos. */
-const VERSION = 'aldia-v7.14.0';
-const V = '?v=7.14.0';
+const VERSION = 'aldia-v7.15.0';
+const V = '?v=7.15.0';
 const SHELL = [
   './',
   './index.html',
@@ -19,6 +19,12 @@ const SHELL = [
   './a/admin.js' + V,
   './a/tienda.js' + V,
   './a/pizarra.js' + V,
+  './a/social.js' + V,
+  './a/agente.js' + V,
+  './a/libretas.js' + V,
+  './a/equipo.js' + V,
+  './a/escaner.js' + V,
+  './a/naturaleza.js' + V,
   './manifest.webmanifest',
   './fonts/schola-bold.woff',
   './fonts/schola-regular.woff',
@@ -129,8 +135,8 @@ self.addEventListener('periodicsync', (e) => {
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { title: 'Al Día', body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Grupo 512', {
-    body: d.body || '', tag: d.tag, icon: 'icons/icon-192.png', badge: 'icons/badge-96.png', lang: 'es-MX', data: { url: d.url || '#/grupo' },
+  e.waitUntil(self.registration.showNotification(d.title || 'Al Día', {
+    body: d.body || '', tag: d.tag, renotify: !!d.tag, icon: 'icons/icon-192.png', badge: 'icons/badge-96.png', lang: 'es-MX', vibrate: [80, 40, 80], data: { url: d.url || '#/hoy' },
   }));
 });
 
@@ -140,7 +146,8 @@ self.addEventListener('notificationclick', (e) => {
     const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     const scope = self.registration.scope;
     const client = all.find((c) => c.url.startsWith(scope));
-    if (client) { await client.focus(); return; }
+    const url = (e.notification.data && e.notification.data.url) || '#/hoy';
+    if (client) { await client.focus(); try { client.postMessage({ nav: url }); } catch { /* */ } return; }
     await self.clients.openWindow(scope + ((e.notification.data && e.notification.data.url) || '#/hoy'));
   })());
 });

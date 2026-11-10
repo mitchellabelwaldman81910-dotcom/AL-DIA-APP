@@ -10,7 +10,7 @@ const PZ_KIND = { note: 'Nota', link: 'Enlace', draft: 'Borrador', file: 'Archiv
 const pzMetaId = () => `bm-${curFid()}`;
 const pzMeta = () => gGet(pzMetaId()) || { id: pzMetaId(), type: 'board', kind: 'meta', epoch: 0, archives: [] };
 const pzEpoch = () => +pzMeta().epoch || 0;
-const pzItems = (ep = pzEpoch()) => gAll('board').filter((x) => x.kind !== 'meta' && (+x.ep || 0) === ep);
+let pzItems = (ep = pzEpoch()) => gAll('board').filter((x) => x.kind !== 'meta' && (+x.ep || 0) === ep);
 const fmtSize = (n) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 
 function pzCardHTML(it, ro) {

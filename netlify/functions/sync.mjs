@@ -6,7 +6,7 @@ import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual, createHash } from
 import webpush from "web-push";
 
 const W = "w/";
-const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done", "focus", "tpl", "board"];
+const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done", "focus", "tpl", "board", "event", "poll", "vote", "pin", "pomo"];
 // administración: estas cuentas pueden entrar a cualquier otra (para dar soporte y recuperar datos)
 const ADMINS = ["mitchell"];
 const dayOf = (ms) => new Date(ms - 5 * 3600000).toISOString().slice(0, 10); // día en hora de México/Cancún
@@ -66,7 +66,7 @@ const revKey = (u) => `${W}rev/${u}`;
 const newRev = () => `${Date.now().toString(36)}${randomBytes(2).toString("hex")}`;
 async function bump(store, users) {
   const r = newRev();
-  await Promise.all([...new Set(users)].filter((u) => u && (USER_RE.test(String(u)) || u === "_lobby")).map((u) => store.set(revKey(u), r)));
+  await Promise.all([...new Set(users)].filter((u) => u && (USER_RE.test(String(u)) || u === "_lobby" || u === "_lib")).map((u) => store.set(revKey(u), r)));
 }
 
 export default async (req, context) => {
@@ -94,6 +94,25 @@ export default async (req, context) => {
 
     const forestOf = async (fid) => (FID_RE.test(String(fid)) ? await store.get(`${W}f/${fid}`, { type: "json" }) : null);
     const memberOf = async (u, fid) => { const f = await forestOf(fid); return f && f.members.includes(u) ? f : null; };
+    const pairKey = (x, y) => [x, y].sort().join("~");
+    const socialOf = async (u) => {
+      const fr = (await store.list({ prefix: `${W}fr/${u}/` })).blobs.map((b) => b.key.split("/").pop());
+      const inc = (await Promise.all((await store.list({ prefix: `${W}frq/${u}/` })).blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean);
+      const outg = (await store.list({ prefix: `${W}frs/${u}/` })).blobs.map((b) => b.key.split("/").pop());
+      const blocked = (await store.list({ prefix: `${W}bl/${u}/` })).blobs.map((b) => b.key.split("/").pop());
+      const threads = {};
+      for (const f of fr) {
+        const ks = (await store.list({ prefix: `${W}dm/${pairKey(u, f)}/` })).blobs.map((b) => b.key).sort().slice(-60);
+        threads[f] = (await Promise.all(ks.map((k) => store.get(k, { type: "json" })))).filter(Boolean);
+      }
+      const reads = {};
+      for (const f of fr) { const r = await store.get(`${W}dmr/${f}/${u}`); if (r) reads[f] = +r; }
+      const friends = [];
+      for (const f of fr) { const a = await meta(f); if (a) friends.push({ id: f, name: a.name, color: a.color, av: a.av || 0 }); }
+      const outgoing = [];
+      for (const t of outg) { const a = await meta(t); if (a) outgoing.push({ id: t, name: a.name, color: a.color }); }
+      return { friends, incoming: inc, outgoing, blocked, threads, reads };
+    };
     const treeDocs = async () => {
       const { blobs } = await store.list({ prefix: `${W}t/` });
       return (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean);
@@ -144,6 +163,10 @@ export default async (req, context) => {
         users.sort((a, b) => b.at - a.at);
         return json({ ok: true, users, forests });
       }
+      if (kindQ === "avisos") {
+        if (!admin) return json({ error: "Solo administración" }, 403);
+        return json({ ok: true, ...(await runAvisos(store, url.origin, +url.searchParams.get("at") || Date.now())) });
+      }
       if (kindQ === "adminexport") {
         if (!admin) return json({ error: "Solo la cuenta de administración puede hacer esto" }, 403);
         const out = { app: "Al Día", kind: "respaldo-total", at: Date.now(), profiles: {}, forests: {} };
@@ -171,17 +194,47 @@ export default async (req, context) => {
         const since = url.searchParams.get("since") || "";
         const sinceL = url.searchParams.get("lob");
         const wantL = sinceL !== null;
+        const sinceB = url.searchParams.get("lib"); const wantB = sinceB !== null;
         const read = async () => {
           const rs = await Promise.all([...authList].sort().map((u) => store.get(revKey(u))));
           const l = wantL ? await store.get(revKey("_lobby")) : "";
-          return { rev: rs.map((x) => x || "0").join("|"), lob: l || "0" };
+          const b = wantB ? await store.get(revKey("_lib")) : "";
+          return { rev: rs.map((x) => x || "0").join("|"), lob: l || "0", lib: b || "0" };
         };
         const t0 = Date.now(); let cur = await read();
-        while (since && cur.rev === since && (!wantL || cur.lob === sinceL) && Date.now() - t0 < 7000) {
+        while (since && cur.rev === since && (!wantL || cur.lob === sinceL) && (!wantB || cur.lib === sinceB) && Date.now() - t0 < 7000) {
           await new Promise((r) => setTimeout(r, 400));
           cur = await read();
         }
-        return json({ ok: true, rev: cur.rev, lob: cur.lob, changed: !!since && (cur.rev !== since || (wantL && cur.lob !== sinceL)) });
+        return json({ ok: true, rev: cur.rev, lob: cur.lob, lib: cur.lib, changed: !!since && (cur.rev !== since || (wantL && cur.lob !== sinceL) || (wantB && cur.lib !== sinceB)) });
+      }
+      if (kindQ === "avatar") {
+        const u = String(url.searchParams.get("u") || "");
+        if (!USER_RE.test(u)) return json({ error: "usuario inválido" }, 400);
+        const v = await store.get(`${W}av/${u}`, { type: "json" });
+        return json({ ok: true, v: v?.v || 0, data: v?.data || null });
+      }
+      if (kindQ === "ufile") {
+        const as = url.searchParams.get("as"); const id = url.searchParams.get("id") || "";
+        if (!allowed(as) && !admin) return json({ error: "Inicia sesión primero" }, 401);
+        if (!/^[a-z0-9-]{4,60}$/i.test(id)) return json({ error: "archivo inválido" }, 400);
+        return json({ ok: true, data: (await store.get(`${W}uf/${as}/${id}`, { type: "text" })) || null });
+      }
+      if (kindQ === "library") {
+        if (!authList.length) return json({ error: "Inicia sesión primero" }, 401);
+        const since = +url.searchParams.get("since") || 0;
+        const { blobs } = await store.list({ prefix: `${W}lib/` });
+        const keys = blobs.map((b) => b.key).sort().slice(-220).filter((k) => +k.split("/").pop().split("-")[0] > since);
+        const posts = (await Promise.all(keys.map((k) => store.get(k, { type: "json" })))).filter(Boolean)
+          .map((x) => ({ ...x, reports: undefined, reported: (x.reports || []).length, hidden: (x.reports || []).length >= 3 && !admin }));
+        const pres = (await store.list({ prefix: `${W}libon/` })).blobs.length;
+        return json({ ok: true, posts, online: pres, now: Date.now() });
+      }
+      if (kindQ === "libfile") {
+        if (!authList.length) return json({ error: "Inicia sesión primero" }, 401);
+        const id = url.searchParams.get("id") || "";
+        if (!/^[a-z0-9-]{4,60}$/i.test(id)) return json({ error: "archivo inválido" }, 400);
+        return json({ ok: true, data: (await store.get(`${W}libf/${id}`, { type: "text" })) || null });
       }
       if (kindQ === "lobby") {
         const as = url.searchParams.get("as");
@@ -221,7 +274,7 @@ export default async (req, context) => {
 
       const out = { ok: true, now: Date.now(), users: {}, profiles: {}, letters: [], presence: [], forests: {}, invites: [] };
       for (const u of authList) {
-        out.users[u] = { name: auth[u].name, color: auth[u].color };
+        out.users[u] = { name: auth[u].name, color: auth[u].color, av: auth[u].av || 0 };
         if (u !== "__none") {
           const d = await store.get(`${W}p/${u}`, { type: "json" });
           if (d) out.profiles[u] = d;
@@ -260,7 +313,10 @@ export default async (req, context) => {
         // nombres de todos los integrantes de mis bosques
         const names = {};
         for (const f of Object.values(out.forests)) for (const m of f.meta.members) names[m] = null;
-        for (const m of Object.keys(names)) { const a = await meta(m); names[m] = a ? { name: a.name, color: a.color } : { name: m, color: COLORS[0] }; }
+        out.social = {};
+        for (const u of authList) out.social[u] = await socialOf(u);
+        for (const s of Object.values(out.social)) for (const f of s.friends) names[f.id] = null;
+        for (const m of Object.keys(names)) { const a = await meta(m); names[m] = a ? { name: a.name, color: a.color, av: a.av || 0 } : { name: m, color: COLORS[0] }; }
         out.members = names;
         out.trees = {};
         for (const m of Object.keys(names)) { const t = await store.get(`${W}t/${m}`, { type: "json" }); if (t) out.trees[m] = t; }
@@ -444,6 +500,147 @@ export default async (req, context) => {
         await bump(store, [p]);
         return json({ ok: true, at, data });
       }
+      case "avatar": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const d = String(body.data || "");
+        if (d && (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(d) || d.length > 120000)) return json({ error: "La foto no es válida o es muy grande" }, 400);
+        const v = Date.now();
+        if (d) await store.setJSON(`${W}av/${as}`, { v, data: d }); else await store.delete(`${W}av/${as}`);
+        const m = await meta(as); await store.setJSON(`${W}a/${as}`, { ...m, av: d ? v : 0 });
+        const fl = (await store.list({ prefix: `${W}mf/${as}/` })).blobs.map((b) => b.key.split("/").pop());
+        const touch = new Set([as]);
+        for (const fid of fl) { const f = await forestOf(fid); if (f) f.members.forEach((x) => touch.add(x)); }
+        for (const b of (await store.list({ prefix: `${W}fr/${as}/` })).blobs) touch.add(b.key.split("/").pop());
+        await bump(store, [...touch]);
+        return json({ ok: true, v: d ? v : 0 });
+      }
+      case "ufile": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        if (!/^[a-z0-9-]{4,60}$/i.test(body.id || "")) return json({ error: "archivo inválido" }, 400);
+        if (body.delete) { await store.delete(`${W}uf/${as}/${body.id}`); return json({ ok: true }); }
+        const d = String(body.data || "");
+        if (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(d) || d.length > 900000) return json({ error: "La imagen es muy grande o no es válida" }, 400);
+        await store.set(`${W}uf/${as}/${body.id}`, d);
+        return json({ ok: true });
+      }
+      case "friendreq": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const to = String(body.to || "").toLowerCase().replace(/^@/, "");
+        if (to === as) return json({ error: "No puedes enviarte una solicitud a ti" }, 400);
+        const tm = await meta(to);
+        if (!tm) return json({ error: "No existe ningún usuario con ese nombre. Revisa cómo lo escribió." }, 404);
+        if (await store.get(`${W}fr/${as}/${to}`)) return json({ error: `${tm.name} ya es tu amistad` }, 409);
+        if (await store.get(`${W}bl/${to}/${as}`) || await store.get(`${W}bl/${as}/${to}`)) return json({ error: "No se puede enviar la solicitud a esta persona" }, 403);
+        if (await store.get(`${W}frq/${as}/${to}`, { type: "json" })) return json({ error: `${tm.name} ya te envió una solicitud: acéptala en Amistades` }, 409);
+        const pend = (await store.list({ prefix: `${W}frs/${as}/` })).blobs.length;
+        if (pend >= 30) return json({ error: "Tienes muchas solicitudes sin respuesta. Espera a que te respondan." }, 429);
+        await store.setJSON(`${W}frq/${to}/${as}`, { from: as, name: auth[as].name, color: auth[as].color, at: Date.now() });
+        await store.set(`${W}frs/${as}/${to}`, "1");
+        await bump(store, [as, to]);
+        if (context?.waitUntil) context.waitUntil(pushTo(store, [to], url.origin, { title: "Nueva solicitud de amistad", body: `${auth[as].name} (@${as}) quiere ser tu amistad en Al Día.`, url: "#/amigos", tag: `fr-${as}` }, ""));
+        return json({ ok: true, name: tm.name });
+      }
+      case "friendrespond": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const from = String(body.from || "");
+        const rq = await store.get(`${W}frq/${as}/${from}`, { type: "json" });
+        if (!rq) return json({ error: "Esa solicitud ya no existe" }, 404);
+        await store.delete(`${W}frq/${as}/${from}`); await store.delete(`${W}frs/${from}/${as}`);
+        if (body.accept) {
+          const since = Date.now();
+          await store.setJSON(`${W}fr/${as}/${from}`, { since }); await store.setJSON(`${W}fr/${from}/${as}`, { since });
+          if (context?.waitUntil) context.waitUntil(pushTo(store, [from], url.origin, { title: "Solicitud aceptada", body: `${auth[as].name} aceptó tu solicitud. Ya pueden mandarse mensajes.`, url: "#/amigos", tag: `fra-${as}` }, ""));
+        }
+        await bump(store, [as, from]);
+        return json({ ok: true });
+      }
+      case "friendcancel": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const to = String(body.to || "");
+        await store.delete(`${W}frq/${to}/${as}`); await store.delete(`${W}frs/${as}/${to}`);
+        await bump(store, [as, to]); return json({ ok: true });
+      }
+      case "friendremove":
+      case "block": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const who = String(body.who || "");
+        if (!USER_RE.test(who)) return json({ error: "usuario inválido" }, 400);
+        await store.delete(`${W}fr/${as}/${who}`); await store.delete(`${W}fr/${who}/${as}`);
+        await store.delete(`${W}frq/${as}/${who}`); await store.delete(`${W}frs/${who}/${as}`); await store.delete(`${W}frq/${who}/${as}`); await store.delete(`${W}frs/${as}/${who}`);
+        if (body.kind === "block") { if (body.undo) await store.delete(`${W}bl/${as}/${who}`); else await store.set(`${W}bl/${as}/${who}`, "1"); }
+        await bump(store, [as, who]); return json({ ok: true });
+      }
+      case "dm": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const to = String(body.to || "");
+        if (!(await store.get(`${W}fr/${as}/${to}`))) return json({ error: "Solo puedes escribirle a tus amistades aceptadas" }, 403);
+        const text = clip(body.text, 2000).trim();
+        if (!text) return json({ error: "mensaje vacío" }, 400);
+        if (!/^[a-z0-9]{6,30}$/i.test(body.id || "")) return json({ error: "mensaje inválido" }, 400);
+        const at = Date.now(); const pk = pairKey(as, to);
+        const key = `${W}dm/${pk}/${at}-${body.id}`;
+        await store.setJSON(key, { id: body.id, from: as, to, text, at });
+        const ks = (await store.list({ prefix: `${W}dm/${pk}/` })).blobs.map((b) => b.key).sort();
+        for (const k of ks.slice(0, Math.max(0, ks.length - 400))) await store.delete(k);
+        await bump(store, [as, to]);
+        if (context?.waitUntil) context.waitUntil(pushTo(store, [to], url.origin, { title: auth[as].name, body: clip(text, 140), url: `#/amigos/${as}`, tag: `dm-${as}` }, ""));
+        return json({ ok: true, at });
+      }
+      case "dmread": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const w = String(body.with || "");
+        if (!USER_RE.test(w)) return json({ error: "usuario inválido" }, 400);
+        await store.set(`${W}dmr/${as}/${w}`, String(Date.now())); await bump(store, [w]);
+        return json({ ok: true });
+      }
+      case "libpost": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const last = +(await store.get(`${W}libt/${as}`)) || 0;
+        if (Date.now() - last < 1200) return json({ error: "Espera un momento antes de volver a publicar" }, 429);
+        const kind = ["text", "draw", "voice", "help", "photo"].includes(body.pkind) ? body.pkind : "text";
+        const text = clip(body.text, 1500).trim();
+        const id = randomBytes(6).toString("hex"); const at = Date.now();
+        let file = "";
+        if (kind === "draw" || kind === "voice" || kind === "photo") {
+          const d = String(body.data || "");
+          const okD = kind === "voice" ? /^data:audio\/[a-z0-9.+-]+(;codecs=[a-z0-9.,]+)?;base64,[A-Za-z0-9+/=]+$/i.test(d) && d.length < 900000
+            : /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(d) && d.length < 700000;
+          if (!okD) return json({ error: kind === "voice" ? "La nota de voz es muy larga (máximo 1 minuto)" : "La imagen es muy grande" }, 400);
+          await store.set(`${W}libf/${id}`, d); file = id;
+        } else if (!text) return json({ error: "Escribe algo primero" }, 400);
+        const parent = /^[a-f0-9]{12}$/.test(body.parent || "") ? body.parent : "";
+        const post = { id, by: as, name: auth[as].name, color: auth[as].color, av: auth[as].av || 0, kind, text, file, dur: Math.max(0, Math.min(90, +body.dur || 0)), subject: clip(body.subject, 40), parent, at, solved: false };
+        await store.setJSON(`${W}lib/${at}-${id}`, post);
+        await store.set(`${W}libt/${as}`, String(at));
+        const ks = (await store.list({ prefix: `${W}lib/` })).blobs.map((b) => b.key).sort();
+        for (const k of ks.slice(0, Math.max(0, ks.length - 500))) { const v = await store.get(k, { type: "json" }); if (v?.file) await store.delete(`${W}libf/${v.file}`); await store.delete(k); }
+        await bump(store, ["_lib"]);
+        if (parent) { const pk = ks.find((k) => k.endsWith(`-${parent}`)); const pv = pk && await store.get(pk, { type: "json" }); if (pv && pv.by !== as && context?.waitUntil) context.waitUntil(pushTo(store, [pv.by], url.origin, { title: `${auth[as].name} te respondió en la Biblioteca`, body: clip(text || "Te mandó algo", 140), url: "#/biblioteca", tag: `lib-${parent}` }, "")); }
+        return json({ ok: true, post });
+      }
+      case "libedit": {
+        if (!allowed(as) && !admin) return json({ error: "Inicia sesión primero" }, 401);
+        const ks = (await store.list({ prefix: `${W}lib/` })).blobs.map((b) => b.key);
+        const k = ks.find((x) => x.endsWith(`-${String(body.id || "")}`)); if (!k) return json({ error: "Ya no existe" }, 404);
+        const v = await store.get(k, { type: "json" });
+        if (body.action === "report") { v.reports = [...new Set([...(v.reports || []), as])]; await store.setJSON(k, v); }
+        else if (body.action === "delete") { if (v.by !== as && !admin) return json({ error: "Solo quien lo publicó puede borrarlo" }, 403); if (v.file) await store.delete(`${W}libf/${v.file}`); await store.delete(k); }
+        else if (body.action === "solved") { if (v.by !== as && !admin) return json({ error: "Solo quien pidió ayuda puede marcarla" }, 403); v.solved = !v.solved; await store.setJSON(k, v); }
+        await bump(store, ["_lib"]);
+        return json({ ok: true });
+      }
+      case "libhere": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        await store.set(`${W}libon/${as}`, String(Date.now()));
+        const { blobs } = await store.list({ prefix: `${W}libon/` });
+        for (const b of blobs) { const t = +(await store.get(b.key)) || 0; if (Date.now() - t > 90000) await store.delete(b.key); }
+        return json({ ok: true });
+      }
+      case "pushtest": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        await pushTo(store, [as], url.origin, { title: "Avisos de Al Día listos", body: "Así te llegarán tus recordatorios, aunque la app esté cerrada.", url: "#/asistente", tag: "aldia-test" }, "");
+        return json({ ok: true });
+      }
       case "adminenter": {
         if (!admin) return json({ error: "Solo la cuenta de administración puede hacer esto" }, 403);
         const user = String(body.user || "").toLowerCase();
@@ -517,7 +714,8 @@ export default async (req, context) => {
         const clean = { ...it, by: auth[as].name, byId: prev?.byId || as, at: +it.at || Date.now(), u: Date.now() };
         for (const k of ["title", "desc", "text", "subject", "link", "tag", "owner", "name"]) if (k in clean) clean[k] = clip(clean[k], k === "desc" || k === "text" ? 4000 : 300);
         if (clean.type === "board") {
-          clean.kind = ["note", "link", "file", "draft", "meta"].includes(it.kind) ? it.kind : "note";
+          clean.kind = ["note", "link", "file", "draft", "meta", "comment"].includes(it.kind) ? it.kind : "note";
+          clean.parent = /^[a-z0-9-]{2,60}$/i.test(it.parent || "") ? it.parent : ""; clean.pa = /^[a-z0-9-]{2,60}$/i.test(it.pa || "") ? it.pa : ""; clean.act = clip(it.act, 20); clean.from = clip(it.from, 20);
           clean.x = Math.max(0, Math.min(1, +it.x || 0)); clean.y = Math.max(0, Math.min(12, +it.y || 0)); clean.ep = Math.max(0, Math.min(9999, Math.floor(+it.ep || 0)));
           if (clean.kind === "meta") { clean.epoch = Math.max(0, Math.min(9999, Math.floor(+it.epoch || 0))); clean.archives = Array.isArray(it.archives) ? it.archives.slice(-40).map((x) => ({ ep: Math.floor(+x.ep || 0), at: +x.at || 0, by: clip(x.by, 40), n: Math.floor(+x.n || 0), title: clip(x.title, 60) })) : []; }
           clean.tone = clip(it.tone, 12); clean.file = clip(it.file, 120); clean.size = Math.max(0, Math.min(5e6, +it.size || 0)); clean.archived = !!it.archived; clean.fileId = /^[a-z0-9-]{4,60}$/i.test(it.fileId || "") ? it.fileId : "";
@@ -583,5 +781,96 @@ export default async (req, context) => {
     return json({ error: "error del servidor" }, 500);
   }
 };
+
+/* ================= Avisos programados (llegan aunque la app esté cerrada) ================= */
+const AGENT = {
+  amable: {
+    eve: (t) => [`Mañana se entrega: ${t}`, "Si avanzas un poco hoy, mañana será tranquilo."],
+    dia: (t) => [`Hoy se entrega: ${t}`, "Tú puedes. Ábrela y da el primer paso."],
+    pre: (t, m) => [`En ${m}: ${t}`, "Último empujón. Ya casi."],
+    late: (t) => [`Se quedó pendiente: ${t}`, "No pasa nada: entrégala hoy y tu árbol se recupera."],
+    custom: (t) => [`Recordatorio: ${t}`, "Lo apartaste para este momento."],
+  },
+  coach: {
+    eve: (t, m, p) => [`Mañana vence ${t}`, p ? `Llevas el ${p}%. Hoy se termina, sin excusas.` : "Llevas el 0%. Empieza hoy. Nada de “ahorita”."],
+    dia: (t, m, p) => [`HOY: ${t}`, p ? `Vas en ${p}%. Cierra el celular y termínala.` : "Llevas el 0%. Apaga Instagram ya y ponte a trabajar."],
+    pre: (t, m, p) => [`Te quedan ${m} para ${t}`, p ? `Vas en ${p}%. Concéntrate, sin distracciones.` : "Y llevas el 0%. Modo bestia: AHORA."],
+    late: (t) => [`Vencida: ${t}`, "Ya pasó la fecha. Entrégala hoy, primero esto y luego lo demás."],
+    custom: (t) => [`Es la hora: ${t}`, "Lo prometiste. Cumple."],
+  },
+  meme: {
+    eve: (t) => [`${t} mañana`, "Tú: “ahorita la hago”. También tú, mañana a las 11:58 p.m.: 😐"],
+    dia: (t) => [`${t} es HOY`, "Plot twist: la tarea no se va a hacer sola. Lo checamos."],
+    pre: (t, m) => [`${m} para ${t}`, "Esto no es un simulacro. Bueno, sí es un aviso, pero tú me entiendes."],
+    late: (t) => [`${t} sigue ahí…`, "Mirándote. Esperándote. Como la ropa en la silla."],
+    custom: (t) => [`Ding ding: ${t}`, "Yo solo vengo a recordarte que esto existe. Ok bye."],
+  },
+  estratega: {
+    eve: (t, m, p, e) => [`${t}: mañana`, `Si empiezas hoy, necesitas unos ${e} min. Mañana serían más, con prisa.`],
+    dia: (t, m, p, e) => [`${t}: hoy`, `Tiempo estimado: ${e} min. Mejor bloque: ahora.`],
+    pre: (t, m, p, e) => [`${t}: faltan ${m}`, `Avance ${p}%. Estimado restante: ${Math.max(5, Math.round(e * (1 - p / 100)))} min.`],
+    late: (t, m, p, e) => [`${t}: vencida`, `Recuperable hoy con unos ${e} min.`],
+    custom: (t) => [`${t}`, "Bloque programado."],
+  },
+};
+function localNow(tz, at) {
+  const f = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const o = Object.fromEntries(f.formatToParts(new Date(at)).map((x) => [x.type, x.value]));
+  return { day: `${o.year}-${o.month}-${o.day}`, min: (+o.hour) * 60 + (+o.minute) };
+}
+const addDayISO = (d, n) => { const x = new Date(d + "T12:00:00Z"); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+const fmtM = (m) => (m >= 60 ? `${Math.round(m / 60)} h` : `${m} min`);
+export async function runAvisos(store, origin, at = Date.now()) {
+  const subs = (await store.list({ prefix: `${W}push/` })).blobs.map((b) => b.key.split("/")[2]);
+  const users = [...new Set(subs)].filter((u) => USER_RE.test(u));
+  let sent = 0;
+  for (const u of users) {
+    const doc = await store.get(`${W}p/${u}`, { type: "json" }); const d = doc?.data; if (!d) continue;
+    const st = d.settings || {};
+    if (st.notify === false || st.pushOff) continue;
+    let tz = st.tz || "America/Mexico_City"; try { new Intl.DateTimeFormat("en", { timeZone: tz }); } catch { tz = "America/Mexico_City"; }
+    const { day, min } = localNow(tz, at);
+    const style = AGENT[st.agent] || AGENT.amable;
+    const before = Math.max(10, Math.min(1440, +st.remindBefore || 60));
+    const out = [];
+    for (const t of d.tasks || []) {
+      if (!t || t.done || !t.title) continue;
+      const steps = t.steps || []; const p = steps.length ? Math.round((100 * steps.filter((s) => s.done).length) / steps.length) : 0;
+      const e = Math.max(15, Math.min(240, +t.estimate || 45));
+      const title = String(t.title).slice(0, 80);
+      if (t.remind && !t.remindShown) {
+        const [rd, rt] = String(t.remind).split("T"); const [rh, rm] = (rt || "00:00").split(":").map(Number);
+        if (rd === day && min >= rh * 60 + rm && min < rh * 60 + rm + 120) out.push({ k: `custom-${t.remind}`, id: t.id, m: style.custom(title, 0, p, e) });
+      }
+      if (!t.due) continue;
+      if (t.due === addDayISO(day, 1) && min >= 19 * 60 && min < 22 * 60) out.push({ k: `eve-${t.due}`, id: t.id, m: style.eve(title, 0, p, e) });
+      if (t.due === day && min >= 7 * 60 && min < 12 * 60) out.push({ k: `dia-${t.due}`, id: t.id, m: style.dia(title, 0, p, e) });
+      if (t.due === day && t.time) {
+        const [h, mm] = t.time.split(":").map(Number); const left = h * 60 + mm - min;
+        if (left > 0 && left <= before) out.push({ k: `pre-${t.due}-${t.time}`, id: t.id, m: style.pre(title, fmtM(left), p, e) });
+      }
+      if (t.due === addDayISO(day, -1) && min >= 9 * 60 && min < 13 * 60) out.push({ k: `late-${t.due}`, id: t.id, m: style.late(title, 0, p, e) });
+    }
+    // partes de trabajos en equipo atrasadas (aviso discreto solo a quien la tiene)
+    for (const b of (await store.list({ prefix: `${W}mf/${u}/` })).blobs) {
+      const fid = b.key.split("/").pop();
+      for (const x of (await store.list({ prefix: `${W}g/${fid}/part/` })).blobs.slice(0, 300)) {
+        const pt = await store.get(x.key, { type: "json" });
+        if (!pt || pt.deleted || pt.done || pt.ownerId !== u || !pt.dueP || pt.dueP >= day || min < 10 * 60 || min > 20 * 60) continue;
+        out.push({ k: `part-${pt.id}-${pt.dueP}`, id: pt.id, m: [`Tu parte va atrasada: ${String(pt.text).slice(0, 60)}`, "Tu equipo cuenta contigo. Si se te complicó, pide ayuda o pide que la reasignen."], url: "#/grupo" });
+      }
+    }
+    let n = 0;
+    for (const o of out) {
+      if (n >= 4) break;
+      const key = `${W}sent/${u}/${o.id}-${o.k}`;
+      const r = await store.set(key, String(at), { onlyIfNew: true });
+      if (r && r.modified === false) continue;
+      await pushTo(store, [u], origin, { title: o.m[0], body: o.m[1], url: o.url || "#/hoy", tag: `aldia-${o.id}-${o.k.split("-")[0]}` }, "");
+      n++; sent++;
+    }
+  }
+  return { users: users.length, sent };
+}
 
 export const config = { path: "/api/sync" };

@@ -116,7 +116,7 @@ function defaults() {
       notify: false, digest: true, onboarded: false, lastBackup: null, lastDigest: null,
       checklist: DEFAULT_CHECKLIST.slice(), installDismissed: false,
     },
-    subjects: [], tasks: [], notes: [], libretas: [], vida: { garden: [], bonus: 0, claimed: {} }, focus: [], refs: [], thoughts: [], timer: null,
+    subjects: [], tasks: [], notes: [], libretas: [], pages: [], vida: { garden: [], bonus: 0, claimed: {} }, focus: [], refs: [], thoughts: [], timer: null,
   };
 }
 function migrate(d) {
@@ -124,7 +124,7 @@ function migrate(d) {
   if (!d || typeof d !== 'object') return base;
   const out = { ...base, ...d, settings: { ...base.settings, ...(d.settings || {}) } };
   if (!out.settings.bosque) { out.settings.theme = 'light'; out.settings.bosque = true; }
-  for (const k of ['subjects', 'tasks', 'notes', 'libretas', 'focus', 'refs', 'thoughts']) if (!Array.isArray(out[k])) out[k] = [];
+  for (const k of ['subjects', 'tasks', 'notes', 'libretas', 'pages', 'focus', 'refs', 'thoughts']) if (!Array.isArray(out[k])) out[k] = [];
   if (!Array.isArray(out.settings.checklist)) out.settings.checklist = DEFAULT_CHECKLIST.slice();
   out.subjects = out.subjects.filter((s) => s && s.id && s.name).map((s) => ({
     teacher: '', room: '', important: false, schedule: [], notes: '', target: null, ...s,
@@ -1172,7 +1172,13 @@ function viewMateria(id) {
 /* ---------- Más ---------- */
 function viewMas() {
   const items = [
+    ['#/libretas', 'book', 'Libretas', 'Una libreta por materia: notas, tareas, fotos y más'],
+    ['#/quiz', 'spark', 'Quiz inteligente', 'Preguntas hechas con tus propios apuntes'],
+    ['#/consejos', 'bulb', 'Consejos para mejorar', 'Cómo estudiar para exámenes y subir tus calificaciones'],
     ['#/salones', 'users', 'Bosques (para grupos)', 'Crea un Bosque con tu salón o equipo y compartan todo en tiempo real'],
+    ['#/amigos', 'heart', 'Amistades y mensajes', 'Solicitudes de amistad y mensajes privados'],
+    ['#/biblioteca', 'globe', 'Biblioteca General', 'La sala de todos: pide y da ayuda con tareas'],
+    ['#/asistente', 'bell', 'Tu asistente', 'Cómo te habla: amable, coach, meme o estratega'],
     ['#/estilo', 'palette', 'Estilo de la app', 'Cambia los colores y el diseño: 7 plantillas con día y noche'],
     ['#/cerebro', 'network', 'Tu Cerebro', 'Todo lo que has hecho y pensado, conectado en una red viva'],
     ['#/panel', 'grid', 'Mi panel', 'Radar de carga, tiempo libre real, patrones y hábitos'],
@@ -1688,7 +1694,7 @@ function intro() {
 const CLOUD = { busy: false, last: null, error: '', timer: null, device: null };
 try { CLOUD.device = localStorage.getItem('aldia:device') || ('d' + uid()); localStorage.setItem('aldia:device', CLOUD.device); } catch { CLOUD.device = 'd' + uid(); }
 const cloudOn = () => true;
-const COLLS = ['tasks', 'subjects', 'notes', 'thoughts', 'refs', 'libretas'];
+const COLLS = ['tasks', 'subjects', 'notes', 'thoughts', 'refs', 'libretas', 'pages'];
 const hashStr = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
 const baseKey = (p) => keyFor(p) + ':base';
 const dirtyKey = (p) => keyFor(p) + ':dirty';
@@ -1882,7 +1888,7 @@ const forestMeta = () => FOR.f[curFid()]?.meta || null;
 const initials = (n) => String(n || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
 const memberColor = (n) => { const m = Object.values(FOR.members || {}).find((x) => x.name === n); return m?.color; };
 const nameColor = (n) => { if (memberColor(n)) return memberColor(n); const c = ['#2F8A5B', '#3E9A93', '#5B7FD1', '#B07AC8', '#D27C5E', '#C9A55C', '#4F9A63', '#7A8CA8']; let h = 0; for (const ch of String(n)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return c[h % c.length]; };
-const mini = (n, cls = '') => `<span class="mini ${cls}" style="--pc:${nameColor(n)}" title="${esc(n)}">${esc(initials(n))}</span>`;
+let mini = (n, cls = '') => `<span class="mini ${cls}" style="--pc:${nameColor(n)}" title="${esc(n)}">${esc(initials(n))}</span>`;
 const ago = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'ahora' : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.round(m / 60)} h` : relDay(toISO(new Date(ms))); };
 function linkify(t) { return esc(t).replace(/https?:\/\/[^\s<]+/g, (u) => { const s = safeURL(u.replace(/&amp;/g, '&')); return s ? `<a href="${esc(s)}" target="_blank" rel="noopener">${esc(new URL(s).hostname.replace(/^www\./, ''))}</a>` : u; }); }
 
@@ -2423,7 +2429,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.14. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.15. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -2493,7 +2499,7 @@ function render() {
   setNav(groupMode);
   if (choosing) html = viewQuien();
   else if (groupMode) {
-    html = r.name === 'pizarron' ? viewPizarron() : r.name === 'equipos' ? viewEquipos() : r.name === 'equipo' ? viewEquipo(r.arg) : r.name === 'ideas' ? viewIdeas() : r.name === 'vida' ? viewVida() : r.name === 'instalar' ? viewInstalar() : r.name === 'mas' ? viewMasGrupo() : viewGrupo();
+    html = (window.GROUP_VIEWS && GROUP_VIEWS[r.name]) ? GROUP_VIEWS[r.name](r.arg) : r.name === 'pizarron' ? viewPizarron() : r.name === 'equipos' ? viewEquipos() : r.name === 'equipo' ? viewEquipo(r.arg) : r.name === 'ideas' ? viewIdeas() : r.name === 'vida' ? viewVida() : r.name === 'instalar' ? viewInstalar() : r.name === 'mas' ? viewMasGrupo() : viewGrupo();
   } else if (showWelcome) html = viewBienvenida();
   else {
     switch (r.name) {
@@ -2520,7 +2526,7 @@ function render() {
       case 'salones': html = viewBosques(); break;
       case 'estilo': setTimeout(() => { history.replaceState(null, '', '#/mas'); openEstilos(); }, 0); html = viewMas(); break;
       case 'carta': setTimeout(() => { history.replaceState(null, '', '#/mas'); writeLetter(); }, 0); html = viewMas(); break;
-      default: html = viewHoy();
+      default: html = (window.EXTRA_VIEWS && EXTRA_VIEWS[r.name]) ? EXTRA_VIEWS[r.name](r.arg) : viewHoy();
     }
   }
   // conservar el texto de la captura rápida si se vuelve a pintar Hoy
@@ -2534,8 +2540,8 @@ function render() {
   if (hadFocus && ['quickIn', 'taskQ', 'notesQ'].includes(hadFocus)) { const el = $('#' + hadFocus); if (el) { el.focus(); const v = el.value; el.setSelectionRange?.(v.length, v.length); } }
 
   const known = ['carta', 'estilo', 'salones', 'panel', 'cerebro', 'vida', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
-  const rn = known.includes(r.name) ? r.name : 'hoy';
-  const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', pizarron: 'pizarron', vida: 'vida', mas: 'mas', instalar: 'mas' }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'mas', materias: 'mas', tareas: 'tareas', calendario: 'calendario', hoy: 'hoy', mente: 'mente', vida: 'vida' }[rn] || 'mas');
+  const rn = known.includes(r.name) || (window.EXTRA_VIEWS && EXTRA_VIEWS[r.name]) ? r.name : 'hoy';
+  const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', pizarron: 'pizarron', vida: 'vida', mas: 'mas', instalar: 'mas', ...(window.GROUP_NAV || {}) }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'mas', materias: 'mas', tareas: 'tareas', calendario: 'calendario', hoy: 'hoy', mente: 'mente', vida: 'vida', ...(window.EXTRA_NAV || {}) }[rn] || 'mas');
   $$('.nav a').forEach((a) => { if (a.dataset.nav === navName) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   $('.nav').hidden = showWelcome;
   $('#fab').hidden = groupMode || showWelcome || !['hoy', 'tareas', 'calendario', 'materia'].includes(rn);
