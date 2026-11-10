@@ -2431,7 +2431,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Cinnavia 7.16. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Cinnavia 7.17. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */

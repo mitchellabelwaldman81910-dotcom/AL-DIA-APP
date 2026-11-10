@@ -2530,3 +2530,13 @@ body.gm-on { overflow: hidden; }
 .share-btns { display: flex; flex-direction: column; gap: 10px; max-width: 420px; margin: 16px auto 0; }
 .share-wa { background: #25A55A !important; border-color: #25A55A !important; }
 .km-nl, .km-cat, .km-fly, .km-star { pointer-events: none; } .km-hit { fill: transparent; }
+
+/* 7.17 Editar perfil */
+.ep-hero { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0 18px; }
+.ep-hero b { font-size: 1.15rem; margin-top: 8px; }
+.ep-av .avatar.xl { width: 112px; height: 112px; font-size: 2.6rem; box-shadow: 0 0 0 4px var(--surface, #fff), 0 8px 24px rgba(0,0,0,.18); }
+.ep-btns { display: flex; flex-direction: column; gap: 10px; }
+.ep-btns .btn { justify-content: center; width: 100%; min-height: 48px; }
+.ep-mini { position: relative; display: inline-flex; }
+.ep-mini i { position: absolute; right: -4px; bottom: -4px; width: 18px; height: 18px; border-radius: 50%; background: var(--accent, #2f6f4f); color: #fff; display: grid; place-items: center; }
+.ep-mini i svg { width: 11px; height: 11px; }
