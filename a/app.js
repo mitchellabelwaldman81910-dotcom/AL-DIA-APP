@@ -1,4 +1,4 @@
-/* Al Día — tareas, entregas y materias.
+/* Cinnavia — tareas, entregas y materias.
    Todo se guarda en este dispositivo (localStorage). Sin cuentas, sin servidores. */
 'use strict';
 
@@ -143,7 +143,7 @@ function load(key = KEY) {
     const raw = localStorage.getItem(key); if (!raw) return stampOwner(defaults(), key);
     const d = JSON.parse(raw); const want = key.startsWith('aldia:v1:') ? key.slice(9) : null;
     // protección: nunca se usan como propios los datos de otra persona
-    if (want && d && d.owner && d.owner !== want) { console.warn('[Al Día] datos de', d.owner, 'en la clave de', want, '— se descartan'); return stampOwner(defaults(), key); }
+    if (want && d && d.owner && d.owner !== want) { console.warn('[Cinnavia] datos de', d.owner, 'en la clave de', want, '— se descartan'); return stampOwner(defaults(), key); }
     return stampOwner(migrate(d), key);
   } catch { return defaults(); }
 }
@@ -688,7 +688,7 @@ function viewHoy() {
   // instalar
   let installHTML = '';
   if (!isStandalone() && !S.settings.installDismissed && (deferredInstall || isIOS())) {
-    installHTML = `<div class="banner">${icon('phone')}<p>Instala Al Día en tu pantalla de inicio para abrirla como app, aun sin internet.</p>
+    installHTML = `<div class="banner">${icon('phone')}<p>Instala Cinnavia en tu pantalla de inicio para abrirla como app, aun sin internet.</p>
       <button class="btn primary" data-act="install">Instalar</button><button class="icon-btn ghost" data-act="install-dismiss" aria-label="Ocultar">${icon('x')}</button></div>`;
   }
 
@@ -735,7 +735,7 @@ function viewHoy() {
   if (doneToday.length) listHTML += `<h2 class="sec">Entregadas hoy <small>${doneToday.length}</small></h2><ul class="tasks">${doneToday.map((t) => taskRow(t)).join('')}</ul>`;
 
   const emptyHTML = !S.tasks.length ? `<div class="card help" style="margin-top:22px">
-      <p><b>Así se usa la captura rápida.</b> Escribe con tus palabras y Al Día entiende la fecha, la hora y la materia:</p>
+      <p><b>Así se usa la captura rápida.</b> Escribe con tus palabras y Cinnavia entiende la fecha, la hora y la materia:</p>
       <ul><li><span class="kbd">ensayo de historia para el viernes</span></li><li><span class="kbd">examen de inglés el 30/10 a las 8</span></li>
       <li><span class="kbd">proyecto final mercadotecnia en 2 semanas vale 30%</span></li><li><span class="kbd">leer capítulo 3 mañana urgente</span></li></ul>
       ${S.subjects.length ? '' : '<p>Primero agrega tus materias para que las reconozca. <a href="#/materias">Agregar materias</a></p>'}</div>` : '';
@@ -1019,7 +1019,7 @@ function taskListHTML() {
   let list = S.tasks.filter((t) => (UI.tf === 'all' || (UI.tf === 'pend' ? !t.done : t.done))
     && (UI.ts === 'all' || t.subjectId === UI.ts) && (UI.tt === 'all' || t.type === UI.tt)
     && (!q || normChars(`${t.title} ${t.desc} ${subj(t.subjectId)?.name || ''}`).includes(q)));
-  if (!S.tasks.length) return `<div class="empty" style="margin-top:20px"><h3>Sin tareas todavía</h3><p>Agrega lo que te dejaron con el botón azul. Al Día te avisa qué toca primero.</p><button class="btn primary" data-act="new-task">${icon('plus')}Nueva tarea</button></div>`;
+  if (!S.tasks.length) return `<div class="empty" style="margin-top:20px"><h3>Sin tareas todavía</h3><p>Agrega lo que te dejaron con el botón azul. Cinnavia te avisa qué toca primero.</p><button class="btn primary" data-act="new-task">${icon('plus')}Nueva tarea</button></div>`;
   if (!list.length) return `<div class="empty" style="margin-top:20px"><h3>No hay tareas con esos filtros</h3><p>Prueba con otra materia o tipo.</p><button class="btn" data-act="clear-filters">Quitar filtros</button></div>`;
   if (UI.tf === 'done') {
     list.sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
@@ -1082,7 +1082,7 @@ function timetableHTML() {
     if (a != null && b != null && b > a) blocks.push({ s, day: +h.day, a, b, room: h.room || s.room });
   }
   if (!blocks.length) {
-    return `<div class="empty" style="margin-top:18px"><h3>Tu horario aparece aquí</h3><p>Abre cada materia y agrega sus días y horas. Al Día te dirá en qué clase estás y cuál sigue.</p><a class="btn primary" href="#/materias">Ir a Materias</a></div>`;
+    return `<div class="empty" style="margin-top:18px"><h3>Tu horario aparece aquí</h3><p>Abre cada materia y agrega sus días y horas. Cinnavia te dirá en qué clase estás y cuál sigue.</p><a class="btn primary" href="#/materias">Ir a Materias</a></div>`;
   }
   const days = [1, 2, 3, 4, 5];
   if (blocks.some((b) => b.day === 6)) days.push(6);
@@ -1172,6 +1172,8 @@ function viewMateria(id) {
 /* ---------- Más ---------- */
 function viewMas() {
   const items = [
+    ['#/compartir', 'share', 'Compartir app', 'Mándala por WhatsApp o compártela con quien quieras'],
+    ['#/juego', 'trophy', 'Cosecha · el juego', 'Atrapa manzanas, gana el podio del día y la semana'],
     ['#/libretas', 'book', 'Libretas', 'Una libreta por materia: notas, tareas, fotos y más'],
     ['#/quiz', 'spark', 'Quiz inteligente', 'Preguntas hechas con tus propios apuntes'],
     ['#/consejos', 'bulb', 'Consejos para mejorar', 'Cómo estudiar para exámenes y subir tus calificaciones'],
@@ -1191,7 +1193,7 @@ function viewMas() {
     ['#/respaldo', 'save', 'Respaldo y calendario', S.settings.lastBackup ? `Último respaldo ${relDay(S.settings.lastBackup)}` : 'Aún no haces un respaldo'],
     ['#/ajustes', 'gear', 'Ajustes', 'Tu nombre, tema, calificaciones y recordatorios'],
     ['#/instalar', 'phone', 'Instalar la app', isStandalone() ? 'Ya la tienes instalada' : 'Ponla en tu pantalla de inicio'],
-    ['#/ayuda', 'help', 'Cómo usar Al Día', 'Trucos de la captura rápida y más'],
+    ['#/ayuda', 'help', 'Cómo usar Cinnavia', 'Trucos de la captura rápida y más'],
   ];
   const me = profile();
   return `<h1 class="page-title">Más</h1><p class="page-sub">Todo lo que te ayuda a ir al día.</p>
@@ -1682,7 +1684,7 @@ function intro() {
   const p = profile();
   const el = document.createElement('div'); el.className = 'intro'; el.setAttribute('aria-hidden', 'true');
   el.innerHTML = `<svg viewBox="0 0 120 120" class="intro-leaf"><path class="draw" d="${'M60 12C38 26 22 48 30 86c1.5 7 4.5 12 8 16C80 96 102 70 98 30 88 18 76 12 60 12z'}"/><path class="draw vein" d="M38 102C48 76 62 52 86 28"/></svg>
-    <div class="intro-name">Al Día</div>${p ? `<div class="intro-hi">Hola, ${esc(p.name)}</div>` : ''}`;
+    <div class="intro-name">Cinnavia</div>${p ? `<div class="intro-hi">Hola, ${esc(p.name)}</div>` : ''}`;
   document.body.appendChild(el);
   const end = () => { el.classList.add('out'); setTimeout(() => el.remove(), 700); };
   el.addEventListener('click', end); setTimeout(end, 2300);
@@ -1718,7 +1720,7 @@ function mergeDocs(local, remote, base, trustDeletes = false) {
     if (!trustDeletes && base && base[c]) {
       const L0 = new Set((local[c] || []).map((x) => x.id)); const R0 = (remote[c] || []).filter((x) => x.id in base[c]);
       const gone = R0.filter((x) => !L0.has(x.id)).length;
-      if (gone >= 3 && gone >= R0.length * 0.4) { const keep = (remote[c] || []).filter((x) => !L0.has(x.id)); out[c] = [...(local[c] || []), ...keep]; console.warn('[Al Día] se evitó borrar', gone, c); continue; }
+      if (gone >= 3 && gone >= R0.length * 0.4) { const keep = (remote[c] || []).filter((x) => !L0.has(x.id)); out[c] = [...(local[c] || []), ...keep]; console.warn('[Cinnavia] se evitó borrar', gone, c); continue; }
     }
     const L = new Map((local[c] || []).map((x) => [x.id, x]));
     const R = new Map((remote[c] || []).map((x) => [x.id, x]));
@@ -1774,9 +1776,9 @@ async function cloudSync(opts = {}) {
       const base = getBase(id);
       const dirty = isDirty(id) || (hasLocal && !base && (local.tasks.length || local.subjects.length || local.notes.length || local.thoughts.length));
       let next = local, push = false;
-      if (local.owner && local.owner !== id) { console.warn('[Al Día] datos ajenos en', id); continue; }
+      if (local.owner && local.owner !== id) { console.warn('[Cinnavia] datos ajenos en', id); continue; }
       const trust = (() => { try { return localStorage.getItem('aldia:wipe:' + id) === '1'; } catch { return false; } })();
-      if (rdoc && rdoc.data && rdoc.data.owner && rdoc.data.owner !== id) { console.warn('[Al Día] la nube de', id, 'tiene datos de', rdoc.data.owner); }
+      if (rdoc && rdoc.data && rdoc.data.owner && rdoc.data.owner !== id) { console.warn('[Cinnavia] la nube de', id, 'tiene datos de', rdoc.data.owner); }
       if (rdoc && rdoc.at > (local.cloudAt || 0)) {
         if (dirty) { next = mergeDocs(local, migrate(rdoc.data), base, trust); push = true; }
         else next = { ...migrate(rdoc.data), timer: local.timer };
@@ -2429,15 +2431,15 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.15. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Cinnavia 7.16. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
 function viewInstalar() {
   let body;
-  if (isStandalone()) body = `<div class="card"><p style="margin:0"><b>Ya la estás usando como app.</b> Búscala en tu pantalla de inicio como “Al Día”.</p></div>`;
-  else if (deferredInstall) body = `<div class="card"><p style="margin:0 0 14px">Tu navegador puede instalarla directo. Queda como una app más en tu celular o computadora y funciona sin internet.</p><button class="btn primary" data-act="install">${icon('phone')}Instalar Al Día</button></div>`;
-  else if (isIOS()) body = `<div class="card help"><p><b>En iPhone o iPad (Safari):</b></p><ul><li>Toca el botón <b>Compartir</b> (el cuadro con la flecha hacia arriba).</li><li>Baja y elige <b>Agregar a inicio</b>.</li><li>Toca <b>Agregar</b>. Listo: aparece el ícono de Al Día.</li></ul></div>`;
+  if (isStandalone()) body = `<div class="card"><p style="margin:0"><b>Ya la estás usando como app.</b> Búscala en tu pantalla de inicio como “Cinnavia”.</p></div>`;
+  else if (deferredInstall) body = `<div class="card"><p style="margin:0 0 14px">Tu navegador puede instalarla directo. Queda como una app más en tu celular o computadora y funciona sin internet.</p><button class="btn primary" data-act="install">${icon('phone')}Instalar Cinnavia</button></div>`;
+  else if (isIOS()) body = `<div class="card help"><p><b>En iPhone o iPad (Safari):</b></p><ul><li>Toca el botón <b>Compartir</b> (el cuadro con la flecha hacia arriba).</li><li>Baja y elige <b>Agregar a inicio</b>.</li><li>Toca <b>Agregar</b>. Listo: aparece el ícono de Cinnavia.</li></ul></div>`;
   else body = `<div class="card help"><p><b>En Android (Chrome):</b></p><ul><li>Toca el menú <b>⋮</b> arriba a la derecha.</li><li>Elige <b>Instalar app</b> o <b>Agregar a la pantalla principal</b>.</li><li>Confirma con <b>Instalar</b>.</li></ul>
     <p><b>En computadora (Chrome o Edge):</b> haz clic en el ícono de instalar que aparece a la derecha de la barra de direcciones.</p></div>`;
   return `<a class="back" href="#/mas">${icon('back')}Más</a><h1 class="page-title">Instalar la app</h1>
@@ -2447,7 +2449,7 @@ function viewInstalar() {
 
 /* ---------- Ayuda ---------- */
 function viewAyuda() {
-  return `<a class="back" href="#/mas">${icon('back')}Más</a><h1 class="page-title">Cómo usar Al Día</h1>
+  return `<a class="back" href="#/mas">${icon('back')}Más</a><h1 class="page-title">Cómo usar Cinnavia</h1>
     <div class="card help">
       <p><b>Captura rápida.</b> En Hoy escribe como hablas. Entiende:</p>
       <ul>
@@ -2549,7 +2551,7 @@ function render() {
   if (r.name === 'calc') calcUpdate();
   if (r.name === 'respaldo') fillSnapList();
   hydratePhotos();
-  document.title = timerState().running ? `${fmtClock(timerRemaining())} · Al Día` : 'Al Día';
+  document.title = timerState().running ? `${fmtClock(timerRemaining())} · Cinnavia` : 'Cinnavia';
 }
 
 /* =========================================================
@@ -2957,7 +2959,7 @@ const ACTIONS = {
     toast(`Escala cambiada a 0–${v}. Convertí tus calificaciones.`);
   },
   'notif-enable': () => enableNotifications(),
-  'notif-test': () => notify('Así se ven tus avisos', 'Al Día te recordará lo que vence hoy y mañana.', 'aldia-test'),
+  'notif-test': () => notify('Así se ven tus avisos', 'Cinnavia te recordará lo que vence hoy y mañana.', 'aldia-test'),
   wipe: async () => {
     const who = profile().name;
     const ok = await ask({ title: `¿Borrar los datos de ${who}?`, text: `Se eliminan las tareas, materias, apuntes y ajustes de ${who} en este dispositivo. Los del otro usuario no se tocan. No se puede deshacer.`, ok: 'Borrar', danger: true });
@@ -2968,7 +2970,7 @@ const ACTIONS = {
   'backup-share': async () => {
     const file = new File([JSON.stringify(S)], `al-dia-${REG.current}-respaldo-${today()}.json`, { type: 'application/json' });
     try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Respaldo de Al Día' }); markBackup(); }
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Respaldo de Cinnavia' }); markBackup(); }
       else { downloadFile(file.name, JSON.stringify(S), 'application/json'); markBackup(); }
     } catch (e) { if (e.name !== 'AbortError') toast('No se pudo compartir. Usa “Descargar respaldo”.'); }
   },
@@ -2990,7 +2992,7 @@ const ACTIONS = {
       deferredInstall.prompt();
       const r = await deferredInstall.userChoice.catch(() => null);
       deferredInstall = null;
-      if (r?.outcome === 'accepted') toast('Instalando Al Día…');
+      if (r?.outcome === 'accepted') toast('Instalando Cinnavia…');
       render();
     } else location.hash = '#/instalar';
   },
@@ -3333,7 +3335,7 @@ async function restoreBackup(file) {
     S = migrate(data); S.settings.onboarded = true; save(); applyTheme(); render(); scheduleReminders();
     toast('Respaldo cargado.');
   } catch {
-    toast('Ese archivo no es un respaldo de Al Día.');
+    toast('Ese archivo no es un respaldo de Cinnavia.');
   } finally {
     const inp = $('#restoreIn'); if (inp) inp.value = '';
   }
@@ -3353,7 +3355,7 @@ function icsFold(line) {
 }
 function buildICS(tasks) {
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
-  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Al Dia//Tareas//ES', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:Al Día — entregas'];
+  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Al Dia//Tareas//ES', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:Cinnavia — entregas'];
   for (const t of tasks) {
     if (!t.due) continue;
     const s = subj(t.subjectId);
@@ -3449,13 +3451,13 @@ function scheduleReminders() {
   for (const t of S.tasks) {
     if (!t.done && t.remind && !t.remindShown) {
       const ms = new Date(t.remind).getTime() - now;
-      if (ms > 0 && ms < 24 * 3600000) reminderTimers.push(setTimeout(() => { notify(`Recordatorio: ${t.title}`, 'Abre Al Día para verla.', 'm-' + t.id); checkDueReminders(); }, ms));
+      if (ms > 0 && ms < 24 * 3600000) reminderTimers.push(setTimeout(() => { notify(`Recordatorio: ${t.title}`, 'Abre Cinnavia para verla.', 'm-' + t.id); checkDueReminders(); }, ms));
     }
     if (t.done || !t.due) continue;
     for (const [day, hh, msg] of [[addDays(t.due, -1), 19, 'Mañana se entrega'], [t.due, 7, 'Hoy se entrega']]) {
       const at2 = new Date(fromISO(day)); at2.setHours(hh, 0, 0, 0);
       const ms = at2.getTime() - now;
-      if (ms > 0 && ms < 24 * 3600000) reminderTimers.push(setTimeout(() => notify(`${msg}: ${t.title}`, 'Tienes que hacerla. Ábrela en Al Día.', 'd-' + t.id + day), ms));
+      if (ms > 0 && ms < 24 * 3600000) reminderTimers.push(setTimeout(() => notify(`${msg}: ${t.title}`, 'Tienes que hacerla. Ábrela en Cinnavia.', 'd-' + t.id + day), ms));
     }
     if (!t.time) continue;
     const [h, m] = t.time.split(':').map(Number);
@@ -3619,14 +3621,14 @@ setInterval(() => {
     $('#timerArc')?.setAttribute('stroke-dashoffset', C * (1 - rem / total));
   }
   updateFocusPill();
-  document.title = `${fmtClock(rem)} · Al Día`;
+  document.title = `${fmtClock(rem)} · Cinnavia`;
 }, 1000);
 
 let deferredInstall = null;
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; if (!sheet().open) render(); });
-window.addEventListener('appinstalled', () => { deferredInstall = null; toast('Al Día quedó instalada.'); render(); });
+window.addEventListener('appinstalled', () => { deferredInstall = null; toast('Cinnavia quedó instalada.'); render(); });
 
 function applyTheme() {
   const th = S.settings.theme === 'dark' ? 'dark' : 'light';

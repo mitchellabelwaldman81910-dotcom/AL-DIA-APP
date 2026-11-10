@@ -1,36 +1,74 @@
 {
   "id": "./",
-  "name": "Al Día — tareas y entregas",
-  "short_name": "Al Día",
-  "description": "Tus tareas, entregas, exámenes y materias en un solo lugar.",
+  "name": "Cinnavia — aprende, entrega y crece",
+  "short_name": "Cinnavia",
+  "description": "Tu refugio para estudiar: tareas, libretas, enfoque, tu árbol y tu grupo.",
   "lang": "es-MX",
   "dir": "ltr",
   "start_url": "./?app=1",
   "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "any",
-  "background_color": "#F3FAF5",
+  "background_color": "#10261E",
   "theme_color": "#F3FAF5",
-  "categories": ["education", "productivity"],
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
     {
       "name": "Nueva tarea",
       "short_name": "Nueva",
       "url": "./?nueva=1#/hoy",
-      "icons": [{ "src": "icons/shortcut-add.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "icons/shortcut-add.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Modo enfoque",
       "short_name": "Enfoque",
       "url": "./#/enfoque",
-      "icons": [{ "src": "icons/shortcut-focus.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "icons/shortcut-focus.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

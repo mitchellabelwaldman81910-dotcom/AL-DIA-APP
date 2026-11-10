@@ -1,4 +1,4 @@
-/* Al Día 7.14 — Administración, respaldos y modo sin conexión.
+/* Cinnavia 7.14 — Administración, respaldos y modo sin conexión.
    · La cuenta de administración (Mitchell) puede entrar a cualquier cuenta sin su contraseña, para dar soporte
      y recuperar datos. El servidor es quien lo autoriza y deja registro; la otra persona ve el ojito con el nombre.
    · Respaldos: la nube guarda versiones cada 10 minutos (40) y una copia por día (60 días) de cada cuenta,
@@ -72,7 +72,7 @@ function backupInfoHTML() {
 }
 const ADM = { data: null, q: '' };
 async function adminOpen() {
-  openSheet(`${sheetHead('Todas las cuentas')}<div class="sheet-body" id="admBody"><p class="small muted">Cargando…</p></div>`);
+  openSheet(`${sheetHead('Todas las cuentas')}<div class="sheet-body" id="admBody">${typeof loaderHTML === 'function' ? loaderHTML('Cargando…') : 'Cargando…'}</div>`);
   try { ADM.data = await cloudFetch('GET', null, 'kind=admin'); adminPaint(); }
   catch (e) { const b = document.getElementById('admBody'); if (b) b.innerHTML = `<p class="small" style="color:var(--red)">${esc(e.message)}</p>`; }
 }
@@ -116,7 +116,7 @@ Object.assign(VIDA_ACTS, {
     const id = (el && el.dataset && el.dataset.p) || dataOwner();
     if (!id || (!tokens()[id] && !isAdminSession())) { toast('Entra con tu usuario primero.'); return; }
     const name = (ADM.data?.users.find((u) => u.id === id)?.name) || profile(id)?.name || id;
-    openSheet(`${sheetHead(id === dataOwner() ? 'Copias de seguridad' : `Copias de ${name}`)}<div class="sheet-body"><p class="muted" style="margin:0 0 12px">La nube guarda una versión cada vez que los datos cambian (las últimas 40) y una copia por día durante 60 días. Restaurar no borra nada: la versión actual también queda guardada.</p><div id="histList"><p class="small muted">Cargando…</p></div></div>`);
+    openSheet(`${sheetHead(id === dataOwner() ? 'Copias de seguridad' : `Copias de ${name}`)}<div class="sheet-body"><p class="muted" style="margin:0 0 12px">La nube guarda una versión cada vez que los datos cambian (las últimas 40) y una copia por día durante 60 días. Restaurar no borra nada: la versión actual también queda guardada.</p><div id="histList">${typeof loaderHTML === 'function' ? loaderHTML('Cargando…') : 'Cargando…'}</div></div>`);
     try {
       const r = await cloudFetch('GET', null, `kind=history&p=${encodeURIComponent(id)}`);
       const box = document.getElementById('histList'); if (!box) return;
@@ -141,7 +141,7 @@ Object.assign(VIDA_ACTS, {
   },
   'g-history': async (el) => {
     const fid = el.dataset.id || curFid(); if (!fid) return;
-    openSheet(`${sheetHead('Copias del Bosque')}<div class="sheet-body"><p class="muted" style="margin:0 0 12px">Cada día se guarda una copia completa del Bosque (45 días). Restaurar solo regresa lo que se borró o falta: nunca quita lo nuevo.</p><div id="gHist"><p class="small muted">Cargando…</p></div></div>`);
+    openSheet(`${sheetHead('Copias del Bosque')}<div class="sheet-body"><p class="muted" style="margin:0 0 12px">Cada día se guarda una copia completa del Bosque (45 días). Restaurar solo regresa lo que se borró o falta: nunca quita lo nuevo.</p><div id="gHist">${typeof loaderHTML === 'function' ? loaderHTML('Cargando…') : 'Cargando…'}</div></div>`);
     try {
       const r = await cloudFetch('GET', null, `kind=ghistory&forest=${encodeURIComponent(fid)}&as=${encodeURIComponent(REG.me)}`);
       const box = document.getElementById('gHist'); if (!box) return;

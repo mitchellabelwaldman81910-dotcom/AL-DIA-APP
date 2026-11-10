@@ -1,4 +1,4 @@
-// Al Día — nube compartida v7.
+// Cinnavia — nube compartida v7.
 // Cuentas propias (cualquiera crea su usuario con contraseña), árbol de VIDA, Bosques colaborativos y rankings.
 // Las contraseñas se verifican aquí en el servidor: nadie lee ni escribe lo de otra persona sin su contraseña.
 import { getStore } from "@netlify/blobs";
@@ -9,6 +9,7 @@ const W = "w/";
 const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done", "focus", "tpl", "board", "event", "poll", "vote", "pin", "pomo"];
 // administración: estas cuentas pueden entrar a cualquier otra (para dar soporte y recuperar datos)
 const ADMINS = ["mitchell"];
+const weekOf = (ms) => { const d = new Date(dayOf(ms) + "T12:00:00Z"); const dn = (d.getUTCDay() + 6) % 7; d.setUTCDate(d.getUTCDate() - dn + 3); const y = d.getUTCFullYear(); const w1 = new Date(Date.UTC(y, 0, 4)); return `${y}-W${String(1 + Math.round(((d - w1) / 86400000 - 3 + ((w1.getUTCDay() + 6) % 7)) / 7)).padStart(2, "0")}`; };
 const dayOf = (ms) => new Date(ms - 5 * 3600000).toISOString().slice(0, 10); // día en hora de México/Cancún
 const LETTER_USERS = ["mitchell", "mel"];
 const MAX = 3 * 1024 * 1024;
@@ -169,7 +170,7 @@ export default async (req, context) => {
       }
       if (kindQ === "adminexport") {
         if (!admin) return json({ error: "Solo la cuenta de administración puede hacer esto" }, 403);
-        const out = { app: "Al Día", kind: "respaldo-total", at: Date.now(), profiles: {}, forests: {} };
+        const out = { app: "Cinnavia", kind: "respaldo-total", at: Date.now(), profiles: {}, forests: {} };
         const { blobs } = await store.list({ prefix: `${W}p/` });
         for (const b of blobs) { const v = await store.get(b.key, { type: "json" }); if (v) out.profiles[b.key.split("/").pop()] = v; }
         const fl = await store.list({ prefix: `${W}f/` });
@@ -235,6 +236,13 @@ export default async (req, context) => {
         const id = url.searchParams.get("id") || "";
         if (!/^[a-z0-9-]{4,60}$/i.test(id)) return json({ error: "archivo inválido" }, 400);
         return json({ ok: true, data: (await store.get(`${W}libf/${id}`, { type: "text" })) || null });
+      }
+      if (kindQ === "gamerank") {
+        const now = Date.now(); const as = url.searchParams.get("as") || "";
+        const read = async (prefix, key = "score") => { const { blobs } = await store.list({ prefix }); const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean); return all.sort((x, y) => (y[key] || 0) - (x[key] || 0) || (x.at || 0) - (y.at || 0)).slice(0, 20); };
+        const out = { ok: true, dia: await read(`${W}gs/d/${dayOf(now)}/`), semana: await read(`${W}gs/w/${weekOf(now)}/`), record: await read(`${W}gs/a/`), manzanas: await read(`${W}gs/t/`, "apples") };
+        if (USER_RE.test(as)) { const a1 = await store.get(`${W}gs/a/${as}`, { type: "json" }); const t1 = await store.get(`${W}gs/t/${as}`, { type: "json" }); out.me = { best: a1?.score || 0, total: t1?.apples || 0, games: t1?.games || 0 }; }
+        return json(out);
       }
       if (kindQ === "lobby") {
         const as = url.searchParams.get("as");
@@ -537,7 +545,7 @@ export default async (req, context) => {
         await store.setJSON(`${W}frq/${to}/${as}`, { from: as, name: auth[as].name, color: auth[as].color, at: Date.now() });
         await store.set(`${W}frs/${as}/${to}`, "1");
         await bump(store, [as, to]);
-        if (context?.waitUntil) context.waitUntil(pushTo(store, [to], url.origin, { title: "Nueva solicitud de amistad", body: `${auth[as].name} (@${as}) quiere ser tu amistad en Al Día.`, url: "#/amigos", tag: `fr-${as}` }, ""));
+        if (context?.waitUntil) context.waitUntil(pushTo(store, [to], url.origin, { title: "Nueva solicitud de amistad", body: `${auth[as].name} (@${as}) quiere ser tu amistad en Cinnavia.`, url: "#/amigos", tag: `fr-${as}` }, ""));
         return json({ ok: true, name: tm.name });
       }
       case "friendrespond": {
@@ -636,9 +644,23 @@ export default async (req, context) => {
         for (const b of blobs) { const t = +(await store.get(b.key)) || 0; if (Date.now() - t > 90000) await store.delete(b.key); }
         return json({ ok: true });
       }
+      case "game": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const apples = Math.max(0, Math.floor(+body.apples || 0)); const score = Math.max(0, Math.floor(+body.score || 0)); const dur = Math.max(1, Math.floor(+body.dur || 0));
+        if (score > apples * 5 || score < apples || apples > 50000 || dur < apples * 0.25) return json({ error: "Partida inválida" }, 400);
+        const now = Date.now(); const who = { id: as, name: auth[as].name, color: auth[as].color, av: auth[as].av || 0 };
+        const put = async (key) => { const prev = await store.get(key, { type: "json" }); if (!prev || score > (prev.score || 0)) { await store.setJSON(key, { ...who, score, apples, at: now }); return true; } return false; };
+        await put(`${W}gs/d/${dayOf(now)}/${as}`); await put(`${W}gs/w/${weekOf(now)}/${as}`); const newBest = await put(`${W}gs/a/${as}`);
+        const t0 = (await store.get(`${W}gs/t/${as}`, { type: "json" })) || { apples: 0, games: 0 };
+        await store.setJSON(`${W}gs/t/${as}`, { ...who, apples: (t0.apples || 0) + apples, games: (t0.games || 0) + 1, score: (t0.apples || 0) + apples, at: now });
+        const best = (await store.get(`${W}gs/a/${as}`, { type: "json" }))?.score || score;
+        const { blobs } = await store.list({ prefix: `${W}gs/d/${dayOf(now)}/` });
+        const day = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean).sort((x, y) => y.score - x.score);
+        return json({ ok: true, best, newBest: newBest && score > 0, rankDay: day.findIndex((x) => x.id === as) + 1 });
+      }
       case "pushtest": {
         if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
-        await pushTo(store, [as], url.origin, { title: "Avisos de Al Día listos", body: "Así te llegarán tus recordatorios, aunque la app esté cerrada.", url: "#/asistente", tag: "aldia-test" }, "");
+        await pushTo(store, [as], url.origin, { title: "Avisos de Cinnavia listos", body: "Así te llegarán tus recordatorios, aunque la app esté cerrada.", url: "#/asistente", tag: "aldia-test" }, "");
         return json({ ok: true });
       }
       case "adminenter": {

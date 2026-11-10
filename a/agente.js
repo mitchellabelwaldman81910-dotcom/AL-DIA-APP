@@ -1,4 +1,4 @@
-/* Al Día 7.15 — Tu asistente, avisos confiables, consejos y Quiz inteligente.
+/* Cinnavia 7.15 — Tu asistente, avisos confiables, consejos y Quiz inteligente.
    · El asistente aprende de lo que haces (a qué hora entregas, qué materias dejas al final, cuánto te tardas)
      y te habla con el estilo que elijas: Amable, Coach exigente, Sarcástico/Meme o Estratega silencioso.
    · Avisos: además de los del teléfono, el servidor manda los recordatorios aunque la app esté cerrada.
@@ -110,7 +110,7 @@ function memeArt(seed) {
     const html = baseHoy();
     const i = html.indexOf('class="today-head"'); if (i < 0) return html;
     const j = html.indexOf('</section>', i); if (j < 0) return html;
-    let card = ''; try { card = agentCardHTML(); } catch (e) { console.warn('[Al Día] asistente', e); }
+    let card = ''; try { card = agentCardHTML(); } catch (e) { console.warn('[Cinnavia] asistente', e); }
     return html.slice(0, j + 10) + card + html.slice(j + 10);
   };
 }
@@ -140,7 +140,7 @@ function notifCardHTML() {
   const on = perm === 'granted' && S.settings.notify !== false;
   const srv = (REG.pushed || {})[dataOwner()];
   return `<h2 class="sec">Notificaciones</h2><div class="card nt-card">
-    <div class="nt-row"><span class="nt-dot ${on ? 'ok' : ''}"></span><span><b>${on ? 'Avisos activados en este dispositivo' : perm === 'denied' ? 'Bloqueaste los avisos' : 'Avisos apagados'}</b><span class="small muted">${on ? (srv ? 'Te llegan aunque la app esté cerrada.' : 'Conectando con la nube para avisarte aunque la app esté cerrada…') : perm === 'denied' ? 'Actívalos en los ajustes del navegador o del teléfono para Al Día.' : 'Actívalos para no olvidar ninguna entrega.'}</span></span></div>
+    <div class="nt-row"><span class="nt-dot ${on ? 'ok' : ''}"></span><span><b>${on ? 'Avisos activados en este dispositivo' : perm === 'denied' ? 'Bloqueaste los avisos' : 'Avisos apagados'}</b><span class="small muted">${on ? (srv ? 'Te llegan aunque la app esté cerrada.' : 'Conectando con la nube para avisarte aunque la app esté cerrada…') : perm === 'denied' ? 'Actívalos en los ajustes del navegador o del teléfono para Cinnavia.' : 'Actívalos para no olvidar ninguna entrega.'}</span></span></div>
     ${ios && !inst ? '<p class="nt-warn">En iPhone y iPad los avisos solo funcionan con la app instalada: Compartir › Agregar a inicio, y ábrela desde el ícono.</p>' : ''}
     <div class="btn-row">${on ? '<button class="btn" data-act="nt-test">Probar un aviso</button>' : perm !== 'denied' ? '<button class="btn primary" data-act="nt-on">Activar avisos</button>' : ''}</div>
     <p class="small muted" style="margin:10px 0 0">Te aviso la noche anterior (7 p. m.), el mismo día en la mañana, ${fmtMinutes(S.settings.remindBefore || 60)} antes si tiene hora, y al día siguiente si se quedó pendiente.</p></div>`;
@@ -213,10 +213,10 @@ const TIPS = [
   ['Organización', 'list', [
     ['Parte las tareas grandes', 'Un proyecto da miedo; «buscar 3 fuentes» no. Divide cada entrega en pasos pequeños con fecha.'],
     ['Lo importante primero', 'Empieza el día con la tarea que más vale o la que más pesa. Las fáciles se hacen solas después.'],
-    ['Anota todo al momento', 'Apenas te dejen algo, anótalo en Al Día. La memoria es para pensar, no para guardar pendientes.'],
+    ['Anota todo al momento', 'Apenas te dejen algo, anótalo en Cinnavia. La memoria es para pensar, no para guardar pendientes.'],
   ]],
   ['Memoria', 'spark', [
-    ['Conecta ideas', 'Relaciona lo nuevo con algo que ya sabes. Tu Cerebro de Al Día muestra cómo se conecta todo lo que estudias.'],
+    ['Conecta ideas', 'Relaciona lo nuevo con algo que ya sabes. Tu Cerebro de Cinnavia muestra cómo se conecta todo lo que estudias.'],
     ['Dibuja y esquematiza', 'Mapas conceptuales, líneas del tiempo y diagramas ayudan a recordar más que solo texto.'],
     ['Mezcla temas', 'Practicar varios tipos de ejercicios mezclados te prepara mejor que hacer 20 iguales seguidos.'],
   ]],

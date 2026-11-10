@@ -1,4 +1,4 @@
-/* Al Día 7.5 — Tiempo real. Los cambios llegan y se guardan al instante:
+/* Cinnavia 7.5 — Tiempo real. Los cambios llegan y se guardan al instante:
    · el servidor sube un número de revisión cada vez que algo te afecta (Bosque, mensajes, tus datos, biblioteca);
    · cada dispositivo lo vigila con una conexión larga y sincroniza en cuanto cambia;
    · lo que haces se envía en el acto (sin esperas) y, si no hay internet, se reintenta solo. */

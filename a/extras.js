@@ -1,4 +1,4 @@
-/* Al Día — extras 7.1: libretas con editor de texto rico, dictado, corrector de ortografía,
+/* Cinnavia — extras 7.1: libretas con editor de texto rico, dictado, corrector de ortografía,
    jardín con semillas y misiones, y tareas de Bosque con foto. Se carga antes de app.js. */
 'use strict';
 

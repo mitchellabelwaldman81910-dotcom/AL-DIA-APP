@@ -1,4 +1,4 @@
-/* Al Día — Tu Cerebro.
+/* Cinnavia — Tu Cerebro.
    Un córtex en 3D: cada tarea, apunte, materia y pensamiento es una neurona en el espacio.
    Señales eléctricas viajan por las sinapsis (actividad espontánea y cascadas al seleccionar),
    con profundidad real, niebla, retícula de selección y cámara que orbita con suavidad.

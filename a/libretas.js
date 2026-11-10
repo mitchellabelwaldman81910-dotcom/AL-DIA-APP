@@ -1,4 +1,4 @@
-/* Al Día 7.15 — Libretas: una por materia.
+/* Cinnavia 7.15 — Libretas: una por materia.
    Cada libreta junta tus apuntes, tarjetas de información, listas, fotos (con marcos y filtros),
    pegatinas botánicas, enlaces y las tareas de esa materia. Las fotos se guardan en tu nube y en el teléfono
    (se ven sin internet). Cualquier página se puede mandar a un Bosque o a una amistad. */

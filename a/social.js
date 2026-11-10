@@ -1,7 +1,7 @@
-/* Al Día 7.15 — Amistades, mensajes, Biblioteca General, Pedir ayuda y fotos de perfil.
+/* Cinnavia 7.15 — Amistades, mensajes, Biblioteca General, Pedir ayuda y fotos de perfil.
    · Amistades estrictas: solo se pueden mandar mensajes después de que la otra persona ACEPTA la solicitud.
      Se puede rechazar, cancelar, quitar y bloquear. El servidor lo hace cumplir.
-   · Biblioteca General: una sala abierta para todas las personas de Al Día. Se escribe, se dibuja,
+   · Biblioteca General: una sala abierta para todas las personas de Cinnavia. Se escribe, se dibuja,
      se mandan notas de voz y fotos, y sobre todo se pide y se da ayuda con tareas. Con reportes y bloqueo.
    · Foto de perfil: se recorta en cuadro, se comprime y se ve en tus Bosques, amistades y la Biblioteca. */
 'use strict';
@@ -98,7 +98,7 @@ function socialBadge() { const s = socOf(); return (s.incoming || []).length + (
         if (route().name === 'amigos') softRender();
       }
       paintSocialBadge();
-    } catch (e) { console.warn('[Al Día] social', e); }
+    } catch (e) { console.warn('[Cinnavia] social', e); }
     return r;
   };
 }
@@ -242,7 +242,7 @@ function viewBiblioteca() {
   const list = roots.filter((p) => LIB.filter === 'todo' || (LIB.filter === 'ayuda' && p.kind === 'help' && !p.solved) || (LIB.filter === 'resueltas' && p.kind === 'help' && p.solved)).slice(-80);
   const openHelp = roots.filter((p) => p.kind === 'help' && !p.solved).length;
   return `<section class="lib-hero"><div class="lib-hero-art">${libArt()}</div><h1 class="page-title">Biblioteca General</h1>
-      <p class="page-sub">La sala de todas las personas de Al Día. Pide ayuda con una tarea, explica lo que sabes, dibuja un esquema o manda una nota de voz.</p>
+      <p class="page-sub">La sala de todas las personas de Cinnavia. Pide ayuda con una tarea, explica lo que sabes, dibuja un esquema o manda una nota de voz.</p>
       <div class="lib-stats"><span><i class="live-dot" data-on="1"></i>${plural(Math.max(1, LIB.online), 'persona aquí', 'personas aquí')}</span><span>${plural(openHelp, 'pregunta abierta', 'preguntas abiertas')}</span></div></section>
     <div class="lib-rules">${icon('lock', 'sm')}<span>Sé amable y respetuoso. No compartas tu teléfono, dirección ni contraseñas. Reporta lo que no esté bien: con 3 reportes se oculta.</span></div>
     <div class="seg full" role="group" style="margin:12px 0">${[['todo', 'Todo'], ['ayuda', `Piden ayuda${openHelp ? ` · ${openHelp}` : ''}`], ['resueltas', 'Resueltas']].map(([k, l]) => `<button type="button" data-act="lib-filter" data-v="${k}" aria-pressed="${LIB.filter === k}">${l}</button>`).join('')}</div>

@@ -1,4 +1,4 @@
-/* Al Día 7.6 — Bosques rediseñados.
+/* Cinnavia 7.6 — Bosques rediseñados.
    Un solo lugar claro para crear, unirse (por invitación o con código) y entrar a tus Bosques;
    un encabezado sobrio dentro de cada Bosque y hojas cuidadas para crear, invitar y unirse. */
 'use strict';
@@ -187,7 +187,7 @@ function viewQuien() {
   const users = PERSONAL_LIST().filter(Boolean);
   const mine = slMine(); const inv = REG.me && tokens()[REG.me] ? (FOR.invites || []).length : 0;
   return `<div class="who">
-    <div class="who-brand">${treeIcon(60)}<span>Al Día</span></div>
+    <div class="who-brand">${treeIcon(60)}<span>Cinnavia</span></div>
     <h1 class="page-title who-t">${users.length ? '¿Quién eres?' : 'Bienvenida, bienvenido'}</h1>
     <p class="page-sub">${users.length ? 'Elige tu usuario. Cada quien tiene su contraseña y nadie más entra a tu sección.' : 'Tus tareas, tu árbol y tus Bosques, guardados en la nube y al instante en todos tus dispositivos.'}</p>
     ${users.length ? `<div class="who-list">${users.map((p) => {
@@ -242,8 +242,8 @@ Object.assign(VIDA_ACTS, {
   'forest-invite': () => { const fid = curFid(); if (!fid) { location.hash = '#/salones'; return; } SL.created = null; openInviteSalon(fid); },
   'sl-copy': async (el) => { const c = fmtCode(el.dataset.id); try { await navigator.clipboard.writeText(c); toast(`Código ${c} copiado.`); } catch { toast(`Tu código es ${c}`); } },
   'sl-share': async (el) => {
-    const c = fmtCode(el.dataset.id); const text = `Únete a mi Bosque "${el.dataset.name}" en Al Día. Abre la app, ve a Bosques › Unirme con código y escribe: ${c}`;
-    if (navigator.share) { try { await navigator.share({ title: 'Al Día', text, url: location.origin + '/#/salones' }); } catch { /* cancelado */ } }
+    const c = fmtCode(el.dataset.id); const text = `Únete a mi Bosque "${el.dataset.name}" en Cinnavia. Abre la app, ve a Bosques › Unirme con código y escribe: ${c}`;
+    if (navigator.share) { try { await navigator.share({ title: 'Cinnavia', text, url: location.origin + '/#/salones' }); } catch { /* cancelado */ } }
     else { try { await navigator.clipboard.writeText(text); toast('Mensaje copiado: pégalo en tu chat del grupo.'); } catch { toast(text); } }
   },
   'sl-join': () => { if (!REG.me || !tokens()[REG.me]) { slNeedLogin(); return; } openJoinSalon(); },

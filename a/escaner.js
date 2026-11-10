@@ -1,4 +1,4 @@
-/* Al Día 7.15 — Escáner más preciso.
+/* Cinnavia 7.15 — Escáner más preciso.
    1) Prepara la foto: tamaño ideal para leer, quita sombras (fondo parejo), estira el contraste y enfoca.
    2) Lee dos versiones (gris mejorado y blanco/negro adaptativo) y se queda con la que el lector entiende mejor.
    3) Corrige errores típicos: números con letras, palabras escolares, materias, meses y días mal leídos. */

@@ -1,4 +1,4 @@
-/* Al Día 7.15 — Naturaleza, sonido y sensación.
+/* Cinnavia 7.15 — Naturaleza, sonido y sensación.
    · Enredaderas: los pensamientos y el pizarrón crecen como una enredadera viva, con hojas y zarcillos
      que conectan lo que se relaciona.
    · Árbol de habilidades nuevo: cada materia es una rama luminosa que florece conforme subes de nivel.
@@ -256,5 +256,22 @@ function butterfly() {
 }
 setInterval(butterfly, 45000); setTimeout(butterfly, 9000);
 
+
+/* ===================== Cinnavia: logo, pantalla de inicio y cargas ===================== */
+const CN_TREE = `<g class="cn-tree" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">  <path class="cn-t" fill="currentColor" stroke="none" d="M231 414C243 382 249 336 246 296C244 272 239 252 229 236C233 233 236 232 238 233C251 249 258 270 262 295C267 330 266 380 281 414C262 409 248 409 231 414Z"/>  <path class="cn-s w1" d="M247 300C222 274 186 264 156 236C136 217 129 190 146 179C160 170 175 182 167 196C162 204 151 203 150 195"/>  <path class="cn-s w1" d="M259 284C291 258 334 250 360 221C378 200 381 174 363 166C348 160 337 175 347 186C353 192 361 189 361 182"/>  <path class="cn-s w1" d="M247 262C239 222 250 186 268 158C284 134 280 104 257 100C240 98 234 116 246 125C253 130 261 125 259 118"/>  <path class="cn-s w0" d="M247 300C236 288 222 280 206 272"/>  <path class="cn-s w0" d="M259 284C273 272 290 264 306 257"/>  <path class="cn-s w0" d="M247 262C244 246 244 232 246 216"/>  <path class="cn-s w2" d="M228 288C206 262 202 230 216 206C224 194 238 194 240 204"/>  <path class="cn-s w2" d="M282 270C304 246 316 222 310 196C307 184 296 182 292 190"/>  <path class="cn-s w3" d="M204 266C186 262 166 270 158 286C154 296 162 304 170 298"/>  <path class="cn-s w3" d="M314 252C332 256 349 266 353 282C356 292 347 298 341 292"/>  <g class="cn-lv" fill="currentColor" stroke="none">    <path d="M176 221c-9-7-10-19-4-27 9 4 12 17 4 27z"/><path d="M338 208c9-8 21-7 27 0-6 9-19 10-27 0z"/>    <path d="M276 140c-1-12 7-21 17-22 1 10-6 20-17 22z"/><path d="M212 196c-11-3-17-13-14-22 10 1 16 12 14 22z"/>    <path d="M300 214c3-11 13-17 22-14-1 10-12 16-22 14z"/><path d="M160 276c-10 3-20-2-23-11 9-4 20 0 23 11z"/>    <path d="M354 268c10 3 20-2 23-11-9-4-20 0-23 11z"/><path d="M226 152c-6-9-4-21 4-26 6 8 5 20-4 26z"/>    <path d="M190 210c-10-1-17-9-16-18 9 0 16 8 16 18z"/><path d="M318 186c4-9 13-13 21-10-3 9-12 13-21 10z"/>  </g>  <g class="cn-fr" fill="currentColor" stroke="none" opacity=".95"><circle cx="184" cy="246" r="5.4"/><circle cx="334" cy="236" r="5.4"/><circle cx="266" cy="178" r="4.6"/><circle cx="226" cy="226" r="4"/><circle cx="292" cy="222" r="4"/></g>  <path class="cn-s w2" d="M146 420C196 406 230 410 256 414C284 410 318 406 366 420"/>  <path class="cn-s w3" d="M188 432C220 426 292 426 324 432"/></g>`;
+function cnTree(cls = '') { return `<svg class="${cls}" viewBox="120 80 280 370" aria-hidden="true"><style>.w0{stroke-width:13}.w1{stroke-width:8}.w2{stroke-width:6}.w3{stroke-width:4.2}</style><g style="color:var(--pen)">${CN_TREE}</g></svg>`; }
+function loaderHTML(text = 'Cargando…') { return `<div class="cn-load" role="status">${cnTree()}<span>${esc(text)}</span></div>`; }
+function cnLogoImg() { return '<img class="cn-logo" src="icons/icon-192.png" alt="" width="40" height="40">'; }
+(function splashOut() {
+  const s = document.getElementById('splash'); if (!s) return;
+  const t0 = (performance.timing && performance.timing.navigationStart) || 0; const el = Date.now() - t0;
+  const wait = Math.max(0, 1750 - el);
+  setTimeout(() => { s.classList.add('out'); setTimeout(() => s.remove(), 900); }, wait);
+})();
+{
+  const baseQuien = viewQuien;
+  viewQuien = function () { return baseQuien().replace(/<div class="who-brand">[\s\S]*?<\/div>/, `<div class="who-brand">${cnLogoImg()}<span>Cinnavia</span></div>`); };
+}
+
 /* vuelve a pintar con todo lo nuevo ya cargado */
-try { render(); } catch (e) { console.warn('[Al Día] render', e); }
+try { render(); } catch (e) { console.warn('[Cinnavia] render', e); }
