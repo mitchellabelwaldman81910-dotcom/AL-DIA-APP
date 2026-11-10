@@ -231,7 +231,7 @@ function libPostHTML(p, replies) {
     ${body}
     <footer>${!p.parent ? `<button class="link-btn" data-act="lib-reply" data-id="${p.id}">${replies && replies.length ? plural(replies.length, 'respuesta', 'respuestas') : 'Responder'}</button>` : ''}
       ${mine && help ? `<button class="link-btn" data-act="lib-solved" data-id="${p.id}">${p.solved ? 'Reabrir' : 'Ya me ayudaron'}</button>` : ''}
-      ${mine ? `<button class="link-btn" data-act="lib-del" data-id="${p.id}">Borrar</button>` : `<button class="link-btn" data-act="lib-report" data-id="${p.id}">Reportar</button><button class="link-btn" data-act="lib-block" data-id="${esc(p.by)}">Ocultar a @${esc(p.by)}</button>`}</footer>
+      ${mine || (typeof isAdminSession === 'function' && isAdminSession()) ? `<button class="link-btn" data-act="lib-del" data-id="${p.id}">Borrar</button>` : ''}${mine ? '' : `<button class="link-btn" data-act="lib-report" data-id="${p.id}">Reportar</button><button class="link-btn" data-act="lib-block" data-id="${esc(p.by)}">Ocultar a @${esc(p.by)}</button>`}</footer>
     ${replies && replies.length && LIB.thread === p.id ? `<div class="lib-replies">${replies.map((r) => libPostHTML(r)).join('')}</div>` : ''}</article>`;
 }
 function viewBiblioteca() {
