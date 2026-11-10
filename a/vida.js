@@ -1,16 +1,16 @@
-/* Al Día — VIDA: cuentas, árbol de 100 niveles, Salones colaborativos y rankings.
+/* Al Día — VIDA: cuentas, árbol de 100 niveles, Bosques colaborativos y rankings.
    Este archivo se carga antes de app.js; todo lo que usa de la app se resuelve al ejecutarse. */
 'use strict';
 
 /* =========================================================
    1. Niveles y cálculo del árbol
    ========================================================= */
-// puntos acumulados para llegar al nivel n (personas: 0 a 100; Salones: 0 a 1000). Igual que en el servidor.
+// puntos acumulados para llegar al nivel n (personas: 0 a 100; Bosques: 0 a 1000). Igual que en el servidor.
 const TREE_T = (n) => Math.round(10 * n + 0.5 * Math.pow(n, 1.75));
 const FOREST_T = (n) => Math.round(25 * n + 0.2 * Math.pow(n, 1.6));
 const levelOf = (pts, f = TREE_T, max = 100) => { let n = 0; while (n < max && f(n + 1) <= pts) n++; return n; };
 
-const STAGES = [[0, 'Semilla'], [1, 'Brote'], [5, 'Plantita'], [10, 'Arbolito'], [20, 'Árbol joven'], [30, 'Árbol frondoso'], [40, 'Árbol en flor'], [50, 'Árbol de frutos'], [60, 'Salón encantado'], [70, 'Jardín de luz'], [80, 'Edén'], [90, 'Paraíso'], [100, 'Árbol de la Vida']];
+const STAGES = [[0, 'Semilla'], [1, 'Brote'], [5, 'Plantita'], [10, 'Arbolito'], [20, 'Árbol joven'], [30, 'Árbol frondoso'], [40, 'Árbol en flor'], [50, 'Árbol de frutos'], [60, 'Bosque encantado'], [70, 'Jardín de luz'], [80, 'Edén'], [90, 'Paraíso'], [100, 'Árbol de la Vida']];
 const stageName = (v) => { let s = STAGES[0][1]; for (const [n, name] of STAGES) if (v >= n) s = name; return s; };
 const MILESTONES = [
   [1, 'Brote', 'Tu semilla despierta y saca su primera hojita.'], [10, 'Primeras ramas', 'El tronco se vuelve fuerte y se ramifica.'],
@@ -116,7 +116,7 @@ function levelUp(level) {
   confetti(innerWidth / 2, innerHeight / 3, level % 10 === 0 ? 80 : 40);
   if (ms || level % 10 === 0) {
     const d = $('#ask');
-    d.innerHTML = `<form method="dialog" class="levelup"><div class="lu-tree">${treeScene({ level, wet: true, id: 'lu', seed: REG.me })}</div>
+    d.innerHTML = `<form method="dialog" class="levelup"><div class="lu-tree">${treeScene({ level, wet: true, id: 'lu', seed: REG.me, species: typeof curSpecies === 'function' ? curSpecies() : 'roble' })}</div>
       <h3 class="serif">¡Nivel ${level}!</h3><p><b>${esc(stageName(level))}${ms ? ` · ${esc(ms[1])}` : ''}</b></p><p>${esc(ms ? ms[2] : 'Tu árbol sigue creciendo gracias a ti.')}</p>
       <div class="btn-row" style="justify-content:center"><button class="btn primary" value="ok">Seguir creciendo</button></div></form>`;
     if (!d.open) { d.showModal(); setTimeout(() => leafBurst(d.querySelector('.lu-tree')), 300); }
@@ -178,6 +178,7 @@ function authDialog(opts) {
         <div class="field"><label for="auPw">${chg ? 'Contraseña nueva' : 'Contraseña'}</label><div class="pw-row"><input class="input" id="auPw" type="password" autocomplete="${login ? 'current-password' : 'new-password'}" placeholder="Mínimo 4 caracteres"><button type="button" class="pw-eye" data-a="eye" aria-label="Mostrar u ocultar contraseña">Ver</button></div></div>
         ${reg || claim || chg ? `<div class="field"><label for="auPw2">Repite la contraseña</label><input class="input" id="auPw2" type="password" autocomplete="new-password" placeholder="Otra vez, igualita"></div>` : ''}
         ${reg ? `<div class="field"><span class="lbl">Tu color</span><div class="swatches">${ACCOUNT_COLORS.map((c) => `<button type="button" data-a="color" data-c="${c}" class="${c === color ? 'on' : ''}" style="--c:${c}" aria-label="Color ${c}"></button>`).join('')}</div></div>` : ''}
+        ${reg ? '<p class="tiny faint" style="margin:0 0 8px">La administración de Al Día puede entrar a las cuentas solo para dar soporte y recuperar datos; cuando lo hace, ves su nombre en tu sección.</p>' : ''}
         <p class="auth-err" role="alert">${esc(msg)}</p>
         <div class="btn-row" style="flex-direction:row-reverse;justify-content:flex-start"><button class="btn primary" data-a="go" type="submit">${reg ? 'Crear mi usuario' : claim ? 'Guardar' : login ? 'Entrar' : 'Cambiar'}</button><button class="btn" type="button" data-a="cancel">Cancelar</button></div>
         ${login && !opts.id ? '<p style="text-align:center;margin:12px 0 0"><button class="link-btn" type="button" data-a="to-reg">Todavía no tengo usuario: crear uno</button></p>' : ''}
@@ -252,7 +253,7 @@ function acceptSession(r, fallback = {}) {
   const rec = { id: u.id, name: u.name || fallback.name || cap(u.id), color: u.color || fallback.color || '#2F8A5B' };
   if (i >= 0) REG.users[i] = rec; else REG.users.push(rec);
   if (!REG.me) REG.me = u.id;
-  saveReg(); setDirty(u.id, true);
+  saveReg();
   return u.id;
 }
 async function sessionFor(id) {
@@ -300,7 +301,7 @@ function accountCardHTML() {
   return `<h2 class="sec">Mi cuenta</h2><div class="card">
     <div class="toggle" style="padding-top:0"><span style="display:flex;gap:12px;align-items:center">${avatar(p, 'sm')}<span><span class="t">${esc(p.name)}</span><span class="d" style="display:block">@${esc(p.id)} · ${on ? 'sesión abierta' : 'sin sesión'}</span></span></span></div>
     <p class="small muted" id="cloudState" style="margin:4px 0 12px">${cloudStateText()}</p>
-    <div class="btn-row"><button class="btn" data-act="acct-pw">${icon('lock')}Cambiar contraseña</button><button class="btn" data-act="cloud-now">${icon('reset')}Sincronizar ahora</button><button class="btn quiet" data-act="acct-out">Cerrar sesión aquí</button></div>
+    <div class="btn-row"><button class="btn" data-act="acct-pw">${icon('lock')}Cambiar contraseña</button><button class="btn" data-act="cloud-now">${icon('reset')}Sincronizar ahora</button><button class="btn" data-act="cloud-history">${icon('clock')}Versiones en la nube</button><button class="btn quiet" data-act="acct-out">Cerrar sesión aquí</button></div>
     <p class="small muted" style="margin:12px 0 0">Tu contraseña se guarda protegida en la nube. Si la olvidas, no se puede recuperar: anótala en un lugar seguro.</p></div>`;
 }
 
@@ -318,7 +319,7 @@ function viewQuien() {
         <span style="flex:1"><b>${esc(p.name)}</b><span class="d">${p.legacy && !on ? 'Toca para ponerle contraseña' : on && p.id === REG.me ? (n ? plural(n, 'entrega pendiente', 'entregas pendientes') : 'Sin pendientes') : on ? 'Toca para entrar' : 'Con contraseña'}${lvl !== undefined ? ` · árbol nivel ${lvl}` : ''}</span></span>
         ${on && p.id === REG.me ? '' : `<span class="lock">${icon('lock')}</span>`}</button>`;
     }).join('')}
-    ${forests.length ? `<h2 class="sec">Mis Salones ${inv ? `<small class="chip pen">${plural(inv, 'invitación', 'invitaciones')}</small>` : ''}</h2>${forests.map((f) => forestCardHTML(f, 'profile-pick')).join('')}` : ''}
+    ${forests.length ? `<h2 class="sec">Mis Bosques ${inv ? `<small class="chip pen">${plural(inv, 'invitación', 'invitaciones')}</small>` : ''}</h2>${forests.map((f) => forestCardHTML(f, 'profile-pick')).join('')}` : ''}
     <button type="button" class="who-btn rank-btn" data-act="rank-open"><span class="avatar lg" style="--pc:#C9A55C">${icon('trophy')}</span><span style="flex:1"><b>Ranking de árboles</b><span class="d">Mira quién tiene el árbol más alto, sin necesidad de entrar</span></span>${icon('chev', 'chev')}</button>
     <div class="who-actions"><button type="button" class="btn primary block" data-act="user-new">${icon('plus')}Crear mi usuario</button>
     <button type="button" class="btn block" data-act="user-login">Ya tengo usuario: entrar</button></div>
@@ -333,11 +334,11 @@ function forestCardHTML(f, act) {
 function openProfileSheet() {
   const users = PERSONAL_LIST().filter(Boolean);
   const forests = REG.me && tokens()[REG.me] ? Object.values(FOR.f).filter((f) => f.meta.members.includes(REG.me)) : [];
-  openSheet(`${sheetHead('Usuarios y Salones')}
+  openSheet(`${sheetHead('Usuarios y Bosques')}
     <div class="sheet-body">
       ${users.map((p) => { const isMe = p.id === REG.current; return `<button type="button" class="who-btn ${isMe ? 'me' : ''}" data-act="profile-to" data-id="${p.id}" ${isMe ? 'aria-current="true"' : ''}>${avatar(p)}
         <span style="flex:1"><b>${esc(p.name)}</b><span class="d">@${esc(p.id)}</span></span>${isMe ? '<span class="chip pen">Activo</span>' : '<span class="chip">Cambiar</span>'}</button>`; }).join('')}
-      ${forests.length ? `<h2 class="sec" style="margin-top:20px">Mis Salones</h2>${forests.map((f) => forestCardHTML(f, 'profile-to')).join('')}` : ''}
+      ${forests.length ? `<h2 class="sec" style="margin-top:20px">Mis Bosques</h2>${forests.map((f) => forestCardHTML(f, 'profile-to')).join('')}` : ''}
       <div class="btn-row" style="margin-top:16px"><button class="btn" data-act="sheet-close-new">${icon('plus')}Agregar otro usuario</button></div>
       <div class="toggle" style="margin-top:12px"><span><span class="t">Preguntar quién eres al abrir</span><span class="d" style="display:block">Útil si comparten el mismo celular.</span></span>
         <label class="switch"><input type="checkbox" data-reg="ask" ${REG.ask ? 'checked' : ''} aria-label="Preguntar quién eres al abrir"><span></span></label></div>
@@ -345,7 +346,7 @@ function openProfileSheet() {
 }
 
 /* =========================================================
-   4. Salones (grupos colaborativos)
+   4. Bosques (grupos colaborativos)
    ========================================================= */
 const FOREST_EMOJI = [''];
 let forestSig = '';
@@ -365,10 +366,10 @@ function applyForests(remote) {
   FOR.myreqs = (remote.myreqs || []).filter((r) => !f[r.forest]);
   for (const fid of prevReq) if (f[fid] && !choosing) { toast(`Te aceptaron en ${f[fid].meta.name}. Ya puedes entrar.`, { action: 'Entrar', onAction: () => enterProfile('f:' + fid) }); if (typeof Snd !== 'undefined') Snd.chime(); }
   saveFOR();
-  for (const i of FOR.invites) if (!prevInv.has(i.forest) && !(REG.invSeen ||= {})[i.forest] && !choosing) { REG.invSeen[i.forest] = 1; saveReg(); toast(`${i.fromName} te invitó al Salón ${i.forestName}. Míralo en Vida.`, { ms: 6000 }); Snd.chime(); }
+  for (const i of FOR.invites) if (!prevInv.has(i.forest) && !(REG.invSeen ||= {})[i.forest] && !choosing) { REG.invSeen[i.forest] = 1; saveReg(); toast(`${i.fromName} te invitó al Bosque ${i.forestName}. Míralo en Vida.`, { ms: 6000 }); Snd.chime(); }
   const sig = Object.values(f).map((x) => x.meta.id + x.meta.name + x.meta.members.join() + x.items.map((i) => i.u || i.at).join()).join('|') + '#' + FOR.invites.map((i) => i.forest).join() + '#' + Object.values(f).map((x) => (x.reqs || []).map((r) => r.user).join()).join() + '#' + (FOR.myreqs || []).map((r) => r.forest).join();
   const changed = sig !== forestSig; forestSig = sig;
-  if (isForestId(REG.current) && !f[REG.current.slice(2)] && Object.keys(f).length >= 0 && !choosing && Object.keys(tokens()).length) { REG.current = REG.me; saveReg(); choosing = true; toast('Ya no eres parte de ese Salón.'); }
+  if (isForestId(REG.current) && !f[REG.current.slice(2)] && Object.keys(f).length >= 0 && !choosing && Object.keys(tokens()).length) { REG.current = REG.me; saveReg(); choosing = true; toast('Ya no eres parte de ese Bosque.'); }
   return changed;
 }
 function forestLife(fid) {
@@ -378,7 +379,7 @@ function forestLife(fid) {
 function inviteBannerHTML() {
   if (!FOR.invites.length || !REG.me || !tokens()[REG.me] || isForestId(REG.current)) return '';
   const i = FOR.invites[0];
-  return `<a class="banner" href="#/vida" data-act="vtab-go" data-v="bosques" style="text-decoration:none">${icon('users')}<p><b>${esc(i.fromName)}</b> te invitó al Salón <b>${esc(i.forestName)}</b>${FOR.invites.length > 1 ? ` (y ${FOR.invites.length - 1} más)` : ''}.</p><span class="chip pen">Ver</span></a>`;
+  return `<a class="banner" href="#/vida" data-act="vtab-go" data-v="bosques" style="text-decoration:none">${icon('users')}<p><b>${esc(i.fromName)}</b> te invitó al Bosque <b>${esc(i.forestName)}</b>${FOR.invites.length > 1 ? ` (y ${FOR.invites.length - 1} más)` : ''}.</p><span class="chip pen">Ver</span></a>`;
 }
 
 /* =========================================================
@@ -402,7 +403,7 @@ function sceneBlock({ level, max, wet, id, seed, title, sub, pts, cur, need, ext
   const pct = need > cur ? Math.max(0, Math.min(100, Math.round(((pts - cur) / (need - cur)) * 100))) : 100;
   const top = level >= max;
   return `<section class="vida-card ${wet ? '' : 'thirsty'}">
-    <div class="vscene">${treeScene({ level, max, wet, id, seed, pour, garden })}
+    <div class="vscene">${treeScene({ level, max, wet, id, seed, pour, garden, species: max === 100 && typeof curSpecies === 'function' ? curSpecies() : 'roble', fx: max === 100 && typeof curFX === 'function' ? curFX() : null })}
       <div class="v-badge"><span class="v-lv">${level}</span><span class="v-of">${max === 100 ? 'de 100' : 'de 1000'}</span></div>
       <div class="v-water ${wet ? 'ok' : 'low'}">${wet ? 'Regado hoy' : 'Tiene sed'}</div></div>
     <div class="v-info"><h2 class="serif">${title}</h2><p class="muted" style="margin:0 0 10px">${sub}</p>
@@ -414,7 +415,7 @@ function viewVida() { return isGroup() ? viewVidaBosque() : viewVidaPersonal(); 
 function viewVidaPersonal() {
   const id = REG.current; const p = profile(id); const c = treeNow(id);
   if (VUI.tab === 'ranking') fetchRank();
-  const tabs = `<div class="seg full" role="group" style="margin:16px 0">${[['arbol', 'Mi árbol'], ['jardin', 'Jardín'], ['ranking', 'Ranking'], ['bosques', FOR.invites.length ? `Salones · ${FOR.invites.length}` : 'Salones']].map(([k, l]) => `<button type="button" data-act="vtab" data-v="${k}" aria-pressed="${VUI.tab === k}">${l}</button>`).join('')}</div>`;
+  const tabs = `<div class="seg full" role="group" style="margin:16px 0">${[['arbol', 'Mi árbol'], ['comprar', 'Comprar'], ['ranking', 'Ranking'], ['bosques', FOR.invites.length ? `Bosques · ${FOR.invites.length}` : 'Bosques']].map(([k, l]) => `<button type="button" data-act="vtab" data-v="${k}" aria-pressed="${VUI.tab === k}">${l}</button>`).join('')}</div>`;
   const warn = c.wet ? '' : `<p class="v-warn">${icon('bell', 'sm')}<span>Tu árbol tiene sed. Si hoy no subes una tarea o escribes un apunte, mañana perderá unos ${c.loss} puntos.</span></p>`;
   const head = `<h1 class="page-title">Vida</h1><p class="page-sub">Cumple a tiempo, riega a diario y mira crecer tu paraíso.</p>`;
   const card = sceneBlock({ level: c.level, max: 100, wet: c.wet, id: 'main', seed: id, garden: vidaData().garden, title: `${esc(p.name)} · ${esc(stageName(c.level))}`, sub: c.wet ? 'Tu árbol está feliz y bien regado.' : 'Súbele una tarea o un apunte para regarlo.', pts: c.pts, cur: c.cur, need: c.need,
@@ -432,16 +433,16 @@ function viewVidaPersonal() {
         <li><div class="rowline"><span class="ico">${icon('spark')}</span><span class="txt"><b>Racha</b><span>Entre más días seguidos riegues, más puntos ganas por tus entregas.</span></span></div></li></ul>
       <h2 class="sec">Tu camino al nivel 100</h2>
       <ol class="milestones">${MILESTONES.map((m) => `<li class="${c.level >= m[0] ? 'done' : ''}"><span class="ms-dot">${c.level >= m[0] ? icon('check', 'sm') : m[0]}</span><span><b>${esc(m[1])}</b><span class="small muted"> · nivel ${m[0]}</span><span class="small muted" style="display:block">${esc(m[2])}</span></span></li>`).join('')}</ol>`;
-  } else if (VUI.tab === 'jardin') body = gardenTabHTML(c);
+  } else if (VUI.tab === 'jardin' || VUI.tab === 'comprar') body = shopTabHTML(c);
   else if (VUI.tab === 'ranking') body = rankingHTML();
   else body = bosquesTabHTML();
-  return VUI.tab === 'arbol' ? `${head}${tabs}${card}${warn}${acts}${body}` : `${head}${tabs}${body}`;
+  return VUI.tab === 'arbol' ? `${head}${tabs}${card}${warn}${acts}${body}` : (VUI.tab === 'comprar' || VUI.tab === 'jardin') ? `${head}${tabs}${card}${body}` : `${head}${tabs}${body}`;
 }
 
 function rankingHTML() {
-  const seg = `<div class="seg full" role="group" style="margin-bottom:14px">${[['personas', 'Personas'], ['bosques', 'Salones']].map(([k, l]) => `<button type="button" data-act="vrank" data-v="${k}" aria-pressed="${VUI.rank === k}">${l}</button>`).join('')}</div>`;
+  const seg = `<div class="seg full" role="group" style="margin-bottom:14px">${[['personas', 'Personas'], ['bosques', 'Bosques']].map(([k, l]) => `<button type="button" data-act="vrank" data-v="${k}" aria-pressed="${VUI.rank === k}">${l}</button>`).join('')}</div>`;
   const R = RANK.data;
-  const note = VUI.rank === 'personas' ? 'Árboles de personas, del 0 al 100.' : 'Los Salones compiten solo con otros Salones, hasta el nivel 1000.';
+  const note = VUI.rank === 'personas' ? 'Árboles de personas, del 0 al 100.' : 'Los Bosques compiten solo con otros Bosques, hasta el nivel 1000.';
   if (!R) return `${seg}<p class="small muted">${note}</p>${RANK.err ? `<div class="banner warn">${icon('bell')}<p>${esc(RANK.err)}</p><button class="btn" data-act="rank-refresh">Reintentar</button></div>` : '<p class="muted" style="text-align:center;padding:24px 0">Buscando a los mejores árboles…</p>'}`;
   const medal = (i) => (i < 3 ? `<span class="rk-n rk-m${i + 1}">${i + 1}</span>` : `<span class="rk-n">${i + 1}</span>`);
   let list;
@@ -461,15 +462,15 @@ function rankingHTML() {
 
 function bosquesTabHTML() {
   const mine = Object.values(FOR.f).filter((f) => f.meta.members.includes(REG.me));
-  return `${FOR.invites.length ? `<h2 class="sec" style="margin-top:6px">Invitaciones</h2>${FOR.invites.map((i) => `<div class="card inv"><span class="avatar" style="--pc:#2F8A5B">${esc(String(i.name || '?').trim().charAt(0).toUpperCase())}</span><span class="inv-t"><b>${esc(i.forestName)}</b><span class="small muted">${esc(i.fromName)} te invita a su Salón</span></span>
+  return `${FOR.invites.length ? `<h2 class="sec" style="margin-top:6px">Invitaciones</h2>${FOR.invites.map((i) => `<div class="card inv"><span class="avatar" style="--pc:#2F8A5B">${esc(String(i.name || '?').trim().charAt(0).toUpperCase())}</span><span class="inv-t"><b>${esc(i.forestName)}</b><span class="small muted">${esc(i.fromName)} te invita a su Bosque</span></span>
         <span class="inv-b"><button class="btn primary" data-act="invite-yes" data-id="${i.forest}">Unirme</button><button class="btn quiet" data-act="invite-no" data-id="${i.forest}">No</button></span></div>`).join('')}` : ''}
-    <h2 class="sec">Mis Salones</h2>
-    ${mine.length ? mine.map((f) => forestCardHTML(f, 'profile-pick')).join('') : '<div class="empty"><h3>Todavía no estás en un Salón</h3><p>Un Salón es un grupo colaborativo: comparten pendientes, trabajos en equipo e ideas, y su árbol crece con el esfuerzo de todos.</p></div>'}
-    <p style="margin-top:14px"><button class="btn primary" data-act="forest-new">${icon('plus')}Crear un Salón</button></p>`;
+    <h2 class="sec">Mis Bosques</h2>
+    ${mine.length ? mine.map((f) => forestCardHTML(f, 'profile-pick')).join('') : '<div class="empty"><h3>Todavía no estás en un Bosque</h3><p>Un Bosque es un grupo colaborativo: comparten pendientes, trabajos en equipo e ideas, y su árbol crece con el esfuerzo de todos.</p></div>'}
+    <p style="margin-top:14px"><button class="btn primary" data-act="forest-new">${icon('plus')}Crear un Bosque</button></p>`;
 }
 
 function viewVidaBosque() {
-  const m = forestMeta(); if (!m) return '<div class="empty"><h3>Este Salón ya no está</h3></div>';
+  const m = forestMeta(); if (!m) return '<div class="empty"><h3>Este Bosque ya no está</h3></div>';
   if (VUI.tab === 'ranking') fetchRank();
   const life = forestLife(m.id); const lv = levelOf(life, FOREST_T, 1000);
   const wetToday = gItems().some((x) => !x.deleted && toISO(new Date(x.u || x.at)) === today()) || Object.keys(tokens()).some((u) => FOR.f[m.id].meta.members.includes(u) && treeNow(u).wet);
@@ -479,12 +480,12 @@ function viewVidaBosque() {
   if (VUI.tab === 'ranking') body = rankingHTML();
   else {
     const rows = m.members.map((u) => { const name = FOR.members[u]?.name || cap(u); const t = u === REG.me ? treeNow(u) : FOR.trees[u] || { level: 0, life: 0 }; return { u, name, level: t.level || 0, life: t.life || 0 }; }).sort((a, b) => b.life - a.life);
-    body = `<p class="small muted" style="margin:0 0 10px">El árbol del Salón crece con todo lo que cumplen sus integrantes. Mientras más colaboran, más alto sube.</p>
-      <h2 class="sec" style="margin-top:6px">Quién hace crecer el Salón</h2>
+    body = `<p class="small muted" style="margin:0 0 10px">El árbol del Bosque crece con todo lo que cumplen sus integrantes. Mientras más colaboran, más alto sube.</p>
+      <h2 class="sec" style="margin-top:6px">Quién hace crecer el Bosque</h2>
       <ol class="ranking">${rows.map((r, i) => `<li class="rk ${r.u === REG.me ? 'me' : ''}"><span class="rk-pos"><span class="rk-n ${i === 0 ? 'rk-m1' : ''}">${i + 1}</span></span>${mini(r.name)}<span class="rk-name"><b>${esc(r.name)}${r.u === REG.me ? ' (tú)' : ''}</b><span class="tiny faint">${r.life} puntos aportados</span></span><span class="rk-lv">Árbol <b>${r.level}</b></span></li>`).join('')}</ol>
       <p style="margin-top:14px"><button class="btn primary" data-act="forest-invite">${icon('plus')}Invitar a alguien</button></p>`;
   }
-  return `<h1 class="page-title">Vida del Salón</h1><p class="page-sub">Juntos hacen crecer el árbol hasta el nivel 1000.</p>${groupStatus()}${card}${tabs}${body}`;
+  return `<h1 class="page-title">Vida del Bosque</h1><p class="page-sub">Juntos hacen crecer el árbol hasta el nivel 1000.</p>${groupStatus()}${card}${tabs}${body}`;
 }
 
 /* =========================================================
@@ -493,6 +494,29 @@ function viewVidaBosque() {
 const VIDA_ACTS = {
   'user-new': () => createUser(),
   'user-login': () => loginUser(),
+  'cloud-history': async () => {
+    const id = dataOwner(); if (!id || !tokens()[id]) { toast('Entra con tu usuario primero.'); return; }
+    openSheet(`${sheetHead('Versiones en la nube')}<div class="sheet-body"><p class="muted" style="margin:0 0 12px">La nube guarda una versión de tus datos cada vez que cambian (máximo una cada 10 minutos, las últimas 40). Si algo se perdió, vuelve a una versión anterior.</p><div id="histList"><p class="small muted">Cargando…</p></div></div>`);
+    try {
+      const r = await cloudFetch('GET', null, `kind=history&p=${encodeURIComponent(id)}`);
+      const box = document.getElementById('histList'); if (!box) return;
+      box.innerHTML = r.list.length ? `<ul class="rows">${r.list.map((h) => `<li><div class="rowline" style="display:flex;align-items:center;gap:12px;padding:12px 16px"><span style="flex:1;min-width:0"><b style="display:block">${esc(cap(relDay(toISO(new Date(h.at)))))}, ${new Date(h.at).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}</b><span class="small muted">${plural(h.subjects, 'materia', 'materias')} · ${plural(h.tasks, 'tarea', 'tareas')} · ${plural(h.notes, 'apunte', 'apuntes')}${h.owner && h.owner !== id ? ' · <span style="color:var(--red)">datos de otra cuenta</span>' : ''}</span></span><button class="btn" data-act="cloud-restore" data-at="${h.at}">Restaurar</button></div></li>`).join('')}</ul>`
+        : '<p class="small muted" style="margin:0">Todavía no hay versiones anteriores. Se irán guardando solas desde ahora.</p>';
+    } catch (e) { const box = document.getElementById('histList'); if (box) box.innerHTML = `<p class="small" style="color:var(--red)">${esc(e.message)}</p>`; }
+  },
+  'cloud-restore': async (el) => {
+    const id = dataOwner(); const at = +el.dataset.at;
+    const ok = await ask({ title: '¿Volver a esta versión?', text: `Tus datos quedan como estaban el ${relDay(toISO(new Date(at)))} a las ${new Date(at).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}. La versión actual también se guarda en el historial, así que puedes regresar.`, ok: 'Restaurar' });
+    if (!ok) return;
+    try {
+      const r = await cloudFetch('POST', { kind: 'restore', as: id, profile: id, at });
+      const next = stampOwner(migrate(r.data), keyFor(id)); next.cloudAt = r.at;
+      try { localStorage.setItem(keyFor(id), JSON.stringify(next)); } catch { /* */ }
+      setBase(id, next); setDirty(id, false);
+      if (id === dataOwner()) S = next;
+      closeSheet(false); render(); applyTheme(); toast('Listo: tus datos volvieron a esa versión.'); Snd.chime();
+    } catch (e) { toast(e.message); }
+  },
   'sheet-close-new': () => { closeSheet(false); createUser(); },
   'acct-pw': () => setPassword(dataOwner()),
   'acct-out': async () => { const ok = await ask({ title: '¿Cerrar sesión aquí?', text: 'Tus datos siguen en la nube. Para volver a entrar necesitarás tu contraseña.', ok: 'Cerrar sesión' }); if (ok) logoutHere(); },
@@ -502,26 +526,26 @@ const VIDA_ACTS = {
   'rank-open': () => openRankSheet(),
   'rank-refresh': () => { fetchRank(true); if (rankBox()) paintRankBox(); else render(); },
   'forest-new': async () => {
-    const name = await ask({ title: 'Crear un Salón', text: 'Ponle un nombre a tu grupo. Después podrás invitar a tus compañeros por su nombre de usuario.', input: { placeholder: 'Ej. T.V 512' }, ok: 'Crear Salón' });
+    const name = await ask({ title: 'Crear un Bosque', text: 'Ponle un nombre a tu grupo. Después podrás invitar a tus compañeros por su nombre de usuario.', input: { placeholder: 'Ej. T.V 512' }, ok: 'Crear Bosque' });
     if (!name) return;
     const emoji = FOREST_EMOJI[Math.floor(Math.random() * FOREST_EMOJI.length)];
     try {
       const r = await cloudFetch('POST', { kind: 'fcreate', as: REG.me, name, emoji, color: profile(REG.me)?.color });
       FOR.f[r.forest.id] = { meta: r.forest, items: [] }; saveFOR();
-      Snd.chime(); toast(`Salón ${r.forest.name} creado. Ahora invita a tus compañeros.`);
+      Snd.chime(); toast(`Bosque ${r.forest.name} creado. Ahora invita a tus compañeros.`);
       enterProfile('f:' + r.forest.id);
     } catch (e) { toast(e.message); }
   },
   'forest-invite': async () => {
     const m = forestMeta(); if (!m) return;
-    const u = await ask({ title: 'Invitar al Salón', text: 'Escribe el nombre de usuario de tu compañero (el que eligió al crear su usuario). Le llegará una solicitud.', input: { placeholder: 'Ej. mel' }, ok: 'Enviar invitación' });
+    const u = await ask({ title: 'Invitar al Bosque', text: 'Escribe el nombre de usuario de tu compañero (el que eligió al crear su usuario). Le llegará una solicitud.', input: { placeholder: 'Ej. mel' }, ok: 'Enviar invitación' });
     if (!u) return;
     try { const r = await cloudFetch('POST', { kind: 'finvite', as: REG.me, forest: m.id, to: userSlug(u) }); Snd.chime(); toast(`Invitación enviada a ${r.name}.`); }
     catch (e) { toast(e.message); }
   },
   'forest-rename': async () => {
     const m = forestMeta(); if (!m) return;
-    const n = await ask({ title: 'Nombre del Salón', input: { value: m.name }, ok: 'Guardar' }); if (!n) return;
+    const n = await ask({ title: 'Nombre del Bosque', input: { value: m.name }, ok: 'Guardar' }); if (!n) return;
     try { await cloudFetch('POST', { kind: 'frename', as: REG.me, forest: m.id, name: n }); m.name = n; saveFOR(); render(); cloudSync(); } catch (e) { toast(e.message); }
   },
   'forest-leave': async () => {
@@ -530,7 +554,7 @@ const VIDA_ACTS = {
     try { await cloudFetch('POST', { kind: 'fleave', as: REG.me, forest: m.id }); delete FOR.f[m.id]; saveFOR(); REG.current = REG.me; saveReg(); switchProfile(REG.me); } catch (e) { toast(e.message); }
   },
   'invite-yes': async (el) => {
-    try { await cloudFetch('POST', { kind: 'frespond', as: REG.me, forest: el.dataset.id, accept: true }); FOR.invites = FOR.invites.filter((i) => i.forest !== el.dataset.id); await cloudSync(); Snd.chime(); toast('¡Ya eres parte del Salón!'); render(); } catch (e) { toast(e.message); }
+    try { await cloudFetch('POST', { kind: 'frespond', as: REG.me, forest: el.dataset.id, accept: true }); FOR.invites = FOR.invites.filter((i) => i.forest !== el.dataset.id); await cloudSync(); Snd.chime(); toast('¡Ya eres parte del Bosque!'); render(); } catch (e) { toast(e.message); }
   },
   'invite-no': async (el) => {
     try { await cloudFetch('POST', { kind: 'frespond', as: REG.me, forest: el.dataset.id, accept: false }); FOR.invites = FOR.invites.filter((i) => i.forest !== el.dataset.id); saveFOR(); render(); } catch (e) { toast(e.message); }

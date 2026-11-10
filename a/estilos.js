@@ -24,7 +24,33 @@ const ESTILOS = {
   rosa: { name: 'Rosa suave', desc: 'Pastel delicado y dulce.', font: 'sans',
     light: { paper: '#FDF3F6', sheet: '#FFFFFF', ink: '#4A2434', pen: '#C2527A', pi: '#FFFFFF' },
     dark: { paper: '#1C0F15', sheet: '#2A1820', ink: '#FCE8EF', pen: '#F08FB2', pi: '#1C0F15' } },
+  // ---- plantillas de la tienda (se compran con monedas en Vida › Comprar) ----
+  grafito: { name: 'Grafito', desc: 'Grises cálidos, minimalismo puro.', font: 'sans', price: 140,
+    light: { paper: '#F2F2F0', sheet: '#FFFFFF', ink: '#262626', pen: '#4A4A48', pi: '#FFFFFF' },
+    dark: { paper: '#111111', sheet: '#1B1B1B', ink: '#EDEDEB', pen: '#C4C4C0', pi: '#111111' } },
+  washi: { name: 'Washi', desc: 'Papel japonés, tinta sumi y un toque bermellón.', font: 'serif', price: 160,
+    light: { paper: '#F7F3EA', sheet: '#FFFDF8', ink: '#1F1B16', pen: '#B5432F', pi: '#FFFFFF' },
+    dark: { paper: '#14110E', sheet: '#1E1A16', ink: '#F1EBDF', pen: '#E07A5F', pi: '#14110E' } },
+  arena: { name: 'Arena', desc: 'Beige suave y bronce, sereno.', font: 'sans', price: 180,
+    light: { paper: '#F5F0E8', sheet: '#FFFCF7', ink: '#3A3229', pen: '#9C7A4D', pi: '#FFFFFF' },
+    dark: { paper: '#16130F', sheet: '#211C16', ink: '#F3EADD', pen: '#D9B27C', pi: '#16130F' } },
+  salvia: { name: 'Salvia', desc: 'Verde grisáceo, limpio y botánico.', font: 'sans', price: 200,
+    light: { paper: '#F2F5F1', sheet: '#FFFFFF', ink: '#263228', pen: '#5F8466', pi: '#FFFFFF' },
+    dark: { paper: '#0F1511', sheet: '#18201A', ink: '#E5EEE6', pen: '#9CC2A2', pi: '#0F1511' } },
+  sakura: { name: 'Sakura', desc: 'Rosa cerezo sobre gris piedra.', font: 'serif', price: 220,
+    light: { paper: '#FBF5F5', sheet: '#FFFFFF', ink: '#3B2F33', pen: '#C1647F', pi: '#FFFFFF' },
+    dark: { paper: '#171013', sheet: '#22181C', ink: '#F7E9EE', pen: '#E99AB5', pi: '#171013' } },
+  nordico: { name: 'Nórdico', desc: 'Azul hielo y blanco nieve.', font: 'sans', price: 240,
+    light: { paper: '#F1F5F8', sheet: '#FFFFFF', ink: '#1B2A36', pen: '#3F7CA6', pi: '#FFFFFF' },
+    dark: { paper: '#0B131A', sheet: '#121D27', ink: '#E3EEF5', pen: '#8CC3E8', pi: '#0B131A' } },
+  medianoche: { name: 'Medianoche', desc: 'Negro profundo y champán, de gala.', font: 'serif', price: 300,
+    light: { paper: '#F4F2EE', sheet: '#FFFFFF', ink: '#1C1B1A', pen: '#957646', pi: '#FFFFFF' },
+    dark: { paper: '#0A0A0B', sheet: '#151517', ink: '#ECE7DF', pen: '#D8B98A', pi: '#0A0A0B' } },
+  marfil: { name: 'Marfil y oro', desc: 'Marfil cálido con detalles dorados.', font: 'serif', price: 360,
+    light: { paper: '#FAF7F0', sheet: '#FFFFFF', ink: '#2C2618', pen: '#A9843A', pi: '#FFFFFF' },
+    dark: { paper: '#15120B', sheet: '#201B12', ink: '#F4EDDD', pen: '#E2C07A', pi: '#15120B' } },
 };
+const styleOwned = (k) => !ESTILOS[k]?.price || (typeof shopOwns === 'function' && shopOwns('st:' + k));
 
 function styleVars(p, dark) {
   const mix = (a, b, n) => `color-mix(in srgb, ${a} ${n}%, ${b})`;
@@ -45,7 +71,7 @@ function styleVars(p, dark) {
   const el = document.createElement('style'); el.id = 'estilosCss'; el.textContent = css; document.head.appendChild(el);
 })();
 
-function currentStyle() { const k = (typeof S !== 'undefined' && S.settings && S.settings.style) || 'bosque'; return ESTILOS[k] ? k : 'bosque'; }
+function currentStyle() { const k = (typeof S !== 'undefined' && S.settings && S.settings.style) || 'bosque'; return ESTILOS[k] && styleOwned(k) ? k : 'bosque'; }
 function applyStyle() {
   const k = currentStyle(); const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   document.documentElement.setAttribute('data-style', k);
@@ -73,7 +99,8 @@ function estilosSheetHTML() {
   return `${sheetHead('Estilo de la app')}<div class="sheet-body">
     <p class="muted" style="margin:0 0 12px">Elige una plantilla: toda la app cambia al instante. Cada una trae su versión de día y de noche.</p>
     <div class="seg" role="group" aria-label="Día o noche" style="margin-bottom:14px">${[['light', 'Día'], ['dark', 'Noche']].map(([v, l]) => `<button type="button" data-act="style-mode" data-v="${v}" aria-pressed="${(dark ? 'dark' : 'light') === v}">${l}</button>`).join('')}</div>
-    <div class="sty-grid">${Object.entries(ESTILOS).map(([k, s]) => `<button type="button" class="sty-card" data-act="style-set" data-v="${k}" aria-pressed="${cur === k}">${stylePreview(k)}<span class="sty-n"><b>${s.name}</b>${cur === k ? '<em>En uso</em>' : ''}</span><span class="small muted">${s.desc}</span></button>`).join('')}</div></div>`;
+    <div class="sty-grid">${Object.entries(ESTILOS).map(([k, s]) => { const own = styleOwned(k); return `<button type="button" class="sty-card ${own ? '' : 'locked'}" data-act="style-set" data-v="${k}" aria-pressed="${cur === k}">${stylePreview(k)}<span class="sty-n"><b>${s.name}</b>${cur === k ? '<em>En uso</em>' : own ? '' : `<em class="price">${coinSVG()}${s.price}</em>`}</span><span class="small muted">${s.desc}</span></button>`; }).join('')}</div>
+    <p class="small muted" style="margin:14px 0 0">Las plantillas con precio se compran con las monedas que ganas al subir de nivel tu árbol.</p></div>`;
 }
 function openEstilos() { openSheet(estilosSheetHTML()); }
 function estilosRowHTML() {
@@ -84,5 +111,6 @@ function estilosRowHTML() {
 Object.assign(VIDA_ACTS, {
   'style-open': () => openEstilos(),
   'style-mode': (el) => { S.settings.theme = el.dataset.v; save(); applyTheme(); openSheet(estilosSheetHTML()); },
-  'style-set': (el) => { const k = el.dataset.v; if (!ESTILOS[k]) return; S.settings.style = k; save(); applyTheme(); if (typeof Snd !== 'undefined' && Snd.chime) Snd.chime(); openSheet(estilosSheetHTML()); },
+  'style-set': async (el) => { const k = el.dataset.v; if (!ESTILOS[k]) return;
+    if (!styleOwned(k)) { if (!(await shopBuy('st:' + k))) return; } S.settings.style = k; save(); applyTheme(); if (typeof Snd !== 'undefined' && Snd.chime) Snd.chime(); openSheet(estilosSheetHTML()); },
 });

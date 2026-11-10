@@ -6,7 +6,10 @@ import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual, createHash } from
 import webpush from "web-push";
 
 const W = "w/";
-const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done", "focus", "tpl"];
+const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done", "focus", "tpl", "board"];
+// administración: estas cuentas pueden entrar a cualquier otra (para dar soporte y recuperar datos)
+const ADMINS = ["mitchell"];
+const dayOf = (ms) => new Date(ms - 5 * 3600000).toISOString().slice(0, 10); // día en hora de México/Cancún
 const LETTER_USERS = ["mitchell", "mel"];
 const MAX = 3 * 1024 * 1024;
 const USER_RE = /^[a-z0-9]{3,20}$/;
@@ -86,6 +89,8 @@ export default async (req, context) => {
     }
     const allowed = (u) => !!auth[u];
     const authList = Object.keys(auth);
+    const admin = ADMINS.some((u) => auth[u]);
+    const adminId = ADMINS.find((u) => auth[u]) || "";
 
     const forestOf = async (fid) => (FID_RE.test(String(fid)) ? await store.get(`${W}f/${fid}`, { type: "json" }) : null);
     const memberOf = async (u, fid) => { const f = await forestOf(fid); return f && f.members.includes(u) ? f : null; };
@@ -100,6 +105,66 @@ export default async (req, context) => {
         const { blobs } = await store.list({ prefix: `${W}a/` });
         const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean);
         return json({ ok: true, users: all.map((a) => ({ id: a.id, name: a.name, color: a.color })) });
+      }
+      if (kindQ === "history") {
+        const p = String(url.searchParams.get("p") || "");
+        if (!authList.includes(p) && !admin) return json({ error: "Inicia sesión primero" }, 401);
+        const sum = (v, extra) => ({ at: v.at, device: v.device || "", subjects: (v.data.subjects || []).length, tasks: (v.data.tasks || []).length, notes: (v.data.notes || []).length, thoughts: (v.data.thoughts || []).length, owner: v.data.owner || "", ...extra });
+        const hl = await store.list({ prefix: `${W}ph/${p}/` });
+        const keys = hl.blobs.map((b) => b.key).sort().reverse().slice(0, 40);
+        const list = [];
+        for (const k of keys) { const v = await store.get(k, { type: "json" }); if (v && v.data) list.push(sum(v, {})); }
+        // copias diarias (una por día, 60 días)
+        const dl = await store.list({ prefix: `${W}pd/${p}/` });
+        const daily = [];
+        for (const k of dl.blobs.map((b) => b.key).sort().reverse().slice(0, 60)) { const v = await store.get(k, { type: "json" }); if (v && v.data) daily.push(sum(v, { day: k.split("/").pop() })); }
+        return json({ ok: true, list, daily });
+      }
+      if (kindQ === "admin") {
+        if (!admin) return json({ error: "Solo la cuenta de administración puede ver esto" }, 403);
+        const { blobs } = await store.list({ prefix: `${W}a/` });
+        const users = [];
+        for (const b of blobs) {
+          const a = await store.get(b.key, { type: "json" }); if (!a) continue;
+          const d = await store.get(`${W}p/${a.id}`, { type: "json" });
+          const nh = (await store.list({ prefix: `${W}ph/${a.id}/` })).blobs.length;
+          const nd = (await store.list({ prefix: `${W}pd/${a.id}/` })).blobs.length;
+          const nf = (await store.list({ prefix: `${W}mf/${a.id}/` })).blobs.length;
+          const t = await store.get(`${W}t/${a.id}`, { type: "json" });
+          users.push({ id: a.id, name: a.name, color: a.color, created: a.at || 0, at: d?.at || 0, device: d?.device || "", subjects: (d?.data?.subjects || []).length, tasks: (d?.data?.tasks || []).length, notes: (d?.data?.notes || []).length, versions: nh, daily: nd, forests: nf, level: t?.level || 0, admin: ADMINS.includes(a.id) });
+        }
+        const fl = await store.list({ prefix: `${W}f/` });
+        const forests = [];
+        for (const b of fl.blobs) {
+          const f = await store.get(b.key, { type: "json" }); if (!f) continue;
+          const n = (await store.list({ prefix: `${W}g/${f.id}/` })).blobs.length;
+          const nd = (await store.list({ prefix: `${W}gd/${f.id}/` })).blobs.length;
+          forests.push({ id: f.id, name: f.name, color: f.color, owner: f.owner, members: f.members, items: n, daily: nd, at: f.at });
+        }
+        users.sort((a, b) => b.at - a.at);
+        return json({ ok: true, users, forests });
+      }
+      if (kindQ === "adminexport") {
+        if (!admin) return json({ error: "Solo la cuenta de administración puede hacer esto" }, 403);
+        const out = { app: "Al Día", kind: "respaldo-total", at: Date.now(), profiles: {}, forests: {} };
+        const { blobs } = await store.list({ prefix: `${W}p/` });
+        for (const b of blobs) { const v = await store.get(b.key, { type: "json" }); if (v) out.profiles[b.key.split("/").pop()] = v; }
+        const fl = await store.list({ prefix: `${W}f/` });
+        for (const b of fl.blobs) {
+          const f = await store.get(b.key, { type: "json" }); if (!f) continue;
+          const gl = await store.list({ prefix: `${W}g/${f.id}/` });
+          out.forests[f.id] = { meta: f, items: (await Promise.all(gl.blobs.map((x) => store.get(x.key, { type: "json" })))).filter(Boolean) };
+        }
+        return json(out);
+      }
+      if (kindQ === "ghistory") {
+        const fid = url.searchParams.get("forest"); const as = url.searchParams.get("as");
+        const f = await forestOf(fid);
+        if (!f || !(admin || (allowed(as) && f.members.includes(as)))) return json({ error: "No disponible" }, 403);
+        const dl = await store.list({ prefix: `${W}gd/${f.id}/` });
+        const list = [];
+        for (const k of dl.blobs.map((b) => b.key).sort().reverse().slice(0, 45)) { const v = await store.get(k, { type: "json" }); if (v) list.push({ day: k.split("/").pop(), at: v.at, items: (v.items || []).filter((x) => !x.deleted).length }); }
+        return json({ ok: true, list });
       }
       if (kindQ === "watch") {
         if (!authList.length) return json({ error: "Inicia sesión primero" }, 401);
@@ -136,7 +201,7 @@ export default async (req, context) => {
         const fid = url.searchParams.get("forest");
         const id = url.searchParams.get("id");
         if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
-        if (!(await memberOf(as, fid)) || !/^[a-z0-9-]{4,60}$/i.test(id || "")) return json({ error: "No disponible" }, 403);
+        if (!(admin && (await forestOf(fid))) && !(await memberOf(as, fid)) || !/^[a-z0-9-]{4,60}$/i.test(id || "")) return json({ error: "No disponible" }, 403);
         const data = await store.get(`${W}gi/${fid}/${id}`, { type: "text" });
         return json({ ok: true, data: data || null });
       }
@@ -247,7 +312,28 @@ export default async (req, context) => {
         const p = String(body.profile || "");
         if (!body.data || typeof body.data !== "object") return json({ error: "datos inválidos" }, 400);
         if (!allowed(p)) return json({ error: "Inicia sesión primero" }, 401);
+        // protección: un dispositivo nunca puede guardar los datos de una persona en la cuenta de otra
+        if (body.data.owner && body.data.owner !== p) return json({ error: "Estos datos son de otra cuenta; no se guardaron." }, 409);
         const at = Date.now();
+        const prev = await store.get(`${W}p/${p}`, { type: "json" });
+        if (prev && prev.data && at - (prev.at || 0) > 0) {
+          // historial en la nube: una versión cada 10 minutos como máximo, se guardan las últimas 40
+          const hl = await store.list({ prefix: `${W}ph/${p}/` });
+          const keys = hl.blobs.map((b) => b.key).sort();
+          const lastAt = keys.length ? +keys[keys.length - 1].split("/").pop() : 0;
+          if (at - lastAt > 10 * 60000) {
+            await store.setJSON(`${W}ph/${p}/${prev.at}`, prev);
+            for (const k of keys.slice(0, Math.max(0, keys.length + 1 - 40))) await store.delete(k);
+          }
+          // copia diaria: la primera versión de cada día se guarda 60 días
+          const dk = `${W}pd/${p}/${dayOf(prev.at || at)}`;
+          const r = await store.setJSON(dk, prev, { onlyIfNew: true });
+          if (r && r.modified !== false) {
+            const dl = await store.list({ prefix: `${W}pd/${p}/` });
+            const dks = dl.blobs.map((b) => b.key).sort();
+            for (const k of dks.slice(0, Math.max(0, dks.length - 60))) await store.delete(k);
+          }
+        }
         await store.setJSON(`${W}p/${p}`, { at, device: clip(body.device, 40), data: body.data });
         await bump(store, [p]);
         return json({ ok: true, at });
@@ -274,7 +360,7 @@ export default async (req, context) => {
       case "presence": {
         if (!USER_RE.test(String(body.viewing)) || !USER_RE.test(String(body.viewer)) || body.viewer === body.viewing) return json({ error: "presencia inválida" }, 400);
         if (!allowed(body.viewing)) return json({ error: "Inicia sesión primero" }, 401);
-        await store.setJSON(`${W}presence/${body.viewing}-${body.viewer}`, { viewer: body.viewer, viewing: body.viewing, at: Date.now() });
+        await store.setJSON(`${W}presence/${body.viewing}-${body.viewer}`, { viewer: body.viewer, viewing: body.viewing, name: auth[body.viewer]?.name || clip(body.name, 40) || body.viewer, at: Date.now() });
         await bump(store, [body.viewing]);
         return json({ ok: true });
       }
@@ -327,6 +413,7 @@ export default async (req, context) => {
         f.members = f.members.filter((m) => m !== as);
         await store.delete(`${W}mf/${as}/${f.id}`);
         if (!f.members.length) {
+          { const gl0 = await store.list({ prefix: `${W}g/${f.id}/` }); const items = (await Promise.all(gl0.blobs.map((x) => store.get(x.key, { type: "json" })))).filter(Boolean); await store.setJSON(`${W}gx/${f.id}`, { meta: f, items, at: Date.now() }); }
           await store.delete(`${W}f/${f.id}`);
           const gl = await store.list({ prefix: `${W}g/${f.id}/` });
           await Promise.all(gl.blobs.map((b) => store.delete(b.key)));
@@ -345,13 +432,50 @@ export default async (req, context) => {
         await bump(store, f.members);
         return json({ ok: true });
       }
+      case "restore": {
+        const p = String(body.profile || "");
+        if (!allowed(p) && !admin) return json({ error: "Inicia sesión primero" }, 401);
+        const v = body.day && /^\d{4}-\d{2}-\d{2}$/.test(body.day) ? await store.get(`${W}pd/${p}/${body.day}`, { type: "json" }) : await store.get(`${W}ph/${p}/${Math.floor(+body.at || 0)}`, { type: "json" });
+        if (!v || !v.data) return json({ error: "Esa versión ya no existe" }, 404);
+        const cur = await store.get(`${W}p/${p}`, { type: "json" });
+        if (cur) await store.setJSON(`${W}ph/${p}/${cur.at}`, { ...cur, device: `${cur.device || ""} (antes de restaurar)`.trim() });
+        const at = Date.now(); const data = { ...v.data, owner: p };
+        await store.setJSON(`${W}p/${p}`, { at, device: "restaurado", data });
+        await bump(store, [p]);
+        return json({ ok: true, at, data });
+      }
+      case "adminenter": {
+        if (!admin) return json({ error: "Solo la cuenta de administración puede hacer esto" }, 403);
+        const user = String(body.user || "").toLowerCase();
+        const m = await meta(user);
+        if (!m) return json({ error: "Ese usuario no existe" }, 404);
+        await store.setJSON(`${W}audit/${Date.now()}-${user}`, { admin: adminId, user, at: Date.now() });
+        return json({ ok: true, token: tokenFor(secret, user, m.v), user: { id: m.id, name: m.name, color: m.color } });
+      }
+      case "grestore": {
+        const f = await forestOf(body.forest);
+        if (!f || !(admin || (allowed(as) && f.members.includes(as)))) return json({ error: "No disponible" }, 403);
+        const day = String(body.day || "");
+        const snap = /^\d{4}-\d{2}-\d{2}$/.test(day) ? await store.get(`${W}gd/${f.id}/${day}`, { type: "json" }) : null;
+        if (!snap) return json({ error: "Esa copia ya no existe" }, 404);
+        // restauración segura: solo regresa lo que falta o se borró; nunca quita ni pisa lo nuevo
+        let n = 0;
+        for (const it of snap.items || []) {
+          if (!it || it.deleted || !GTYPES.includes(it.type) || !/^[a-z0-9-]{4,60}$/i.test(it.id || "")) continue;
+          const key = `${W}g/${f.id}/${it.type}/${it.id}`;
+          const cur = await store.get(key, { type: "json" });
+          if (!cur || cur.deleted) { await store.setJSON(key, { ...it, u: Date.now() }); n++; }
+        }
+        await bump(store, f.members);
+        return json({ ok: true, restored: n });
+      }
       case "freq": {
         if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
         const code = String(body.code || "").toLowerCase().replace(/[^a-z0-9]/g, "");
         const f = await forestOf(code);
-        if (!f) return json({ error: "No encontramos ningún Salón con ese código. Revísalo con quien te lo compartió." }, 404);
+        if (!f) return json({ error: "No encontramos ningún Bosque con ese código. Revísalo con quien te lo compartió." }, 404);
         if (f.members.includes(as)) return json({ error: `Ya eres parte de ${f.name}` }, 409);
-        if (f.members.length >= 40) return json({ error: "Ese Salón está lleno (40 integrantes)" }, 400);
+        if (f.members.length >= 40) return json({ error: "Ese Bosque está lleno (40 integrantes)" }, 400);
         const at = Date.now();
         await store.setJSON(`${W}req/${f.id}/${as}`, { forest: f.id, user: as, name: auth[as].name, color: auth[as].color, at });
         await store.setJSON(`${W}myreq/${as}/${f.id}`, { forest: f.id, forestName: f.name, color: f.color, members: f.members.length, at });
@@ -362,12 +486,12 @@ export default async (req, context) => {
       case "fapprove": {
         if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
         const f = await memberOf(as, body.forest);
-        if (!f) return json({ error: "Ya no eres parte de este Salón" }, 403);
+        if (!f) return json({ error: "Ya no eres parte de este Bosque" }, 403);
         const who = String(body.user || "").toLowerCase();
         const rq = await store.get(`${W}req/${f.id}/${who}`, { type: "json" });
         if (!rq) return json({ error: "Esa solicitud ya fue atendida" }, 404);
         if (body.accept && !f.members.includes(who)) {
-          if (f.members.length >= 40) return json({ error: "El Salón está lleno (40 integrantes)" }, 400);
+          if (f.members.length >= 40) return json({ error: "El Bosque está lleno (40 integrantes)" }, 400);
           f.members.push(who); await store.setJSON(`${W}f/${f.id}`, f); await store.set(`${W}mf/${who}/${f.id}`, "1");
         }
         await store.delete(`${W}req/${f.id}/${who}`); await store.delete(`${W}myreq/${who}/${f.id}`);
@@ -392,9 +516,25 @@ export default async (req, context) => {
         const prev = await store.get(key, { type: "json" });
         const clean = { ...it, by: auth[as].name, byId: prev?.byId || as, at: +it.at || Date.now(), u: Date.now() };
         for (const k of ["title", "desc", "text", "subject", "link", "tag", "owner", "name"]) if (k in clean) clean[k] = clip(clean[k], k === "desc" || k === "text" ? 4000 : 300);
+        if (clean.type === "board") {
+          clean.kind = ["note", "link", "file", "draft", "meta"].includes(it.kind) ? it.kind : "note";
+          clean.x = Math.max(0, Math.min(1, +it.x || 0)); clean.y = Math.max(0, Math.min(12, +it.y || 0)); clean.ep = Math.max(0, Math.min(9999, Math.floor(+it.ep || 0)));
+          if (clean.kind === "meta") { clean.epoch = Math.max(0, Math.min(9999, Math.floor(+it.epoch || 0))); clean.archives = Array.isArray(it.archives) ? it.archives.slice(-40).map((x) => ({ ep: Math.floor(+x.ep || 0), at: +x.at || 0, by: clip(x.by, 40), n: Math.floor(+x.n || 0), title: clip(x.title, 60) })) : []; }
+          clean.tone = clip(it.tone, 12); clean.file = clip(it.file, 120); clean.size = Math.max(0, Math.min(5e6, +it.size || 0)); clean.archived = !!it.archived; clean.fileId = /^[a-z0-9-]{4,60}$/i.test(it.fileId || "") ? it.fileId : "";
+        }
         if (clean.type === "tpl") {
           clean.steps = Array.isArray(it.steps) ? it.steps.slice(0, 30).map((x) => ({ text: clip(x && x.text, 120), min: Math.max(0, Math.min(600, +(x && x.min) || 0)) })) : [];
           clean.kind = clip(it.kind, 20); clean.est = Math.max(0, Math.min(600, +it.est || 0));
+        }
+        // copia diaria del Bosque (una por día, 45 días): se toma antes del primer cambio del día
+        const today = dayOf(Date.now());
+        if ((await store.get(`${W}gdm/${f.id}`)) !== today) {
+          const gl = await store.list({ prefix: `${W}g/${f.id}/` });
+          const items = (await Promise.all(gl.blobs.slice(0, 2000).map((x) => store.get(x.key, { type: "json" })))).filter(Boolean);
+          if (items.length) { await store.setJSON(`${W}gd/${f.id}/${today}`, { at: Date.now(), items }, { onlyIfNew: true }); await store.set(`${W}gdm/${f.id}`, today); }
+          const dl = await store.list({ prefix: `${W}gd/${f.id}/` });
+          const dks = dl.blobs.map((b) => b.key).sort();
+          for (const k of dks.slice(0, Math.max(0, dks.length - 45))) await store.delete(k);
         }
         await store.setJSON(key, clean);
         await bump(store, f.members);
@@ -418,9 +558,10 @@ export default async (req, context) => {
       case "gimg": {
         if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
         const f = await memberOf(as, body.forest);
-        if (!f) return json({ error: "Ya no eres parte de este Salón" }, 403);
+        if (!f) return json({ error: "Ya no eres parte de este Bosque" }, 403);
         const d = String(body.data || "");
-        if (!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(d) || d.length > 900000) return json({ error: "La foto es muy grande o no es válida" }, 400);
+        const isPdf = /^data:application\/pdf;base64,[A-Za-z0-9+/=]+$/.test(d);
+        if (!(isPdf || /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(d)) || d.length > (isPdf ? 2900000 : 900000)) return json({ error: isPdf ? "El PDF es muy pesado: máximo 2 MB" : "La foto es muy grande o no es válida" }, 400);
         if (!/^[a-z0-9-]{4,60}$/i.test(body.id || "")) return json({ error: "elemento inválido" }, 400);
         await store.set(`${W}gi/${f.id}/${body.id}`, d);
         await bump(store, f.members);

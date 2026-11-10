@@ -550,7 +550,7 @@ Object.assign(PLUS_ACTS, {
 });
 
 /* =========================================================
-   12. Plantillas de estudio compartidas (en los Salones)
+   12. Plantillas de estudio compartidas (en los Bosques)
    ========================================================= */
 const myForests = () => Object.values(FOR.f || {}).filter((f) => f.meta?.members?.includes(REG.me));
 function allTpls(fid) {
@@ -582,11 +582,11 @@ Object.assign(PLUS_ACTS, {
   'tpl-clone': (el) => { cloneTpl(el.dataset.fid, el.dataset.id); if (sheet().open && isGroup()) closeSheet(false); },
   'tpl-share': async () => {
     if (!draft || (draft.steps || []).length < 2) { toast('Agrega al menos 2 pasos para compartir.'); return; }
-    const fs = myForests(); if (!REG.me || !tokens()[REG.me] || !fs.length) { toast('Para compartir, primero únete a un Salón con tus compañeros.'); return; }
+    const fs = myForests(); if (!REG.me || !tokens()[REG.me] || !fs.length) { toast('Para compartir, primero únete a un Bosque con tus compañeros.'); return; }
     let fid = fs[0].meta.id;
-    if (fs.length > 1) { const v = await ask({ title: '¿En qué Salón la compartes?', options: fs.map((f) => ({ value: f.meta.id, label: `${f.meta.name}` })) }); if (!v) return; fid = v; }
+    if (fs.length > 1) { const v = await ask({ title: '¿En qué Bosque la compartes?', options: fs.map((f) => ({ value: f.meta.id, label: `${f.meta.name}` })) }); if (!v) return; fid = v; }
     const item = { id: gid(), type: 'tpl', title: draft.title.trim() || 'Plantilla', kind: draft.type, est: +draft.estimate || 0, steps: draft.steps.slice(0, 30).map((s) => ({ text: String(s.text).slice(0, 120), min: +s.min || 0 })), at: Date.now(), by: me() };
-    try { await cloudFetch('POST', { kind: 'gitem', as: REG.me, forest: fid, item, device: CLOUD.device }); (FOR.f[fid].items ||= []).push(item); saveFOR(); Snd.chime(); toast('Plantilla compartida con tu Salón.'); }
+    try { await cloudFetch('POST', { kind: 'gitem', as: REG.me, forest: fid, item, device: CLOUD.device }); (FOR.f[fid].items ||= []).push(item); saveFOR(); Snd.chime(); toast('Plantilla compartida con tu Bosque.'); }
     catch (e) { toast(`No se pudo compartir: ${e.message}`); }
   },
 });
@@ -614,7 +614,7 @@ function lobbyBody() {
     ${LOB.err && D ? `<p class="small" style="color:var(--red);text-align:center">${esc(LOB.err)}</p>` : ''}
     <label class="toggle ghost-tg"><span class="t">Modo fantasma <span class="small muted" style="display:block">Solo verán que alguien estudia.</span></span><span class="switch"><input type="checkbox" id="lobGhost" ${PUI.lobGhost ? 'checked' : ''} aria-label="Modo fantasma"><span></span></span></label>
     <div class="btn-row" style="margin-top:12px;justify-content:center">${mineJ ? '<button class="btn" data-act="lobby-leave">Salir de la sala</button>' : (s.phase === 'focus' ? '<button class="btn primary block" data-act="lobby-join">Entrar a estudiar en silencio</button>' : '<span class="muted small">Podrás entrar cuando empiece la siguiente sesión.</span>')}</div>
-    <p class="tiny faint" style="text-align:center;margin-top:10px">Sin chat ni video: solo ves a los demás concentrados. Al terminar ganas semillas.</p>`;
+    <p class="tiny faint" style="text-align:center;margin-top:10px">Sin chat ni video: solo ves a los demás concentrados. Al terminar ganas monedas.</p>`;
 }
 function lobbyPaint() { const b = document.getElementById('lobBox'); if (b) b.innerHTML = lobbyBody(); }
 function lobbyOpen() {
@@ -632,7 +632,7 @@ function lobbyOpen() {
 function lobbyCheck() {
   const L = (S.vida || {}).lobby; if (!L || L.rewarded || Date.now() < L.end) return;
   L.rewarded = true; const mins = Math.round((L.end - L.start) / 60000);
-  if (mins >= 5) { const v = vidaData(); const r = Math.max(2, Math.round(mins / 5)); v.bonus = (v.bonus || 0) + r; save(); Snd.chime(); confetti(innerWidth / 2, innerHeight / 3, 50); toast(`Terminaste tu sesión en la biblioteca: +${r} semillas`, { ms: 6000 }); } else save();
+  if (mins >= 5) { const v = vidaData(); const r = Math.max(2, Math.round(mins / 5)); v.bonus = (v.bonus || 0) + r; save(); Snd.chime(); confetti(innerWidth / 2, innerHeight / 3, 50); toast(`Terminaste tu sesión en la biblioteca: +${r} monedas`, { ms: 6000 }); } else save();
   lobbyPaint();
 }
 Object.assign(PLUS_ACTS, {
@@ -656,7 +656,7 @@ function viewPanel() {
     <p class="page-sub">Entiende tu semana, cuida tu energía y aprende a organizarte mejor.</p>
     <div class="btn-row" style="margin-bottom:12px"><button class="btn danger block" data-act="sos-open">Nube de emergencia</button><button class="btn block" data-act="lobby-open">Biblioteca global</button></div>
     ${radarHTML()}${freeHTML()}${critHTML()}${estHTML()}${patternsHTML()}${habitsHTML()}${skillTreeHTML()}
-    ${myForests().length ? `<section class="pn-card"><h2 class="serif">Plantillas de mis Salones</h2>${tplListHTML(allTpls())}</section>` : ''}
+    ${myForests().length ? `<section class="pn-card"><h2 class="serif">Plantillas de mis Bosques</h2>${tplListHTML(allTpls())}</section>` : ''}
     <section class="pn-card"><h2 class="serif">Quiz antes de entregar</h2><div class="toggle"><span><span class="t">Preguntarme 3 cosas con mis apuntes</span><span class="d" style="display:block">Usa tus apuntes de la materia o los pasos de la tarea.</span></span><label class="switch"><input type="checkbox" data-quiz-set ${S.settings.quizOff ? '' : 'checked'} aria-label="Quiz antes de entregar"><span></span></label></div></section>`;
 }
 document.addEventListener('change', (e) => { if (e.target.dataset.quizSet !== undefined) { S.settings.quizOff = !e.target.checked; save(); toast(e.target.checked ? 'Quiz activado.' : 'Quiz desactivado.'); } });

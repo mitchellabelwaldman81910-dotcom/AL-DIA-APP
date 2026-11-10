@@ -1,5 +1,5 @@
 /* Al Día — extras 7.1: libretas con editor de texto rico, dictado, corrector de ortografía,
-   jardín con semillas y misiones, y tareas de Salón con foto. Se carga antes de app.js. */
+   jardín con semillas y misiones, y tareas de Bosque con foto. Se carga antes de app.js. */
 'use strict';
 
 /* =========================================================
@@ -258,7 +258,7 @@ function questsToday() {
 function questsHTML() {
   const Q = questsToday(); const done = Q.filter((q) => q.claimed).length;
   return `<div class="card quests"><div class="q-head"><b class="serif">Misiones de hoy</b><span class="chip ${done === Q.length ? 'pen' : ''}">${done}/${Q.length}</span></div>
-    ${Q.map((q) => `<div class="quest ${q.ok ? 'ok' : ''}"><span class="q-ico">${icon(q.icon)}</span><span class="q-t">${esc(q.text)}</span>${q.claimed ? '<span class="chip pen">Listo</span>' : q.ok ? `<button class="btn primary" data-act="quest-claim" data-id="${q.id}">+${q.reward} semillas</button>` : `<span class="small muted">+${q.reward} semillas</span>`}</div>`).join('')}</div>`;
+    ${Q.map((q) => `<div class="quest ${q.ok ? 'ok' : ''}"><span class="q-ico">${icon(q.icon)}</span><span class="q-t">${esc(q.text)}</span>${q.claimed ? '<span class="chip pen">Listo</span>' : q.ok ? `<button class="btn primary" data-act="quest-claim" data-id="${q.id}">+${q.reward} monedas</button>` : `<span class="small muted">+${q.reward} monedas</span>`}</div>`).join('')}</div>`;
 }
 function gardenTabHTML(c) {
   const v = vidaData(); const bal = seedsOf(c);
@@ -276,7 +276,7 @@ Object.assign(VIDA_ACTS, {
     const q = questsToday().find((x) => x.id === el.dataset.id); if (!q || !q.ok || q.claimed) return;
     const v = vidaData(); v.claimed[`${today()}:${q.id}`] = 1; v.bonus = (v.bonus || 0) + q.reward;
     for (const k of Object.keys(v.claimed)) if (k.slice(0, 10) < addDays(today(), -14)) delete v.claimed[k];
-    commit(); Snd.chime(); leafBurst(el); toast(`+${q.reward} semillas`);
+    commit(); Snd.chime(); leafBurst(el); toast(`+${q.reward} monedas`);
   },
   'garden-buy': (el) => {
     const g = GARDEN.find((x) => x.id === el.dataset.id); if (!g) return;
@@ -298,7 +298,7 @@ Object.assign(VIDA_ACTS, {
 });
 
 /* =========================================================
-   5. Tareas del Salón con foto e instrucciones
+   5. Tareas del Bosque con foto e instrucciones
    ========================================================= */
 function fileToDataURL(file, max = 1100, q = 0.6) {
   return new Promise((res, rej) => {
@@ -323,13 +323,13 @@ async function loadGImg(fid, id) {
 let gNewPhoto = null;
 function openGroupNew() {
   gNewPhoto = null;
-  openSheet(`${sheetHead('Tarea para el Salón')}<div class="sheet-body">
+  openSheet(`${sheetHead('Tarea para el Bosque')}<div class="sheet-body">
     <div class="field"><label for="gnTitle" class="sr">Título</label><input id="gnTitle" class="title-input" placeholder="Ej. Tarea de hoy: mapa conceptual"></div>
     <div class="row2"><div class="field"><label for="gnDue">Entrega</label><input id="gnDue" class="input" type="date" value="${addDays(today(), 1)}"></div><div class="field"><label for="gnTime">Hora</label><input id="gnTime" class="input" type="time"></div></div>
     <div class="field"><label for="gnSubj">Materia</label><input id="gnSubj" class="input" placeholder="Ej. Mercadotecnia"></div>
     <div class="field"><label for="gnDesc">Instrucciones</label><textarea id="gnDesc" class="input" placeholder="Escribe lo que pidió el profe o pega el texto…"></textarea></div>
     <div class="field"><span class="lbl">Foto de las instrucciones</span><div id="gnPrev"></div><label class="btn" for="gnImg" style="align-self:flex-start">${icon('cam')}Tomar o elegir foto</label><input id="gnImg" type="file" accept="image/*" class="sr" data-gn-img></div>
-  </div><div class="sheet-foot"><span class="grow"></span><button class="btn primary" data-act="g-new-save">${icon('plus')}Subir al Salón</button></div>`);
+  </div><div class="sheet-foot"><span class="grow"></span><button class="btn primary" data-act="g-new-save">${icon('plus')}Subir al Bosque</button></div>`);
   setTimeout(() => $('#gnTitle')?.focus(), 60);
 }
 document.addEventListener('change', async (e) => {
@@ -377,7 +377,7 @@ function homeTreeHTML() {
     <span class="ht-ico">${treeIcon(c.level)}<span class="ht-lv">${c.level}</span></span>
     <span class="ht-main"><b>${esc(stageName(c.level))}${c.streak ? ` · racha ${c.streak}` : ''}</b>
       <span class="ht-bar"><i style="width:${pct}%"></i></span>
-      <span class="small">${c.wet ? 'Regado hoy' : 'Tiene sed: súbele algo hoy'} · ${bal} semillas${ready ? ` · <b class="ht-ready">${plural(ready, 'misión lista', 'misiones listas')}</b>` : ''}</span></span>${icon('chev', 'chev')}</a>`;
+      <span class="small">${c.wet ? 'Regado hoy' : 'Tiene sed: súbele algo hoy'} · ${bal} monedas${ready ? ` · <b class="ht-ready">${plural(ready, 'misión lista', 'misiones listas')}</b>` : ''}</span></span>${icon('chev', 'chev')}</a>`;
 }
 
 /* =========================================================
@@ -420,8 +420,8 @@ function focusSheetBody() {
       <span class="fp-t"><b>${esc(name)}</b><span class="small muted">${x.title && !x.ghost ? esc(x.title) : 'Concentrado'}</span></span><span class="fp-time" data-end="${focusEnd(x)}">${mmss(focusEnd(x) - now)}</span>
       ${mine ? '' : `<button class="btn" data-act="focus-join" data-id="${x.id}">Unirme</button>`}</div>`;
   }).join('')}</div>` : (mine ? '<p class="small muted" style="text-align:center;margin-top:14px">Eres la única persona concentrada ahora. Invita a alguien a unirse.</p>' : '');
-  return `${top}${room}<div class="btn-row" style="margin-top:16px;justify-content:center"><button class="btn quiet" data-act="forest-invite">${icon('plus')}Invitar a alguien a este Salón</button></div>
-    <p class="small muted" style="text-align:center;margin:10px 0 0">Al terminar ganas semillas y tu árbol se riega.</p>`;
+  return `${top}${room}<div class="btn-row" style="margin-top:16px;justify-content:center"><button class="btn quiet" data-act="forest-invite">${icon('plus')}Invitar a alguien a este Bosque</button></div>
+    <p class="small muted" style="text-align:center;margin:10px 0 0">Al terminar ganas monedas y tu árbol se riega.</p>`;
 }
 let focusTimer = null;
 function paintFocusSheet() { const b = document.getElementById('focusBox'); if (b) b.innerHTML = focusSheetBody(); }
@@ -460,7 +460,7 @@ function focusWatch() {
       if (!R[key]) {
         R[key] = 1; const reward = Math.max(3, Math.round(it.mins / 5)); const v = vidaData(); v.bonus = (v.bonus || 0) + reward; v.focusMin = (v.focusMin || 0) + it.mins;
         for (const k of Object.keys(R)) if (R[k] && Object.keys(R).length > 30) delete R[k];
-        save(); waterToday(); Snd.chime(); confetti(innerWidth / 2, innerHeight / 3, 60); toast(`Sesión completada: +${reward} semillas y tu árbol se regó.`, { ms: 6000 });
+        save(); waterToday(); Snd.chime(); confetti(innerWidth / 2, innerHeight / 3, 60); toast(`Sesión completada: +${reward} monedas y tu árbol se regó.`, { ms: 6000 });
         gput({ ...it, deleted: true, start: it.start }).catch(() => {});
       }
       paintFocusSheet();
@@ -472,5 +472,5 @@ Object.assign(VIDA_ACTS, {
   'focus-mins': (el) => { focusUI.mins = +el.dataset.v; focusUI.topic = $('#focusTopic')?.value || ''; focusUI.ghost = !!$('#focusGhost')?.checked; paintFocusSheet(); },
   'focus-start': () => { focusUI.topic = $('#focusTopic')?.value.trim() || ''; focusUI.ghost = !!$('#focusGhost')?.checked; focusStart(); },
   'focus-join': (el) => { const h = gGet(el.dataset.id); if (!h) return; focusUI.ghost = !!$('#focusGhost')?.checked || focusUI.ghost; focusStart({ start: h.start, mins: h.mins, title: h.ghost ? '' : (h.title || '') }); },
-  'focus-stop': async () => { const it = gGet(focusId()); if (!it) return; const ok = await ask({ title: '¿Terminar la sesión?', text: 'Si sales antes de tiempo no ganas semillas.', ok: 'Terminar', danger: true }); if (!ok) return; await gput({ ...it, deleted: true }); toast('Sesión terminada.'); paintFocusSheet(); },
+  'focus-stop': async () => { const it = gGet(focusId()); if (!it) return; const ok = await ask({ title: '¿Terminar la sesión?', text: 'Si sales antes de tiempo no ganas monedas.', ok: 'Terminar', danger: true }); if (!ok) return; await gput({ ...it, deleted: true }); toast('Sesión terminada.'); paintFocusSheet(); },
 });

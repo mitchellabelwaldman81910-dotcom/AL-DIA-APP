@@ -139,9 +139,15 @@ function migrate(d) {
   return out;
 }
 function load(key = KEY) {
-  try { const raw = localStorage.getItem(key); return raw ? migrate(JSON.parse(raw)) : defaults(); }
-  catch { return defaults(); }
+  try {
+    const raw = localStorage.getItem(key); if (!raw) return stampOwner(defaults(), key);
+    const d = JSON.parse(raw); const want = key.startsWith('aldia:v1:') ? key.slice(9) : null;
+    // protección: nunca se usan como propios los datos de otra persona
+    if (want && d && d.owner && d.owner !== want) { console.warn('[Al Día] datos de', d.owner, 'en la clave de', want, '— se descartan'); return stampOwner(defaults(), key); }
+    return stampOwner(migrate(d), key);
+  } catch { return defaults(); }
 }
+function stampOwner(d, key) { const id = String(key || '').startsWith('aldia:v1:') ? key.slice(9) : null; if (id && !String(id).startsWith('f:')) d.owner = id; return d; }
 
 /* ---------- Usuarios: cada quien con su propia cuenta (nombre + contraseña) ---------- */
 const SPACE = 'BOSQUE-ALDIA-NUBE-GLOBAL';
@@ -172,7 +178,7 @@ if (!Array.isArray(REG.users)) {
   }
 }
 saveReg();
-/* Salones (grupos colaborativos): copia local de lo que hay en la nube */
+/* Bosques (grupos colaborativos): copia local de lo que hay en la nube */
 const FOR_KEY = 'aldia:bosques7';
 let FOR = { f: {}, members: {}, invites: [], trees: {} };
 try { FOR = { ...FOR, ...JSON.parse(localStorage.getItem(FOR_KEY) || '{}') }; } catch { /* */ }
@@ -652,9 +658,19 @@ function viewHoy() {
     }
   }
 
-  // clase actual / siguiente
+  // clase actual / siguiente (si hoy ya no hay, la del siguiente día con clases)
   let nowHTML = '';
   const cls = classesOn(d.getDay());
+  const nmNow = nowMin();
+  if (!cls.some((c) => toMin(c.end) > nmNow)) {
+    for (let k = 1; k <= 7; k++) {
+      const wd = (d.getDay() + k) % 7; const list = classesOn(wd);
+      if (list.length) { const c = list[0];
+        nowHTML = `<a class="now" href="#/materia/${c.s.id}" style="text-decoration:none;color:inherit"><span class="bar" style="background:${safeColor(c.s.color)}"></span>
+          <span><span class="lbl">Siguiente clase · ${k === 1 ? 'mañana' : esc(DIAS[wd])}</span><b>${esc(c.s.name)}</b><span class="small muted">Empieza a las ${fmtTime(c.start)}${c.room ? `, salón ${esc(c.room)}` : ''}</span></span></a>`;
+        break; }
+    }
+  }
   if (cls.length) {
     const nm = nowMin();
     const cur = cls.find((c) => toMin(c.start) <= nm && nm < toMin(c.end));
@@ -724,7 +740,7 @@ function viewHoy() {
       <li><span class="kbd">proyecto final mercadotecnia en 2 semanas vale 30%</span></li><li><span class="kbd">leer capítulo 3 mañana urgente</span></li></ul>
       ${S.subjects.length ? '' : '<p>Primero agrega tus materias para que las reconozca. <a href="#/materias">Agregar materias</a></p>'}</div>` : '';
 
-  return `<section class="today-head"><div class="today-wrap">
+  return `${typeof hoyHeroHTML === 'function' ? hoyHeroHTML() : ''}<section class="today-head"><div class="today-wrap">
       <div class="today-top"><p class="greet">${greet}, ${esc(profile().name)}</p>
         <div class="head-actions">
           <button type="button" class="who-chip" data-act="profile-sheet" aria-label="Usuario: ${esc(profile().name)}. Cambiar de usuario">${avatar(profile(), 'sm')}<span>${esc(profile().name)}</span></button>
@@ -1156,7 +1172,7 @@ function viewMateria(id) {
 /* ---------- Más ---------- */
 function viewMas() {
   const items = [
-    ['#/salones', 'users', 'Salones', 'Crea o únete a un grupo y compartan todo en tiempo real'],
+    ['#/salones', 'users', 'Bosques (para grupos)', 'Crea un Bosque con tu salón o equipo y compartan todo en tiempo real'],
     ['#/estilo', 'palette', 'Estilo de la app', 'Cambia los colores y el diseño: 7 plantillas con día y noche'],
     ['#/cerebro', 'network', 'Tu Cerebro', 'Todo lo que has hecho y pensado, conectado en una red viva'],
     ['#/panel', 'grid', 'Mi panel', 'Radar de carga, tiempo libre real, patrones y hábitos'],
@@ -1431,7 +1447,7 @@ async function runScan(file, mode) {
   SCAN.busy = false; render();
 }
 
-/* ---------- Salón: hojas cayendo, ráfaga de hojas, acomodo armonioso ---------- */
+/* ---------- Bosque: hojas cayendo, ráfaga de hojas, acomodo armonioso ---------- */
 const LEAF_PATH = 'M12 2C7 5 3.5 10 5 18c.3 1.6 1 2.8 1.8 3.6C15 20.5 20 15 19.5 6.5 17.5 3.8 15 2.5 12 2z';
 const LEAF_VEIN = 'M6.8 21.6C9 16 12 10 17 5';
 const LEAF_COLORS = ['#7DBE7A', '#5DA36A', '#A8D08D', '#3F8F5F', '#C9DE8C', '#94C9A0'];
@@ -1689,9 +1705,15 @@ function setDirty(p, v) { try { if (v) localStorage.setItem(dirtyKey(p), '1'); e
 
 // Mezcla de tres vías: lo que cambiaste aquí gana sobre lo que no cambiaste; lo nuevo de ambos lados se conserva;
 // lo que se borró de un lado se borra del otro.
-function mergeDocs(local, remote, base) {
+function mergeDocs(local, remote, base, trustDeletes = false) {
   const out = JSON.parse(JSON.stringify(local));
   for (const c of COLLS) {
+    // freno de seguridad: si de pronto "faltan" muchas cosas aquí que siguen en la nube, no se borran allá
+    if (!trustDeletes && base && base[c]) {
+      const L0 = new Set((local[c] || []).map((x) => x.id)); const R0 = (remote[c] || []).filter((x) => x.id in base[c]);
+      const gone = R0.filter((x) => !L0.has(x.id)).length;
+      if (gone >= 3 && gone >= R0.length * 0.4) { const keep = (remote[c] || []).filter((x) => !L0.has(x.id)); out[c] = [...(local[c] || []), ...keep]; console.warn('[Al Día] se evitó borrar', gone, c); continue; }
+    }
     const L = new Map((local[c] || []).map((x) => [x.id, x]));
     const R = new Map((remote[c] || []).map((x) => [x.id, x]));
     const B = (base && base[c]) || {};
@@ -1711,6 +1733,7 @@ function mergeDocs(local, remote, base) {
   out.focus = [...(local.focus || []), ...(remote.focus || []).filter((f) => !fset.has(JSON.stringify(f)))];
   const localSettingsChanged = !base || hashStr(JSON.stringify(stripLocal(local.settings))) !== base.settings;
   if (!localSettingsChanged) out.settings = { ...remote.settings, lastDigest: local.settings.lastDigest, installDismissed: local.settings.installDismissed, lastBackup: local.settings.lastBackup };
+  if (typeof mergeVida === 'function') out.vida = mergeVida(local.vida, remote.vida);
   return out;
 }
 
@@ -1745,21 +1768,27 @@ async function cloudSync(opts = {}) {
       const base = getBase(id);
       const dirty = isDirty(id) || (hasLocal && !base && (local.tasks.length || local.subjects.length || local.notes.length || local.thoughts.length));
       let next = local, push = false;
+      if (local.owner && local.owner !== id) { console.warn('[Al Día] datos ajenos en', id); continue; }
+      const trust = (() => { try { return localStorage.getItem('aldia:wipe:' + id) === '1'; } catch { return false; } })();
+      if (rdoc && rdoc.data && rdoc.data.owner && rdoc.data.owner !== id) { console.warn('[Al Día] la nube de', id, 'tiene datos de', rdoc.data.owner); }
       if (rdoc && rdoc.at > (local.cloudAt || 0)) {
-        if (dirty) { next = mergeDocs(local, migrate(rdoc.data), base); push = true; }
+        if (dirty) { next = mergeDocs(local, migrate(rdoc.data), base, trust); push = true; }
         else next = { ...migrate(rdoc.data), timer: local.timer };
         next.cloudAt = rdoc.at;
         if (isCur) changedCurrent = true;
-      } else if (dirty || (!rdoc && hasLocal && (local.tasks.length || local.subjects.length))) push = true;
+      } else if (dirty || (!rdoc && hasLocal && (local.tasks.length || local.subjects.length))) { push = true; if (rdoc && rdoc.data && !trust) next = { ...mergeDocs(local, migrate(rdoc.data), base, false), cloudAt: local.cloudAt }; }
+      next.owner = id;
       if (push) {
-        const data = JSON.parse(JSON.stringify(next)); delete data.timer;
+        const data = JSON.parse(JSON.stringify(next)); delete data.timer; data.owner = id;
         const res = await cloudFetch('PUT', { kind: 'profile', profile: id, device: CLOUD.device, data });
         next.cloudAt = res.at;
       }
       if (push || next !== local) {
-        if (isCur) { S = next; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch { /* */ } }
-        else { try { localStorage.setItem(keyFor(id), JSON.stringify(next)); } catch { /* */ } }
+        // se escribe SIEMPRE en la clave de esa persona; solo pasa a la pantalla si sigue siendo la sesión activa
+        try { localStorage.setItem(keyFor(id), JSON.stringify(next)); } catch { /* */ }
+        if (id === dataOwner()) { const tm = S.timer; S = next; S.timer = tm ?? next.timer; changedCurrent = changedCurrent || !isCur; }
       }
+      if (trust && push) { try { localStorage.removeItem('aldia:wipe:' + id); } catch { /* */ } }
       setBase(id, next); setDirty(id, false);
     }
     // mensajes
@@ -1815,15 +1844,17 @@ function presenceTick() {
   clearTimeout(presenceT);
   if (!cloudOn() || document.visibilityState !== 'visible') { presenceT = setTimeout(presenceTick, 20000); return; }
   if (REG.me && !isForestId(REG.current) && REG.current !== REG.me && !choosing) {
-    cloudFetch('POST', { kind: 'presence', viewer: REG.me, viewing: REG.current }).catch(() => {});
+    cloudFetch('POST', { kind: 'presence', viewer: REG.me, viewing: REG.current, name: profile(REG.me)?.name || '' }).catch(() => {});
   }
   presenceT = setTimeout(presenceTick, 20000);
 }
+document.addEventListener('DOMContentLoaded', () => setTimeout(presenceTick, 1500));
+setTimeout(() => { if (!presenceT) presenceTick(); }, 2500);
 function showPresence(list) {
   const mine = (list || []).filter((v) => v.viewing === REG.current && REG.current === REG.me && v.viewer !== REG.me);
   const el = $('#eye');
   if (!mine.length) { if (el) { el.classList.add('out'); setTimeout(() => el.remove(), 600); } presenceShown = null; return; }
-  const who = profile(mine[0].viewer)?.name || cap(mine[0].viewer || 'alguien');
+  const who = profile(mine[0].viewer)?.name || mine[0].name || cap(mine[0].viewer || 'alguien');
   if (el && presenceShown === who) return;
   el?.remove();
   const d = document.createElement('button');
@@ -1841,7 +1872,7 @@ function showPresence(list) {
   if (Snd.on()) Snd.bell(880, 0, 1.2, 0.04);
 }
 
-/* ================= Salones (grupos colaborativos) ================= */
+/* ================= Bosques (grupos colaborativos) ================= */
 const curFid = () => (isForestId(REG.current) ? REG.current.slice(2) : null);
 const gItems = () => (FOR.f[curFid()]?.items) || [];
 const gAll = (type) => gItems().filter((x) => x.type === type && !x.deleted);
@@ -1882,6 +1913,7 @@ function forestAuthLost(e) {
 function groupStatus() {
   const pend = (REG.gout || []).length;
   if (!REG.me || !tokens()[REG.me]) return `<button class="gstat warn" data-act="profile-choose">${icon('lock', 'sm')}Sesión cerrada: toca para entrar</button>`;
+  if (!navigator.onLine) return `<span class="gstat off">${icon('bell', 'sm')}Sin conexión: puedes seguir trabajando, todo se envía solo al volver la red${pend ? ` · ${plural(pend, 'cambio en espera', 'cambios en espera')}` : ''}</span>`;
   if (pend) return `<button class="gstat warn" data-act="g-retry">${icon('reset', 'sm')}${plural(pend, 'cambio sin guardar', 'cambios sin guardar')}: toca para reintentar</button>`;
   if (CLOUD.error) return `<span class="gstat warn">${icon('bell', 'sm')}${esc(CLOUD.error)}</span>`;
   return `<span class="gstat ok"><i id="liveDot" class="live-dot" data-on="${typeof LIVE !== 'undefined' && LIVE.live ? 1 : 0}"></i>En vivo · guardado al instante${CLOUD.last ? ` · ${new Date(CLOUD.last).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}` : ''}</span>`;
@@ -1923,8 +1955,8 @@ function viewGrupo_v7() {
   const done = tasks.filter((t) => gDone()[t.id]);
   const by = {}; for (const t of pend) (by[bucketOf(t)] ||= []).push(t);
   const people = new Set(gItems().map((x) => x.by).filter(Boolean));
-  return `${groupHead(esc(forestMeta()?.name || 'Salón'), `${plural(pend.length, 'pendiente', 'pendientes')} del grupo · ${plural(people.size, 'compañero activo', 'compañeros activos')}`)}
-    <form class="quick" id="gTaskForm" autocomplete="off"><div class="quick-row"><label for="gTaskIn" class="sr">Nueva tarea del Salón</label>
+  return `${groupHead(esc(forestMeta()?.name || 'Bosque'), `${plural(pend.length, 'pendiente', 'pendientes')} del grupo · ${plural(people.size, 'compañero activo', 'compañeros activos')}`)}
+    <form class="quick" id="gTaskForm" autocomplete="off"><div class="quick-row"><label for="gTaskIn" class="sr">Nueva tarea del Bosque</label>
       <input id="gTaskIn" placeholder="Ej. Tarea de hoy: ensayo de historia"><button class="quick-go">${icon('plus', 'sm')}Subir</button></div>
       <div class="quick-preview" id="gTaskPrev"></div></form>
     <p style="margin:-4px 0 12px"><button type="button" class="btn" data-act="g-new">${icon('cam')}Subir con foto o instrucciones</button></p>
@@ -2020,19 +2052,19 @@ function viewIdeas() {
 }
 function viewMasGrupo_v7() {
   const p = profile(); const f = forestMeta(); const st = S.settings;
-  if (!p || !f) return '<div class="empty"><h3>Este Salón ya no está</h3><p><button class="btn" data-act="profile-choose">Volver</button></p></div>';
+  if (!p || !f) return '<div class="empty"><h3>Este Bosque ya no está</h3><p><button class="btn" data-act="profile-choose">Volver</button></p></div>';
   const mem = f.members.map((id) => ({ id, ...(FOR.members[id] || { name: cap(id), color: '#2F8A5B' }) }));
   return `<h1 class="page-title">Más</h1>
-    <p class="page-sub">Ajustes del Salón ${esc(f.name)}.</p>
+    <p class="page-sub">Ajustes del Bosque ${esc(f.name)}.</p>
     ${groupStatus()}
     <h2 class="sec">Integrantes <small>${mem.length}</small></h2>
-    <div class="card"><div class="members">${mem.map((m) => `<span class="member">${mini(m.name)}<span>${esc(m.name)}${m.id === f.owner ? ' · fundó el Salón' : ''}</span></span>`).join('')}</div>
+    <div class="card"><div class="members">${mem.map((m) => `<span class="member">${mini(m.name)}<span>${esc(m.name)}${m.id === f.owner ? ' · fundó el Bosque' : ''}</span></span>`).join('')}</div>
       <div class="btn-row" style="margin-top:12px"><button class="btn primary" data-act="forest-invite">${icon('plus')}Invitar a alguien</button></div>
-      <p class="small muted" style="margin:10px 0 0">Escribe el nombre de usuario de tu compañero. Le llega una solicitud a su sesión y, si la acepta, entra al Salón.</p></div>
+      <p class="small muted" style="margin:10px 0 0">Escribe el nombre de usuario de tu compañero. Le llega una solicitud a su sesión y, si la acepta, entra al Bosque.</p></div>
     <ul class="rows" style="margin-top:14px">
-      <li><button type="button" class="rowbtn" data-act="forest-rename"><span class="ico">${icon('edit')}</span><span class="txt"><b>Nombre del Salón</b><span>${esc(f.name)}</span></span>${icon('chev', 'chev')}</button></li>
-      <li><button type="button" class="rowbtn" data-act="g-push"><span class="ico">${icon('bell')}</span><span class="txt"><b>Avisos del Salón</b><span>${REG.gpush ? 'Activados en este dispositivo' : 'Recibe una notificación cuando alguien suba algo'}</span></span>${icon('chev', 'chev')}</button></li>
-      <li><button type="button" class="rowbtn" data-act="profile-choose"><span class="ico">${icon('users')}</span><span class="txt"><b>Volver a mi usuario</b><span>Cambiar de usuario o de Salón</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="forest-rename"><span class="ico">${icon('edit')}</span><span class="txt"><b>Nombre del Bosque</b><span>${esc(f.name)}</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="g-push"><span class="ico">${icon('bell')}</span><span class="txt"><b>Avisos del Bosque</b><span>${REG.gpush ? 'Activados en este dispositivo' : 'Recibe una notificación cuando alguien suba algo'}</span></span>${icon('chev', 'chev')}</button></li>
+      <li><button type="button" class="rowbtn" data-act="profile-choose"><span class="ico">${icon('users')}</span><span class="txt"><b>Volver a mi usuario</b><span>Cambiar de usuario o de Bosque</span></span>${icon('chev', 'chev')}</button></li>
       <li><a href="#/instalar"><span class="ico">${icon('phone')}</span><span class="txt"><b>Instalar la app</b><span>Necesario para avisos en iPhone y iPad</span></span>${icon('chev', 'chev')}</a></li></ul>
     <h2 class="sec">Apariencia y sonido</h2>
     <div class="card" style="padding-top:6px;padding-bottom:6px">
@@ -2040,7 +2072,7 @@ function viewMasGrupo_v7() {
       <div class="toggle"><span class="t">Hojas cayendo</span><label class="switch"><input type="checkbox" data-set="leaves" data-bool ${st.leaves !== false ? 'checked' : ''} aria-label="Hojas cayendo"><span></span></label></div>
       <div class="toggle"><span class="t">Sonidos suaves</span><label class="switch"><input type="checkbox" data-set="sounds" data-bool ${st.sounds !== false ? 'checked' : ''} aria-label="Sonidos suaves"><span></span></label></div>
     </div>
-    <p style="margin-top:18px"><button class="btn danger" data-act="forest-leave">${icon('x')}Salir de este Salón</button></p>`;
+    <p style="margin-top:18px"><button class="btn danger" data-act="forest-leave">${icon('x')}Salir de este Bosque</button></p>`;
 }
 function urlB64(s) { const p = '='.repeat((4 - (s.length % 4)) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...b].map((c) => c.charCodeAt(0))); }
 async function enableGroupPush() {
@@ -2058,7 +2090,7 @@ async function enableGroupPush() {
 
 let navMode = null;
 const NAV_PERSONAL = [['hoy', 'home', 'Hoy'], ['tareas', 'list', 'Tareas'], ['calendario', 'cal', 'Calendario'], ['vida', 'tree', 'Vida'], ['mente', 'leaf', 'Mente'], ['mas', 'grid', 'Más']];
-const NAV_GROUP = [['grupo', 'list', 'Pendientes'], ['equipos', 'users', 'Equipos'], ['ideas', 'spark', 'Ideas'], ['vida', 'tree', 'Vida'], ['mas', 'grid', 'Más']];
+const NAV_GROUP = [['grupo', 'list', 'Pendientes'], ['equipos', 'users', 'Equipos'], ['ideas', 'spark', 'Ideas'], ['pizarron', 'board', 'Pizarrón'], ['vida', 'tree', 'Vida'], ['mas', 'grid', 'Más']];
 function setNav(group) {
   const mode = group ? 'g' : 'p'; if (mode === navMode) return; navMode = mode;
   $('.nav').innerHTML = (group ? NAV_GROUP : NAV_PERSONAL).map(([k, ic, l]) => `<a href="#/${k}" data-nav="${k}"><svg class="i"><use href="#i-${ic}"/></svg><span>${l}</span></a>`).join('');
@@ -2083,7 +2115,7 @@ function switchProfile(id) {
   const changed = id !== REG.current;
   REG.current = id; saveReg();
   KEY = keyFor(dataOwner());
-  S = load();
+  S = load(); CLOUD.again = CLOUD.busy || CLOUD.again;
   if (!S.settings.name && !isForestId(id)) S.settings.name = profile(id).name;
   choosing = false;
   Object.assign(UI, { tf: 'pend', ts: 'all', tt: 'all', q: '', notesQ: '', wStep: 0, calSel: today(), calMonth: today().slice(0, 7) });
@@ -2091,7 +2123,8 @@ function switchProfile(id) {
   if (location.hash && location.hash !== '#/hoy' && !isForestId(id)) location.hash = '#/hoy'; else if (isForestId(id) && location.hash !== '#/grupo') location.hash = '#/grupo'; else render();
   window.scrollTo(0, 0);
   updateBadge(); queueSync(); scheduleReminders(); dailyDigest();
-  if (changed) toast(`Ahora estás en ${isForestId(id) ? 'el Salón ' : 'la sesión de '}${profile(id).name}.`);
+  if (changed) setTimeout(presenceTick, 300);
+  if (changed) toast(`Ahora estás en ${isForestId(id) ? 'el Bosque ' : 'la sesión de '}${profile(id).name}.`);
   cloudSync(); treeCheck();
 }
 
@@ -2390,7 +2423,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.12. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.14. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -2460,7 +2493,7 @@ function render() {
   setNav(groupMode);
   if (choosing) html = viewQuien();
   else if (groupMode) {
-    html = r.name === 'equipos' ? viewEquipos() : r.name === 'equipo' ? viewEquipo(r.arg) : r.name === 'ideas' ? viewIdeas() : r.name === 'vida' ? viewVida() : r.name === 'instalar' ? viewInstalar() : r.name === 'mas' ? viewMasGrupo() : viewGrupo();
+    html = r.name === 'pizarron' ? viewPizarron() : r.name === 'equipos' ? viewEquipos() : r.name === 'equipo' ? viewEquipo(r.arg) : r.name === 'ideas' ? viewIdeas() : r.name === 'vida' ? viewVida() : r.name === 'instalar' ? viewInstalar() : r.name === 'mas' ? viewMasGrupo() : viewGrupo();
   } else if (showWelcome) html = viewBienvenida();
   else {
     switch (r.name) {
@@ -2484,7 +2517,7 @@ function render() {
       case 'vida': html = viewVida(); break;
       case 'panel': html = viewPanel(); break;
       case 'cerebro': html = viewCerebro(); break;
-      case 'salones': html = viewSalones(); break;
+      case 'salones': html = viewBosques(); break;
       case 'estilo': setTimeout(() => { history.replaceState(null, '', '#/mas'); openEstilos(); }, 0); html = viewMas(); break;
       case 'carta': setTimeout(() => { history.replaceState(null, '', '#/mas'); writeLetter(); }, 0); html = viewMas(); break;
       default: html = viewHoy();
@@ -2502,7 +2535,7 @@ function render() {
 
   const known = ['carta', 'estilo', 'salones', 'panel', 'cerebro', 'vida', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
   const rn = known.includes(r.name) ? r.name : 'hoy';
-  const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', vida: 'vida', mas: 'mas', instalar: 'mas' }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'mas', materias: 'mas', tareas: 'tareas', calendario: 'calendario', hoy: 'hoy', mente: 'mente', vida: 'vida' }[rn] || 'mas');
+  const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', pizarron: 'pizarron', vida: 'vida', mas: 'mas', instalar: 'mas' }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'mas', materias: 'mas', tareas: 'tareas', calendario: 'calendario', hoy: 'hoy', mente: 'mente', vida: 'vida' }[rn] || 'mas');
   $$('.nav a').forEach((a) => { if (a.dataset.nav === navName) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   $('.nav').hidden = showWelcome;
   $('#fab').hidden = groupMode || showWelcome || !['hoy', 'tareas', 'calendario', 'materia'].includes(rn);
@@ -2669,6 +2702,30 @@ function renderSubjectSheet() {
   if (wasOpen) sheet().querySelector('.sheet-body').scrollTop = scroll;
   if (!s.id) setTimeout(() => $('#sName')?.focus(), 60);
 }
+/* Horario: al mover la hora de inicio, la de fin se recorre para conservar la duración; nunca se pierde una clase */
+const minToHHMM = (m) => `${pad(Math.floor((m % 1440) / 60))}:${pad(m % 60)}`;
+function schedSet(el, typing = false) {
+  const i = +el.dataset.sched; const h = draft.schedule[i]; if (!h) return;
+  const k = el.dataset.k; draftDirty = true;
+  if (k === 'day') { h.day = +el.value; return; }
+  if (!el.value) return;
+  if (k === 'start') {
+    const dur = (toMin(h.end) ?? 0) - (toMin(h.start) ?? 0);
+    h.start = el.value;
+    const want = toMin(h.start) + (dur > 0 ? dur : 60);
+    if (!h.end || toMin(h.end) <= toMin(h.start) || dur > 0) { h.end = minToHHMM(Math.min(want, 23 * 60 + 59)); const e2 = el.closest('.sched-row')?.querySelector('[data-k="end"]'); if (e2) e2.value = h.end; }
+  } else h.end = el.value;
+  const row = el.closest('.sched-row'); const bad = h.start && h.end && toMin(h.end) <= toMin(h.start);
+  if (row) row.classList.toggle('bad', !!bad);
+  if (bad && !typing) toast('La hora de fin debe ser después de la de inicio.');
+}
+function fixSchedule(list) {
+  return (list || []).filter((h) => h && h.start).map((h) => {
+    const a = toMin(h.start); let b = toMin(h.end);
+    if (b == null || b <= a) b = Math.min(a + 60, 23 * 60 + 59);
+    return { ...h, day: +h.day, end: minToHHMM(b) };
+  });
+}
 function schedHTML() {
   if (!draft.schedule.length) return '<p class="small muted" style="margin:0">Sin horario todavía.</p>';
   const order = [1, 2, 3, 4, 5, 6, 0];
@@ -2683,7 +2740,7 @@ function saveDraftSubject(silent = false) {
   if (!d) return false;
   d.name = d.name.trim();
   if (!d.name) { toast('Escribe el nombre de la materia.'); return false; }
-  d.schedule = d.schedule.filter((h) => h.start && h.end && h.end > h.start);
+  d.schedule = fixSchedule(d.schedule);
   const isNew = !d.id;
   if (isNew) d.id = uid();
   const copy = JSON.parse(JSON.stringify(d));
@@ -2899,7 +2956,7 @@ const ACTIONS = {
     const who = profile().name;
     const ok = await ask({ title: `¿Borrar los datos de ${who}?`, text: `Se eliminan las tareas, materias, apuntes y ajustes de ${who} en este dispositivo. Los del otro usuario no se tocan. No se puede deshacer.`, ok: 'Borrar', danger: true });
     if (!ok) return;
-    S = defaults(); S.settings.name = who; save(); UI.wStep = 0; location.hash = '#/hoy'; render(); applyTheme(); toast(`Listo. ${who} empieza de cero.`);
+    S = stampOwner(defaults(), KEY); S.settings.name = who; try { localStorage.setItem('aldia:wipe:' + dataOwner(), '1'); } catch { /* */ } save(); UI.wStep = 0; location.hash = '#/hoy'; render(); applyTheme(); toast(`Listo. ${who} empieza de cero.`);
   },
   backup: () => { downloadFile(`al-dia-${REG.current}-respaldo-${today()}.json`, JSON.stringify(S, null, 1), 'application/json'); markBackup(); },
   'backup-share': async () => {
@@ -2914,7 +2971,7 @@ const ACTIONS = {
   'auto-restore': async (el) => {
     const b = (await autoBackups())[+el.dataset.i]; if (!b) return;
     const ok = await ask({ title: `¿Volver a la copia de ${relDay(b.d)}?`, text: 'Reemplaza lo que tienes ahora.', ok: 'Restaurar' });
-    if (!ok) return; S = migrate(b.data); save(); applyTheme(); render(); toast('Copia restaurada.');
+    if (!ok) return; S = stampOwner(migrate(b.data), KEY); try { localStorage.setItem('aldia:wipe:' + dataOwner(), '1'); } catch { /* */ } save(); applyTheme(); render(); toast('Copia restaurada.');
   },
   'ics-all': () => {
     const pend = pendingTasks().filter((t) => t.due);
@@ -3106,6 +3163,7 @@ sheet().addEventListener('click', (e) => { if (e.target === sheet()) closeSheet(
 
 document.addEventListener('input', (e) => {
   const el = e.target;
+  if (typeof draft !== 'undefined' && draft && el.dataset.sched !== undefined && el.type === 'time') { schedSet(el, true); return; }
   if (el.id === 'quickIn') { updateQuickPreview(); return; }
   if (el.id === 'gTaskIn') { const pq = parseQuick(el.value); $('#gTaskPrev').innerHTML = el.value.trim() ? `${pq.due ? `<span class="chip pen">${icon('cal', 'sm')}${esc(cap(relDay(pq.due)))}</span>` : '<span class="chip">Sin fecha</span>'}${pq.time ? `<span class="chip">${fmtTime(pq.time)}</span>` : ''}` : ''; return; }
   if (el.dataset.ambVol !== undefined) { Snd.setVol(+el.value); return; }
@@ -3142,7 +3200,7 @@ document.addEventListener('change', async (e) => {
   if (draft && el.dataset.f === 'important') { draft.important = el.checked; draftDirty = true; return; }
   if (draft && el.dataset.f && el.closest('#sheet') && el.tagName === 'SELECT') { draft[el.dataset.f] = el.value; draftDirty = true; return; }
   if (draft && el.dataset.stepDate) { const s = draft.steps.find((x) => x.id === el.dataset.stepDate); if (s) { s.date = el.value; draftDirty = true; } return; }
-  if (draft && el.dataset.sched !== undefined) { const h = draft.schedule[+el.dataset.sched]; if (h) { h[el.dataset.k] = el.dataset.k === 'day' ? +el.value : el.value; draftDirty = true; } return; }
+  if (draft && el.dataset.sched !== undefined) { schedSet(el); return; }
   if (el.dataset.voice !== undefined) { REG.voice = el.value; saveReg(); if (speakingNow) speechSynthesis.cancel(); speakingNow = false; speak('Así suena esta voz.'); return; }
   if (el.dataset.reg) { REG[el.dataset.reg] = el.checked; saveReg(); $$(`[data-reg="${el.dataset.reg}"]`).forEach((x) => { x.checked = el.checked; }); return; }
   if (el.dataset.set) {
