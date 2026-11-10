@@ -349,6 +349,8 @@ export default async (req, context) => {
     const body = JSON.parse(text);
     const as = String(body.as || "");
 
+    const viewId = String(req.headers.get("x-aldia-view") || "");
+    if (viewId && !(["presence", "adminenter"].includes(body.kind)) && (body.profile === viewId || body.as === viewId || body.kind === "letter")) return json({ error: "Vista de administración: solo lectura. No se guardó nada." }, 403);
     switch (body.kind) {
       case "register": {
         const user = String(body.user || "").toLowerCase();

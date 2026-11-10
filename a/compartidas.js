@@ -80,6 +80,7 @@ function shpOpen(p) {
       ${inv.length ? `<ul class="rows">${inv.map((f) => `<li><button type="button" class="rowbtn" data-act="shp-invite" data-id="${sid}" data-to="${esc(f.id)}" data-name="${esc(f.name)}"><span class="txt"><b>${esc(f.name)}</b><span>Invitar a esta hoja</span></span>${icon('plus', 'sm')}</button></li>`).join('')}</ul>` : '<p class="small muted">No hay más amigos por invitar. Agrega amigos en Amistades.</p>'}
       <div class="btn-row" style="margin-top:16px"><button class="btn quiet danger" data-act="shp-leave" data-id="${p.id}">${p.isOwner ? 'Dejar de compartir' : 'Salir de la hoja'}</button></div>`;
   }
+  body += `<div class="btn-row" style="margin-top:14px"><button class="btn" data-act="lb-send" data-id="${p.id}">${icon('users', 'sm')}Mandar a un Bosque o amigo</button></div>`;
   openSheet(`${sheetHead(sid ? 'Hoja compartida' : 'Compartir hoja')}<div class="sheet-body">${body}</div>`);
 }
 
