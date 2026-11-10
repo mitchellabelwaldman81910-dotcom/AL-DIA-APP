@@ -444,6 +444,7 @@ function planHoy() {
       why.push(d === 0 ? 'vence hoy' : d === 1 ? 'vence mañana' : `vence ${relDay(t.due)}`);
     }
     score *= [0.75, 1, 1.45][(t.priority || 2) - 1];
+    if (typeof plusFactor === 'function') score *= plusFactor(t, s);
     if (t.priority === 3) why.push('es prioridad alta');
     if (s && s.important) { score *= 1.3; why.push('es de una materia importante'); }
     if (+t.value >= 20) { score *= 1.25; why.push(`vale ${+t.value}%`); }
@@ -735,6 +736,7 @@ function viewHoy() {
     </div></section>
     ${inviteBannerHTML()}
     ${homeTreeHTML()}
+    ${plusHomeHTML()}
     ${lettersHTML()}
     ${!isGroup() && otherProfile() ? `<button type="button" class="letter-write" data-act="letter-write">${icon('heart', 'sm')}<span>Escribirle a ${esc(otherProfile().name)}</span>${(REG.letters || []).some((l) => l.from === REG.current && l.to === otherProfile().id && !l.read) ? `<span class="tiny faint">· tu mensaje aún no lo abre</span>` : ''}</button>` : ''}
     <form class="quick" id="quickForm" autocomplete="off">
@@ -1148,6 +1150,8 @@ function viewMateria(id) {
 /* ---------- Más ---------- */
 function viewMas() {
   const items = [
+    ['#/cerebro', 'spark', 'Tu Cerebro', 'Todo lo que has hecho y pensado, conectado en una red viva'],
+    ['#/panel', 'grid', 'Mi panel', 'Radar de carga, tiempo libre real, patrones y hábitos'],
     ['#/materias', 'book', 'Materias', 'Tus materias, horarios y calificaciones'],
     ['#/escanear', 'cam', 'Escanear foto', 'Saca pendientes y fechas de una foto o resuelve ejercicios de mate'],
     ['#/enfoque', 'timer', 'Modo enfoque', 'Temporizador para estudiar por bloques y llevar tu racha'],
@@ -1925,6 +1929,7 @@ function viewGrupo() {
       <div class="quick-preview" id="gTaskPrev"></div></form>
     <p style="margin:-4px 0 12px"><button type="button" class="btn" data-act="g-new">${icon('cam')}Subir con foto o instrucciones</button></p>
     ${focusCardHTML()}
+    ${typeof tplCardHTML === 'function' ? tplCardHTML() : ''}
     ${pushBanner()}
     ${pend.length ? BUCKETS.filter(([k]) => by[k]).map(([k, l]) => `<div class="group-h ${k === 'late' ? 'late' : ''}">${l}<span class="count">${by[k].length}</span></div><ul class="tasks">${by[k].map(groupTaskRow).join('')}</ul>`).join('')
       : `<div class="empty" style="margin-top:18px"><h3>Sin pendientes del grupo</h3><p>Cuando alguien suba una tarea, aparece aquí para todos y les llega un aviso.</p></div>`}
@@ -2384,7 +2389,7 @@ function viewAjustes() {
     <h2 class="sec">Datos</h2>
     <div class="card"><p style="margin:0 0 12px">${esc(me.name)} tiene ${plural(S.tasks.length, 'tarea', 'tareas')}, ${plural(S.subjects.length, 'materia', 'materias')} y ${plural(S.notes.length, 'apunte', 'apuntes')} guardados en este dispositivo.</p>
       <div class="btn-row"><a class="btn" href="#/respaldo">${icon('save')}Respaldo</a><button class="btn danger" data-act="wipe">${icon('trash')}Borrar datos de ${esc(me.name)}</button></div></div>
-    <p class="tiny faint" style="margin-top:24px">Al Día 7.2. Funciona sin internet una vez instalada.</p>`;
+    <p class="tiny faint" style="margin-top:24px">Al Día 7.3. Funciona sin internet una vez instalada.</p>`;
 }
 
 /* ---------- Instalar ---------- */
@@ -2476,6 +2481,8 @@ function render() {
       case 'escanear': html = viewEscanear(); break;
       case 'mente': html = viewMente(); break;
       case 'vida': html = viewVida(); break;
+      case 'panel': html = viewPanel(); break;
+      case 'cerebro': html = viewCerebro(); break;
       case 'carta': setTimeout(() => { history.replaceState(null, '', '#/mas'); writeLetter(); }, 0); html = viewMas(); break;
       default: html = viewHoy();
     }
@@ -2485,10 +2492,11 @@ function render() {
   const hadFocus = document.activeElement?.id;
   main.innerHTML = html;
   harmonize(main);
+  if (r.name === 'cerebro' && !groupMode && !choosing && !showWelcome) brainInit();
   if (qv && $('#quickIn')) { $('#quickIn').value = qv; updateQuickPreview(); }
   if (hadFocus && ['quickIn', 'taskQ', 'notesQ'].includes(hadFocus)) { const el = $('#' + hadFocus); if (el) { el.focus(); const v = el.value; el.setSelectionRange?.(v.length, v.length); } }
 
-  const known = ['carta', 'vida', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
+  const known = ['carta', 'panel', 'cerebro', 'vida', 'mente', 'escanear', 'tareas', 'calendario', 'materias', 'materia', 'mas', 'enfoque', 'herramientas', 'calc', 'apa', 'checklist', 'notas', 'respaldo', 'ajustes', 'instalar', 'ayuda'];
   const rn = known.includes(r.name) ? r.name : 'hoy';
   const navName = groupMode ? ({ equipos: 'equipos', equipo: 'equipos', ideas: 'ideas', vida: 'vida', mas: 'mas', instalar: 'mas' }[r.name] || 'grupo') : showWelcome ? '' : ({ materia: 'mas', materias: 'mas', tareas: 'tareas', calendario: 'calendario', hoy: 'hoy', mente: 'mente', vida: 'vida' }[rn] || 'mas');
   $$('.nav a').forEach((a) => { if (a.dataset.nav === navName) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
@@ -2522,6 +2530,7 @@ function renderTaskSheet() {
   const max = S.settings.gradeMax;
   const html = `${sheetHead(isNew ? 'Nueva tarea' : (t.done ? 'Tarea entregada' : 'Tarea'))}
   <div class="sheet-body">
+    ${typeof plusTopHTML === 'function' ? plusTopHTML(t) : ''}
     ${t.id ? `<div id="sumBox">${summaryHTML(t)}</div>` : ''}
     <div class="field"><label for="fTitle" class="sr">Título</label>
       <input id="fTitle" class="title-input" data-f="title" placeholder="¿Qué hay que entregar?" value="${esc(t.title)}" autocomplete="off"></div>
@@ -2541,7 +2550,7 @@ function renderTaskSheet() {
       ${[[1, 'Baja'], [2, 'Normal'], [3, 'Alta']].map(([k, l]) => `<button type="button" data-act="pick" data-k="priority" data-v="${k}" aria-pressed="${t.priority === k}">${l}</button>`).join('')}</div></div>
     <div class="row2">
       <div class="field"><label for="fValue">Vale <span class="faint">(%)</span></label><input id="fValue" class="input" type="number" inputmode="numeric" min="0" max="100" data-f="value" value="${t.value ?? ''}" placeholder="Ej. 20"></div>
-      <div class="field"><label for="fEst">Tiempo que lleva</label><select id="fEst" class="input" data-f="estimate">${ESTIMATES.map(([v, l]) => `<option value="${v}" ${+t.estimate === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="field"><label for="fEst">¿Cuánto crees que te tomará?</label><select id="fEst" class="input" data-f="estimate">${ESTIMATES.map(([v, l]) => `<option value="${v}" ${+t.estimate === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
     </div>
     ${isNew ? '' : `<div class="field"><span class="lbl">Cumplimiento</span><div class="card" style="padding:4px 14px;background:var(--paper)">
       <div class="toggle"><span class="t">Tarea realizada</span><label class="switch"><input type="checkbox" data-f="made" data-bool ${t.made || t.done ? 'checked' : ''} aria-label="Tarea realizada"><span></span></label></div>
@@ -2559,6 +2568,7 @@ function renderTaskSheet() {
         <button type="button" class="btn quiet" data-act="checklist-steps">${icon('check', 'sm')}Checklist de entrega</button>
         <button type="button" class="btn quiet" data-act="spread-steps">${icon('cal', 'sm')}Repartir en días</button>
       </div></div>
+    ${typeof plusTaskHTML === 'function' ? plusTaskHTML(t) : ''}
     <div class="field"><label for="fRemind">Recordarme <span class="faint">(día y hora)</span></label>
       <input id="fRemind" class="input" type="datetime-local" data-f="remind" value="${esc(t.remind || '')}">
       <span class="hint">Además de los avisos de siempre: un día antes a las 7 pm y el mismo día a las 7 am.</span></div>
@@ -2589,7 +2599,7 @@ function stepsHTML() {
   if (!draft.steps.length) return '';
   return draft.steps.map((s) => `<li class="step ${s.done ? 'done' : ''}">
     <button type="button" class="chk" data-act="draft-step-toggle" data-step="${s.id}" role="checkbox" aria-checked="${s.done}" aria-label="Paso hecho"><span class="box">${icon('check')}</span></button>
-    <input class="txt" data-step-text="${s.id}" value="${esc(s.text)}" aria-label="Texto del paso">
+    <input class="txt" data-step-text="${s.id}" value="${esc(s.text)}" aria-label="Texto del paso">${s.min ? `<span class="chip stepmin">${s.min} min</span>` : ''}
     <input type="date" data-step-date="${s.id}" value="${s.date || ''}" aria-label="Día para hacerlo">
     <button type="button" class="rm" data-act="draft-step-del" data-step="${s.id}" aria-label="Quitar paso">${icon('x', 'sm')}</button></li>`).join('');
 }
@@ -2725,6 +2735,7 @@ function toggleTask(id, rowEl) {
     return;
   }
   if (!t.done) {
+    if (typeof quizGate === 'function' && quizGate(t)) return;
     t.done = true; t.made = true; t.doneAt = Date.now();
     save(); Snd.chime();
     if (rowEl) { floatText(rowEl, `+${t.priority === 3 ? 14 : 10} ✨`); leafBurst(rowEl); }
@@ -2734,7 +2745,8 @@ function toggleTask(id, rowEl) {
       setTimeout(render, 900);
     } else render();
     leafBurst(rowEl?.querySelector('.chk'));
-    toast(`Entregada: ${t.title}`, { action: 'Deshacer', onAction: () => commit(() => { t.done = false; t.doneAt = null; }) });
+    if (+t.estimate > 0 && typeof realMin === 'function' && realMin(t) >= 3) { const d = realMin(t) - +t.estimate; toast(d > 5 ? `Entregada. Te tomó ${fmtMinutes(realMin(t))}: ${fmtMinutes(d)} más de lo que calculaste.` : d < -5 ? `Entregada. Terminaste ${fmtMinutes(-d)} antes de lo calculado. 🎯` : 'Entregada. Calculaste casi perfecto. 🎯', { ms: 5500, action: 'Deshacer', onAction: () => commit(() => { t.done = false; t.doneAt = null; }) }); }
+    else toast(`Entregada: ${t.title}`, { action: 'Deshacer', onAction: () => commit(() => { t.done = false; t.doneAt = null; }) });
     if (navigator.vibrate) navigator.vibrate(18);
   } else {
     commit(() => { t.done = false; t.doneAt = null; });
@@ -3074,7 +3086,7 @@ function addStepFromInput() {
 function logFocus(m) {
   const T = timerState();
   const t = T.taskId ? task(T.taskId) : null;
-  S.focus.push({ d: today(), m, s: t?.subjectId || null, t: t?.id || null });
+  S.focus.push({ d: today(), m, h: new Date().getHours(), s: t?.subjectId || null, t: t?.id || null });
   if (S.focus.length > 3000) S.focus = S.focus.slice(-3000);
 }
 function markBackup() { commit((s) => { s.settings.lastBackup = today(); }); toast('Respaldo listo. Guárdalo en un lugar seguro.'); }
@@ -3220,7 +3232,7 @@ function quickAdd() {
   inp.value = '';
   commit((s) => s.tasks.push(t));
   scheduleReminders();
-  toast(t.due ? `Agregada para ${relDay(t.due)}.` : 'Agregada sin fecha.', { action: 'Editar', onAction: () => openTask(t.id) });
+  toast(t.due ? `Agregada para ${relDay(t.due)}.` : 'Agregada sin fecha.', { action: 'Desglosar en pasos', onAction: () => { openTask(t.id); setTimeout(() => { if (typeof microOpen === 'function') microOpen(); }, 120); }, ms: 5500 });
   setTimeout(() => $('#quickIn')?.focus(), 30);
 }
 
