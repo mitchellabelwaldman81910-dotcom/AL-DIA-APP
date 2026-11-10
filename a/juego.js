@@ -110,7 +110,7 @@ function gmStart() {
   const spawn = () => {
     const gold = Math.random() < Math.min(0.09, 0.035 + st.apples * 0.0004);
     const live = () => st.hang.length + st.apples_.filter((a) => !a.done).length;
-    const cap = level() < 3 ? 1 : level() < 6 ? 2 : 3; if (live() >= cap) return false;
+    if (live() >= 1) return false; // una sola manzana a la vez, siempre
     const heal = !gold && st.lives < 3 && st.apples - st.lastHeal >= 30 && Math.random() < 0.03; if (heal) st.lastHeal = st.apples;
     const y = st.treeBottom * (0.35 + Math.random() * 0.55);
     // elige el lugar más alejado de las manzanas que ya están cayendo, para que no caigan encimadas
@@ -128,14 +128,14 @@ function gmStart() {
     if (!GAME.run) return;
     const dt = Math.min(0.05, (now - st.last) / 1000); st.last = now;
     const W = R.w, H = R.h; const lv = level();
-    st.spawn -= dt; if (st.spawn <= 0 && !st.over) { if (spawn() && lv > 4 && Math.random() < Math.min(0.25, (lv - 4) * 0.05)) spawn(); st.spawn = Math.max(1.1, 1.8 - lv * 0.06) * (0.8 + Math.random() * 0.4); }
+    st.spawn -= dt; if (st.spawn <= 0 && !st.over) { if (spawn()) st.spawn = Math.max(0.35, 0.9 - lv * 0.05) * (0.8 + Math.random() * 0.4); else st.spawn = 0.1; }
     // manzanas que tiemblan antes de caer
     for (const a of st.hang) a.t += dt;
-    for (const a of st.hang.filter((a) => a.t >= a.wob)) st.apples_.push({ x: a.x, y: a.y, vx: (Math.random() - 0.5) * 20 * Math.min(3, lv / 2), vy: 40, gold: a.gold, heal: a.heal, r: a.gold ? 15 : 14, rot: 0, vr: (Math.random() - 0.5) * 4 });
+    for (const a of st.hang.filter((a) => a.t >= a.wob)) st.apples_.push({ x: a.x, y: a.y, vx: (Math.random() - 0.5) * 20 * Math.min(3, lv / 2), vy: 110, gold: a.gold, heal: a.heal, r: a.gold ? 15 : 14, rot: 0, vr: (Math.random() - 0.5) * 4 });
     st.hang = st.hang.filter((a) => a.t < a.wob);
     st.bx += (st.tx - st.bx) * Math.min(1, dt * 18);
     const by = H * 0.86, bw = Math.min(120, W * 0.28);
-    const grav = 380 + lv * 46;
+    const grav = 560 + lv * 55;
     for (const a of st.apples_) {
       a.vy += grav * dt; a.y += a.vy * dt; a.x += a.vx * dt; a.rot += a.vr * dt; if (a.x < 16 || a.x > W - 16) a.vx *= -1;
       if (!a.done && a.y + a.r >= by - 6 && a.y < by + 14 && Math.abs(a.x - st.bx) < bw / 2 + 4) {
