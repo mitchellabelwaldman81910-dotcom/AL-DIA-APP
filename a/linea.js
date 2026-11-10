@@ -30,7 +30,30 @@ function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pou
   const W = 360, H = 300, GY = 252, cx = 180;
   const key = `${id}:${seed}:${v}`; const anim = !LN.seen.has(key); LN.seen.add(key);
   let o = `<svg viewBox="0 0 ${W} ${H}" class="vscene-svg ln-scene ${wet ? 'is-wet' : 'is-dry'} ${pour ? 'is-pour' : ''}" role="img" aria-label="Tu árbol, nivel ${level}" preserveAspectRatio="xMidYMid slice">`;
-  o += `<rect class="sc-bg" width="${W}" height="${H}"/>`;
+  const u = `${id}-${String(seed).replace(/[^a-z0-9]/gi, '')}`;
+  // ---- acuarela: cielo, luz, montañas y colinas lavadas (los trazos van encima) ----
+  o += `<defs>
+    <linearGradient id="sky-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="sk-a"/><stop offset=".62" class="sk-b"/><stop offset="1" class="sk-c"/></linearGradient>
+    <radialGradient id="sun-${u}" cx="292" cy="60" r="${lnR(90 + 120 * p)}" gradientUnits="userSpaceOnUse"><stop offset="0" class="sg-a"/><stop offset=".35" class="sg-b"/><stop offset="1" class="sg-c"/></radialGradient>
+    <linearGradient id="mt-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="mt-a"/><stop offset="1" class="mt-b"/></linearGradient>
+    <linearGradient id="hl-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="hl-a"/><stop offset="1" class="hl-b"/></linearGradient>
+    <linearGradient id="gd-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="gd-a"/><stop offset="1" class="gd-b"/></linearGradient>
+    <radialGradient id="cw-${u}"><stop offset="0" class="cw-a"/><stop offset=".7" class="cw-b"/><stop offset="1" class="cw-c"/></radialGradient>
+    <radialGradient id="ch-${u}"><stop offset="0" class="ch-a"/><stop offset="1" class="ch-b"/></radialGradient>
+    <linearGradient id="lk-${u}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="lk-a"/><stop offset="1" class="lk-b"/></linearGradient>
+    <radialGradient id="vg-${u}" cx=".5" cy=".45" r=".75"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" class="vg-b"/></radialGradient>
+    <filter id="soft-${u}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="${lnR(3.5 + 2 * p)}"/></filter>
+  </defs>`;
+  o += `<rect width="${W}" height="${H}" fill="url(#sky-${u})"/>`;
+  o += `<rect width="${W}" height="${H}" fill="url(#sun-${u})" class="w-sun"/>`;
+  if (v >= 20) o += `<g class="w-rays">${[-0.5, -0.2, 0.12, 0.42].map((k, i) => `<path d="M292 60L${lnR(292 + Math.cos(2.2 + k) * 420)} ${lnR(60 + Math.sin(2.2 + k) * 420)}L${lnR(292 + Math.cos(2.26 + k) * 420)} ${lnR(60 + Math.sin(2.26 + k) * 420)}Z" style="--d:${i * 1.7}s"/>`).join('')}</g>`;
+  o += `<path class="w-mt1" fill="url(#mt-${u})" d="M0 170L28 150L52 158L86 128L116 146L140 136L176 112L206 134L228 126L262 104L296 132L326 120L360 138V230H0Z"/>`;
+  o += `<path class="w-mt2" fill="url(#mt-${u})" d="M0 188L40 168L74 178L110 156L150 174L190 160L224 172L258 150L300 170L336 160L360 168V230H0Z"/>`;
+  o += `<path class="w-hl1" fill="url(#hl-${u})" d="M0 196C60 170 120 192 190 178S320 160 360 182V300H0Z"/>`;
+  o += `<path class="w-hl2" fill="url(#hl-${u})" d="M0 224C70 206 140 228 220 214S330 202 360 216V300H0Z"/>`;
+  o += `<path class="w-gd" fill="url(#gd-${u})" d="M0 ${GY - 6}C80 ${GY - 14} 150 ${GY - 2} 230 ${GY - 8}S340 ${GY - 14} 360 ${GY - 6}V300H0Z"/>`;
+  if (v >= 35) { const rx = lnR(24 + 14 * p); o += `<ellipse cx="300" cy="${GY + 27}" rx="${rx}" ry="7" fill="url(#lk-${u})"/>`; }
+  if (v >= 70) o += `<path fill="url(#lk-${u})" opacity=".8" d="M-2 ${GY + 38}C60 ${GY + 46} 140 ${GY + 34} 200 ${GY + 41}S250 ${GY + 34} 270 ${GY + 31}L282 ${GY + 35}C262 ${GY + 41} 210 ${GY + 47} 150 ${GY + 41}S50 ${GY + 52} -2 ${GY + 44}Z"/>`;
   // estrellas y constelación
   if (v >= 90) {
     const st = Array.from({ length: 18 }, () => [lnR(16 + R() * 328), lnR(12 + R() * 96)]);
@@ -115,11 +138,20 @@ function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pou
     grow(cx, GY - 3, (R() - 0.5) * 0.08, trunkLen, trunkW, 0);
     let roots = '';
     if (v >= 20) for (const s of [-1, 1]) roots += `<path class="ln" stroke-width="${lnR(trunkW * 0.45)}" d="M${cx} ${GY - 3}q${s * 7} 2 ${lnR(s * (12 + 12 * p))} 6"/><path class="ln s" stroke-width=".6" d="M${cx + s * 4} ${GY}q${s * 5} 4 ${lnR(s * (8 + 8 * p))} 9"/>`;
-    o += `<g class="vt-sway ${anim ? 'grow' : ''} ${wet ? '' : 'dry'}"><ellipse class="ln s" stroke-width=".7" cx="${cx}" cy="${GY + 3}" rx="${lnR(20 + 26 * p)}" ry="4"/>${roots}${br.join('')}${bark.join('')}<g class="vt-leaves">${leaves.join('')}</g>`;
+    // copa en acuarela: manchas suaves bajo las hojas de línea, con luz del lado del sol
+    let wash = '';
+    if (ends.length) {
+      const cr = 8 + 16 * p; const pick = ends.length > 60 ? ends.filter((_, i) => i % 2 === 0) : ends;
+      for (const [x, y] of pick) wash += `<circle cx="${lnR(x + (R() - 0.5) * 6)}" cy="${lnR(y + (R() - 0.5) * 6)}" r="${lnR(cr * (0.7 + R() * 0.6))}" fill="url(#cw-${u})"/>`;
+      let hi = ''; for (const [x, y] of pick.filter((q) => q[0] > cx - 4).slice(0, 18)) hi += `<circle cx="${lnR(x + 4)}" cy="${lnR(y - 5)}" r="${lnR(cr * 0.55)}" fill="url(#ch-${u})"/>`;
+      wash = `<g class="w-canopy ${anim ? 'grow-w' : ''}" filter="url(#soft-${u})">${wash}${hi}</g>`;
+    }
+    const shadow = `<ellipse class="w-shadow" cx="${cx + 14}" cy="${GY + 2}" rx="${lnR(26 + 46 * p)}" ry="${lnR(4 + 3 * p)}" filter="url(#soft-${u})"/>`;
+    o += `<g class="vt-sway ${anim ? 'grow' : ''} ${wet ? '' : 'dry'}">${shadow}${wash}<ellipse class="ln s" stroke-width=".7" cx="${cx}" cy="${GY + 3}" rx="${lnR(20 + 26 * p)}" ry="4"/>${roots}${br.join('')}${bark.join('')}<g class="vt-leaves">${leaves.join('')}</g>`;
     if (wet && v >= 38) { const nF = Math.min(16, Math.floor((v - 36) / 3)); for (let i = 0; i < nF && ends.length; i++) { const [x, y, d] = ends[Math.floor(R() * ends.length)]; o += `<g class="fl-g" style="--d:${d + 200}ms">${lnFlower(x + (R() - 0.5) * 8, y + (R() - 0.5) * 8, 0.85)}</g>`; } }
     if (wet && v >= 55) { const nF = Math.min(12, Math.floor((v - 52) * 0.3)); for (let i = 0; i < nF && ends.length; i++) { const [x, y, d] = ends[Math.floor(R() * ends.length)]; const fx = x + (R() - 0.5) * 7, fy = y + 3 + R() * 4; o += `<g class="fl-g" style="--d:${d + 300}ms"><path class="ln g" stroke-width=".6" d="M${lnR(fx)} ${lnR(fy - 3)}v2"/><circle class="fr" cx="${lnR(fx)}" cy="${lnR(fy + 1)}" r="${v >= 95 ? 2.6 : 2.1}"/></g>`; } }
     if (!wet) o += `<path class="ln w vt-thirst" stroke-width="1" stroke-dasharray="2 2.5" d="M0 0C-5 8-7 12-3 15 1 17 5 15 6 11 7 7 3 3 0 0Z" transform="translate(${cx + 30} ${lnR(GY - trunkLen - 30)})"/>`;
-    if (v >= 100) { const cy = lnR(GY - trunkLen * 2.1); o += [1.25].map((k, i) => `<circle class="ln g v-pulse" stroke-width=".6" opacity="${0.55 - i * 0.15}" cx="${cx}" cy="${cy}" r="${lnR(trunkLen * k)}" style="animation-delay:${i * 0.6}s"/>`).join(''); }
+    if (false) { const cy = lnR(GY - trunkLen * 2.1); o += [1.25].map((k, i) => `<circle class="ln g v-pulse" stroke-width=".6" opacity="${0.55 - i * 0.15}" cx="${cx}" cy="${cy}" r="${lnR(trunkLen * k)}" style="animation-delay:${i * 0.6}s"/>`).join(''); }
     o += '</g>';
   }
   // visitantes
@@ -134,6 +166,7 @@ function treeScene({ level = 0, max = 100, wet = true, id = 'v', seed = 'x', pou
     o += '</g>';
   }
   if (garden && garden.length) o += gardenSVG(garden, id);
+  o += `<rect width="${W}" height="${H}" fill="url(#vg-${u})" pointer-events="none"/>`;
   return o + '</svg>';
 }
 
