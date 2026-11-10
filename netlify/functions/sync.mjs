@@ -101,6 +101,15 @@ export default async (req, context) => {
         const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean);
         return json({ ok: true, users: all.map((a) => ({ id: a.id, name: a.name, color: a.color })) });
       }
+      if (kindQ === "history") {
+        const p = String(url.searchParams.get("p") || "");
+        if (!authList.includes(p)) return json({ error: "Inicia sesión primero" }, 401);
+        const hl = await store.list({ prefix: `${W}ph/${p}/` });
+        const keys = hl.blobs.map((b) => b.key).sort().reverse().slice(0, 40);
+        const list = [];
+        for (const k of keys) { const v = await store.get(k, { type: "json" }); if (v && v.data) list.push({ at: v.at, device: v.device || "", subjects: (v.data.subjects || []).length, tasks: (v.data.tasks || []).length, notes: (v.data.notes || []).length, thoughts: (v.data.thoughts || []).length, owner: v.data.owner || "" }); }
+        return json({ ok: true, list });
+      }
       if (kindQ === "watch") {
         if (!authList.length) return json({ error: "Inicia sesión primero" }, 401);
         const since = url.searchParams.get("since") || "";
@@ -247,7 +256,20 @@ export default async (req, context) => {
         const p = String(body.profile || "");
         if (!body.data || typeof body.data !== "object") return json({ error: "datos inválidos" }, 400);
         if (!allowed(p)) return json({ error: "Inicia sesión primero" }, 401);
+        // protección: un dispositivo nunca puede guardar los datos de una persona en la cuenta de otra
+        if (body.data.owner && body.data.owner !== p) return json({ error: "Estos datos son de otra cuenta; no se guardaron." }, 409);
         const at = Date.now();
+        const prev = await store.get(`${W}p/${p}`, { type: "json" });
+        if (prev && prev.data && at - (prev.at || 0) > 0) {
+          // historial en la nube: una versión cada 10 minutos como máximo, se guardan las últimas 40
+          const hl = await store.list({ prefix: `${W}ph/${p}/` });
+          const keys = hl.blobs.map((b) => b.key).sort();
+          const lastAt = keys.length ? +keys[keys.length - 1].split("/").pop() : 0;
+          if (at - lastAt > 10 * 60000) {
+            await store.setJSON(`${W}ph/${p}/${prev.at}`, prev);
+            for (const k of keys.slice(0, Math.max(0, keys.length + 1 - 40))) await store.delete(k);
+          }
+        }
         await store.setJSON(`${W}p/${p}`, { at, device: clip(body.device, 40), data: body.data });
         await bump(store, [p]);
         return json({ ok: true, at });
@@ -274,7 +296,7 @@ export default async (req, context) => {
       case "presence": {
         if (!USER_RE.test(String(body.viewing)) || !USER_RE.test(String(body.viewer)) || body.viewer === body.viewing) return json({ error: "presencia inválida" }, 400);
         if (!allowed(body.viewing)) return json({ error: "Inicia sesión primero" }, 401);
-        await store.setJSON(`${W}presence/${body.viewing}-${body.viewer}`, { viewer: body.viewer, viewing: body.viewing, at: Date.now() });
+        await store.setJSON(`${W}presence/${body.viewing}-${body.viewer}`, { viewer: body.viewer, viewing: body.viewing, name: auth[body.viewer]?.name || clip(body.name, 40) || body.viewer, at: Date.now() });
         await bump(store, [body.viewing]);
         return json({ ok: true });
       }
@@ -344,6 +366,18 @@ export default async (req, context) => {
         await store.setJSON(`${W}f/${f.id}`, f);
         await bump(store, f.members);
         return json({ ok: true });
+      }
+      case "restore": {
+        const p = String(body.profile || "");
+        if (!allowed(p)) return json({ error: "Inicia sesión primero" }, 401);
+        const v = await store.get(`${W}ph/${p}/${Math.floor(+body.at || 0)}`, { type: "json" });
+        if (!v || !v.data) return json({ error: "Esa versión ya no existe" }, 404);
+        const cur = await store.get(`${W}p/${p}`, { type: "json" });
+        if (cur) await store.setJSON(`${W}ph/${p}/${cur.at}`, cur);
+        const at = Date.now(); const data = { ...v.data, owner: p };
+        await store.setJSON(`${W}p/${p}`, { at, device: "restaurado", data });
+        await bump(store, [p]);
+        return json({ ok: true, at, data });
       }
       case "freq": {
         if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);

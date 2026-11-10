@@ -252,7 +252,7 @@ function acceptSession(r, fallback = {}) {
   const rec = { id: u.id, name: u.name || fallback.name || cap(u.id), color: u.color || fallback.color || '#2F8A5B' };
   if (i >= 0) REG.users[i] = rec; else REG.users.push(rec);
   if (!REG.me) REG.me = u.id;
-  saveReg(); setDirty(u.id, true);
+  saveReg();
   return u.id;
 }
 async function sessionFor(id) {
@@ -300,7 +300,7 @@ function accountCardHTML() {
   return `<h2 class="sec">Mi cuenta</h2><div class="card">
     <div class="toggle" style="padding-top:0"><span style="display:flex;gap:12px;align-items:center">${avatar(p, 'sm')}<span><span class="t">${esc(p.name)}</span><span class="d" style="display:block">@${esc(p.id)} · ${on ? 'sesión abierta' : 'sin sesión'}</span></span></span></div>
     <p class="small muted" id="cloudState" style="margin:4px 0 12px">${cloudStateText()}</p>
-    <div class="btn-row"><button class="btn" data-act="acct-pw">${icon('lock')}Cambiar contraseña</button><button class="btn" data-act="cloud-now">${icon('reset')}Sincronizar ahora</button><button class="btn quiet" data-act="acct-out">Cerrar sesión aquí</button></div>
+    <div class="btn-row"><button class="btn" data-act="acct-pw">${icon('lock')}Cambiar contraseña</button><button class="btn" data-act="cloud-now">${icon('reset')}Sincronizar ahora</button><button class="btn" data-act="cloud-history">${icon('clock')}Versiones en la nube</button><button class="btn quiet" data-act="acct-out">Cerrar sesión aquí</button></div>
     <p class="small muted" style="margin:12px 0 0">Tu contraseña se guarda protegida en la nube. Si la olvidas, no se puede recuperar: anótala en un lugar seguro.</p></div>`;
 }
 
@@ -493,6 +493,29 @@ function viewVidaBosque() {
 const VIDA_ACTS = {
   'user-new': () => createUser(),
   'user-login': () => loginUser(),
+  'cloud-history': async () => {
+    const id = dataOwner(); if (!id || !tokens()[id]) { toast('Entra con tu usuario primero.'); return; }
+    openSheet(`${sheetHead('Versiones en la nube')}<div class="sheet-body"><p class="muted" style="margin:0 0 12px">La nube guarda una versión de tus datos cada vez que cambian (máximo una cada 10 minutos, las últimas 40). Si algo se perdió, vuelve a una versión anterior.</p><div id="histList"><p class="small muted">Cargando…</p></div></div>`);
+    try {
+      const r = await cloudFetch('GET', null, `kind=history&p=${encodeURIComponent(id)}`);
+      const box = document.getElementById('histList'); if (!box) return;
+      box.innerHTML = r.list.length ? `<ul class="rows">${r.list.map((h) => `<li><div class="rowline" style="display:flex;align-items:center;gap:12px;padding:12px 16px"><span style="flex:1;min-width:0"><b style="display:block">${esc(cap(relDay(toISO(new Date(h.at)))))}, ${new Date(h.at).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}</b><span class="small muted">${plural(h.subjects, 'materia', 'materias')} · ${plural(h.tasks, 'tarea', 'tareas')} · ${plural(h.notes, 'apunte', 'apuntes')}${h.owner && h.owner !== id ? ' · <span style="color:var(--red)">datos de otra cuenta</span>' : ''}</span></span><button class="btn" data-act="cloud-restore" data-at="${h.at}">Restaurar</button></div></li>`).join('')}</ul>`
+        : '<p class="small muted" style="margin:0">Todavía no hay versiones anteriores. Se irán guardando solas desde ahora.</p>';
+    } catch (e) { const box = document.getElementById('histList'); if (box) box.innerHTML = `<p class="small" style="color:var(--red)">${esc(e.message)}</p>`; }
+  },
+  'cloud-restore': async (el) => {
+    const id = dataOwner(); const at = +el.dataset.at;
+    const ok = await ask({ title: '¿Volver a esta versión?', text: `Tus datos quedan como estaban el ${relDay(toISO(new Date(at)))} a las ${new Date(at).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })}. La versión actual también se guarda en el historial, así que puedes regresar.`, ok: 'Restaurar' });
+    if (!ok) return;
+    try {
+      const r = await cloudFetch('POST', { kind: 'restore', as: id, profile: id, at });
+      const next = stampOwner(migrate(r.data), keyFor(id)); next.cloudAt = r.at;
+      try { localStorage.setItem(keyFor(id), JSON.stringify(next)); } catch { /* */ }
+      setBase(id, next); setDirty(id, false);
+      if (id === dataOwner()) S = next;
+      closeSheet(false); render(); applyTheme(); toast('Listo: tus datos volvieron a esa versión.'); Snd.chime();
+    } catch (e) { toast(e.message); }
+  },
   'sheet-close-new': () => { closeSheet(false); createUser(); },
   'acct-pw': () => setPassword(dataOwner()),
   'acct-out': async () => { const ok = await ask({ title: '¿Cerrar sesión aquí?', text: 'Tus datos siguen en la nube. Para volver a entrar necesitarás tu contraseña.', ok: 'Cerrar sesión' }); if (ok) logoutHere(); },
