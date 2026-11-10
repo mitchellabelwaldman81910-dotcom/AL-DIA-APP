@@ -51,12 +51,15 @@ function hoyDayHTML(nowHTML) {
 function hoyToolsHTML() {
   if (isGroup()) return '';
   const t = [
+    ['act:help-open', 'help', 'Pedir ayuda', 'Te responden en vivo'],
+    ['#/libretas', 'book', 'Libretas', 'Una por materia'],
+    ['#/quiz', 'spark', 'Quiz inteligente', 'Practica lo que sabes'],
+    ['#/biblioteca', 'globe', 'Biblioteca General', 'Habla con todos'],
+    ['#/salones', 'users', 'Bosques', 'Para grupos, en vivo'],
+    ['act:lobby-open', 'headphones', 'Estudia conmigo', 'Sala de enfoque'],
     ['#/panel', 'bars', 'Mi semana', 'Carga y tiempo libre'],
     ['act:sos-open', 'flag', 'Emergencia', 'Plan de daños mínimos'],
     ['#/cerebro', 'network', 'Tu Cerebro', 'Todo, conectado'],
-    ['act:lobby-open', 'globe', 'Biblioteca', 'Estudia acompañado'],
-    ['#/salones', 'users', 'Bosques', 'Para grupos, en vivo'],
-    ['act:speak-day', 'play', 'Escuchar', 'Tu día en voz alta'],
   ];
   return `<h2 class="sec">Atajos</h2><div class="hoy-tools">${t.map(([h, ic, b, s]) => h.startsWith('act:')
     ? `<button type="button" class="ht" data-act="${h.slice(4)}">${icon(ic)}<b>${b}</b><span>${s}</span></button>`
