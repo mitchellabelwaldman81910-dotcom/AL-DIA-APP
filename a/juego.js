@@ -80,6 +80,7 @@ function gmStart() {
   addEventListener('keydown', key);
   wrap.querySelector('#gmX').addEventListener('click', () => end(true));
   const vib = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch { /* */ } };
+  const flash = (k) => { wrap.classList.remove('gm-ok', 'gm-gold', 'gm-miss'); void wrap.offsetWidth; wrap.classList.add(k); clearTimeout(flash.t); flash.t = setTimeout(() => wrap.classList.remove(k), 480); };
   const lives = () => { document.getElementById('gmLives').innerHTML = Array.from({ length: 3 }, (_, i) => `<i class="${i < st.lives ? 'on' : ''}"></i>`).join(''); };
   lives();
   const msg = (t, ms = 1200) => { const m = document.getElementById('gmMsg'); m.textContent = t; m.classList.remove('show'); void m.offsetWidth; m.classList.add('show'); clearTimeout(msg.t); msg.t = setTimeout(() => m.classList.remove('show'), ms); };
@@ -108,14 +109,14 @@ function gmStart() {
         a.done = 'catch'; const pts = a.gold ? 5 : 1; st.score += pts; st.apples++; if (a.gold) st.golden++; st.combo++; st.squash = 1;
         st.floats.push({ x: a.x, y: by - 30, t: 0, txt: `+${pts}`, gold: a.gold });
         for (let i = 0; i < (a.gold ? 26 : 12); i++) st.parts.push({ x: a.x, y: by - 10, vx: (Math.random() - 0.5) * 260, vy: -80 - Math.random() * 260, t: 0, life: 0.7 + Math.random() * 0.5, gold: a.gold, leaf: Math.random() < 0.4 });
-        vib(a.gold ? [25, 30, 25, 30, 40] : 16);
+        vib(a.gold ? [30, 40, 30, 40, 60] : 18); flash(a.gold ? 'gm-gold' : 'gm-ok');
         gmSound(a.gold ? 'gold' : 'catch', st.combo);
         if (st.combo && st.combo % 10 === 0) { msg(`¡${st.combo} seguidas!`); gmSound('combo', st.combo); }
         else if (a.gold) msg('¡Manzana dorada! +5', 900);
         if (st.apples % 25 === 0) msg('¡Más rápido!', 1000);
         document.getElementById('gmScore').textContent = st.score; document.getElementById('gmScore').classList.remove('bump'); void document.getElementById('gmScore').offsetWidth; document.getElementById('gmScore').classList.add('bump');
       }
-      if (!a.done && a.y - a.r > H) { a.done = 'miss'; st.lives--; st.combo = 0; st.shake = 0.35; vib([60, 40, 60]); gmSound('miss'); lives(); if (st.lives <= 0) { st.over = true; setTimeout(() => end(false), 700); } else msg(st.lives === 1 ? '¡Cuidado, última!' : 'Se cayó una…', 900); }
+      if (!a.done && a.y - a.r > H) { a.done = 'miss'; st.lives--; st.combo = 0; st.shake = 0.35; vib([220, 90, 220]); flash('gm-miss'); gmSound('miss'); lives(); if (st.lives <= 0) { st.over = true; setTimeout(() => end(false), 700); } else msg(st.lives === 1 ? '¡Cuidado, última!' : 'Se cayó una…', 900); }
     }
     st.apples_ = st.apples_.filter((a) => !a.done);
     for (const p of st.parts) { p.t += dt; p.vy += 520 * dt; p.x += p.vx * dt; p.y += p.vy * dt; }

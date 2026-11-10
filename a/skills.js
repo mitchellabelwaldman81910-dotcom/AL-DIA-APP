@@ -42,39 +42,39 @@ function skStats(sid) {
 function skTree() {
   const subs = S.subjects.slice(0, 12); const n = subs.length;
   const H = n > 10 ? 780 : 680, W = 420, tx = 210; const R = rnd(seedOf('sktree:' + subs.map((x) => x.id).join()));
-  const st = subs.map((x) => ({ s: x, ...skStats(x.id) })); const lit = st.reduce((a, x) => a + x.lit, 0), total = st.reduce((a, x) => a + x.total, 0);
+  const st = subs.map((x) => ({ s: x, ...skStats(x.id) })); const lit = st.reduce((q, x) => q + x.lit, 0), total = st.reduce((q, x) => q + x.total, 0);
   let sky = '', motes = '', back = '', orbs = '', leaves = '';
-  for (let k = 0; k < 70; k++) sky += `<circle class="kt-star" cx="${(R() * W).toFixed(0)}" cy="${(R() * H * 0.8).toFixed(0)}" r="${(0.5 + R() * 1.4).toFixed(1)}" style="--d:${(R() * 5).toFixed(2)}s"/>`;
-  for (let k = 0; k < Math.min(34, 10 + lit / 6); k++) motes += `<circle class="kt-mote" cx="${(40 + R() * 340).toFixed(0)}" cy="${(120 + R() * (H - 200)).toFixed(0)}" r="${(1.2 + R() * 1.6).toFixed(1)}" style="--d:${(R() * 7).toFixed(2)}s;--t:${(5 + R() * 5).toFixed(1)}s"/>`;
+  for (let k = 0; k < 44; k++) sky += `<circle class="kt-star" cx="${(R() * W).toFixed(0)}" cy="${(R() * H * 0.78).toFixed(0)}" r="${(0.4 + R() * 1.1).toFixed(1)}" style="--d:${(R() * 5).toFixed(2)}s"/>`;
+  for (let k = 0; k < Math.min(26, 8 + lit / 8); k++) motes += `<circle class="kt-mote" cx="${(40 + R() * 340).toFixed(0)}" cy="${(120 + R() * (H - 200)).toFixed(0)}" r="${(1 + R() * 1.3).toFixed(1)}" style="--d:${(R() * 7).toFixed(2)}s;--t:${(6 + R() * 5).toFixed(1)}s"/>`;
   const gh = H - 150;
-  back += `<path class="kt-trunk" d="M${tx - 38} ${H}C${tx - 30} ${H - 90} ${tx - 14} ${gh - 40} ${tx - 12} ${gh - 120}L${tx + 12} ${gh - 120}C${tx + 14} ${gh - 40} ${tx + 30} ${H - 90} ${tx + 38} ${H}Z"/>`;
-  for (let k = 0; k < 5; k++) { const sd = k % 2 ? 1 : -1, len = 60 + R() * 70; back += `<path class="sk-root" d="M${tx + sd * 20} ${H - 6}C${tx + sd * 50} ${H - 2} ${tx + sd * len * 0.7} ${H + 4} ${tx + sd * len} ${H + 10}"/>`; }
-  const ys = SK_SLOTS.slice(0, Math.max(1, n)).map((q) => q[1]); const dy = Math.round((60 + (gh - 150 - 60) / 2) - (Math.min(...ys) + Math.max(...ys)) / 2);
+  back += `<path class="kt-trunk" d="M${tx - 40} ${H}C${tx - 32} ${H - 90} ${tx - 14} ${gh - 40} ${tx - 13} ${gh - 120}L${tx + 13} ${gh - 120}C${tx + 14} ${gh - 40} ${tx + 32} ${H - 90} ${tx + 40} ${H}Z"/>`;
+  for (let k = 0; k < 7; k++) { const dx = (R() - 0.5) * 22; back += `<path class="kt-bark" d="M${tx + dx} ${H - 16} C${tx + dx * 0.6} ${H - 110} ${tx + dx * 0.3} ${gh - 60} ${tx + dx * 0.5} ${gh - 112}"/>`; }
+  for (let k = 0; k < 5; k++) { const sd = k % 2 ? 1 : -1, len = 60 + R() * 70; back += `<path class="kt-root" d="M${tx + sd * 20} ${H - 6}C${tx + sd * 50} ${H - 2} ${tx + sd * len * 0.7} ${H + 4} ${tx + sd * len} ${H + 10}"/>`; }
   st.forEach((o, i) => {
-    const ox = SK_SLOTS[i][0], oy = SK_SLOTS[i][1] + dy; const col = safeColor(o.s.color); const f = o.lit / o.total;
+    const ox = SK_SLOTS[i][0], oy = SK_SLOTS[i][1]; const f = o.lit / o.total; const col = safeColor(o.s.color);
     const sy = gh - 90 - (i % 4) * 22;
     const d = `M${tx} ${sy}C${tx} ${(sy + oy) / 2 + 20} ${ox} ${oy + (sy - oy) * 0.45} ${ox} ${oy + 30}`;
-    back += `<path class="sk-limb" d="${d}"/>`;
+    back += `<path class="sk-limb" d="${d}"/><path class="sk-limb-hi" d="${d}"/>`;
     if (o.lit) back += `<path class="sk-limb-on" pathLength="1" d="${d}" style="stroke-dasharray:${Math.min(1, 0.2 + f * 0.8).toFixed(3)} 2"/>`;
-    for (let k = 0; k < 3; k++) { const u = 0.35 + k * 0.2; const px = tx + (ox - tx) * u + (k % 2 ? 8 : -8), py = sy + (oy - sy) * u; leaves += lnLeaf(px, py, (k % 2 ? 40 : -40) + (ox < tx ? -20 : 20), 11, R() < 0.25 ? 'lf2' : 'lf'); }
+    for (let k = 0; k < 2; k++) { const u = 0.4 + k * 0.25; const px = tx + (ox - tx) * u + (k % 2 ? 8 : -8), py = sy + (oy - sy) * u; leaves += lnLeaf(px, py, (k % 2 ? 40 : -40) + (ox < tx ? -20 : 20), 10, R() < 0.5 ? 'lf2' : 'lf'); }
     const circ = 2 * Math.PI * 38;
     const nm = o.s.name.length > 13 ? o.s.name.slice(0, 12) + '…' : o.s.name;
-    orbs += `<g class="sk-orb ${o.lit ? 'on' : ''}" data-act="skt-open" data-id="${o.s.id}" style="--c:${col};--d:${(R() * 3).toFixed(2)}s" role="button" tabindex="0" aria-label="${esc(o.s.name)}: ${o.lit} de ${o.total} habilidades">
-      <circle class="sk-halo" cx="${ox}" cy="${oy}" r="${46 + Math.round(f * 18)}" fill="url(#skHalo-${i})"/>
+    orbs += `<g class="sk-orb ${o.lit ? 'on' : ''}" data-act="skt-open" data-id="${o.s.id}" style="--d:${(R() * 3).toFixed(2)}s" role="button" tabindex="0" aria-label="${esc(o.s.name)}: ${o.lit} de ${o.total} habilidades">
+      <circle class="sk-halo" cx="${ox}" cy="${oy}" r="${44 + Math.round(f * 14)}" fill="url(#skHalo)"/>
       <circle class="sk-ring-bg" cx="${ox}" cy="${oy}" r="38"/>
       <circle class="sk-ring" cx="${ox}" cy="${oy}" r="38" transform="rotate(-90 ${ox} ${oy})" stroke-dasharray="${(circ * f).toFixed(1)} ${circ.toFixed(1)}"/>
-      <circle class="sk-core" cx="${ox}" cy="${oy}" r="29" fill="url(#skCore-${i})"/>
-      <text class="sk-lv" x="${ox}" y="${oy + 7}" text-anchor="middle">${o.lit}</text>
-      <rect class="sk-pill" x="${ox - 54}" y="${oy + 46}" width="108" height="24" rx="12"/><text class="sk-nm" x="${ox}" y="${oy + 63}" text-anchor="middle">${esc(nm)}</text>
+      <circle class="sk-core" cx="${ox}" cy="${oy}" r="30" fill="url(#skCore)"/>
+      <text class="sk-lv" x="${ox}" y="${oy + 8}" text-anchor="middle">${o.lit}</text>
+      <rect class="sk-pill" x="${ox - 56}" y="${oy + 46}" width="112" height="24" rx="12"/><circle class="sk-dot" cx="${ox - 44}" cy="${oy + 58}" r="4" fill="${col}"/><text class="sk-nm" x="${ox + 6}" y="${oy + 62}" text-anchor="middle">${esc(nm)}</text>
       <circle class="sk-hit" cx="${ox}" cy="${oy + 20}" r="56"/></g>`;
   });
-  const defs = st.map((o, i) => { const col = safeColor(o.s.color); return `<radialGradient id="skHalo-${i}"><stop offset="0" stop-color="${col}" stop-opacity="${(0.25 + (o.lit / o.total) * 0.5).toFixed(2)}"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></radialGradient>
-    <radialGradient id="skCore-${i}" cx="38%" cy="32%"><stop offset="0" stop-color="#FFF6D8"/><stop offset=".45" stop-color="${col}"/><stop offset="1" stop-color="#14202c"/></radialGradient>`; }).join('');
-  const svg = `<svg class="sk-svg" viewBox="0 0 ${W} ${H}" aria-label="Árbol de habilidades"><defs>${defs}
-    <radialGradient id="skSky" cx="50%" cy="38%" r="80%"><stop offset="0" stop-color="#22385C"/><stop offset="1" stop-color="#070C16"/></radialGradient>
-    <radialGradient id="skCan" cx="50%" cy="50%"><stop offset="0" stop-color="#FFD98A" stop-opacity=".9"/><stop offset="1" stop-color="#FFD98A" stop-opacity="0"/></radialGradient></defs>
+  const svg = `<svg class="sk-svg" viewBox="0 0 ${W} ${H}" aria-label="Árbol de habilidades"><defs>
+    <radialGradient id="skHalo" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#D6AE62" stop-opacity=".38"/><stop offset="1" stop-color="#D6AE62" stop-opacity="0"/></radialGradient>
+    <radialGradient id="skCore" cx="50%" cy="38%" r="62%"><stop offset="0" stop-color="#3A2A18"/><stop offset="1" stop-color="#140D07"/></radialGradient>
+    <radialGradient id="skSky" cx="50%" cy="36%" r="82%"><stop offset="0" stop-color="#2E2216"/><stop offset="1" stop-color="#0B0705"/></radialGradient>
+    <radialGradient id="skCan" cx="50%" cy="50%"><stop offset="0" stop-color="#E0B865" stop-opacity=".7"/><stop offset="1" stop-color="#E0B865" stop-opacity="0"/></radialGradient></defs>
     <rect width="${W}" height="${H}" fill="url(#skSky)"/>${sky}
-    <ellipse cx="${tx}" cy="${H * 0.42}" rx="${150 + lit * 0.4}" ry="${220 + lit * 0.5}" fill="url(#skCan)" opacity="${Math.min(0.42, 0.06 + lit / 500).toFixed(2)}" class="sk-can"/>
+    <ellipse cx="${tx}" cy="${H * 0.42}" rx="${150 + lit * 0.35}" ry="${220 + lit * 0.45}" fill="url(#skCan)" opacity="${Math.min(0.2, 0.04 + lit / 800).toFixed(2)}" class="sk-can"/>
     <path class="sk-ground" d="M0 ${H - 26}C${W * 0.3} ${H - 46} ${W * 0.7} ${H - 46} ${W} ${H - 26}V${H}H0Z"/>
     ${back}<g class="sk-leaves">${leaves}</g>${motes}${orbs}</svg>`;
   return { svg, lit, total };
