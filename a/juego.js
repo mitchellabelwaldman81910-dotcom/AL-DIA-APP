@@ -56,7 +56,7 @@ function gmStart() {
   document.body.appendChild(wrap); document.body.classList.add('gm-on');
   const c = wrap.querySelector('canvas'); const g = c.getContext('2d');
   const R = { w: 0, h: 0, dpr: Math.min(2, devicePixelRatio || 1) };
-  const size = () => { R.w = innerWidth; R.h = innerHeight; c.width = R.w * R.dpr; c.height = R.h * R.dpr; c.style.width = R.w + 'px'; c.style.height = R.h + 'px'; g.setTransform(R.dpr, 0, 0, R.dpr, 0, 0); scene(); };
+  const size = () => { if (innerWidth === R.w && innerHeight === R.h && bg) return; R.w = innerWidth; R.h = innerHeight; c.width = R.w * R.dpr; c.height = R.h * R.dpr; c.style.width = R.w + 'px'; c.style.height = R.h + 'px'; g.setTransform(R.dpr, 0, 0, R.dpr, 0, 0); scene(); };
   const st = { score: 0, apples: 0, golden: 0, lives: 3, apples_: [], parts: [], floats: [], t0: performance.now(), last: performance.now(), spawn: 0, combo: 0, over: false, bx: innerWidth / 2, tx: innerWidth / 2, squash: 0, shake: 0, sunA: 0, clouds: [], hang: [], biome: 0, fade: 0, lastHeal: -30 };
   GAME.run = st;
   // fondo pre-dibujado
@@ -180,15 +180,28 @@ function gmStart() {
     GAME.run = null;
     if (quit && !st.score) { wrap.remove(); document.body.classList.remove('gm-on'); return; }
     gmSound('over');
-    let rec = null;
-    if (REG.me && tokens()[REG.me] && st.score > 0) { try { rec = await cloudFetch('POST', { kind: 'game', as: REG.me, ...res }); } catch { (REG.gameout ||= []).push(res); saveReg(); } }
-    const best = rec ? rec.best : Math.max(st.score, +(localStorage.getItem('aldia:gmbest') || 0)); try { localStorage.setItem('aldia:gmbest', String(best)); } catch { /* */ }
-    wrap.insertAdjacentHTML('beforeend', `<div class="gm-over"><div class="gm-card"><span class="gm-k">${rec && rec.newBest ? '¡Nuevo récord!' : 'Fin de la cosecha'}</span><b class="gm-big">${st.score}</b><span class="gm-sub">${plural(st.apples, 'manzana', 'manzanas')}${st.golden ? ` · ${plural(st.golden, 'dorada', 'doradas')}` : ''}</span>
-      <p class="gm-best">Tu mejor: <b>${best}</b>${rec && rec.rankDay ? ` · lugar <b>#${rec.rankDay}</b> de hoy` : ''}</p>
-      <div class="btn-row" style="justify-content:center"><button class="btn primary" id="gmAgain">${icon('play', 'sm')}Otra vez</button><button class="btn" id="gmOut">Ver ranking</button></div></div></div>`);
-    if (rec && rec.newBest) confetti(innerWidth / 2, innerHeight / 3, 80);
-    wrap.querySelector('#gmAgain').addEventListener('click', () => { wrap.remove(); document.body.classList.remove('gm-on'); gmStart(); });
-    wrap.querySelector('#gmOut').addEventListener('click', () => { wrap.remove(); document.body.classList.remove('gm-on'); GAME.rank = null; if (location.hash !== '#/juego') location.hash = '#/juego'; else render(); });
+    // el resultado aparece al instante; el ranking llega después, si la red responde
+    const local = Math.max(st.score, +(localStorage.getItem('aldia:gmbest') || 0));
+    try { localStorage.setItem('aldia:gmbest', String(local)); } catch { /* */ }
+    const paint = (rec) => {
+      const best = rec ? rec.best : local;
+      const tmp = document.createElement('div');
+      tmp.innerHTML = `<div class="gm-over"><div class="gm-card"><span class="gm-k">${rec && rec.newBest ? '¡Nuevo récord!' : 'Fin de la cosecha'}</span><b class="gm-big">${st.score}</b><span class="gm-sub">${plural(st.apples, 'manzana', 'manzanas')}${st.golden ? ` · ${plural(st.golden, 'dorada', 'doradas')}` : ''}</span>
+        <p class="gm-best">Tu mejor: <b>${best}</b>${rec && rec.rankDay ? ` · lugar <b>#${rec.rankDay}</b> de hoy` : ''}</p>
+        <div class="btn-row" style="justify-content:center"><button class="btn primary" id="gmAgain">${icon('play', 'sm')}Otra vez</button><button class="btn" id="gmOut">Ver ranking</button></div></div></div>`;
+      const nu = tmp.firstElementChild; const old = wrap.querySelector('.gm-over');
+      if (old) old.replaceWith(nu); else wrap.appendChild(nu);
+      nu.querySelector('#gmAgain').addEventListener('click', () => { wrap.remove(); document.body.classList.remove('gm-on'); gmStart(); });
+      nu.querySelector('#gmOut').addEventListener('click', () => { wrap.remove(); document.body.classList.remove('gm-on'); GAME.rank = null; if (location.hash !== '#/juego') location.hash = '#/juego'; else render(); });
+    };
+    paint(null);
+    if (REG.me && tokens()[REG.me] && st.score > 0) {
+      const limit = new Promise((_, rej) => setTimeout(() => rej(new Error('lento')), 6000));
+      try {
+        const rec = await Promise.race([cloudFetch('POST', { kind: 'game', as: REG.me, ...res }), limit]);
+        if (rec && wrap.isConnected) { paint(rec); if (rec.newBest) confetti(innerWidth / 2, innerHeight / 3, 80); }
+      } catch { (REG.gameout ||= []).push(res); saveReg(); }
+    }
   }
 }
 function gmApple(g, x, y, r, gold, rot, now, heal) {
