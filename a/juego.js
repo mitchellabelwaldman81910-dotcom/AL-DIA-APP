@@ -88,14 +88,20 @@ function gmStart() {
   const level = () => 1 + st.apples / 12;
   const spawn = () => {
     const gold = Math.random() < Math.min(0.09, 0.035 + st.apples * 0.0004);
-    const x = 30 + Math.random() * (R.w - 60); const y = st.treeBottom * (0.35 + Math.random() * 0.55);
+    const live = () => st.hang.length + st.apples_.filter((a) => !a.done).length;
+    if (live() >= Math.min(6, 3 + Math.floor(level() / 2))) return false;
+    const y = st.treeBottom * (0.35 + Math.random() * 0.55);
+    // elige el lugar más alejado de las manzanas que ya están cayendo, para que no caigan encimadas
+    let x = 30 + Math.random() * (R.w - 60), best = -1;
+    for (let k = 0; k < 8; k++) { const cx = 30 + Math.random() * (R.w - 60); let md = 1e9; for (const o of [...st.hang, ...st.apples_.filter((a) => !a.done)]) md = Math.min(md, Math.hypot(o.x - cx, (o.y - y) * 0.5)); if (md > best) { best = md; x = cx; } }
     st.hang.push({ x, y, gold, t: 0, wob: 0.55 - Math.min(0.3, level() * 0.02) });
+    return true;
   };
   const loop = (now) => {
     if (!GAME.run) return;
     const dt = Math.min(0.05, (now - st.last) / 1000); st.last = now;
     const W = R.w, H = R.h; const lv = level();
-    st.spawn -= dt; if (st.spawn <= 0 && !st.over) { spawn(); if (lv > 3 && Math.random() < Math.min(0.35, (lv - 3) * 0.06)) spawn(); st.spawn = Math.max(0.32, 1.25 - lv * 0.09) * (0.7 + Math.random() * 0.6); }
+    st.spawn -= dt; if (st.spawn <= 0 && !st.over) { if (spawn() && lv > 4 && Math.random() < Math.min(0.25, (lv - 4) * 0.05)) spawn(); st.spawn = Math.max(0.5, 1.3 - lv * 0.08) * (0.75 + Math.random() * 0.5); }
     // manzanas que tiemblan antes de caer
     for (const a of st.hang) a.t += dt;
     for (const a of st.hang.filter((a) => a.t >= a.wob)) st.apples_.push({ x: a.x, y: a.y, vx: (Math.random() - 0.5) * 20 * Math.min(3, lv / 2), vy: 40, gold: a.gold, r: a.gold ? 15 : 14, rot: 0, vr: (Math.random() - 0.5) * 4 });

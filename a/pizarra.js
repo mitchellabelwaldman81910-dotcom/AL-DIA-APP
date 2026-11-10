@@ -187,7 +187,8 @@ const pzUp = (e) => {
     // "y" se guarda en unidades del lienzo (620 px = 1), así no cambia cuando el lienzo crece
     gput({ ...d.it, x: Math.round((d.nx || 0) * 1000) / 1000, y: Math.round((d.ny || 0) * 1000) / 1000 });
     if (typeof staleCheck === 'function') staleCheck();
-  } else if (e.type === 'pointerup') pzSheet(d.it);
+    setTimeout(pzResolve, 80);
+  } else if (e.type === 'pointerup') pzRead(d.it);
 };
 document.addEventListener('pointerup', pzUp);
 document.addEventListener('pointercancel', pzUp);
@@ -196,3 +197,38 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.
   const baseSoft = softRender;
   softRender = function () { if (PZ.drag) { CLOUD.stale = true; return false; } return baseSoft(); };
 }
+
+/* ---------- Sin encimar tarjetas: las que se traslapan se recorren hacia abajo ---------- */
+function pzResolve() {
+  const board = document.getElementById('pzBoard'); if (!board || PZ.mode !== 'lienzo' || PZ.view != null) return;
+  const cards = [...board.querySelectorAll('.pz-card')].map((el) => ({ el, l: el.offsetLeft, r: el.offsetLeft + el.offsetWidth, t: el.offsetTop, b: el.offsetTop + el.offsetHeight, t0: el.offsetTop }));
+  cards.sort((a, b) => a.t - b.t);
+  const moved = [];
+  for (let i = 0; i < cards.length; i++) {
+    const c = cards[i]; let again = true, guard = 0;
+    while (again && guard++ < 60) {
+      again = false;
+      for (let j = 0; j < i; j++) { const o = cards[j]; if (c.l < o.r - 6 && o.l < c.r - 6 && c.t < o.b + 6 && o.t < c.b) { const d = o.b + 12 - c.t; c.t += d; c.b += d; again = true; } }
+    }
+    if (c.t !== c.t0) moved.push(c);
+  }
+  for (const c of moved) { const it = gGet(c.el.dataset.pz); if (it) gput({ ...it, y: Math.round((c.t / 620) * 1000) / 1000 }); }
+}
+{
+  const basePz = viewPizarron;
+  viewPizarron = function () { const h = basePz(); setTimeout(pzResolve, 60); return h; };
+}
+
+/* ---------- Leer una idea completa (pantalla completa) ---------- */
+function pzRead(it) {
+  const f = gGet(it.id) || it;
+  const kindName = { note: 'Nota', link: 'Enlace', draft: 'Borrador', file: 'Archivo' }[f.kind] || 'Nota';
+  let body = '';
+  if (f.kind === 'link') { const u = safeURL(f.link || ''); let host = ''; try { host = new URL(u).hostname.replace(/^www\./, ''); } catch { /* */ } body = `<a class="lb-link" href="${esc(u)}" target="_blank" rel="noopener">${icon('link', 'sm')}<span><b>${esc(f.title || host || 'Enlace')}</b><em>${esc(host)}</em></span></a>${f.text ? `<div class="lb-rd-text">${esc(f.text)}</div>` : ''}`; }
+  else if (f.kind === 'file') body = `<button type="button" class="btn" data-act="pz-open" data-id="${f.id}">${icon('upload', 'sm')}Abrir ${esc(f.file || 'archivo')}</button>${f.text ? `<div class="lb-rd-text">${esc(f.text)}</div>` : ''}`;
+  else body = `<div class="lb-rd-text">${f.kind === 'note' ? linkify(f.text || '') : esc(f.text || '')}</div>`;
+  const title = f.title || kindName;
+  lbReadOpen(title, `${esc(kindName)} · ${esc(f.by || '')} · ${esc(ago(f.u || f.at))}`, body, PZ_TONES[f.tone] ? f.tone : 'papel',
+    `<button type="button" class="btn quiet" data-act="pz-edit-read" data-id="${f.id}">${icon('edit', 'sm')}Editar y comentar</button>`);
+}
+Object.assign(VIDA_ACTS, { 'pz-edit-read': (el) => { const it = gGet(el.dataset.id); if (it) pzSheet(it); } });
