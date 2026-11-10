@@ -1174,6 +1174,7 @@ function viewMas() {
   const items = [
     ['#/compartir', 'share', 'Compartir app', 'Mándala por WhatsApp o compártela con quien quieras'],
     ['#/juego', 'trophy', 'Cosecha · el juego', 'Atrapa manzanas, gana el podio del día y la semana'],
+    ['#/galope', 'trophy', 'Galope · el caballo', 'Salta los manzanos y supera tu récord'],
     ['#/libretas', 'book', 'Libretas', 'Una libreta por materia: notas, tareas, fotos y más'],
     ['#/quiz', 'spark', 'Quiz inteligente', 'Preguntas hechas con tus propios apuntes'],
     ['#/consejos', 'bulb', 'Consejos para mejorar', 'Cómo estudiar para exámenes y subir tus calificaciones'],
@@ -1745,9 +1746,11 @@ function mergeDocs(local, remote, base, trustDeletes = false) {
   return out;
 }
 
+const viewOnlyNow = () => !!(REG.current && REG.adminView && REG.adminView[REG.current]);
 async function cloudFetch(method, body, query = '') {
+  if (method !== 'GET' && viewOnlyNow() && !['presence', 'adminenter'].includes(body?.kind) && (body?.profile === REG.current || body?.as === REG.current || body?.kind === 'letter')) throw new Error('Estás mirando una cuenta en vista de administración: solo se puede ver. No se guardó nada.');
   const r = await fetch(`/api/sync${query ? `?${query}` : ''}`, {
-    method, headers: { ...(body ? { 'content-type': 'application/json' } : {}), 'x-aldia-tokens': JSON.stringify(tokens()) }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store',
+    method, headers: { ...(body ? { 'content-type': 'application/json' } : {}), 'x-aldia-tokens': JSON.stringify(tokens()), ...(viewOnlyNow() ? { 'x-aldia-view': REG.current } : {}) }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store',
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) { const e = new Error(j.error || `error ${r.status}`); e.status = r.status; throw e; }
@@ -1786,7 +1789,7 @@ async function cloudSync(opts = {}) {
         if (isCur) changedCurrent = true;
       } else if (dirty || (!rdoc && hasLocal && (local.tasks.length || local.subjects.length))) { push = true; if (rdoc && rdoc.data && !trust) next = { ...mergeDocs(local, migrate(rdoc.data), base, false), cloudAt: local.cloudAt }; }
       next.owner = id;
-      if (push) {
+      if (push && !(REG.adminView && REG.adminView[id])) {
         const data = JSON.parse(JSON.stringify(next)); delete data.timer; data.owner = id;
         const res = await cloudFetch('PUT', { kind: 'profile', profile: id, device: CLOUD.device, data });
         next.cloudAt = res.at;
@@ -1812,7 +1815,7 @@ async function cloudSync(opts = {}) {
     const remoteIds = new Set((remote.letters || []).map((l) => l.id));
     for (const l of mine.values()) if (!remoteIds.has(l.id) && tokens()[l.from]) toPush.push(l);
     REG.letters = [...mine.values()].sort((a, b) => a.at - b.at); saveReg();
-    for (const l of toPush) { try { await cloudFetch('POST', { kind: 'letter', letter: l }); } catch { /* se reintenta */ } }
+    if (!viewOnlyNow()) for (const l of toPush) { try { await cloudFetch('POST', { kind: 'letter', letter: l }); } catch { /* se reintenta */ } }
     await flushForestOutbox();
     await postTrees(live);
     CLOUD.last = Date.now();

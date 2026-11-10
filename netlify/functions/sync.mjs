@@ -64,6 +64,17 @@ async function pushTo(store, users, origin, payload, exceptDevice) {
 
 /* Tiempo real: cada cambio "empuja" un número de revisión a las personas afectadas; los dispositivos lo vigilan (long-poll). */
 const revKey = (u) => `${W}rev/${u}`;
+function shpClean(d) {
+  if (!d || typeof d !== "object") return null;
+  const kinds = ["info", "lista", "enlace", "nota", "pegatina"];
+  const kind = kinds.includes(d.kind) ? d.kind : "nota";
+  const title = String(d.title || "").slice(0, 120);
+  const text = String(d.text || "").slice(0, 6000);
+  const link = /^https?:\/\//i.test(String(d.link || "")) ? String(d.link).slice(0, 500) : "";
+  const items = Array.isArray(d.items) ? d.items.slice(0, 120).map((i) => ({ t: String(i?.t || "").slice(0, 200), done: !!i?.done })).filter((i) => i.t) : [];
+  const tones = ["papel", "salvia", "cielo", "rosa", "miel", "lavanda"];
+  return { kind, title, text, link, items, tone: tones.includes(d.tone) ? d.tone : "papel", sticker: String(d.sticker || "").slice(0, 20) };
+}
 const newRev = () => `${Date.now().toString(36)}${randomBytes(2).toString("hex")}`;
 async function bump(store, users) {
   const r = newRev();
@@ -338,6 +349,8 @@ export default async (req, context) => {
     const body = JSON.parse(text);
     const as = String(body.as || "");
 
+    const viewId = String(req.headers.get("x-aldia-view") || "");
+    if (viewId && !(["presence", "adminenter"].includes(body.kind)) && (body.profile === viewId || body.as === viewId || body.kind === "letter")) return json({ error: "Vista de administración: solo lectura. No se guardó nada." }, 403);
     switch (body.kind) {
       case "register": {
         const user = String(body.user || "").toLowerCase();
@@ -600,6 +613,67 @@ export default async (req, context) => {
         if (!USER_RE.test(w)) return json({ error: "usuario inválido" }, 400);
         await store.set(`${W}dmr/${as}/${w}`, String(Date.now())); await bump(store, [w]);
         return json({ ok: true });
+      }
+      // ---- Hojas compartidas de la Libreta (2 o más personas editan la misma hoja) ----
+      case "shpshare": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const doc = shpClean(body.doc); if (!doc) return json({ error: "Esa hoja no se puede compartir (las fotos no se comparten todavía)" }, 400);
+        const mine = (await store.list({ prefix: `${W}shpi/${as}/` })).blobs.length;
+        if (mine >= 60) return json({ error: "Tienes muchas hojas compartidas; deja alguna antes de crear otra" }, 400);
+        const id = randomBytes(8).toString("hex");
+        await store.setJSON(`${W}shp/${id}`, { id, owner: as, members: [as], names: { [as]: auth[as].name }, doc, v: 1, by: as, at: Date.now() });
+        await store.set(`${W}shpi/${as}/${id}`, "1");
+        return json({ ok: true, id, v: 1 });
+      }
+      case "shpinvite": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const sh = await store.get(`${W}shp/${String(body.id || "")}`, { type: "json" });
+        if (!sh || !sh.members.includes(as)) return json({ error: "Esa hoja ya no está disponible" }, 404);
+        const to = String(body.to || "");
+        if (!USER_RE.test(to) || to === as) return json({ error: "Elige a un amigo" }, 400);
+        if (!(await store.get(`${W}fr/${as}/${to}`))) return json({ error: "Solo puedes invitar a tus amigos" }, 403);
+        if (sh.members.includes(to)) return json({ error: "Ya está en la hoja" }, 409);
+        if (sh.members.length >= 6) return json({ error: "Una hoja admite hasta 6 personas" }, 400);
+        sh.members.push(to); sh.names = { ...(sh.names || {}), [to]: clip(body.name, 40) || to }; await store.setJSON(`${W}shp/${sh.id}`, sh);
+        await store.set(`${W}shpi/${to}/${sh.id}`, "1");
+        await bump(store, [to]);
+        return json({ ok: true });
+      }
+      case "shpsave": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const sh = await store.get(`${W}shp/${String(body.id || "")}`, { type: "json" });
+        if (!sh || !sh.members.includes(as)) return json({ error: "Esa hoja ya no está disponible" }, 404);
+        if (+body.base !== sh.v) return json({ error: "Alguien cambió la hoja mientras editabas", conflict: true, v: sh.v, doc: sh.doc, by: sh.by }, 409);
+        const doc = shpClean(body.doc); if (!doc) return json({ error: "Esa hoja no se puede guardar" }, 400);
+        sh.doc = doc; sh.v += 1; sh.by = as; sh.at = Date.now();
+        await store.setJSON(`${W}shp/${sh.id}`, sh);
+        return json({ ok: true, v: sh.v, at: sh.at });
+      }
+      case "shpleave": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const sh = await store.get(`${W}shp/${String(body.id || "")}`, { type: "json" });
+        if (!sh || !sh.members.includes(as)) return json({ ok: true });
+        await store.delete(`${W}shpi/${as}/${sh.id}`);
+        if (sh.owner === as || body.remove) {
+          // quien comparte deja la hoja: se quita a todos (la copia de cada quien queda como hoja personal)
+          for (const m of sh.members) { await store.delete(`${W}shpi/${m}/${sh.id}`); }
+          await store.delete(`${W}shp/${sh.id}`);
+          await bump(store, sh.members);
+        } else {
+          sh.members = sh.members.filter((m) => m !== as); await store.setJSON(`${W}shp/${sh.id}`, sh); await bump(store, sh.members.concat([as]));
+        }
+        return json({ ok: true });
+      }
+      case "shplist": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const ids = (await store.list({ prefix: `${W}shpi/${as}/` })).blobs.map((b) => b.key.split("/").pop());
+        const out = [];
+        for (const id of ids.slice(0, 60)) {
+          const sh = await store.get(`${W}shp/${id}`, { type: "json" });
+          if (!sh || !sh.members.includes(as)) { await store.delete(`${W}shpi/${as}/${id}`); continue; }
+          out.push({ id, owner: sh.owner, members: sh.members.map((m) => ({ id: m, name: (sh.names || {})[m] || m })), doc: sh.doc, v: sh.v, by: sh.by, at: sh.at });
+        }
+        return json({ ok: true, shared: out });
       }
       case "libpost": {
         if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);

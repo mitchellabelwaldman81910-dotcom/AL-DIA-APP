@@ -83,8 +83,8 @@ function pageHTML(p) {
   else if (p.kind === 'enlace') { const u = safeURL(p.link || ''); let host = ''; try { host = new URL(u).hostname.replace(/^www\./, ''); } catch { /* */ } body = `<a class="lb-link" href="${esc(u)}" target="_blank" rel="noopener">${icon('link', 'sm')}<span><b>${esc(p.title || host)}</b><em>${esc(host)}</em></span></a>${p.text ? `<p>${esc(p.text)}</p>` : ''}`; }
   else if (p.kind === 'pegatina') body = `<div class="lb-big-stk">${stickerSVG(p.sticker || 'hoja', 'big')}</div>${p.text ? `<p class="lb-cap">${esc(p.text)}</p>` : ''}`;
   else body = `${p.text ? `<p>${linkify(p.text)}</p>` : ''}`;
-  return `<article class="lb-page t-${tone} k-${p.kind}">${p.sticker && p.kind !== 'pegatina' ? stickerSVG(p.sticker, 'corner') : ''}
-    <header>${p.kind === 'info' ? `<span class="lb-kind">Información clave</span>` : ''}${p.title && p.kind !== 'enlace' ? `<h3>${esc(p.title)}</h3>` : ''}</header>${body}
+  return `<article class="lb-page t-${tone} k-${p.kind} lb-tap" data-pid="${p.id}">${p.sticker && p.kind !== 'pegatina' ? stickerSVG(p.sticker, 'corner') : ''}
+    <header>${p.kind === 'info' ? `<span class="lb-kind">Información clave</span>` : ''}${p.shared ? `<span class="lb-shared">${icon('share', 'sm')}${p.isOwner ? 'Compartida' : `Compartida${p.sharedFrom ? ` · de ${esc(p.sharedFrom)}` : ''}`}</span>` : ''}${p.title && p.kind !== 'enlace' ? `<h3>${esc(p.title)}</h3>` : ''}</header>${body}
     <footer><span class="tiny faint">${esc(relDay(toISO(new Date(p.updated || p.at))))}</span><span class="grow"></span>
       <button class="icon-btn ghost" data-act="lb-send" data-id="${p.id}" aria-label="Mandar">${icon('share', 'sm')}</button><button class="icon-btn ghost" data-act="lb-edit" data-id="${p.id}" aria-label="Editar">${icon('edit', 'sm')}</button></footer></article>`;
 }
@@ -100,7 +100,7 @@ function viewLibreta(sid) {
   let body = '';
   if (LB.tab === 'tareas') body = `<button class="btn primary" data-act="new-task" data-subject="${lbSid(sid) || ''}">${icon('plus')}Tarea de ${esc(s.name)}</button>${tasks.length ? `<ul class="tasks" style="margin-top:12px">${tasks.map((t) => taskRow(t)).join('')}</ul>` : '<p class="muted">Sin tareas en esta materia.</p>'}`;
   else if (LB.tab === 'fotos') body = photos.length ? `<div class="lb-gallery">${photos.map((id) => `<span class="lb-ph fr-simple"><img data-uf="${id}" alt="" data-act="lb-zoom" data-id="${id}"></span>`).join('')}</div>` : '<div class="empty"><h3>Sin fotos todavía</h3><p>Toma foto al pizarrón o a tu cuaderno y queda guardada aquí, aunque cambies de teléfono.</p></div>';
-  else body = feed.length ? `<div class="lb-feed">${feed.map((x) => (x.k === 'p' ? pageHTML(x.p) : `<article class="lb-page t-papel k-nota"><header><span class="lb-kind">Apunte</span><h3>${esc(x.n.title || 'Sin título')}</h3></header><p class="lb-clip">${esc(htmlText(x.n.body).slice(0, 260))}</p><footer><span class="tiny faint">${x.n.updated ? esc(relDay(toISO(new Date(x.n.updated)))) : ''}</span><span class="grow"></span><button class="icon-btn ghost" data-act="lb-send-note" data-id="${x.n.id}" aria-label="Mandar">${icon('share', 'sm')}</button><button class="icon-btn ghost" data-act="lb-open-note" data-id="${x.n.id}" aria-label="Abrir">${icon('edit', 'sm')}</button></footer></article>`)).join('')}</div>`
+  else body = feed.length ? `<div class="lb-feed">${feed.map((x) => (x.k === 'p' ? pageHTML(x.p) : `<article class="lb-page t-papel k-nota lb-tap" data-nid="${x.n.id}"><header><span class="lb-kind">Apunte</span><h3>${esc(x.n.title || 'Sin título')}</h3></header><p class="lb-clip">${esc(htmlText(x.n.body).slice(0, 260))}</p><footer><span class="tiny faint">${x.n.updated ? esc(relDay(toISO(new Date(x.n.updated)))) : ''}</span><span class="grow"></span><button class="icon-btn ghost" data-act="lb-send-note" data-id="${x.n.id}" aria-label="Mandar">${icon('share', 'sm')}</button><button class="icon-btn ghost" data-act="lb-open-note" data-id="${x.n.id}" aria-label="Abrir">${icon('edit', 'sm')}</button></footer></article>`)).join('')}</div>`
     : `<div class="empty"><h3>Tu libreta está en blanco</h3><p>Empieza con un apunte, una tarjeta de información o una foto. Todo lo que escribas aquí también alimenta tu Quiz inteligente.</p></div>`;
   return `<a class="back" href="#/libretas">${icon('back')}Libretas</a>
     <section class="lb-head">${coverHTML(s, true)}<div><h1 class="page-title">${esc(s.name)}</h1><button class="link-btn" data-act="lb-cover" data-id="${sid}">Cambiar portada</button></div></section>
@@ -109,6 +109,55 @@ function viewLibreta(sid) {
     <div class="btn-row" style="margin-top:16px"><button class="btn" data-act="qz-go" data-v="${lbSid(sid) || ''}">${icon('spark', 'sm')}Quiz de esta libreta</button><button class="btn quiet" data-act="help-open">${icon('help', 'sm')}Pedir ayuda</button></div>`;
 }
 EXTRA_VIEWS.libretas = viewLibretas; EXTRA_NAV.libretas = 'mas';
+
+/* ---------- Ver la hoja completa (lector a pantalla completa) ---------- */
+function lbReadBody(p) {
+  if (p.kind === 'foto') return `<div class="lb-rd-photos">${(p.img || []).map((id) => `<figure class="lb-rd-fig fr-${p.frame || 'polaroid'} fx-${p.filter || 'natural'}"><img data-uf="${id}" alt="" data-act="lb-zoom" data-id="${id}"></figure>`).join('')}</div>${p.text ? `<div class="lb-rd-text">${esc(p.text)}</div>` : ''}`;
+  if (p.kind === 'lista') return `<ul class="lb-check lb-rd-list">${(p.items || []).map((it, i) => `<li><button type="button" class="lb-ck ${it.done ? 'on' : ''}" data-act="lb-check" data-id="${p.id}" data-i="${i}" aria-pressed="${!!it.done}">${icon('check', 'sm')}</button><span>${esc(it.t)}</span></li>`).join('')}</ul>`;
+  if (p.kind === 'enlace') { const u = safeURL(p.link || ''); let host = ''; try { host = new URL(u).hostname.replace(/^www\./, ''); } catch { /* */ } return `<a class="lb-link" href="${esc(u)}" target="_blank" rel="noopener">${icon('link', 'sm')}<span><b>${esc(p.title || host)}</b><em>${esc(host)}</em></span></a>${p.text ? `<div class="lb-rd-text">${esc(p.text)}</div>` : ''}`; }
+  if (p.kind === 'pegatina') return `<div class="lb-big-stk">${stickerSVG(p.sticker || 'hoja', 'big')}</div>${p.text ? `<div class="lb-rd-text">${esc(p.text)}</div>` : ''}`;
+  return p.text ? `<div class="lb-rd-text">${linkify(p.text)}</div>` : '<p class="lb-rd-empty">Esta hoja está en blanco. Toca Editar para escribir.</p>';
+}
+function lbReadOpen(title, meta, body, tone, acts) {
+  let o = document.getElementById('lbRead');
+  if (!o) {
+    o = document.createElement('div'); o.id = 'lbRead'; o.className = 'lb-reader'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true');
+    document.body.appendChild(o);
+    o.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-lbx],[data-act]'); if (!t) return;
+      if (t.dataset.lbx === 'close') { lbReadClose(); return; }
+      if (t.dataset.act === 'lb-check') { t.classList.toggle('on'); t.setAttribute('aria-pressed', t.classList.contains('on')); return; }
+      if (t.dataset.act && t.dataset.act !== 'lb-zoom') setTimeout(lbReadClose, 0);
+    });
+    addEventListener('keydown', (e) => { if (e.key === 'Escape' && o.classList.contains('open') && !document.getElementById('ask')?.open) lbReadClose(); });
+  }
+  o.innerHTML = `<div class="lb-rd-top"><button type="button" class="icon-btn ghost lb-rd-x" data-lbx="close" aria-label="Cerrar">${icon('back')}<span>Libreta</span></button><span class="lb-rd-meta">${meta}</span><span class="grow"></span>${acts}</div>
+    <div class="lb-rd-scroll"><article class="lb-rd-paper t-${tone}"><h1>${esc(title || 'Sin título')}</h1>${body}</article></div>`;
+  o.classList.add('open'); document.body.classList.add('lb-open');
+  hydrateUF(); o.querySelector('.lb-rd-scroll').scrollTop = 0;
+}
+let LBR_ID = null;
+function lbReadClose() { const o = document.getElementById('lbRead'); if (o) { o.classList.remove('open'); o.innerHTML = ''; } document.body.classList.remove('lb-open'); LBR_ID = null; }
+function lbReadPage(p) {
+  const when = relDay(toISO(new Date(p.updated || p.at)));
+  LBR_ID = p.id;
+  const badge = p.shared ? ` · Compartida${p.sharedFrom ? ` con ti (de ${esc(p.sharedFrom)})` : ''}` : '';
+  lbReadOpen(p.title, `${esc(LB_KIND_NAME[p.kind] || 'Hoja')} · ${esc(when)}${badge}`, lbReadBody(p), LB_TONES[p.tone] ? p.tone : 'papel',
+    `<button type="button" class="icon-btn ghost" data-act="shp-open" data-id="${p.id}" aria-label="Compartir">${icon('share', 'sm')}</button><button type="button" class="btn quiet lb-rd-edit" data-act="lb-edit" data-id="${p.id}">${icon('edit', 'sm')}Editar</button>`);
+}
+function lbReadNote(n) {
+  const when = n.updated ? relDay(toISO(new Date(n.updated))) : '';
+  const body = htmlText(n.body || '').trim().split(/\n+/).filter(Boolean).map((l) => `<p>${esc(l)}</p>`).join('') || '<p class="lb-rd-empty">Este apunte está vacío.</p>';
+  lbReadOpen(n.title || 'Sin título', `Apunte · ${esc(when)}`, `<div class="lb-rd-text lb-rd-note">${body}</div>`, 'papel',
+    `<button type="button" class="btn quiet" data-act="shp-note" data-id="${n.id}">${icon('share', 'sm')}Compartir</button><button type="button" class="btn quiet" data-act="lb-open-note" data-id="${n.id}">${icon('edit', 'sm')}Editar</button>`);
+}
+const LB_KIND_NAME = { info: 'Información clave', lista: 'Lista', foto: 'Fotos', enlace: 'Enlace', pegatina: 'Pegatina', nota: 'Página' };
+document.addEventListener('click', (e) => {
+  if (e.target.closest('a,button,input,textarea,select,label,img,[data-act]')) return;
+  const t = e.target.closest('.lb-tap'); if (!t) return;
+  if (t.dataset.pid) { const p = (S.pages || []).find((x) => x.id === t.dataset.pid); if (p) lbReadPage(p); }
+  else if (t.dataset.nid) { const n = S.notes.find((x) => x.id === t.dataset.nid); if (n) lbReadNote(n); }
+});
 
 /* ---------- Crear y editar páginas ---------- */
 let LBD = null;
@@ -129,7 +178,7 @@ function pageSheet(p) {
   openSheet(`${sheetHead(isNew ? { info: 'Información clave', lista: 'Nueva lista', foto: 'Fotos', enlace: 'Enlace', pegatina: 'Pegatina', nota: 'Página' }[k] : 'Editar página')}<div class="sheet-body">${f}
     <div class="field"><span class="lbl">${k === 'pegatina' ? 'Elige una pegatina' : 'Pegatina (opcional)'}</span><div class="lb-stks" role="group">${k === 'pegatina' ? '' : `<button type="button" class="lb-sb ${!LB.sticker ? 'on' : ''}" data-v="">Ninguna</button>`}${Object.keys(STICKERS).map((s) => `<button type="button" class="lb-sb ${LB.sticker === s ? 'on' : ''}" data-v="${s}" aria-label="${s}">${stickerSVG(s)}</button>`).join('')}</div></div>
     <div class="field"><span class="lbl">Color de la hoja</span><div class="pz-tones" role="group" id="lbTones">${Object.keys(LB_TONES).map((t) => `<button type="button" class="pz-tone lbt-${t}" data-v="${t}" aria-pressed="${LB.tone === t}" aria-label="${LB_TONES[t]}"></button>`).join('')}</div></div></div>
-    <div class="sheet-foot">${isNew ? '<button class="btn" data-act="sheet-close">Cancelar</button>' : `<button class="btn danger" data-act="lb-del" data-id="${p.id}">${icon('trash', 'sm')}Quitar</button>`}<span class="grow"></span><button class="btn primary" id="lbSave">${isNew ? 'Pegar en la libreta' : 'Guardar'}</button></div>`);
+    <div class="sheet-foot">${isNew ? '<button class="btn" data-act="sheet-close">Cancelar</button>' : `<button class="btn danger" data-act="lb-del" data-id="${p.id}">${icon('trash', 'sm')}Quitar</button>`}<span class="grow"></span>${!isNew && k !== 'foto' ? `<button class="btn quiet" data-act="shp-open" data-id="${p.id}">${icon('share', 'sm')}Compartir</button>` : ''}<button class="btn primary" id="lbSave">${isNew ? 'Pegar en la libreta' : 'Guardar'}</button></div>`);
   setTimeout(hydrateUF, 30);
   const sh = sheet(); const pickIn = (sel, key) => sh.querySelectorAll(`${sel} button`).forEach((b) => b.addEventListener('click', () => { LBD[key] = b.dataset.v; LB[key] = b.dataset.v; sh.querySelectorAll(`${sel} button`).forEach((x) => x.setAttribute('aria-pressed', x === b)); sh.querySelectorAll('#lbPrev .lb-ph').forEach((ph) => { ph.className = `lb-ph fr-${LBD.frame || LB.frame} fx-${LBD.filter || LB.filter}`; }); }));
   pickIn('#lbFrame', 'frame'); pickIn('#lbFilter', 'filter');
@@ -153,6 +202,7 @@ function pageSheet(p) {
     if ((k === 'nota' || k === 'info') && !d.text && !d.title) { toast('Escribe algo primero.'); return; }
     d.updated = Date.now();
     commit((s) => { s.pages ||= []; const i = s.pages.findIndex((x) => x.id === d.id); if (i >= 0) s.pages[i] = d; else s.pages.push(d); });
+    if (d.shared) shpPush(d);
     closeSheet(false); Snd.drop(); waterToday(); setTimeout(() => { const el = document.querySelector('.lb-page'); if (el) { el.classList.add('lb-new'); leafBurst(el); } }, 60);
   });
 }
@@ -188,7 +238,7 @@ Object.assign(VIDA_ACTS, {
     pageSheet({ id: 'pg' + uid(), kind: k, subjectId: lbSid(sid), title: '', text: '', items: [], img: [], tone: LB.tone, at: Date.now() });
   },
   'lb-edit': (el) => { const p = (S.pages || []).find((x) => x.id === el.dataset.id); if (p) pageSheet(p); },
-  'lb-del': async (el) => { const ok = await ask({ title: '¿Quitar esta página?', text: 'Se quita de tu libreta.', ok: 'Quitar', danger: true }); if (!ok) return; commit((s) => { const p = s.pages.find((x) => x.id === el.dataset.id); if (p) { p.deleted = true; p.updated = Date.now(); } }); closeSheet(false); },
+  'lb-del': async (el) => { const cur = (S.pages || []).find((x) => x.id === el.dataset.id); const ok = await ask({ title: '¿Quitar esta página?', text: cur && cur.shared ? 'Se quita de tu libreta y dejas de compartirla con tus amigos.' : 'Se quita de tu libreta.', ok: 'Quitar', danger: true }); if (!ok) return; if (cur && cur.shared && !shpNeedLogin()) { try { await cloudFetch('POST', { kind: 'shpleave', as: REG.me, id: cur.shared }); } catch { /* sin internet: se queda local */ } } commit((s) => { const p = s.pages.find((x) => x.id === el.dataset.id); if (p) { p.deleted = true; p.updated = Date.now(); } }); closeSheet(false); },
   'lb-check': (el) => { commit((s) => { const p = s.pages.find((x) => x.id === el.dataset.id); if (p && p.items[+el.dataset.i]) { p.items[+el.dataset.i].done = !p.items[+el.dataset.i].done; p.updated = Date.now(); } }); Snd.pop ? Snd.pop() : Snd.tick(); },
   'lb-send': (el) => { const p = (S.pages || []).find((x) => x.id === el.dataset.id); if (p) sendPage(p); },
   'lb-send-note': (el) => { const n = S.notes.find((x) => x.id === el.dataset.id); if (n) sendPage({ kind: 'nota', title: n.title, text: htmlText(n.body).trim(), tone: 'papel' }); },

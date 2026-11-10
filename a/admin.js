@@ -18,6 +18,8 @@ async function adminEnter(id) {
     const me0 = REG.me; acceptSession(r); REG.me = me0;
     // si esa persona ya tenía su sesión en este dispositivo, se respeta; si no, es una visita temporal
     if (!had) (REG.adminSess ||= {})[r.user.id] = Date.now();
+    // vista de solo lectura: la administración puede mirar, pero nada se guarda en esa cuenta
+    (REG.adminView ||= {})[r.user.id] = true;
     saveReg();
     if (sheet().open) closeSheet(false);
     switchProfile(r.user.id);
@@ -34,7 +36,9 @@ async function adminEnter(id) {
 }
 /* revisa cada pocos segundos si la administración ya salió de alguna cuenta ajena */
 const ADM_CLEAN = new Set();
+const isAdminView = (id = REG.current) => !!(REG.adminView && REG.adminView[id]);
 setInterval(() => {
+  for (const id of Object.keys(REG.adminView || {})) if (id !== REG.current) delete REG.adminView[id];
   for (const id of Object.keys(REG.adminSess || {})) if (id !== REG.current && !ADM_CLEAN.has(id)) { ADM_CLEAN.add(id); adminCleanup(id); }
 }, 2500);
 /* Cuando la administración sale de una cuenta ajena, se sube todo y se borra su copia de este dispositivo */
