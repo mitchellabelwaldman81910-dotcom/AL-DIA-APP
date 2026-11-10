@@ -1834,3 +1834,41 @@ html body, :root[data-daypart] body { background: var(--paper) !important; }
 .scene, .stars, .sun, .moon, .glow { display: none !important; }
 .ha-p { height: 3px; background: color-mix(in srgb, var(--ink) 12%, transparent); }
 .hoy-day .now, .emergency .task, .tasks .task { background: transparent !important; }
+
+/* =========================================================
+   7.10 — La magia de vuelta: hojas, cielo y paisaje en trazo fino
+   ========================================================= */
+.scene { display: block !important; }
+.stars { display: block !important; }
+.forest, .ln-forest { display: block !important; }
+.leaves, #leaves { display: block !important; }
+/* cielo según la hora, muy suave y con el color del estilo */
+html body, :root[data-daypart] body { background: linear-gradient(180deg, color-mix(in srgb, #CFE3F2 38%, var(--paper)) 0%, var(--paper) 46%) fixed !important; }
+:root[data-daypart="dawn"] body { background: linear-gradient(180deg, color-mix(in srgb, #F6D9C4 42%, var(--paper)) 0%, var(--paper) 46%) fixed !important; }
+:root[data-daypart="dusk"] body { background: linear-gradient(180deg, color-mix(in srgb, #EBC9D6 40%, var(--paper)) 0%, color-mix(in srgb, #F3DCC4 20%, var(--paper)) 26%, var(--paper) 50%) fixed !important; }
+:root[data-daypart="night"] body { background: linear-gradient(180deg, color-mix(in srgb, #C9D3EA 40%, var(--paper)) 0%, var(--paper) 50%) fixed !important; }
+:root[data-theme="dark"] body { background: linear-gradient(180deg, color-mix(in srgb, #24305A 45%, var(--paper)) 0%, var(--paper) 52%) fixed !important; }
+/* sol (o luna) de línea fina que respira */
+.sun { display: block !important; top: calc(var(--safe-t, 0px) + 10px); right: -18px; width: 150px; height: 150px; border-radius: 0; background: none !important; animation: none; opacity: .55; }
+.sun svg { width: 100%; height: 100%; overflow: visible; }
+.sun circle { fill: none; stroke: color-mix(in srgb, #C29A4A 80%, var(--ink)); stroke-width: 1; vector-effect: non-scaling-stroke; transform-origin: 50px 50px; }
+.sun .r2 { opacity: .55; animation: breathe 9s ease-in-out infinite alternate; }
+.sun .r3 { opacity: .25; animation: breathe 9s ease-in-out -4.5s infinite alternate; }
+@keyframes breathe { from { transform: scale(.97); } to { transform: scale(1.05); } }
+:root[data-theme="dark"] .sun circle, :root[data-daypart="night"] .sun circle { stroke: color-mix(in srgb, #E8E3FF 70%, var(--ink)); }
+:root[data-theme="dark"] .sun circle:first-child, :root[data-daypart="night"] .sun circle:first-child { fill: color-mix(in srgb, #E8E3FF 8%, transparent); }
+/* paisaje y bruma */
+.forest.ln-forest { opacity: .7; height: 30vh; }
+.mist { position: absolute; left: 0; right: 0; bottom: 4vh; width: 140%; height: 18vh; opacity: .5; animation: mist 60s ease-in-out infinite alternate; }
+.mist path { fill: none; stroke: color-mix(in srgb, var(--ink) 18%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 2 10; }
+.mist .m2 { stroke-dasharray: 1 14; opacity: .7; }
+@keyframes mist { from { transform: translateX(-12%); } to { transform: translateX(0); } }
+/* hojas: contorno fino, lentas, detrás del contenido */
+.leaves { z-index: 0 !important; }
+.leaf { opacity: .55 !important; }
+.leaf svg { filter: none !important; }
+:root[data-theme="dark"] .leaf { opacity: .45 !important; }
+:root[data-style="minimal"] .leaves, :root[data-style="ejecutivo"] .leaves { display: block !important; }
+:root[data-style="minimal"] .leaf { opacity: .35 !important; }
+@media (prefers-reduced-motion: reduce) { .mist, .sun circle { animation: none; } }
+.sun { top: calc(var(--safe-t, 0px) + 36px); right: -64px; width: 200px; height: 200px; opacity: .3; }
