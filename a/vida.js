@@ -1,4 +1,4 @@
-/* Al Día — VIDA: cuentas, árbol de 100 niveles, Bosques colaborativos y rankings.
+/* Cinnavia — VIDA: cuentas, árbol de 100 niveles, Bosques colaborativos y rankings.
    Este archivo se carga antes de app.js; todo lo que usa de la app se resuelve al ejecutarse. */
 'use strict';
 
@@ -178,7 +178,7 @@ function authDialog(opts) {
         <div class="field"><label for="auPw">${chg ? 'Contraseña nueva' : 'Contraseña'}</label><div class="pw-row"><input class="input" id="auPw" type="password" autocomplete="${login ? 'current-password' : 'new-password'}" placeholder="Mínimo 4 caracteres"><button type="button" class="pw-eye" data-a="eye" aria-label="Mostrar u ocultar contraseña">Ver</button></div></div>
         ${reg || claim || chg ? `<div class="field"><label for="auPw2">Repite la contraseña</label><input class="input" id="auPw2" type="password" autocomplete="new-password" placeholder="Otra vez, igualita"></div>` : ''}
         ${reg ? `<div class="field"><span class="lbl">Tu color</span><div class="swatches">${ACCOUNT_COLORS.map((c) => `<button type="button" data-a="color" data-c="${c}" class="${c === color ? 'on' : ''}" style="--c:${c}" aria-label="Color ${c}"></button>`).join('')}</div></div>` : ''}
-        ${reg ? '<p class="tiny faint" style="margin:0 0 8px">La administración de Al Día puede entrar a las cuentas solo para dar soporte y recuperar datos; cuando lo hace, ves su nombre en tu sección.</p>' : ''}
+        ${reg ? '<p class="tiny faint" style="margin:0 0 8px">La administración de Cinnavia puede entrar a las cuentas solo para dar soporte y recuperar datos; cuando lo hace, ves su nombre en tu sección.</p>' : ''}
         <p class="auth-err" role="alert">${esc(msg)}</p>
         <div class="btn-row" style="flex-direction:row-reverse;justify-content:flex-start"><button class="btn primary" data-a="go" type="submit">${reg ? 'Crear mi usuario' : claim ? 'Guardar' : login ? 'Entrar' : 'Cambiar'}</button><button class="btn" type="button" data-a="cancel">Cancelar</button></div>
         ${login && !opts.id ? '<p style="text-align:center;margin:12px 0 0"><button class="link-btn" type="button" data-a="to-reg">Todavía no tengo usuario: crear uno</button></p>' : ''}
@@ -496,7 +496,7 @@ const VIDA_ACTS = {
   'user-login': () => loginUser(),
   'cloud-history': async () => {
     const id = dataOwner(); if (!id || !tokens()[id]) { toast('Entra con tu usuario primero.'); return; }
-    openSheet(`${sheetHead('Versiones en la nube')}<div class="sheet-body"><p class="muted" style="margin:0 0 12px">La nube guarda una versión de tus datos cada vez que cambian (máximo una cada 10 minutos, las últimas 40). Si algo se perdió, vuelve a una versión anterior.</p><div id="histList"><p class="small muted">Cargando…</p></div></div>`);
+    openSheet(`${sheetHead('Versiones en la nube')}<div class="sheet-body"><p class="muted" style="margin:0 0 12px">La nube guarda una versión de tus datos cada vez que cambian (máximo una cada 10 minutos, las últimas 40). Si algo se perdió, vuelve a una versión anterior.</p><div id="histList">${typeof loaderHTML === 'function' ? loaderHTML('Cargando…') : 'Cargando…'}</div></div>`);
     try {
       const r = await cloudFetch('GET', null, `kind=history&p=${encodeURIComponent(id)}`);
       const box = document.getElementById('histList'); if (!box) return;

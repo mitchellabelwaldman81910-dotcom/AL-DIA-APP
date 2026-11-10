@@ -1,7 +1,7 @@
-/* Al Día 7.15 — Amistades, mensajes, Biblioteca General, Pedir ayuda y fotos de perfil.
+/* Cinnavia 7.15 — Amistades, mensajes, Biblioteca General, Pedir ayuda y fotos de perfil.
    · Amistades estrictas: solo se pueden mandar mensajes después de que la otra persona ACEPTA la solicitud.
      Se puede rechazar, cancelar, quitar y bloquear. El servidor lo hace cumplir.
-   · Biblioteca General: una sala abierta para todas las personas de Al Día. Se escribe, se dibuja,
+   · Biblioteca General: una sala abierta para todas las personas de Cinnavia. Se escribe, se dibuja,
      se mandan notas de voz y fotos, y sobre todo se pide y se da ayuda con tareas. Con reportes y bloqueo.
    · Foto de perfil: se recorta en cuadro, se comprime y se ve en tus Bosques, amistades y la Biblioteca. */
 'use strict';
@@ -63,10 +63,53 @@ document.addEventListener('change', async (e) => {
   try {
     const d = await cropSquare(e.target.files[0]);
     await cloudFetch('POST', { kind: 'avatar', as: id, data: d });
-    AVC[id] = { v: Date.now(), d }; saveAVC(); render(); Snd.chime(); toast('Tu foto de perfil quedó lista.');
+    AVC[id] = { v: Date.now(), d }; saveAVC(); closeSheet(false); render(); Snd.chime(); toast('Tu foto de perfil quedó lista.');
   } catch (x) { toast(/fetch|network|Failed/i.test(x.message) ? 'Necesitas internet para cambiar tu foto.' : x.message); }
   e.target.value = '';
 });
+
+/* ---------- Editar perfil (celular): cámara, galería y quitar foto ---------- */
+function openEditProfile() {
+  const p = profile(); if (!p) return;
+  const id = dataOwner();
+  const can = !isForestId(REG.current) && !!tokens()[id];
+  const has = !!avData(id);
+  openSheet(`${sheetHead('Editar perfil')}<div class="sheet-body ep-body">
+    <div class="ep-hero"><span class="ep-av">${avatar(p, 'xl')}</span><b>${esc(p.name)}</b><span class="small muted">@${esc(id)}</span></div>
+    ${can ? `<div class="ep-btns">
+      <label class="btn primary">${icon('cam', 'sm')}Tomar foto<input type="file" accept="image/*" capture="user" id="avIn" hidden></label>
+      <label class="btn">${icon('upload', 'sm')}Elegir de la galería<input type="file" accept="image/*" id="avIn2" hidden></label>
+      ${has ? '<button type="button" class="btn quiet" data-act="av-del">Quitar foto</button>' : ''}</div>
+      <p class="small muted" style="text-align:center;margin-top:12px">Se recorta en cuadro y se ve en tus Bosques, amistades y la Biblioteca.</p>`
+    : '<p class="small muted" style="text-align:center">Para poner foto necesitas haber iniciado sesión con tu cuenta (con internet).</p>'}
+  </div>`);
+}
+document.addEventListener('change', async (e) => {
+  if (e.target.id !== 'avIn2' || !e.target.files[0]) return;
+  const id = dataOwner();
+  try {
+    const d = await cropSquare(e.target.files[0]);
+    await cloudFetch('POST', { kind: 'avatar', as: id, data: d });
+    AVC[id] = { v: Date.now(), d }; saveAVC(); closeSheet(false); render(); Snd.chime(); toast('Tu foto de perfil quedó lista.');
+  } catch (x) { toast(/fetch|network|Failed/i.test(x.message) ? 'Necesitas internet para cambiar tu foto.' : x.message); }
+  e.target.value = '';
+});
+Object.assign(VIDA_ACTS, {
+  'edit-profile': () => openEditProfile(),
+  'av-del': async () => {
+    const id = dataOwner();
+    try { await cloudFetch('POST', { kind: 'avatar', as: id, data: '' }); AVC[id] = { v: 0, d: '' }; saveAVC(); closeSheet(false); render(); toast('Foto quitada.'); }
+    catch (x) { toast(/fetch|network|Failed/i.test(x.message) ? 'Necesitas internet para quitar tu foto.' : x.message); }
+  },
+});
+{
+  const baseMas = viewMas;
+  viewMas = function () {
+    const h = baseMas(); const me = profile(); if (!me) return h;
+    const row = `<ul class="rows" style="margin-bottom:10px"><li><button type="button" class="rowbtn" data-act="edit-profile"><span class="ep-mini">${avatar(me, 'sm')}<i>${icon('cam', 'sm')}</i></span><span class="txt"><b>Editar perfil</b><span>Cambia tu foto de perfil con la cámara o la galería.</span></span>${icon('chev', 'chev')}</button></li></ul>`;
+    return h.replace('<ul class="rows" style="margin-bottom:14px">', row + '<ul class="rows" style="margin-bottom:14px">');
+  };
+}
 
 /* ===================== Amistades y mensajes ===================== */
 const SOC = (() => { try { return JSON.parse(localStorage.getItem('aldia:soc') || 'null') || {}; } catch { return {}; } })();
@@ -98,7 +141,7 @@ function socialBadge() { const s = socOf(); return (s.incoming || []).length + (
         if (route().name === 'amigos') softRender();
       }
       paintSocialBadge();
-    } catch (e) { console.warn('[Al Día] social', e); }
+    } catch (e) { console.warn('[Cinnavia] social', e); }
     return r;
   };
 }
@@ -242,7 +285,7 @@ function viewBiblioteca() {
   const list = roots.filter((p) => LIB.filter === 'todo' || (LIB.filter === 'ayuda' && p.kind === 'help' && !p.solved) || (LIB.filter === 'resueltas' && p.kind === 'help' && p.solved)).slice(-80);
   const openHelp = roots.filter((p) => p.kind === 'help' && !p.solved).length;
   return `<section class="lib-hero"><div class="lib-hero-art">${libArt()}</div><h1 class="page-title">Biblioteca General</h1>
-      <p class="page-sub">La sala de todas las personas de Al Día. Pide ayuda con una tarea, explica lo que sabes, dibuja un esquema o manda una nota de voz.</p>
+      <p class="page-sub">La sala de todas las personas de Cinnavia. Pide ayuda con una tarea, explica lo que sabes, dibuja un esquema o manda una nota de voz.</p>
       <div class="lib-stats"><span><i class="live-dot" data-on="1"></i>${plural(Math.max(1, LIB.online), 'persona aquí', 'personas aquí')}</span><span>${plural(openHelp, 'pregunta abierta', 'preguntas abiertas')}</span></div></section>
     <div class="lib-rules">${icon('lock', 'sm')}<span>Sé amable y respetuoso. No compartas tu teléfono, dirección ni contraseñas. Reporta lo que no esté bien: con 3 reportes se oculta.</span></div>
     <div class="seg full" role="group" style="margin:12px 0">${[['todo', 'Todo'], ['ayuda', `Piden ayuda${openHelp ? ` · ${openHelp}` : ''}`], ['resueltas', 'Resueltas']].map(([k, l]) => `<button type="button" data-act="lib-filter" data-v="${k}" aria-pressed="${LIB.filter === k}">${l}</button>`).join('')}</div>

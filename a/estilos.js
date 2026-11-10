@@ -1,4 +1,4 @@
-/* Al Día 7.4 — Estilos de diseño (plantillas visuales).
+/* Cinnavia 7.4 — Estilos de diseño (plantillas visuales).
    Una sola fuente de verdad: las paletas generan el CSS real y las vistas previas. */
 'use strict';
 

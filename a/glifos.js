@@ -1,4 +1,4 @@
-/* Al Día 7.4 — Glifos de línea (sustituyen a los emojis). Mismo trazo que el resto de íconos. */
+/* Cinnavia 7.4 — Glifos de línea (sustituyen a los emojis). Mismo trazo que el resto de íconos. */
 'use strict';
 const GLIFOS = {
   drop: '<path d="M12 3.2s6 6.3 6 10.3a6 6 0 0 1-12 0c0-4 6-10.3 6-10.3z"/>',

@@ -1,4 +1,4 @@
-// Al Día — avisos programados: cada 10 minutos revisa las entregas de cada persona y le manda la notificación
+// Cinnavia — avisos programados: cada 10 minutos revisa las entregas de cada persona y le manda la notificación
 // a su teléfono aunque la app esté cerrada (estilo de su asistente: amable, coach, meme o estratega).
 import { getStore } from "@netlify/blobs";
 import { runAvisos } from "./sync.mjs";

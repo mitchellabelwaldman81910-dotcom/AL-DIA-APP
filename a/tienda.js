@@ -1,4 +1,4 @@
-/* Al Día 7.14 — Vida › Comprar.
+/* Cinnavia 7.14 — Vida › Comprar.
    Cada vez que tu árbol llega a un nivel nuevo ganas monedas (10 + el nivel), y más con las misiones del día.
    Con ellas compras otras especies de árbol, ambientes para tu paisaje, decoraciones del jardín
    y plantillas visuales para toda la app. Todo se guarda en tu cuenta y en la nube. */

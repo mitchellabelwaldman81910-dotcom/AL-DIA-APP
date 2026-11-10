@@ -1,4 +1,4 @@
-/* Al Día 7.15 — Bosques más útiles.
+/* Cinnavia 7.15 — Bosques más útiles.
    · Radar de roles: los trabajos en equipo se dividen por áreas (investigación, redacción, diseño, entrega),
      se reparten de forma equitativa y, si alguien se atrasa, recibe un aviso discreto y el equipo puede reasignar.
    · «Estudia conmigo»: Pomodoro sincronizado. Todo el Bosque se concentra y descansa al mismo tiempo.

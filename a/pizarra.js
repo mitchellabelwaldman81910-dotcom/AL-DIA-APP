@@ -1,4 +1,4 @@
-/* Al Día 7.14 — Pizarrón del Bosque (espacio de trabajo efímero y compartido).
+/* Cinnavia 7.14 — Pizarrón del Bosque (espacio de trabajo efímero y compartido).
    Un lienzo rápido dentro del grupo para soltar notas, enlaces, borradores y PDFs sin abrir otra app.
    Todo el grupo lo ve y lo mueve en vivo; funciona sin internet (se envía solo al volver).
    Al terminar el proyecto, el pizarrón se archiva y se puede exportar a los apuntes de cada quien. */

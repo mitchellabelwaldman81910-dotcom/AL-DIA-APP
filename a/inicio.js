@@ -1,4 +1,4 @@
-/* Al Día 7.9 — Inicio como una pieza editorial.
+/* Cinnavia 7.9 — Inicio como una pieza editorial.
    Portada: fecha en serif, tu árbol enmarcado como una lámina con su ficha, tres cifras del día,
    una sola captura, "Tu día" (clase y energía), el plan y las entregas, atajos en cuadrícula
    y un epígrafe al cierre. Nada se repite ni compite por atención. */
@@ -60,6 +60,9 @@ function hoyToolsHTML() {
     ['#/panel', 'bars', 'Mi semana', 'Carga y tiempo libre'],
     ['act:sos-open', 'flag', 'Emergencia', 'Plan de daños mínimos'],
     ['#/cerebro', 'network', 'Tu Cerebro', 'Todo, conectado'],
+    ['#/juego', 'trophy', 'Cosecha', 'Atrapa manzanas'],
+    ['#/skills', 'skill', 'Skills', 'Tu árbol de habilidades'],
+    ['#/compartir', 'share', 'Compartir', 'Invita a tu salón'],
   ];
   return `<h2 class="sec">Atajos</h2><div class="hoy-tools">${t.map(([h, ic, b, s]) => h.startsWith('act:')
     ? `<button type="button" class="ht" data-act="${h.slice(4)}">${icon(ic)}<b>${b}</b><span>${s}</span></button>`

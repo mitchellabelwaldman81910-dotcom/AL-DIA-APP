@@ -1,6 +1,6 @@
-/* Al Día — service worker: funciona sin internet y manda avisos. */
-const VERSION = 'aldia-v7.15.0';
-const V = '?v=7.15.0';
+/* Cinnavia — service worker: funciona sin internet y manda avisos. */
+const VERSION = 'aldia-v7.17.0';
+const V = '?v=7.17.0';
 const SHELL = [
   './',
   './index.html',
@@ -24,7 +24,10 @@ const SHELL = [
   './a/libretas.js' + V,
   './a/equipo.js' + V,
   './a/escaner.js' + V,
+  './a/skills.js' + V,
+  './a/juego.js' + V,
   './a/naturaleza.js' + V,
+  './icons/cinnavia.svg',
   './manifest.webmanifest',
   './fonts/schola-bold.woff',
   './fonts/schola-regular.woff',
@@ -58,7 +61,7 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   // el lector de fotos se descarga una vez y se guarda para usarlo sin internet
-  if (url.hostname === 'cdn.jsdelivr.net') {
+  if (url.hostname === 'cdn.jsdelivr.net' || url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
     e.respondWith(caches.open('aldia-lector').then(async (c) => (await c.match(req)) || fetch(req).then((r) => { if (r.ok) c.put(req, r.clone()); return r; })));
     return;
   }
@@ -134,8 +137,8 @@ self.addEventListener('periodicsync', (e) => {
 
 self.addEventListener('push', (e) => {
   let d = {};
-  try { d = e.data ? e.data.json() : {}; } catch { d = { title: 'Al Día', body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Al Día', {
+  try { d = e.data ? e.data.json() : {}; } catch { d = { title: 'Cinnavia', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Cinnavia', {
     body: d.body || '', tag: d.tag, renotify: !!d.tag, icon: 'icons/icon-192.png', badge: 'icons/badge-96.png', lang: 'es-MX', vibrate: [80, 40, 80], data: { url: d.url || '#/hoy' },
   }));
 });

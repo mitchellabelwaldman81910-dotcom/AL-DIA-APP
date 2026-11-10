@@ -1,4 +1,4 @@
-/* Al Día 7.5 — Ilustración en línea fina.
+/* Cinnavia 7.5 — Ilustración en línea fina.
    Todo se dibuja con trazos delgados que toman el color del estilo elegido (día y noche):
    tinta para la estructura, acento para las hojas y dorado suave para flores, frutos y luz.
    La primera vez que ves un nivel, el árbol se dibuja trazo a trazo. */

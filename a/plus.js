@@ -1,4 +1,4 @@
-/* Al Día — plus 7.3: micro-pasos guiados, estimado vs real, energía, ruta crítica, radar de carga,
+/* Cinnavia — plus 7.3: micro-pasos guiados, estimado vs real, energía, ruta crítica, radar de carga,
    tiempo libre real, patrones, hábitos, árbol de habilidades, nube de emergencia, mini-quiz,
    plantillas compartidas y biblioteca global. Todo local y gratis (sin IA de pago). Se carga antes de app.js. */
 'use strict';
