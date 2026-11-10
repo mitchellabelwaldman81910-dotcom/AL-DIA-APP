@@ -6,7 +6,7 @@ import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual, createHash } from
 import webpush from "web-push";
 
 const W = "w/";
-const GTYPES = ["task", "team", "join", "part", "post", "idea", "like"];
+const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done", "focus", "tpl"];
 const LETTER_USERS = ["mitchell", "mel"];
 const MAX = 3 * 1024 * 1024;
 const USER_RE = /^[a-z0-9]{3,20}$/;
@@ -93,8 +93,29 @@ export default async (req, context) => {
         const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean);
         return json({ ok: true, users: all.map((a) => ({ id: a.id, name: a.name, color: a.color })) });
       }
+      if (kindQ === "lobby") {
+        const as = url.searchParams.get("as");
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const now = Date.now();
+        const { blobs } = await store.list({ prefix: `${W}lobby/` });
+        const docs = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter((d) => d && d.end > now);
+        const SLOT = 30 * 60000, slot = Math.floor(now / SLOT);
+        const rank = (id) => createHash("sha256").update(`${id}:${slot}`).digest("hex");
+        const sorted = [...docs].sort((a, b) => rank(a.id).localeCompare(rank(b.id)));
+        const idx = sorted.findIndex((d) => d.id === as);
+        const room = idx < 0 ? [] : sorted.slice(Math.floor(idx / 6) * 6, Math.floor(idx / 6) * 6 + 6);
+        return json({ ok: true, total: docs.length, slot, room: room.map((d) => ({ id: d.id, name: d.ghost ? null : d.name, color: d.ghost ? null : d.color, ghost: !!d.ghost, end: d.end })) });
+      }
+      if (kindQ === "gimg") {
+        const as = url.searchParams.get("as");
+        const fid = url.searchParams.get("forest");
+        const id = url.searchParams.get("id");
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        if (!(await memberOf(as, fid)) || !/^[a-z0-9-]{4,60}$/i.test(id || "")) return json({ error: "No disponible" }, 403);
+        const data = await store.get(`${W}gi/${fid}/${id}`, { type: "text" });
+        return json({ ok: true, data: data || null });
+      }
       if (kindQ === "rank") {
-        if (!authList.length) return json({ error: "Inicia sesión primero" }, 401);
         const trees = await treeDocs();
         const people = trees.sort((a, b) => b.level - a.level || b.pts - a.pts || b.life - a.life).slice(0, 100)
           .map((t) => ({ id: t.id, name: t.name, color: t.color, level: t.level, pts: t.pts, life: t.life, streak: t.streak || 0 }));
@@ -293,14 +314,36 @@ export default async (req, context) => {
         const prev = await store.get(key, { type: "json" });
         const clean = { ...it, by: auth[as].name, byId: prev?.byId || as, at: +it.at || Date.now(), u: Date.now() };
         for (const k of ["title", "desc", "text", "subject", "link", "tag", "owner", "name"]) if (k in clean) clean[k] = clip(clean[k], k === "desc" || k === "text" ? 4000 : 300);
+        if (clean.type === "tpl") {
+          clean.steps = Array.isArray(it.steps) ? it.steps.slice(0, 30).map((x) => ({ text: clip(x && x.text, 120), min: Math.max(0, Math.min(600, +(x && x.min) || 0)) })) : [];
+          clean.kind = clip(it.kind, 20); clean.est = Math.max(0, Math.min(600, +it.est || 0));
+        }
         await store.setJSON(key, clean);
-        if (!prev && !clean.deleted && ["task", "team", "idea"].includes(clean.type)) {
-          const what = clean.type === "task" ? "subió una tarea" : clean.type === "team" ? "creó un trabajo en equipo" : "compartió una idea";
+        if ((!prev || (clean.type === "focus" && !clean.joined && (prev.deleted || prev.start !== clean.start))) && !clean.deleted && !(clean.type === "focus" && clean.joined) && ["task", "team", "idea", "focus", "tpl"].includes(clean.type) && !(clean.type === "focus" && clean.ghost)) {
+          const what = clean.type === "task" ? "subió una tarea" : clean.type === "focus" ? "empezó a concentrarse: ¡únete a la sala de enfoque!" : clean.type === "tpl" ? "compartió una plantilla de estudio" : clean.type === "team" ? "creó un trabajo en equipo" : "compartió una idea";
           const payload = { title: `${f.emoji || "🌳"} ${f.name} · ${clean.by} ${what}`, body: clip(clean.title || clean.text, 140), url: "#/grupo", tag: `g-${clean.id}` };
           const job = pushTo(store, f.members.filter((m) => m !== as), url.origin, payload, clip(body.device, 40));
           if (context?.waitUntil) context.waitUntil(job); else await job;
         }
         return json({ ok: true, u: clean.u });
+      }
+      case "lobby": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const key = `${W}lobby/${as}`;
+        if (body.leave) { await store.delete(key); return json({ ok: true }); }
+        const now = Date.now(); const end = Math.max(now + 1000, Math.min(+body.end || 0, now + 31 * 60000));
+        await store.setJSON(key, { id: as, name: auth[as].name, color: auth[as].color, ghost: !!body.ghost, start: now, end });
+        return json({ ok: true });
+      }
+      case "gimg": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const f = await memberOf(as, body.forest);
+        if (!f) return json({ error: "Ya no eres parte de este Salón" }, 403);
+        const d = String(body.data || "");
+        if (!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(d) || d.length > 900000) return json({ error: "La foto es muy grande o no es válida" }, 400);
+        if (!/^[a-z0-9-]{4,60}$/i.test(body.id || "")) return json({ error: "elemento inválido" }, 400);
+        await store.set(`${W}gi/${f.id}/${body.id}`, d);
+        return json({ ok: true });
       }
       case "gsub": {
         if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
