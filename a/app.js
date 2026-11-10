@@ -1821,7 +1821,7 @@ async function cloudSync(opts = {}) {
     CLOUD.last = Date.now();
     if (lost) { choosing = true; render(); toast('Tu contraseña cambió en otro dispositivo. Vuelve a entrar.'); }
     else if (changedCurrent && !choosing) { if (softRender()) applyTheme(); }
-    else if (forestChanged && !choosing) softRender();
+    else if (forestChanged && !choosing && (isGroup() || ['vida', 'salones', 'amigos', 'biblioteca', 'estudio', 'gcal', 'equipos', 'equipo', 'ideas', 'pizarron', 'grupo'].includes(route().name))) softRender();
     else if (route().name === 'hoy' && !choosing && (remote.letters || []).some((l) => l.to === REG.current && !l.read)) softRender();
     updateCloudBadge();
   } catch (e) {
@@ -2537,7 +2537,8 @@ function render() {
   // conservar el texto de la captura rápida si se vuelve a pintar Hoy
   const qv = $('#quickIn')?.value;
   const hadFocus = document.activeElement?.id;
-  main.innerHTML = html;
+  if (!(render.soft && render.lastHtml === html && render.lastRoute === r.name + (groupMode ? ':g' : ''))) main.innerHTML = html;
+  render.lastHtml = html;
   if (render.lastRoute !== r.name + (groupMode ? ':g' : '')) { render.lastRoute = r.name + (groupMode ? ':g' : ''); main.classList.remove('enter'); void main.offsetWidth; main.classList.add('enter'); }
   harmonize(main);
   if (r.name === 'cerebro' && !groupMode && !choosing && !showWelcome) brainInit();
@@ -3685,11 +3686,20 @@ if (window.visualViewport) {
       // al volver a la app, busca si hay versión nueva
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
     }).catch(() => {});
-    // Versión nueva lista: se recarga sola en un momento tranquilo (sin hojas abiertas ni texto a medias)
+    // Versión nueva lista: se recarga sola, pero solo cuando no la estás usando (app en segundo plano o sin tocar nada un rato),
+    // nunca en medio de un juego ni con una hoja abierta, y nunca más de dos veces en dos minutos.
+    let lastInput = Date.now();
+    for (const ev of ['pointerdown', 'keydown', 'touchstart']) addEventListener(ev, () => { lastInput = Date.now(); }, { passive: true, capture: true });
+    const tooManyReloads = () => {
+      try { const t = JSON.parse(sessionStorage.getItem('aldia:rl') || '[]').filter((x) => Date.now() - x < 120000); return t.length >= 2; } catch { return false; }
+    };
+    const noteReload = () => { try { const t = JSON.parse(sessionStorage.getItem('aldia:rl') || '[]').filter((x) => Date.now() - x < 120000); t.push(Date.now()); sessionStorage.setItem('aldia:rl', JSON.stringify(t)); } catch { /* */ } };
     const reloadSafe = () => {
-      if (reloading) return;
+      if (reloading || tooManyReloads()) return;
       const a = document.activeElement; const typing = a && /^(INPUT|TEXTAREA)$/.test(a.tagName) && a.value;
-      if (document.visibilityState === 'hidden' || (!sheet().open && !typing)) { reloading = true; location.reload(); }
+      const playing = document.body.classList.contains('gm-on');
+      const idle = Date.now() - lastInput > 25000;
+      if (document.visibilityState === 'hidden' || (!sheet().open && !typing && !playing && idle)) { reloading = true; noteReload(); location.reload(); }
       else setTimeout(reloadSafe, 4000);
     };
     navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadSW) reloadSafe(); });
