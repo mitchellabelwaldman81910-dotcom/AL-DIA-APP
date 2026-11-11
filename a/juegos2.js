@@ -72,7 +72,7 @@ Object.assign(VIDA_ACTS, {
   const baseJuegos = viewJuegos;
   const row = (href, ic, t, d) => `<li><a href="${href}"><span class="ico">${icon(ic)}</span><span class="txt"><b>${t}</b><span>${d}</span></span>${icon('chev', 'chev')}</a></li>`;
   viewJuegos = function () {
-    return baseJuegos().replace('</ul>', row('#/peloton', 'play', 'Pelotón de Tareas', 'Corre por la ciudad, junta libros y monedas y esquiva las tareas.') + row('#/memoria', 'skill', 'Mente Viva', 'Sigue la carta que se baraja. 200 niveles que suben poco a poco.') + row('#/enlaza', 'link', 'Enlaza', 'Desenreda la red moviendo los puntos. Sin tiempo, sin prisa.') + row('#/gusano', 'tree', 'Gusano Goloso', 'Come manzanas, crece y llega a la salida. 1000 niveles.') + '</ul>');
+    return baseJuegos().replace('</ul>', row('#/peloton', 'play', 'Pelotón de Tareas', 'Corre por la ciudad, junta libros y monedas y esquiva las tareas.') + row('#/memoria', 'skill', 'Mente Viva', 'Sigue la carta que se baraja. 200 niveles que suben poco a poco.') + row('#/enlaza', 'link', 'Enlaza', 'Desenreda la red moviendo los puntos. Sin tiempo, sin prisa.') + row('#/gusano', 'tree', 'Gusano Goloso', 'Come manzanas, crece y llega a la salida. 330 niveles.') + '</ul>');
   };
   EXTRA_VIEWS.juegos = viewJuegos;
 }
