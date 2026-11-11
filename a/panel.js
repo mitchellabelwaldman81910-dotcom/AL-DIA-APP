@@ -36,8 +36,8 @@ EXTRA_VIEWS.panel = viewPanel; EXTRA_NAV.panel = 'mas';
   const bar = () => {
     let el = document.getElementById('admBanner'); const on = !!(REG.current && isAdminView() && REG.me && REG.current !== REG.me);
     if (!on) { if (el) el.remove(); return; }
-    if (!el) { el = document.createElement('div'); el.id = 'admBanner'; el.className = 'adm-banner'; el.innerHTML = '<span></span><button type="button" class="btn" id="admBack">Salir</button>'; document.body.appendChild(el); el.querySelector('#admBack').addEventListener('click', () => { switchProfile(REG.me); }); }
-    const nm = (profile(REG.current) || {}).name || REG.current; const sp = el.querySelector('span'); const t = `Modo revisión · solo lectura · ${nm}`; if (sp.textContent !== t) sp.textContent = t;
+    if (!el) { el = document.createElement('div'); el.id = 'admBanner'; el.className = 'adm-banner'; el.innerHTML = '<svg viewBox="0 0 64 40" class="eye-svg" aria-hidden="true"><path class="lid" d="M4 20 C16 4 48 4 60 20 C48 36 16 36 4 20Z"/><circle class="iris" cx="32" cy="20" r="10"/><path class="pupil-heart" d="M32 25 C27 21.5 26 19 27.8 17.6 C29.4 16.4 31 17.3 32 18.6 C33 17.3 34.6 16.4 36.2 17.6 C38 19 37 21.5 32 25Z"/><circle class="glint" cx="35.5" cy="15.5" r="2.2"/><rect class="blink" x="0" y="0" width="64" height="40"/></svg><span></span><button type="button" class="btn" id="admBack">Salir</button>'; document.body.appendChild(el); el.querySelector('#admBack').addEventListener('click', () => { switchProfile(REG.me); }); }
+    const nm = (profile(REG.current) || {}).name || REG.current; const sp = el.querySelector('span'); const t = `Estás viendo la pantalla de ${nm} · solo lectura`; if (sp.textContent !== t) sp.textContent = t;
   };
   setInterval(bar, 700);
 }
