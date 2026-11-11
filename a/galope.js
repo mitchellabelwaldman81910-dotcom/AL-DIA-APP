@@ -164,7 +164,7 @@ function glStart() {
     const [n, h] = kinds[Math.floor(Math.random() * kinds.length)];
     const gap = 44 + h * 0.3;
     for (let i = 0; i < n; i++) st.trees.push({ x: V.w + 40 + i * gap, h: h - i * 5 + (Math.random() * 8 - 4), seed: 'gt' + Math.random() });
-    if (Math.random() < 0.3) { const cxm = V.w + 40 + ((n - 1) * gap) / 2; st.coinsF.push({ x: cxm, y: h + 30 + Math.random() * 6, ph: Math.random() * 6 }); }
+    if (Math.random() < 0.3) { const cxm = V.w + 40 + ((n - 1) * gap) / 2; st.coinsF.push({ x: cxm, y: Math.min(112, Math.max(h + 48, 96)) + Math.random() * 6, ph: Math.random() * 6 }); }
     else if (Math.random() < 0.14) st.coinsF.push({ x: V.w + 40 + n * gap + 60, y: 22, ph: Math.random() * 6 });
     st.next = st.dist + Math.max(300, st.speed * (0.95 + Math.random() * 0.7)) + n * gap;
   };

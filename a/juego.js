@@ -68,10 +68,28 @@ function gmStart() {
     const sky = b.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, B.sky[0]); sky.addColorStop(0.5, B.sky[1]); sky.addColorStop(1, B.sky[2]); b.fillStyle = sky; b.fillRect(0, 0, W, H);
     const mt = (y, amp, col, seed, cap) => { const r = rnd(seedOf('gm' + seed)); const pts = []; for (let x = 0; x <= W + 40; x += 40) pts.push([x, y - amp * (0.3 + r() * 0.7)]); b.fillStyle = col; b.beginPath(); b.moveTo(0, H); b.lineTo(0, y); for (const [x, yy] of pts) b.lineTo(x, yy); b.lineTo(W, H); b.closePath(); b.fill();
       if (cap) { b.fillStyle = cap; for (let k = 1; k < pts.length - 1; k++) if (pts[k][1] < pts[k - 1][1] && pts[k][1] < pts[k + 1][1]) { const [x, yy] = pts[k]; b.beginPath(); b.moveTo(x, yy); b.lineTo(x - 15, yy + 17); b.lineTo(x - 5, yy + 13); b.lineTo(x + 3, yy + 19); b.lineTo(x + 15, yy + 15); b.closePath(); b.fill(); } } };
-    mt(H * 0.62, H * 0.16, B.m1, 1, B.cap); mt(H * 0.7, H * 0.12, B.m2, 2, B.cap);
+    // montañas con picos, cara en sombra, nieve y neblina
+    const ridge = (y, amp, col, seed, cap, haze) => {
+      const r = rnd(seedOf('gmr' + seed)); const pts = []; const ph = [r() * 6, r() * 6, r() * 6];
+      for (let x = -20; x <= W + 60; x += 22 + r() * 14) { const n = 0.5 * Math.sin(x * 0.004 + ph[0]) + 0.3 * Math.sin(x * 0.011 + ph[1]) + 0.2 * Math.sin(x * 0.027 + ph[2]); const pk = Math.pow(Math.abs(Math.sin(x * 0.0065 + ph[0] * 1.7)), 0.7); pts.push([x, y - amp * (0.18 + 0.42 * (n + 1) / 2 + 0.5 * pk * (0.6 + r() * 0.4))]); }
+      b.fillStyle = col; b.beginPath(); b.moveTo(-20, H); for (const [x, yy] of pts) b.lineTo(x, yy); b.lineTo(W + 60, H); b.closePath(); b.fill();
+      for (let k = 1; k < pts.length - 1; k++) if (pts[k][1] < pts[k - 1][1] && pts[k][1] < pts[k + 1][1]) {
+        const [x, yy] = pts[k]; const nx = pts[k + 1]; const dn = Math.min(H, yy + amp * 0.9);
+        b.fillStyle = 'rgba(20,30,50,.14)'; b.beginPath(); b.moveTo(x, yy); b.lineTo(nx[0], nx[1]); b.lineTo(nx[0], dn); b.lineTo(x - 6, dn); b.closePath(); b.fill();
+        b.fillStyle = 'rgba(255,255,255,.07)'; b.beginPath(); b.moveTo(x, yy); b.lineTo(pts[k - 1][0], pts[k - 1][1]); b.lineTo(pts[k - 1][0], dn); b.lineTo(x - 6, dn); b.closePath(); b.fill();
+        if (cap && yy < y - amp * 0.5) { const sw = 13 + (y - yy) * 0.16; b.fillStyle = cap; b.beginPath(); b.moveTo(x, yy); b.lineTo(x - sw, yy + sw * 1.05); b.lineTo(x - sw * 0.45, yy + sw * 0.8); b.lineTo(x - sw * 0.1, yy + sw * 1.3); b.lineTo(x + sw * 0.35, yy + sw * 0.85); b.lineTo(x + sw, yy + sw * 1.1); b.closePath(); b.fill(); }
+      }
+      const hz = b.createLinearGradient(0, y - amp, 0, y + amp * 0.5); hz.addColorStop(0, 'rgba(255,255,255,0)'); hz.addColorStop(1, `rgba(235,244,250,${haze})`); b.fillStyle = hz; b.fillRect(0, y - amp, W, amp * 1.6);
+    };
+    const capc = B.deco === 'cactus' ? null : (B.cap || 'rgba(255,255,255,.9)'); ridge(H * 0.6, H * 0.22, B.m1, 1, capc, 0.35); ridge(H * 0.69, H * 0.15, B.m2, 2, B.deco === 'cactus' ? null : B.cap, 0.22);
+    // lago lejano
+    b.fillStyle = 'rgba(150,200,230,.5)'; b.beginPath(); b.ellipse(W * 0.22, H * 0.705, W * 0.13, H * 0.012, 0, 0, Math.PI * 2); b.fill();
     b.fillStyle = B.g1; b.beginPath(); b.moveTo(0, H); b.lineTo(0, H * 0.82); b.bezierCurveTo(W * 0.3, H * 0.76, W * 0.7, H * 0.86, W, H * 0.8); b.lineTo(W, H); b.fill();
-    const r2 = rnd(seedOf('gmt')); for (let i = 0; i < 9; i++) {
-      const x = r2() * W, y = H * (0.74 + r2() * 0.06), s = 0.6 + r2() * 0.6;
+    // río que baja serpenteando desde las montañas
+    { const wl = b.createLinearGradient(0, H * 0.7, 0, H); wl.addColorStop(0, 'rgba(150,205,235,.65)'); wl.addColorStop(1, 'rgba(110,175,215,.85)'); b.fillStyle = wl; b.beginPath(); b.moveTo(W * 0.62, H * 0.72); b.bezierCurveTo(W * 0.55, H * 0.78, W * 0.72, H * 0.83, W * 0.6, H * 0.9); b.bezierCurveTo(W * 0.56, H * 0.94, W * 0.7, H * 0.97, W * 0.66, H); b.lineTo(W * 0.8, H); b.bezierCurveTo(W * 0.84, H * 0.96, W * 0.72, H * 0.93, W * 0.74, H * 0.9); b.bezierCurveTo(W * 0.8, H * 0.84, W * 0.66, H * 0.79, W * 0.65, H * 0.72); b.closePath(); b.fill();
+      b.strokeStyle = 'rgba(255,255,255,.35)'; b.lineWidth = 1.2; b.beginPath(); b.moveTo(W * 0.63, H * 0.74); b.bezierCurveTo(W * 0.6, H * 0.79, W * 0.72, H * 0.84, W * 0.66, H * 0.9); b.stroke(); }
+    const r2 = rnd(seedOf('gmt')); for (let i = 0; i < 26; i++) {
+      const x = r2() * W, y = H * (0.73 + r2() * 0.08), s = 0.5 + r2() * 0.75;
       if (B.deco === 'palm') { b.strokeStyle = '#5B4426'; b.lineWidth = 3 * s; b.beginPath(); b.moveTo(x, y + 4); b.quadraticCurveTo(x + 8 * s, y - 20 * s, x + 3 * s, y - 38 * s); b.stroke(); b.fillStyle = 'rgba(38,110,64,.85)'; for (let k = 0; k < 6; k++) { const an = -Math.PI / 2 + (k - 2.5) * 0.62; b.beginPath(); b.moveTo(x + 3 * s, y - 38 * s); b.quadraticCurveTo(x + 3 * s + Math.cos(an) * 20 * s, y - 38 * s + Math.sin(an) * 16 * s - 6, x + 3 * s + Math.cos(an) * 34 * s, y - 38 * s + Math.sin(an) * 24 * s + 12 * s); b.quadraticCurveTo(x + 3 * s + Math.cos(an) * 20 * s, y - 38 * s + Math.sin(an) * 16 * s + 2, x + 3 * s, y - 38 * s); b.fill(); } }
       else if (B.deco === 'cactus') { b.fillStyle = 'rgba(96,128,72,.9)'; const w = 6 * s; b.beginPath(); b.roundRect(x - w / 2, y - 34 * s, w, 38 * s, w / 2); b.fill(); b.beginPath(); b.roundRect(x - 13 * s, y - 24 * s, 5 * s, 14 * s, 2.5 * s); b.roundRect(x - 13 * s, y - 14 * s, 13 * s, 4 * s, 2); b.fill(); b.beginPath(); b.roundRect(x + 8 * s, y - 28 * s, 5 * s, 16 * s, 2.5 * s); b.roundRect(x, y - 14 * s, 13 * s, 4 * s, 2); b.fill(); }
       else { b.fillStyle = B.pine; b.beginPath(); b.moveTo(x, y - 34 * s); b.lineTo(x - 12 * s, y); b.lineTo(x + 12 * s, y); b.fill(); b.fillRect(x - 1.5, y, 3, 6 * s); if (B.snow) { b.fillStyle = 'rgba(255,255,255,.85)'; b.beginPath(); b.moveTo(x, y - 34 * s); b.lineTo(x - 6 * s, y - 18 * s); b.lineTo(x + 6 * s, y - 18 * s); b.fill(); } }
@@ -168,6 +186,12 @@ function gmStart() {
     for (const f of st.floats) f.t += dt; st.floats = st.floats.filter((f) => f.t < 0.9);
     st.squash = Math.max(0, st.squash - dt * 5); st.shake = Math.max(0, st.shake - dt);
     st.sunA += dt * 0.25;
+    // lluvia suave (solo ambiente: no toca manzanas ni canasta)
+    st.rainT = (st.rainT ?? 25 + Math.random() * 25) - dt;
+    if (st.rainT <= 0) { if (!st.rainLeft) { st.rainLeft = 14 + Math.random() * 10; st.rainT = 1e9; } }
+    if (st.rainLeft > 0) { st.rainLeft -= dt; if (st.rainLeft <= 0) { st.rainLeft = 0; st.rainT = 40 + Math.random() * 40; } }
+    st.rainK = Math.max(0, Math.min(1, (st.rainK || 0) + (st.rainLeft > 0 ? dt / 2.5 : -dt / 2.5)));
+    if (st.rainK > 0) { const want = Math.round(70 * st.rainK); const dr = (st.drops ||= []); while (dr.length < want) dr.push({ x: Math.random() * W, y: Math.random() * H, v: 620 + Math.random() * 260, l: 9 + Math.random() * 9 }); if (dr.length > want) dr.length = want; for (const d of dr) { d.y += d.v * dt; d.x -= d.v * 0.12 * dt; if (d.y > H) { d.y = -20; d.x = Math.random() * (W + 60); } } }
     // ---- dibujo ----
     g.save(); if (st.shake) g.translate((Math.random() - 0.5) * 10 * st.shake, 0);
     g.drawImage(bg, 0, 0, W, H); if (st.fade > 0 && bgOld) { st.fade = Math.max(0, st.fade - dt / 1.4); g.globalAlpha = st.fade; g.drawImage(bgOld, 0, 0, W, H); g.globalAlpha = 1; }
@@ -179,6 +203,7 @@ function gmStart() {
     g.restore(); const sg = g.createRadialGradient(sx - sr * 0.3, sy - sr * 0.3, 2, sx, sy, sr); sg.addColorStop(0, '#FFF1C2'); sg.addColorStop(1, '#F6B848'); g.fillStyle = sg; g.beginPath(); g.arc(sx, sy, sr, 0, Math.PI * 2); g.fill();
     // nubes
     for (const cl of st.clouds) { cl.x += cl.v * dt; if (cl.x > W + 80) cl.x = -80; g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.ellipse(cl.x, cl.y, 34 * cl.s, 12 * cl.s, 0, 0, Math.PI * 2); g.ellipse(cl.x + 18 * cl.s, cl.y - 8 * cl.s, 20 * cl.s, 12 * cl.s, 0, 0, Math.PI * 2); g.ellipse(cl.x - 16 * cl.s, cl.y - 4 * cl.s, 16 * cl.s, 10 * cl.s, 0, 0, Math.PI * 2); g.fill(); }
+    if (st.rainK > 0) { g.fillStyle = `rgba(40,70,100,${0.16 * st.rainK})`; g.fillRect(0, 0, W, H); g.strokeStyle = `rgba(210,230,250,${0.5 * st.rainK})`; g.lineWidth = 1.2; g.beginPath(); for (const d of st.drops) { g.moveTo(d.x, d.y); g.lineTo(d.x + d.l * 0.12, d.y - d.l); } g.stroke(); }
     // manzanas colgando (tiemblan)
     for (const a of st.hang) { const wob = Math.sin(a.t * 40) * 3 * (a.t / a.wob); gmApple(g, a.x + wob, a.y, a.gold ? 15 : 14, a.gold, 0, now, a.heal); }
     for (const a of st.apples_) gmApple(g, a.x, a.y, a.r, a.gold, a.rot, now, a.heal);

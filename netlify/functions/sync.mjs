@@ -964,6 +964,18 @@ export async function runAvisos(store, origin, at = Date.now()) {
       }
       if (t.due === addDayISO(day, -1) && min >= 9 * 60 && min < 13 * 60) out.push({ k: `late-${t.due}`, id: t.id, m: style.late(title, 0, p, e) });
     }
+    // recordatorios propios (Tareas > Recordatorios): hora exacta, aviso previo y repetición
+    for (const r of (Array.isArray(d.recs) ? d.recs : []).slice(0, 60)) {
+      if (!r || !r.title || !r.date || !/^\d{4}-\d{2}-\d{2}$/.test(r.date) || day < r.date) continue;
+      const rep = r.repeat || "no"; if (r.done && rep === "no") continue;
+      const wd = new Date(day + "T12:00:00Z").getUTCDay(), w0 = new Date(r.date + "T12:00:00Z").getUTCDay();
+      const occurs = rep === "dia" || (rep === "laboral" && wd >= 1 && wd <= 5) || (rep === "semana" && wd === w0) || (rep === "no" && day === r.date);
+      if (!occurs || (r.skipUntil && rep !== "no" && day <= r.skipUntil)) continue;
+      const [rh, rm] = String(r.time || "08:00").split(":").map(Number); const at0 = rh * 60 + rm - Math.max(0, Math.min(1440, +r.before || 0));
+      if (at0 < 0 || min < at0 || min >= at0 + 120) continue;
+      const lead = +r.before ? `Es a las ${String(rh).padStart(2, "0")}:${String(rm).padStart(2, "0")}.` : "Es ahora.";
+      out.push({ k: `rc-${day}`, id: String(r.id).slice(0, 40), m: [String(r.title).slice(0, 80), lead], url: "#/recordatorios" });
+    }
     // partes de trabajos en equipo atrasadas (aviso discreto solo a quien la tiene)
     for (const b of (await store.list({ prefix: `${W}mf/${u}/` })).blobs) {
       const fid = b.key.split("/").pop();
