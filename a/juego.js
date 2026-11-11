@@ -124,7 +124,7 @@ function gmStart() {
   lives();
   const msg = (t, ms = 1200) => { const m = document.getElementById('gmMsg'); m.textContent = t; m.classList.remove('show'); void m.offsetWidth; m.classList.add('show'); clearTimeout(msg.t); msg.t = setTimeout(() => m.classList.remove('show'), ms); };
   msg('¡Atrapa las manzanas!', 1600);
-  const level = () => 1 + st.apples / 12;
+  const level = () => 1 + Math.min(st.apples, 1600) / 12; /* a partir de 1 600 la velocidad ya no sube */
   const spawn = () => {
     const gold = Math.random() < Math.min(0.09, 0.035 + st.apples * 0.0004);
     const live = () => st.hang.length + st.apples_.filter((a) => !a.done).length;
