@@ -2941,3 +2941,34 @@ html[data-theme="dark"] #fauna { filter: brightness(.62) saturate(.85); }
 @media (prefers-reduced-motion: reduce) { .rm-grow { animation: none; stroke-dashoffset: 0; } .rm-node, .rm-bud { animation: none; opacity: 1; } }
 .adm-banner { position: fixed; left: 50%; transform: translateX(-50%); top: max(8px, env(safe-area-inset-top)); z-index: 9000; display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 14px; border-radius: 999px; background: #1E3A2B; color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,.25); max-width: calc(100vw - 24px); }
 .adm-banner .btn { padding: 4px 12px; min-height: 0; font-size: 13px; }
+
+/* ===== 7.29 · Skills minimalista, con los colores de la app ===== */
+.sk2 { --c: var(--pen); }
+.sk2 b { font-weight: 650; color: var(--ink); }
+.sk2-line { display: block; height: 3px; border-radius: 3px; background: color-mix(in srgb, var(--ink) 11%, transparent); overflow: hidden; }
+.sk2-line.big { height: 4px; margin: 14px 0 6px; }
+.sk2-line i { display: block; height: 100%; border-radius: 3px; background: var(--c, var(--pen)); animation: sk2Fill .9s cubic-bezier(.3,.7,.2,1) both; transform-origin: left; }
+@keyframes sk2Fill { from { transform: scaleX(0); } }
+.sk2-tree { list-style: none; margin: 22px 0 0; padding: 0 0 0 18px; position: relative; display: grid; gap: 10px; }
+.sk2-tree::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: 6px; width: 2px; border-radius: 2px; background: color-mix(in srgb, var(--pen) 45%, transparent); }
+.sk2-tree li { position: relative; }
+.sk2-tree li::before { content: ""; position: absolute; left: -14px; top: 28px; width: 14px; height: 2px; border-radius: 2px; background: color-mix(in srgb, var(--c) 70%, transparent); }
+.sk2-tree li button { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; text-align: left; padding: 14px 16px 12px; border-radius: 16px; border: 1px solid var(--line, color-mix(in srgb, var(--ink) 10%, transparent)); background: var(--sheet); color: var(--ink); font: inherit; cursor: pointer; box-shadow: 0 1px 2px rgba(22,35,63,.05); transition: transform .15s, box-shadow .15s; -webkit-tap-highlight-color: transparent; }
+.sk2-tree li button:active { transform: scale(.99); }
+.sk2-nm { font-family: var(--display); font-weight: 600; font-size: 19px; line-height: 1.2; min-width: 0; overflow-wrap: anywhere; }
+.sk2-n { font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; align-self: center; } .sk2-n b { font-size: 15px; }
+.sk2-meta { font-size: 12.5px; color: var(--ink-2); }
+.sk2-tree li .sk2-line { grid-column: 1 / -1; margin-top: 10px; }
+.sk2-chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 4px; margin: 0 -16px; padding-left: 16px; padding-right: 16px; scrollbar-width: none; } .sk2-chips::-webkit-scrollbar { display: none; }
+.sk2-chip { flex: none; padding: 7px 13px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent); background: transparent; color: var(--ink-2); font: inherit; font-size: 13.5px; cursor: pointer; }
+.sk2-chip.me { background: color-mix(in srgb, var(--c) 14%, var(--sheet)); border-color: var(--c); color: var(--ink); font-weight: 600; }
+.sk2-cat { margin-top: 24px; }
+.sk2-cat-h { display: flex; align-items: baseline; justify-content: space-between; } .sk2-cat-h h3 { margin: 0; font-family: var(--display); font-size: 20px; font-weight: 600; }
+.sk2-cat-h span { font-size: 17px; font-weight: 650; color: var(--ink); font-variant-numeric: tabular-nums; } .sk2-cat-h i { font-style: normal; font-weight: 400; color: var(--ink-3); font-size: 13px; }
+.sk2-cat-d { margin: 3px 0 10px; font-size: 13.5px; color: var(--ink-2); line-height: 1.4; }
+.sk2-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+.sk2-tag { min-width: 44px; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent); background: transparent; color: var(--ink-3); font: 600 13px var(--sans, system-ui); font-variant-numeric: tabular-nums; cursor: pointer; transition: transform .12s; -webkit-tap-highlight-color: transparent; }
+.sk2-tag:active { transform: scale(.94); }
+.sk2-tag.on { background: color-mix(in srgb, var(--c) 16%, var(--sheet)); border-color: color-mix(in srgb, var(--c) 70%, transparent); color: var(--ink); }
+.sk2-tag.next { border-style: dashed; border-color: var(--c); color: var(--ink); }
+.sk2-st { display: grid; gap: 2px; margin: 0 0 12px; padding-left: 12px; border-left: 3px solid color-mix(in srgb, var(--ink) 18%, transparent); } .sk2-st.on { border-left-color: var(--c); } .sk2-st span { font-size: 13px; color: var(--ink-2); }
