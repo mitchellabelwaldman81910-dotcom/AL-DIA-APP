@@ -321,7 +321,10 @@ Object.assign(VIDA_ACTS, {
   viewEscanear = function () {
     let h = baseView();
     h = h.replace('<label class="btn" for="scanSolve">', `<label class="btn" for="scanLibreta">${icon('book')}Pasar a libreta</label><input id="scanLibreta" type="file" accept="image/*" capture="environment" class="sr" data-scan="libreta">\n      <label class="btn" for="scanSolve">`);
+    h = h.replace('<textarea class="input" id="scanText"', '<textarea class="input" id="scanText" lang="es" spellcheck="true" autocorrect="on" autocapitalize="sentences"');
     let extra = '';
+    if (!SCAN.busy && SCAN.text && SCAN.conf != null && SCAN.conf < 80) extra += `<div class="banner warn">${icon('bell')}<p><b>Lectura poco segura (${SCAN.conf}%).</b> Si es letra a mano o la foto está oscura, puede haber errores: toma otra foto de frente y con buena luz, o usa «Pegar texto copiado» (en iPhone/iPad mantén presionado el texto de la foto y toca Copiar). Revisa siempre el texto antes de usarlo.</p></div>`;
+    if (!SCAN.busy) extra += `<div class="card"><h3 class="serif" style="margin:0 0 4px">Pegar texto copiado</h3><p class="small muted" style="margin:0 0 10px">Lectura exacta en iPhone/iPad: abre la foto, mantén presionado el texto, toca Copiar y pégalo aquí. La app lo analiza igual.</p><button class="btn block" data-act="scan-paste">${icon('copy')}Pegar y analizar</button></div>`;
     if (!SCAN.busy && SCAN.text) {
       const doubts = SCAN.lines ? lcDoubts().length : 0;
       if (SCAN.lines) {
@@ -336,10 +339,42 @@ Object.assign(VIDA_ACTS, {
         ${SCAN.items && SCAN.items.length ? '<label class="lc-chk"><input type="checkbox" id="lcWTasks" checked> Incluir las tareas encontradas como lista</label>' : ''}
         <button class="btn primary block" data-act="lc-save" style="margin-top:10px">${icon('save')}Guardar en la libreta</button></div>`;
     }
-    return h.replace('<h2 class="sec">Pendientes de fotos', extra + '<h2 class="sec">Pendientes de fotos');
+    if (!SCAN.busy && (SCAN.text || SCAN.items || SCAN.solved)) extra += `<button class="btn block" data-act="scan-clear" style="margin:0 0 14px">${icon('trash')}Descartar este escaneo</button>`;
+    h = h.replace('<h2 class="sec">Pendientes de fotos', extra + '<h2 class="sec">Pendientes de fotos');
+    const photo = S.tasks.filter((t) => t.source === 'foto' && !t.done);
+    if (photo.length) {
+      h = h.replace(/<ul class="tasks">[\s\S]*?<\/ul>/, () => `<ul class="tasks">${photo.sort(sortPending).map((t) => `${taskRow(t)}<li class="lc-del"><button class="btn danger" data-act="scan-del" data-id="${t.id}" aria-label="Borrar ${esc(t.title)}">${icon('trash')}Borrar esta</button></li>`).join('')}</ul>
+        <button class="btn danger block" data-act="scan-del-all" style="margin-top:10px">${icon('trash')}Borrar todas las de fotos</button>`);
+    }
+    return h;
   };
 }
 {
   const baseAnalyze = analyzeScan;
   analyzeScan = function (mode) { if (mode === 'libreta') { SCAN.mode = mode; SCAN.items = null; SCAN.solved = null; return; } return baseAnalyze(mode); };
 }
+
+Object.assign(VIDA_ACTS, {
+  'scan-clear': () => { SCAN.text = ''; SCAN.items = null; SCAN.solved = null; SCAN.lines = null; SCAN.error = ''; SCAN.mode = null; SCAN.reviewed = false; render(); toast('Escaneo descartado.'); },
+  'scan-del': (el) => { if (typeof deleteTask === 'function') deleteTask(el.dataset.id); },
+  'scan-del-all': async () => {
+    const list = S.tasks.filter((t) => t.source === 'foto' && !t.done);
+    if (!list.length) return;
+    if (!(await ask({ title: 'Borrar tareas de fotos', text: `Se borrarán ${plural(list.length, 'tarea', 'tareas')} sacadas de fotos.`, ok: 'Borrar', danger: true }))) return;
+    const ids = new Set(list.map((t) => t.id));
+    const keep = list.map((t) => ({ t, i: S.tasks.indexOf(t) }));
+    commit((s) => { s.tasks = s.tasks.filter((t) => !ids.has(t.id)); });
+    toast(`${plural(list.length, 'tarea borrada', 'tareas borradas')}.`, { action: 'Deshacer', onAction: () => commit((s) => { keep.forEach((k) => s.tasks.push(k.t)); }) });
+  },
+});
+
+Object.assign(VIDA_ACTS, {
+  'scan-paste': async () => {
+    let t = '';
+    try { t = await navigator.clipboard.readText(); } catch (e) { t = (prompt && window.prompt('Pega aquí el texto copiado:')) || ''; }
+    t = (t || '').trim();
+    if (!t) { toast('No hay texto copiado para pegar.'); return; }
+    SCAN.text = t.slice(0, 20000); SCAN.autoText = SCAN.text; SCAN.lines = null; SCAN.conf = null; SCAN.error = ''; SCAN.reviewed = false;
+    analyzeScan(SCAN.mode === 'solve' ? 'solve' : 'tasks'); render();
+  },
+});

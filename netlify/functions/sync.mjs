@@ -172,8 +172,13 @@ export default async (req, context) => {
           const nd = (await store.list({ prefix: `${W}gd/${f.id}/` })).blobs.length;
           forests.push({ id: f.id, name: f.name, color: f.color, owner: f.owner, members: f.members, items: n, daily: nd, at: f.at });
         }
-        users.sort((a, b) => b.at - a.at);
-        return json({ ok: true, users, forests });
+        const nowT = Date.now();
+        for (const u of users) {
+          const sn = await store.get(`${W}seen/${u.id}`, { type: "json" });
+          u.seen = sn?.at || 0; u.online = !!sn && nowT - sn.at < 60000; u.since = sn?.since || 0; u.prevAt = sn?.prevAt || 0;
+        }
+        users.sort((a, b) => (b.online - a.online) || ((b.seen || b.at) - (a.seen || a.at)));
+        return json({ ok: true, users, forests, now: nowT });
       }
       if (kindQ === "avisos") {
         if (!admin) return json({ error: "Solo administración" }, 403);
@@ -433,6 +438,15 @@ export default async (req, context) => {
         const at = prevL?.at || (Math.abs((+l.at || 0) - Date.now()) < 120000 || !(+l.at) ? Date.now() : Math.min(+l.at, Date.now()));
         await store.setJSON(`${W}l/${l.id}`, { id: l.id, from: l.from, to: l.to, text: clip(l.text, 4000), at, tz: clip(l.tz, 40), read: !!l.read });
         await bump(store, [l.from, l.to]);
+        return json({ ok: true });
+      }
+      case "ping": {
+        const who = String(body.who || "");
+        if (!USER_RE.test(who) || !allowed(who)) return json({ error: "Inicia sesión primero" }, 401);
+        const prev = await store.get(`${W}seen/${who}`, { type: "json" });
+        const now = Date.now();
+        const first = !prev || now - (prev.at || 0) > 120000;
+        await store.setJSON(`${W}seen/${who}`, { at: now, since: first ? now : (prev.since || now), prevAt: first ? (prev?.at || 0) : (prev.prevAt || 0) });
         return json({ ok: true });
       }
       case "presence": {

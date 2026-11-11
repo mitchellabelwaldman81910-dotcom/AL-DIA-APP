@@ -3000,3 +3000,7 @@ html[data-theme="dark"] #fauna { filter: brightness(.62) saturate(.85); }
 .share-wa { background: #167A43 !important; border-color: #167A43 !important; color: #fff !important; }
 .adm-banner .eye-svg { width: 34px; height: 21px; flex: none; } .adm-banner .eye-svg .lid { fill: #fff; stroke: #6FCF97; } .adm-banner .eye-svg .iris { fill: #2A7F53; } .adm-banner .eye-svg .pupil-heart { fill: #fff; } .adm-banner span { line-height: 1.25; }
 .adm-banner { width: max-content; } .adm-banner span { font-size: 12.5px; }
+.lc-del { list-style: none; margin: -4px 0 10px; display: flex; justify-content: flex-end; }
+.lc-del .btn { min-height: 36px; font-size: 13px; }
+.adm-seen.on { color: var(--green, #5f9b6a); font-weight: 600; }
+.adm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; margin-right: 6px; vertical-align: 1px; }

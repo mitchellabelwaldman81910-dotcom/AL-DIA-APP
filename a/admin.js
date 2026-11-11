@@ -80,16 +80,26 @@ async function adminOpen() {
   try { ADM.data = await cloudFetch('GET', null, 'kind=admin'); adminPaint(); }
   catch (e) { const b = document.getElementById('admBody'); if (b) b.innerHTML = `<p class="small" style="color:var(--red)">${esc(e.message)}</p>`; }
 }
+let admTimer = null;
+function admAutoRefresh() {
+  if (admTimer) return;
+  admTimer = setInterval(async () => {
+    if (!document.getElementById('admBody')) { clearInterval(admTimer); admTimer = null; return; }
+    if (document.visibilityState !== 'visible' || (document.activeElement && document.activeElement.id === 'admQ')) return;
+    try { ADM.data = await cloudFetch('GET', null, 'kind=admin'); adminPaint(); } catch (e) { /* sin red */ }
+  }, 15000);
+}
 function adminPaint() {
+  admAutoRefresh();
   const b = document.getElementById('admBody'); if (!b || !ADM.data) return;
   const q = ADM.q.trim().toLowerCase();
   const users = ADM.data.users.filter((u) => !q || u.name.toLowerCase().includes(q) || u.id.includes(q));
   const tot = ADM.data.users.length;
-  b.innerHTML = `<div class="adm-stats"><span><b>${tot}</b>cuentas</span><span><b>${ADM.data.forests.length}</b>Bosques</span><span><b>${ADM.data.users.reduce((a, u) => a + u.daily, 0)}</b>copias diarias</span></div>
+  b.innerHTML = `<div class="adm-stats"><span><b>${tot}</b>cuentas</span><span><b>${ADM.data.users.filter((u) => u.online).length}</b>en línea</span><span><b>${ADM.data.forests.length}</b>Bosques</span><span><b>${ADM.data.users.reduce((a, u) => a + u.daily, 0)}</b>copias diarias</span></div>
     <input class="input" id="admQ" placeholder="Buscar por nombre o usuario" value="${esc(ADM.q)}" autocomplete="off" style="margin:4px 0 12px">
     <ul class="rows adm-list">${users.map((u) => `<li><div class="adm-row">${avatar({ id: u.id, name: u.name, color: u.color }, 'sm')}
       <span class="adm-main"><b>${esc(u.name)}${u.admin ? ' <span class="sl-chip">Admin</span>' : ''}</b><span class="tiny faint">@${esc(u.id)} · ${plural(u.subjects, 'materia', 'materias')} · ${plural(u.tasks, 'tarea', 'tareas')} · nivel ${u.level}</span>
-      <span class="tiny faint">Último guardado: ${fmtWhen(u.at)} · ${u.versions + u.daily} copias</span><span class="tiny faint adm-sec">Cuenta creada: ${u.created ? new Date(u.created).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}${u.device ? ` · Dispositivo: ${esc(String(u.device).slice(0, 40))}` : ''}${u.at && Date.now() - u.at > 30 * 86400000 ? ' · <b class="adm-warn">Inactiva 30+ días</b>' : ''}${!u.at ? ' · <b class="adm-warn">Sin datos</b>' : ''}</span></span>
+      <span class="tiny adm-seen ${u.online ? 'on' : 'faint'}">${u.online ? '<i class="adm-dot"></i>En línea ahora' : (u.seen ? 'Última vez que entró: ' + fmtWhen(u.seen) : 'Última vez que entró: sin registro aún')}</span><span class="tiny faint">Último guardado: ${fmtWhen(u.at)} · ${u.versions + u.daily} copias</span><span class="tiny faint adm-sec">Cuenta creada: ${u.created ? new Date(u.created).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}${u.device ? ` · Dispositivo: ${esc(String(u.device).slice(0, 40))}` : ''}${u.at && Date.now() - u.at > 30 * 86400000 ? ' · <b class="adm-warn">Inactiva 30+ días</b>' : ''}${!u.at ? ' · <b class="adm-warn">Sin datos</b>' : ''}</span></span>
       <span class="adm-btns">${u.id === REG.me ? '' : `<button class="btn primary" data-act="adm-enter" data-id="${esc(u.id)}">Entrar</button>`}<button class="btn" data-act="cloud-history" data-p="${esc(u.id)}">Copias</button></span></div></li>`).join('') || '<li><p class="small muted" style="padding:12px 16px;margin:0">Sin resultados.</p></li>'}</ul>
     ${ADM.data.forests.length ? `<h2 class="sec">Bosques</h2><ul class="rows adm-list">${ADM.data.forests.map((f) => `<li><div class="adm-row">${monogram(f.name, f.color, 'sm')}<span class="adm-main"><b>${esc(f.name)}</b><span class="tiny faint">${plural(f.members.length, 'integrante', 'integrantes')} · ${plural(f.items, 'elemento', 'elementos')} · ${plural(f.daily, 'copia diaria', 'copias diarias')}</span></span>
       <span class="adm-btns"><button class="btn" data-act="g-history" data-id="${esc(f.id)}">Copias</button></span></div></li>`).join('')}</ul>` : ''}`;

@@ -1855,6 +1855,7 @@ let presenceT = null, presenceShown = null;
 function presenceTick() {
   clearTimeout(presenceT);
   if (!cloudOn() || document.visibilityState !== 'visible') { presenceT = setTimeout(presenceTick, 20000); return; }
+  if (REG.me && !choosing) cloudFetch('POST', { kind: 'ping', who: REG.me }).catch(() => {});
   if (REG.me && !isForestId(REG.current) && REG.current !== REG.me && !choosing) {
     cloudFetch('POST', { kind: 'presence', viewer: REG.me, viewing: REG.current, name: profile(REG.me)?.name || '' }).catch(() => {});
   }
