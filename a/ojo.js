@@ -8,7 +8,7 @@ function eyeSVG() {
     <g class="e3-body">
       <path class="e3-white" d="M5 20 Q32 -6 59 20 Q32 46 5 20Z"/>
       <g class="e2-gaze"><circle cx="32" cy="20" r="11" fill="url(#${g})"/>
-        <circle class="e2-pupil" cx="32" cy="20" r="5.2"/>
+        <circle class="e3-ring" cx="32" cy="20" r="10.6"/><circle class="e2-pupil" cx="32" cy="20" r="5.2"/>
         <circle class="e3-hi" cx="28" cy="15.5" r="3"/><circle class="e3-hi2" cx="36" cy="24" r="1.3"/></g>
       <path class="e3-line" d="M5 20 Q32 -6 59 20 Q32 46 5 20Z"/>
     </g>
@@ -18,18 +18,51 @@ function eyeSVG() {
 const EYE = { gx: 0, gy: 0, hold: 0, dil: 1, until: 0 };
 function eyeEls() { return document.querySelectorAll('.eye2'); }
 function eyeSet(vars) { eyeEls().forEach((e) => { for (const k in vars) e.style.setProperty(k, vars[k]); }); }
+/* parpadeo real: cierra rápido (70 ms), sostiene, abre más lento */
 function eyeBlink(double) {
-  eyeSet({ '--lid': 1 });
-  setTimeout(() => { eyeSet({ '--lid': EYE.squint || 0 }); if (double) setTimeout(() => { eyeSet({ '--lid': 1 }); setTimeout(() => eyeSet({ '--lid': EYE.squint || 0 }), 110); }, 150); }, 120);
+  if (EYE.blinking) return; EYE.blinking = true;
+  const rest = () => EYE.squint || EYE.lidRest || 0;
+  eyeSet({ '--lidT': '.07s', '--lid': 1 });
+  setTimeout(() => { eyeSet({ '--lidT': '.17s', '--lid': rest() });
+    if (double) setTimeout(() => { eyeSet({ '--lidT': '.07s', '--lid': 1 }); setTimeout(() => { eyeSet({ '--lidT': '.17s', '--lid': rest() }); EYE.blinking = false; }, 110); }, 230);
+    else setTimeout(() => { EYE.blinking = false; }, 180); }, 110);
 }
-function eyeLook(x, y, ms) { EYE.gx = x; EYE.gy = y; EYE.hold = Date.now() + (ms || 0); eyeSet({ '--gx': x + 'px', '--gy': y + 'px' }); }
+/* sacada: movimiento rápido y preciso a un punto nuevo; mirar abajo baja un poco el párpado */
+function eyeLook(x, y, ms, slow) {
+  EYE.gx = x; EYE.gy = y; EYE.hold = Date.now() + (ms || 0);
+  EYE.lidRest = y > 1.5 ? Math.min(0.22, y * 0.05) : y < -1.5 ? 0 : 0.03;
+  const d = Math.hypot(x - (EYE.px || 0), y - (EYE.py || 0)); EYE.px = x; EYE.py = y;
+  eyeSet({ '--gT': slow ? '.6s' : (0.045 + d * 0.006).toFixed(3) + 's', '--gx': x + 'px', '--gy': y + 'px' });
+  if (!EYE.blinking && !EYE.squint) eyeSet({ '--lid': EYE.lidRest });
+}
 function eyeReact(kind) {
+  EYE.dilHold = true; clearTimeout(EYE.dilT); EYE.dilT = setTimeout(() => { EYE.dilHold = false; }, 1800); eyeSet({ '--dilT': '.35s' });
   if (kind === 'talk') { eyeLook(0, 4.2, 1600); eyeSet({ '--dil': 1.35 }); EYE.squint = 0.16; eyeSet({ '--lid': 0.16 }); setTimeout(() => { EYE.squint = 0; eyeSet({ '--dil': 1, '--lid': 0 }); }, 1500); setTimeout(() => eyeBlink(), 1650); }
   else if (kind === 'wake') { eyeSet({ '--lid': 1 }); setTimeout(() => eyeSet({ '--lid': 0, '--dil': 1.4 }), 160); setTimeout(() => eyeSet({ '--dil': 1 }), 1100); eyeLook(0, 0, 1200); }
   else if (kind === 'poke') { eyeBlink(true); eyeSet({ '--dil': 1.5 }); setTimeout(() => eyeSet({ '--dil': 1 }), 700); }
 }
-setInterval(() => { if (!eyeEls().length) return; if (Date.now() < EYE.hold) return; const r = Math.random(); if (r < 0.28) eyeLook(0, 0, 0); else eyeLook(Math.round((Math.random() * 2 - 1) * 6.5), Math.round((Math.random() * 2 - 1) * 2.6), 0); }, 1700);
-(function blinkLoop() { setTimeout(() => { if (eyeEls().length && !EYE.squint) eyeBlink(Math.random() < 0.22); blinkLoop(); }, 2200 + Math.random() * 3800); })();
+/* mirada con fijaciones, microsacadas y vuelta a mirarte; pupila que "respira" */
+(function gazeLoop() {
+  let wait = 900;
+  if (eyeEls().length && Date.now() >= EYE.hold) {
+    const r = Math.random();
+    let x, y, slow = false;
+    if (r < 0.42) { x = 0; y = 0; wait = 1400 + Math.random() * 2600; }                       // te mira de frente
+    else if (r < 0.78) { x = (Math.random() * 2 - 1) * 4; y = (Math.random() * 2 - 1) * 1.8; wait = 500 + Math.random() * 1400; } // mira cerca
+    else if (r < 0.93) { x = (Math.random() < .5 ? -1 : 1) * (5 + Math.random() * 2); y = (Math.random() * 2 - 1) * 2.2; wait = 700 + Math.random() * 1100; } // mira a un lado
+    else { x = (Math.random() * 2 - 1) * 5; y = 3 + Math.random(); slow = true; wait = 1300; } // baja la vista despacio
+    x = Math.round(x * 10) / 10; y = Math.round(y * 10) / 10;
+    const big = Math.hypot(x - (EYE.px || 0), y - (EYE.py || 0)) > 5;
+    eyeLook(x, y, 0, slow);
+    if (big && Math.random() < 0.35) setTimeout(() => eyeBlink(false), 30);
+    // microsacadas durante la fijación
+    const fx = x, fy = y, n = Math.floor(wait / 420);
+    for (let i = 1; i <= n; i++) setTimeout(() => { if (Date.now() >= EYE.hold && EYE.gx === fx && EYE.gy === fy) eyeSet({ '--gT': '.04s', '--gx': (fx + (Math.random() - .5) * .6).toFixed(2) + 'px', '--gy': (fy + (Math.random() - .5) * .4).toFixed(2) + 'px' }); }, i * 420);
+  }
+  setTimeout(gazeLoop, wait);
+})();
+(function blinkLoop() { setTimeout(() => { if (eyeEls().length && !EYE.squint) eyeBlink(Math.random() < 0.15); blinkLoop(); }, 2600 + Math.random() * 4200); })();
+(function hippus() { if (eyeEls().length && !EYE.dilHold) eyeSet({ '--dilT': '1.6s', '--dil': (0.93 + Math.random() * 0.14).toFixed(3) }); setTimeout(hippus, 1700 + Math.random() * 900); })();
 document.addEventListener('pointermove', (ev) => { const e = document.querySelector('.eye2'); if (!e) return; const r = e.getBoundingClientRect(); const dx = ev.clientX - (r.left + r.width / 2), dy = ev.clientY - (r.top + r.height / 2); const m = Math.hypot(dx, dy) || 1; const k = Math.min(1, m / 140); eyeLook(Math.round(dx / m * 6.5 * k), Math.round(dy / m * 2.8 * k), 1400); }, { passive: true });
 document.addEventListener('pointerdown', (ev) => { if (ev.target.closest && ev.target.closest('.eye-pill, .adm-banner')) eyeReact('poke'); });
 {

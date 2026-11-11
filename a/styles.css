@@ -3054,3 +3054,14 @@ html[data-theme="dark"] .eye-pill .eye3 { --e3-white: #EEF4EF; }
 .am-recv.under-eye { top: calc(var(--safe-t, 0px) + 74px); }
 .am-recv .am-bub { cursor: pointer; font: inherit; font-size: 14.5px; text-align: center; }
 @media (prefers-reduced-motion: reduce) { .eye3 .e3-halo { animation: none; } }
+/* ojo v3: movimiento natural (sacadas, parpadeo, pupila) */
+.eye3 .e2-gaze { transition: transform var(--gT, .08s) cubic-bezier(.2,.8,.25,1); }
+.eye3 .e2-pupil { transition: transform var(--dilT, .35s) ease-in-out; }
+.eye3 .e3-body, .eye3 .e3-lash path { transition: transform var(--lidT, .12s) cubic-bezier(.4,0,.2,1); }
+.eye3 .e3-ring { fill: none; stroke: #0a0d0b; stroke-width: 1.5; opacity: .9; }
+/* ojo que ve la persona: contorno y pestañas negros, halo discreto */
+.eye-pill .eye3 { --e3-ink: #0a0d0b; }
+.eye-pill .eye3 .e3-halo { stroke: #0a0d0b; stroke-width: 1; animation-duration: 3.6s; }
+html[data-theme="dark"] .eye-pill .eye3 .e3-halo { stroke: #cfd8d2; }
+.eye-pill .eye3 .e3-line { stroke-width: 2.8; }
+html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-pill .eye3 .e3-line { filter: drop-shadow(0 0 1.2px rgba(255,255,255,.75)); }
