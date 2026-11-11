@@ -113,6 +113,10 @@ function gwDrawWorm(g, pts, cs, P, o) {
   else if (mood === 'dead') { g.strokeStyle = '#26202A'; g.lineWidth = R * 0.09; g.beginPath(); g.moveTo(mx - R * 0.24, my + R * 0.12); g.quadraticCurveTo(mx, my - R * 0.08, mx + R * 0.24, my + R * 0.12); g.stroke(); g.fillStyle = '#F2748A'; g.beginPath(); g.ellipse(mx + R * 0.14, my + R * 0.2, R * 0.08, R * 0.14, 0, 0, 7); g.fill(); }
   else if (mood === 'win') { g.fillStyle = '#5A1F2C'; g.beginPath(); g.moveTo(mx - R * 0.34, my - R * 0.06); g.quadraticCurveTo(mx, my + R * 0.52, mx + R * 0.34, my - R * 0.06); g.closePath(); g.fill(); g.fillStyle = '#F2748A'; g.beginPath(); g.ellipse(mx, my + R * 0.15, R * 0.14, R * 0.08, 0, 0, 7); g.fill(); }
   else { g.strokeStyle = '#3A2430'; g.lineWidth = R * 0.085; g.beginPath(); g.moveTo(mx - R * 0.22, my - R * 0.02); g.quadraticCurveTo(mx, my + R * 0.2, mx + R * 0.22, my - R * 0.02); g.stroke(); }
+  /* firma de Cinnavia: pecas y un brotecito (nuestro sello, distinto a cualquier otro gusano) */
+  g.fillStyle = 'rgba(120,60,40,.45)'; for (const sx of [-1, 1]) for (const [fx, fy] of [[0.72, 0.3], [0.58, 0.42], [0.84, 0.44]]) { g.beginPath(); g.arc(hx + sx * R * fx, hy + R * fy, R * 0.035, 0, 7); g.fill(); }
+  if (!P.hat || P.hat === 'none') { const sx0 = hx - R * 0.08, sy0 = hy - R * 0.98; g.strokeStyle = '#3E8A4F'; g.lineWidth = R * 0.07; g.lineCap = 'round'; g.beginPath(); g.moveTo(sx0, sy0 + R * 0.1); g.quadraticCurveTo(sx0 - R * 0.02, sy0 - R * 0.14, sx0 + R * 0.05, sy0 - R * 0.24); g.stroke();
+    g.fillStyle = '#5BBF6A'; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(sx0 + R * 0.05 + s * R * 0.14, sy0 - R * 0.26, R * 0.17, R * 0.08, s * -0.5, 0, 7); g.fill(); } }
   /* accesorios (arriba de la cabeza) */
   const hat = P.hat, hc = P.hc || '#E85A5A', top = hy - R * 0.82, eyes = [[hx - ex, hy + ey], [hx + ex, hy + ey]];
   if (hat === 'beanie') { g.fillStyle = hc; g.beginPath(); g.arc(hx, hy - R * 0.2, R * 0.92, Math.PI * 1.05, Math.PI * 1.95); g.closePath(); g.fill(); g.fillStyle = '#fff'; g.fillRect(hx - R * 0.9, hy - R * 0.3, R * 1.8, R * 0.2); g.beginPath(); g.arc(hx, top - R * 0.22, R * 0.2, 0, 7); g.fill(); }

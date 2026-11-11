@@ -6,7 +6,8 @@ import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual, createHash } from
 import webpush from "web-push";
 
 const W = "w/";
-const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done", "focus", "tpl", "board", "event", "poll", "vote", "pin", "pomo"];
+const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done", "focus", "tpl", "board", "event", "poll", "vote", "pin", "pomo", "aviso", "asist", "eval"];
+const GUARD_TYPES = ["aviso", "asist", "eval"];
 // administración: estas cuentas pueden entrar a cualquier otra (para dar soporte y recuperar datos)
 const ADMINS = ["mitchell"];
 const weekOf = (ms) => { const d = new Date(dayOf(ms) + "T12:00:00Z"); const dn = (d.getUTCDay() + 6) % 7; d.setUTCDate(d.getUTCDate() - dn + 3); const y = d.getUTCFullYear(); const w1 = new Date(Date.UTC(y, 0, 4)); return `${y}-W${String(1 + Math.round(((d - w1) / 86400000 - 3 + ((w1.getUTCDay() + 6) % 7)) / 7)).padStart(2, "0")}`; };
@@ -332,7 +333,7 @@ export default async (req, context) => {
 
       const out = { ok: true, now: Date.now(), users: {}, profiles: {}, letters: [], presence: [], forests: {}, invites: [] };
       for (const u of authList) {
-        out.users[u] = { name: auth[u].name, color: auth[u].color, av: auth[u].av || 0 };
+        out.users[u] = { name: auth[u].name, color: auth[u].color, av: auth[u].av || 0, role: auth[u].role === "guardian" ? "guardian" : "student" };
         if (u !== "__none") {
           const d = await store.get(`${W}p/${u}`, { type: "json" });
           if (d) out.profiles[u] = d;
@@ -358,7 +359,9 @@ export default async (req, context) => {
             if (!f || !f.members.includes(u)) continue;
             seen.add(fid);
             const gl = await store.list({ prefix: `${W}g/${fid}/` });
-            const items = (await Promise.all(gl.blobs.slice(0, 1500).map((x) => store.get(x.key, { type: "json" })))).filter(Boolean);
+            let items = (await Promise.all(gl.blobs.slice(0, 1500).map((x) => store.get(x.key, { type: "json" })))).filter(Boolean);
+            // privacidad: quien no es Guardián solo recibe SU asistencia y SUS calificaciones
+            if (auth[u].role !== "guardian") items = items.map((x) => (x.type === "asist" ? { ...x, marks: x.marks && x.marks[u] ? { [u]: x.marks[u] } : {} } : x.type === "eval" ? { ...x, scores: x.scores && x.scores[u] !== undefined ? { [u]: x.scores[u] } : {} } : x));
             const rq = await store.list({ prefix: `${W}req/${fid}/` });
             const reqs = (await Promise.all(rq.blobs.slice(0, 60).map((x) => store.get(x.key, { type: "json" })))).filter(Boolean);
             out.forests[fid] = { meta: f, items, reqs };
@@ -374,7 +377,7 @@ export default async (req, context) => {
         out.social = {};
         for (const u of authList) out.social[u] = await socialOf(u);
         for (const s of Object.values(out.social)) for (const f of s.friends) names[f.id] = null;
-        for (const m of Object.keys(names)) { const a = await meta(m); names[m] = a ? { name: a.name, color: a.color, av: a.av || 0 } : { name: m, color: COLORS[0] }; }
+        for (const m of Object.keys(names)) { const a = await meta(m); names[m] = a ? { name: a.name, color: a.color, av: a.av || 0, role: a.role === "guardian" ? "guardian" : "student" } : { name: m, color: COLORS[0] }; }
         out.members = names;
         out.trees = {};
         for (const m of Object.keys(names)) { const t = await store.get(`${W}t/${m}`, { type: "json" }); if (t) out.trees[m] = t; }
@@ -400,17 +403,25 @@ export default async (req, context) => {
         if (await meta(user)) return json({ error: "Ese usuario ya existe. Prueba con otro o entra con tu contraseña" }, 409);
         const salt = randomBytes(16).toString("hex");
         const color = COLORS.includes(body.color) ? body.color : COLORS[Math.floor(Math.random() * COLORS.length)];
-        const rec = { id: user, name, color, salt, hash: hashPw(body.password, salt), v: 1, at: Date.now() };
+        const role = body.role === "guardian" ? "guardian" : "student";
+        const rec = { id: user, name, color, role, salt, hash: hashPw(body.password, salt), v: 1, at: Date.now() };
         await store.setJSON(`${W}a/${user}`, rec, { onlyIfNew: true });
         const again = await store.get(`${W}a/${user}`, { type: "json" });
         if (!again || again.salt !== salt) return json({ error: "Ese usuario ya existe. Prueba con otro" }, 409);
-        return json({ ok: true, token: tokenFor(secret, user, 1), user: { id: user, name, color } });
+        return json({ ok: true, token: tokenFor(secret, user, 1), user: { id: user, name, color, role } });
       }
       case "login": {
         const user = String(body.user || "").toLowerCase();
         const m = await meta(user);
         if (!m || !safeEq(hashPw(body.password, m.salt), m.hash)) return json({ error: "Usuario o contraseña incorrectos" }, 401);
-        return json({ ok: true, token: tokenFor(secret, user, m.v), user: { id: m.id, name: m.name, color: m.color } });
+        return json({ ok: true, token: tokenFor(secret, user, m.v), user: { id: m.id, name: m.name, color: m.color, role: m.role === "guardian" ? "guardian" : "student" } });
+      }
+      case "setrole": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const role = body.role === "guardian" ? "guardian" : "student";
+        const m = await meta(as); await store.setJSON(`${W}a/${as}`, { ...m, role });
+        await bump(store, [as]);
+        return json({ ok: true, role });
       }
       case "setpw": {
         const user = String(body.user || "").toLowerCase();
@@ -934,6 +945,7 @@ export default async (req, context) => {
         if (!f) return json({ error: "Ya no eres parte de este Bosque" }, 403);
         const it = body.item || {};
         if (!GTYPES.includes(it.type) || !/^[a-z0-9-]{4,60}$/i.test(it.id || "")) return json({ error: "elemento inválido" }, 400);
+        if (GUARD_TYPES.includes(it.type) && auth[as].role !== "guardian") return json({ error: "Solo el Guardián del Bosque puede hacer esto" }, 403);
         const key = `${W}g/${f.id}/${it.type}/${it.id}`;
         const prev = await store.get(key, { type: "json" });
         const clean = { ...it, by: auth[as].name, byId: prev?.byId || as, at: +it.at || Date.now(), u: Date.now() };
@@ -952,6 +964,16 @@ export default async (req, context) => {
           clean.steps = Array.isArray(it.steps) ? it.steps.slice(0, 30).map((x) => ({ text: clip(x && x.text, 120), min: Math.max(0, Math.min(600, +(x && x.min) || 0)) })) : [];
           clean.kind = clip(it.kind, 20); clean.est = Math.max(0, Math.min(600, +it.est || 0));
         }
+        if (clean.type === "aviso") { clean.pin = !!it.pin; clean.due = /^\d{4}-\d{2}-\d{2}$/.test(it.due || "") ? it.due : ""; }
+        if (clean.type === "asist") {
+          clean.date = /^\d{4}-\d{2}-\d{2}$/.test(it.date || "") ? it.date : dayOf(Date.now());
+          clean.marks = {}; for (const m of f.members) { const v = it.marks && it.marks[m]; if (["p", "f", "r", "j"].includes(v)) clean.marks[m] = v; }
+        }
+        if (clean.type === "eval") {
+          clean.date = /^\d{4}-\d{2}-\d{2}$/.test(it.date || "") ? it.date : dayOf(Date.now());
+          clean.max = Math.max(1, Math.min(1000, +it.max || 10)); clean.weight = Math.max(0, Math.min(100, +it.weight || 0));
+          clean.scores = {}; for (const m of f.members) { const v = it.scores && it.scores[m]; if (v !== null && v !== undefined && v !== "" && isFinite(+v)) clean.scores[m] = Math.max(0, Math.min(clean.max, Math.round(+v * 100) / 100)); }
+        }
         // copia diaria del Bosque (una por día, 45 días): se toma antes del primer cambio del día
         const today = dayOf(Date.now());
         if ((await store.get(`${W}gdm/${f.id}`)) !== today) {
@@ -964,8 +986,8 @@ export default async (req, context) => {
         }
         await store.setJSON(key, clean);
         await bump(store, f.members);
-        if ((!prev || (clean.type === "focus" && !clean.joined && (prev.deleted || prev.start !== clean.start))) && !clean.deleted && !(clean.type === "focus" && clean.joined) && ["task", "team", "idea", "focus", "tpl"].includes(clean.type) && !(clean.type === "focus" && clean.ghost)) {
-          const what = clean.type === "task" ? "subió una tarea" : clean.type === "focus" ? "empezó a concentrarse: ¡únete a la sala de enfoque!" : clean.type === "tpl" ? "compartió una plantilla de estudio" : clean.type === "team" ? "creó un trabajo en equipo" : "compartió una idea";
+        if ((!prev || (clean.type === "focus" && !clean.joined && (prev.deleted || prev.start !== clean.start))) && !clean.deleted && !(clean.type === "focus" && clean.joined) && ["task", "team", "idea", "focus", "tpl", "aviso"].includes(clean.type) && !(clean.type === "focus" && clean.ghost)) {
+          const what = clean.type === "task" ? "subió una tarea" : clean.type === "focus" ? "empezó a concentrarse: ¡únete a la sala de enfoque!" : clean.type === "aviso" ? "publicó un aviso" : clean.type === "tpl" ? "compartió una plantilla de estudio" : clean.type === "team" ? "creó un trabajo en equipo" : "compartió una idea";
           const payload = { title: `${f.name} · ${clean.by} ${what}`, body: clip(clean.title || clean.text, 140), url: "#/grupo", tag: `g-${clean.id}` };
           const job = pushTo(store, f.members.filter((m) => m !== as), url.origin, payload, clip(body.device, 40));
           if (context?.waitUntil) context.waitUntil(job); else await job;

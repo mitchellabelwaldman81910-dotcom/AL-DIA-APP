@@ -3289,3 +3289,26 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
 .gw-toast { top: 14px; font-size: 15px; padding: 10px 18px; background: rgba(10,24,22,.78); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.14); }
 .gw-pill { white-space: nowrap; } .gw-pill em { white-space: nowrap; }
 .gw-title b { white-space: nowrap; font-size: 17px; } .gw-title small { white-space: nowrap; }
+
+/* 7.42 — Guardián del Bosque */
+.role-seg button{font-size:14px}
+.gd-badge{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:99px;background:var(--accent,#2F8A5B);color:#fff;font-size:11px;font-weight:600;vertical-align:middle;letter-spacing:.02em}
+.gd-body{margin-top:14px}
+.gd-form{display:grid;gap:8px;margin:0 0 14px}
+.gd-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.gd-row .input{flex:1;min-width:120px}
+.gd-chk{display:flex;gap:6px;align-items:center;font-size:14px}
+.gd-list{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px}
+.gd-card{background:var(--card,#fff);border:1px solid var(--line,#e4e4df);border-radius:14px;padding:12px 14px;margin:0}
+.gd-card.pin{border-color:var(--accent,#2F8A5B)}
+.gd-card p{margin:6px 0}
+.gd-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.gd-h b{flex:1}
+.gd-pin{font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(47,138,91,.12);color:var(--accent,#2F8A5B)}
+.gd-acts{display:flex;gap:14px;margin-top:6px}
+.gd-big{font-size:34px;font-weight:700;margin:2px 0}
+.gd-seg{margin-top:8px}.gd-seg button{font-size:12px;padding:6px 4px}
+.gd-evs{flex-wrap:wrap;margin-bottom:10px}
+.gd-sc{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line,#e4e4df)}
+.gd-sc .input{max-width:90px;text-align:right}
+.gd-low{color:#C0463A}

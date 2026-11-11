@@ -161,7 +161,7 @@ const userSlug = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
 function authDialog(opts) {
   return new Promise((resolve) => {
     let mode = opts.mode; let done = false; let color = opts.color || ACCOUNT_COLORS[Math.floor(Math.random() * ACCOUNT_COLORS.length)];
-    let userTouched = false; const keep = { name: opts.name || '', user: opts.id || '' };
+    let role = 'student'; let userTouched = false; const keep = { name: opts.name || '', user: opts.id || '' };
     const d = $('#ask');
     const paint = (msg = '') => {
       const reg = mode === 'register', claim = mode === 'claim', login = mode === 'login', chg = mode === 'setpw';
@@ -177,6 +177,7 @@ function authDialog(opts) {
         ${claim ? `<p class="auth-who">${avatar({ name: opts.name, color: opts.color || '#2F8A5B', initials: initials2(opts.name) }, 'sm')}<b>${esc(opts.name)}</b><span class="faint">@${esc(opts.id)}</span></p>` : ''}
         <div class="field"><label for="auPw">${chg ? 'Contraseña nueva' : 'Contraseña'}</label><div class="pw-row"><input class="input" id="auPw" type="password" autocomplete="${login ? 'current-password' : 'new-password'}" placeholder="Mínimo 4 caracteres"><button type="button" class="pw-eye" data-a="eye" aria-label="Mostrar u ocultar contraseña">Ver</button></div></div>
         ${reg || claim || chg ? `<div class="field"><label for="auPw2">Repite la contraseña</label><input class="input" id="auPw2" type="password" autocomplete="new-password" placeholder="Otra vez, igualita"></div>` : ''}
+        ${reg ? `<div class="field"><span class="lbl">Soy…</span><div class="seg full role-seg" role="group" aria-label="Tipo de usuario"><button type="button" data-a="role" data-r="student" aria-pressed="${role === 'student'}">Estudiante</button><button type="button" data-a="role" data-r="guardian" aria-pressed="${role === 'guardian'}">Guardián del Bosque</button></div><p class="tiny faint" style="margin:6px 0 0">${role === 'guardian' ? 'Para docentes: crea Bosques, publica avisos, pasa lista y lleva calificaciones.' : 'Para estudiantes: organiza tus tareas y únete a los Bosques de tu grupo.'}</p></div>` : ''}
         ${reg ? `<div class="field"><span class="lbl">Tu color</span><div class="swatches">${ACCOUNT_COLORS.map((c) => `<button type="button" data-a="color" data-c="${c}" class="${c === color ? 'on' : ''}" style="--c:${c}" aria-label="Color ${c}"></button>`).join('')}</div></div>` : ''}
         ${reg ? '<p class="tiny faint" style="margin:0 0 8px">La administración de Cinnavia puede entrar a las cuentas solo para dar soporte y recuperar datos; cuando lo hace, ves su nombre en tu sección.</p>' : ''}
         <p class="auth-err" role="alert">${esc(msg)}</p>
@@ -196,6 +197,7 @@ function authDialog(opts) {
         const b = e.target.closest('[data-a]'); if (!b) return;
         const a = b.dataset.a;
         if (a === 'eye') { const t = d.querySelector('#auPw').type === 'password' ? 'text' : 'password'; d.querySelector('#auPw').type = t; const p2 = d.querySelector('#auPw2'); if (p2) p2.type = t; }
+        else if (a === 'role') { role = b.dataset.r; const sv = ['auName', 'auUser', 'auPw', 'auPw2'].map((i) => val(i)); paint(); ['auName', 'auUser', 'auPw', 'auPw2'].forEach((i, k) => { const el = d.querySelector('#' + i); if (el) el.value = sv[k]; }); }
         else if (a === 'color') { color = b.dataset.c; d.querySelectorAll('.swatches button').forEach((x) => x.classList.toggle('on', x === b)); }
         else if (a === 'cancel') { d.close(); }
         else if (a === 'to-reg') { mode = 'register'; paint(); }
@@ -213,7 +215,7 @@ function authDialog(opts) {
             if (pw.length < 4) return err('La contraseña necesita al menos 4 caracteres.');
             if (pw !== pw2) return err('Las contraseñas no son iguales.');
             go.disabled = true; err('Creando tu usuario…');
-            finish(await cloudFetch('POST', { kind: 'register', user, name, password: pw, color }));
+            finish(await cloudFetch('POST', { kind: 'register', user, name, password: pw, color, role }));
           } else if (claim) {
             if (pw.length < 4) return err('La contraseña necesita al menos 4 caracteres.');
             if (pw !== pw2) return err('Las contraseñas no son iguales.');
@@ -250,7 +252,7 @@ function acceptSession(r, fallback = {}) {
   const u = r.user || fallback; if (!u.id) return null;
   tokens()[u.id] = r.token;
   const i = (REG.users ||= []).findIndex((x) => x.id === u.id);
-  const rec = { id: u.id, name: u.name || fallback.name || cap(u.id), color: u.color || fallback.color || '#2F8A5B' };
+  const rec = { id: u.id, name: u.name || fallback.name || cap(u.id), color: u.color || fallback.color || '#2F8A5B', role: u.role === 'guardian' ? 'guardian' : 'student' };
   if (i >= 0) REG.users[i] = rec; else REG.users.push(rec);
   if (!REG.me) REG.me = u.id;
   saveReg();
