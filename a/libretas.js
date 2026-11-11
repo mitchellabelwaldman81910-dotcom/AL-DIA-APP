@@ -25,7 +25,7 @@ const STICKERS = {
   caracol: '<path d="M6 30h22a6 6 0 0 0 6-6"/><path d="M24 26a8 8 0 1 0-8-8 5 5 0 0 0 5 5 3 3 0 0 0 3-3"/><path d="M32 22l2-6M34 23l4-4"/>',
 };
 const stickerSVG = (k, cls = '') => (STICKERS[k] ? `<svg class="lb-stk ${cls}" viewBox="0 0 40 40" aria-hidden="true">${STICKERS[k]}</svg>` : '');
-const lbSubjects = () => [...S.subjects, { id: '_gen', name: 'General', color: '#7A8CA8' }];
+let lbSubjects = () => [...S.subjects, { id: '_gen', name: 'General', color: '#7A8CA8' }];
 const lbSid = (sid) => (sid === '_gen' ? null : sid);
 const lbPages = (sid) => (S.pages || []).filter((p) => !p.deleted && (p.subjectId || '_gen') === sid);
 const lbNotes = (sid) => (S.notes || []).filter((n) => (n.subjectId || '_gen') === sid);

@@ -3316,3 +3316,44 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
 @keyframes gwHint{50%{transform:scale(1.08)}}
 #gwUndo.pulse{animation:gwHint .6s ease-in-out 3;box-shadow:0 0 0 3px rgba(255,216,74,.6)}
 .gw-act{flex-wrap:wrap}
+
+/* =========================================================
+   7.46 — Modo "Sin ruido visual" (Guardián del Bosque)
+   Paleta grafito y azul marino, sin animaciones ni adornos.
+   ========================================================= */
+:root[data-calm]:not(#_) { --paper: #F4F5F7; --sheet: #FFFFFF; --sheet-2: #ECEEF2; --grid: #E3E6EB; --ink: #1E2530; --ink-2: #4A5463; --ink-3: #6F7988; --pen: #2F4A6B; --pen-ink: #FFFFFF; --pen-soft: #E1E8F1; --red: #9A3B3B; --red-soft: #F3E3E3; --hl: #2F4A6B; --hl-ink: #FFFFFF; --ok: #3F6B54; --ok-soft: #E2EEE7; --line: #D9DDE4; --amber: #8A6A2E; --shadow: 0 1px 2px rgba(20,28,40,.06); color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root[data-calm]:not([data-theme="light"]):not(#_) { --paper: #14181F; --sheet: #1B212B; --sheet-2: #232B37; --grid: #232B37; --ink: #E6E9EE; --ink-2: #B3BAC6; --ink-3: #8B94A3; --pen: #9DB6D6; --pen-ink: #10141A; --pen-soft: #26334A; --red: #D98A8A; --red-soft: #3A2528; --hl: #9DB6D6; --hl-ink: #10141A; --ok: #8FBFA4; --ok-soft: #22332B; --line: #2D3644; --amber: #D0B070; --shadow: none; color-scheme: dark; } }
+:root[data-calm][data-theme="dark"]:not(#_) { --paper: #14181F; --sheet: #1B212B; --sheet-2: #232B37; --grid: #232B37; --ink: #E6E9EE; --ink-2: #B3BAC6; --ink-3: #8B94A3; --pen: #9DB6D6; --pen-ink: #10141A; --pen-soft: #26334A; --red: #D98A8A; --red-soft: #3A2528; --hl: #9DB6D6; --hl-ink: #10141A; --ok: #8FBFA4; --ok-soft: #22332B; --line: #2D3644; --amber: #D0B070; --shadow: none; color-scheme: dark; }
+:root[data-calm] body { background: var(--paper) !important; }
+:root[data-calm] *, :root[data-calm] *::before, :root[data-calm] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+:root[data-calm] #splash, :root[data-calm] .scene, :root[data-calm] #fauna, :root[data-calm] #leaves, :root[data-calm] .leaves, :root[data-calm] .leaf, :root[data-calm] .amb-bfly, :root[data-calm] .rip,
+:root[data-calm] .gm-hero, :root[data-calm] .hero-svg, :root[data-calm] .ln-scene, :root[data-calm] .vscene, :root[data-calm] .lb-art, :root[data-calm] .lb-wash, :root[data-calm] .lb-stk, :root[data-calm] .sp-dust, :root[data-calm] .fab, :root[data-calm] #fab { display: none !important; }
+:root[data-calm] .card, :root[data-calm] .rows, :root[data-calm] .task { box-shadow: none; border-radius: 8px; }
+:root[data-calm] .btn { border-radius: 6px; box-shadow: none; }
+:root[data-calm] .page-title, :root[data-calm] h2 { font-family: var(--sans); font-weight: 650; letter-spacing: -.01em; }
+:root[data-calm] .lb-page, :root[data-calm] .lb-page[class*="t-"] { background: var(--sheet); border: 1px solid var(--line); box-shadow: none; }
+:root[data-calm] .lb-cover { background: var(--sheet-2); border: 1px solid var(--line); box-shadow: none; }
+:root[data-calm] .nav { border-top: 1px solid var(--line); box-shadow: none; }
+.cm-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0 6px; }
+.cm-quick .btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; text-decoration: none; }
+.cm-list { list-style: none; margin: 0 0 8px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--sheet); overflow: hidden; }
+.cm-list li + li { border-top: 1px solid var(--line); }
+.cm-row { display: flex; gap: 14px; align-items: baseline; width: 100%; padding: 12px 14px; background: none; border: 0; text-align: left; }
+.cm-t { flex: none; width: 86px; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.cm-t em { display: block; font-style: normal; font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+.cm-m b { display: block; font-weight: 600; }
+.cm-m small { color: var(--ink-3); font-size: 12px; }
+.cm-link { display: flex; gap: 12px; align-items: center; margin-top: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--sheet); color: var(--ink); text-decoration: none; }
+.cm-link small { display: block; color: var(--ink-3); font-size: 12.5px; }
+.cm-switch { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin: 16px 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--sheet); }
+.cm-switch small { display: block; color: var(--ink-3); font-size: 12.5px; }
+.cm-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cal .day .dots i { background: var(--pen); }
+:root[data-calm] h2.sec::before, :root[data-calm] .empty::before, :root[data-calm] .nav::before, :root[data-calm] .nav a::before, :root[data-calm] .nav a::after { display: none !important; content: none !important; }
+:root[data-calm] h2.sec { justify-content: flex-start; }
+:root[data-calm] .nav a[aria-current="page"] { background: none; box-shadow: none; filter: none; }
+:root[data-calm] .nav a[aria-current="page"] .i { filter: none; }
+:root[data-calm] .rowbtn .grow { flex: 1; min-width: 0; }
+:root[data-calm] .toast { background: var(--ink) !important; color: var(--paper) !important; border-radius: 8px; box-shadow: none; }
+:root[data-calm] .toast svg, :root[data-calm] .toast .i { display: none; }
+:root[data-calm] .cal .day { border-radius: 6px; box-shadow: none; }

@@ -170,7 +170,7 @@ function brainFrame(now) {
   if (BR.rotT) { const k = 1 - Math.pow(0.0025, dt / 1000); BR.rot.yaw += (BR.rotT.yaw - BR.rot.yaw) * k; BR.rot.pitch += (BR.rotT.pitch - BR.rot.pitch) * k; if (Math.abs(BR.rotT.yaw - BR.rot.yaw) + Math.abs(BR.rotT.pitch - BR.rot.pitch) < 0.002) BR.rotT = null; }
   if (BR.zoomT) { const k = 1 - Math.pow(0.004, dt / 1000); BR.zoom += (BR.zoomT - BR.zoom) * k; if (Math.abs(BR.zoomT - BR.zoom) < 0.002) BR.zoomT = null; }
   { const want = BR.sel && !document.getElementById('brainCard')?.hidden ? 0.34 : 0.5; BR.cy += (want - BR.cy) * (1 - Math.pow(0.003, dt / 1000)); }
-  if (!reduce && !BR.rotT && !BR.ptr.size && now - BR.idleT > 5000 && !BR.sel) BR.rot.yaw += dt * 0.00006;
+  if (!reduce && !document.documentElement.hasAttribute('data-calm') && !BR.rotT && !BR.ptr.size && now - BR.idleT > 5000 && !BR.sel) BR.rot.yaw += dt * 0.00006;
   ctx.setTransform(BR.dpr, 0, 0, BR.dpr, 0, 0);
   // fondo: casi negro con un leve resplandor violeta
   ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#05050B'; ctx.fillRect(0, 0, W, H);
