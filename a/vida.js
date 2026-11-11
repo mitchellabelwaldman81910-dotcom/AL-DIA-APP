@@ -215,7 +215,7 @@ function authDialog(opts) {
             if (pw.length < 4) return err('La contraseña necesita al menos 4 caracteres.');
             if (pw !== pw2) return err('Las contraseñas no son iguales.');
             go.disabled = true; err('Creando tu usuario…');
-            finish(await cloudFetch('POST', { kind: 'register', user, name, password: pw, color, role }));
+            const rr = await cloudFetch('POST', { kind: 'register', user, name, password: pw, color, role }); if (rr && rr.user && rr.user.role === undefined) rr.user.role = role; /* nube sin actualizar: se respeta lo que elegiste */ finish(rr);
           } else if (claim) {
             if (pw.length < 4) return err('La contraseña necesita al menos 4 caracteres.');
             if (pw !== pw2) return err('Las contraseñas no son iguales.');
@@ -252,7 +252,12 @@ function acceptSession(r, fallback = {}) {
   const u = r.user || fallback; if (!u.id) return null;
   tokens()[u.id] = r.token;
   const i = (REG.users ||= []).findIndex((x) => x.id === u.id);
-  const rec = { id: u.id, name: u.name || fallback.name || cap(u.id), color: u.color || fallback.color || '#2F8A5B', role: u.role === 'guardian' ? 'guardian' : 'student' };
+  const old = i >= 0 ? REG.users[i] : null;
+  let role = u.role ? (u.role === 'guardian' ? 'guardian' : 'student') : (old && old.role) || 'student';
+  let rl = !!(old && old.rl);
+  if (old && old.rl && old.role === 'guardian' && role !== 'guardian') { role = 'guardian'; setTimeout(() => cloudFetch('POST', { kind: 'setrole', as: u.id, role: 'guardian' }).catch(() => {}), 1500); } /* lo elegido en este equipo se reenvía a la nube */
+  else if (u.role) rl = false;
+  const rec = { id: u.id, name: u.name || fallback.name || cap(u.id), color: u.color || fallback.color || '#2F8A5B', role, ...(rl ? { rl: true } : {}) };
   if (i >= 0) REG.users[i] = rec; else REG.users.push(rec);
   if (!REG.me) REG.me = u.id;
   saveReg();

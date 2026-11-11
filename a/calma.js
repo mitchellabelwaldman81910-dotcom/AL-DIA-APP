@@ -147,19 +147,33 @@ Object.assign(VIDA_ACTS, {
   'cl-toggle': () => { commit(() => { S.settings.calm = !calmOn(); }); calmApply(); render(); toast(S.settings.calm === false ? 'Modo sin ruido visual desactivado.' : 'Modo sin ruido visual activado.'); },
 });
 
+/* ---------- Tipo de cuenta (Estudiante / Guardián del Bosque) ---------- */
+const roleCardHTML = () => { const g = isGuardian(REG.me); return `<div class="cm-switch cm-role"><span><b>Tipo de cuenta</b><small>${g ? 'Guardián del Bosque: avisos, asistencia, calificaciones y modo sin ruido visual.' : 'Estudiante. Si eres docente, cámbiala a Guardián del Bosque.'}</small></span><div class="seg" role="group" aria-label="Tipo de cuenta"><button type="button" data-act="role-set" data-r="student" aria-pressed="${!g}">Estudiante</button><button type="button" data-act="role-set" data-r="guardian" aria-pressed="${g}">Guardián</button></div></div>`; };
+Object.assign(VIDA_ACTS, {
+  'role-set': async (el) => {
+    const r = el.dataset.r === 'guardian' ? 'guardian' : 'student'; const u = (REG.users || []).find((x) => x.id === REG.me); if (!u || (u.role || 'student') === r) return;
+    if (r === 'student' && !await ask({ title: '¿Volver a Estudiante?', text: 'Dejarás de ver las herramientas de Guardián y el modo sin ruido visual.', ok: 'Sí, volver' })) return;
+    u.role = r; if (r === 'guardian') u.rl = true; else delete u.rl; if (FOR.members && FOR.members[REG.me]) FOR.members[REG.me].role = r; saveReg(); navMode = null; calmApply();
+    let cloud = true; try { await cloudFetch('POST', { kind: 'setrole', as: REG.me, role: r }); } catch { cloud = false; }
+    if (!cloud) { u.rl = true; saveReg(); }
+    render(); toast(r === 'guardian' ? (cloud ? 'Ahora eres Guardián del Bosque.' : 'Guardián en este equipo. Se confirmará en la nube cuando haya conexión.') : 'Cuenta de Estudiante.');
+  },
+});
+
 /* ---------- Más: lista corta y formal ---------- */
 {
   const base = viewMas;
   viewMas = function () {
     if (!calmOn() || isGroup()) {
-      const h = base(); if (!isGuardian() || isGroup()) return h;
-      return h.replace('<h1 class="page-title">', `<div class="cm-switch"><span><b>Modo sin ruido visual</b><small>Interfaz sobria para docentes, sin animaciones ni adornos.</small></span><button type="button" class="btn" data-act="cl-toggle">Activar</button></div><h1 class="page-title">`);
+      const h = base(); if (isGroup() || choosing) return h;
+      const card = roleCardHTML() + (isGuardian() ? '<div class="cm-switch"><span><b>Modo sin ruido visual</b><small>Interfaz sobria para docentes, sin animaciones ni adornos.</small></span><button type="button" class="btn" data-act="cl-toggle">Activar</button></div>' : '');
+      return h.includes('<h1 class="page-title">') ? h.replace('<h1 class="page-title">', card + '<h1 class="page-title">') : card + h;
     }
     const me = profile();
     const items = [['#/salones', 'users', 'Bosques', 'Grupos, avisos, asistencia y calificaciones'], ['#/lienzo', 'board', 'Pizarrón', 'Tu lienzo personal'], ['#/cerebro', 'network', 'Cerebro', 'Pensamientos y notas rápidas conectados'], ['#/respaldo', 'save', 'Respaldo', 'Guardar o restaurar tus datos'], ['#/ajustes', 'gear', 'Ajustes', 'Nombre, tema y avisos'], ['#/ayuda', 'help', 'Ayuda', 'Cómo usar Cinnavia']];
     return `<h1 class="page-title">Más</h1>
       <ul class="rows" style="margin-bottom:14px"><li><button type="button" class="rowbtn" data-act="profile-sheet">${avatar(me, 'sm')}<span class="grow"><b>${esc(me?.name || '')}</b><small class="muted" style="display:block">Guardián del Bosque · cambiar de cuenta</small></span>${icon('chev')}</button></li></ul>
       <ul class="rows">${items.map(([h, ic, t, d]) => `<li><a class="rowbtn" href="${h}">${icon(ic)}<span class="grow"><b>${t}</b><small class="muted" style="display:block">${d}</small></span>${icon('chev')}</a></li>`).join('')}</ul>
-      <div class="cm-switch"><span><b>Modo sin ruido visual</b><small>Activado. Sin animaciones ni adornos.</small></span><button type="button" class="btn" data-act="cl-toggle">Desactivar</button></div>`;
+      ${roleCardHTML()}<div class="cm-switch"><span><b>Modo sin ruido visual</b><small>Activado. Sin animaciones ni adornos.</small></span><button type="button" class="btn" data-act="cl-toggle">Desactivar</button></div>`;
   };
 }

@@ -3372,3 +3372,4 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
   #plPrint h1 { font-size: 20pt; margin: 0 0 4px; } #plPrint h2 { font-size: 11pt; text-transform: uppercase; letter-spacing: .06em; margin: 16px 0 4px; border-top: 1px solid #999; padding-top: 8px; } #plPrint p { margin: 0 0 6px; } .pl-pm { color: #444; }
 }
 :root[data-calm] .lb-page::before, :root[data-calm] .lb-page::after { display: none !important; content: none !important; }
+.cm-role { flex-wrap: wrap; } .cm-role .seg { flex: none; }
