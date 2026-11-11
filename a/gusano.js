@@ -218,7 +218,7 @@ function gwPlay(level) {
     R.W = w; R.H = h; R.dpr = dpr; if (R.L) { R.cs = Math.max(14, Math.min(60, Math.floor(Math.min((w - 12) / R.L.w, (h - 12) / R.L.h)))); R.ox = Math.round((w - R.L.w * R.cs) / 2); R.oy = Math.round((h - R.L.h * R.cs) / 2); }
   };
   const E = () => GW_ENVS[R.L ? Math.min(GW_ENVS.length - 1, R.L.th) : 0];
-  const initParts = () => { R.parts = []; const e = E(), kind = e.p[0]; const n = kind === 'cloud' ? 5 : 26; for (let i = 0; i < n; i++) R.parts.push({ x: Math.random(), y: Math.random(), s: 0.5 + Math.random(), ph: Math.random() * 6.3 }); };
+  const initParts = () => { R.parts = []; const e = E(), kind = e.p[0]; const n = kind === 'cloud' ? 4 : kind === 'leaf' || kind === 'petal' ? 5 : 0; /* sin puntitos: menos ruido visual */ for (let i = 0; i < n; i++) R.parts.push({ x: Math.random(), y: Math.random(), s: 0.5 + Math.random(), ph: Math.random() * 6.3 }); };
   const toast = (t, ms = 1400) => { const el = $('#gwToast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), ms); };
   const burst = (x, y, cols, n, sp) => { for (let i = 0; i < n; i++) { const an = Math.random() * 6.283, v = (0.4 + Math.random()) * (sp || 1) * R.cs * 0.09; R.fx.push({ x, y, vx: Math.cos(an) * v, vy: Math.sin(an) * v - R.cs * 0.05, life: 1, d: 0.7 + Math.random() * 0.9, c: cols[i % cols.length], r: R.cs * (0.04 + Math.random() * 0.06) }); } };
   const setMood = (m, ms) => { R.mood = m; R.moodUntil = performance.now() + (ms || 0); };

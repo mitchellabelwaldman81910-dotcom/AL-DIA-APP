@@ -1,4 +1,4 @@
-/* Cinnavia 7.41 — Mente Viva (seguir la carta que se baraja, 200 niveles), Enlaza (desenredar la red, 200 niveles)
+/* Cinnavia 7.41 — Mente Viva (seguir la carta que se baraja, 300 niveles), Enlaza (desenredar la red, 300 niveles)
    y skins para los dos. Comparten ranking, monedas y el avance por cuenta. */
 'use strict';
 
@@ -121,15 +121,15 @@ function pmDrawRunnerStatic(g, K) {
 /* ======================================================================
    Mente Viva — sigue la carta
    ====================================================================== */
-const MC_MAX = 200;
-const mcCfg = (L) => ({
+const MC_MAX = 300;
+const mcCfg = (L0) => { const L = L0 * 2 / 3; /* 300 niveles con la misma subida suave de antes */ return {
   n: Math.min(7, 3 + Math.floor(L / 30)),
   swaps: Math.round(4 + L * 0.27),
   ms: Math.max(175, Math.round(720 - L * 2.8)),
   targets: L >= 140 ? 3 : L >= 60 ? 2 : 1,
   twin: L >= 100,
   show: Math.max(1100, 2100 - L * 5),
-});
+}; };
 const MC_COLORS = ['#E8744F', '#4FA8E8', '#E8B84F'];
 const MC = { run: null };
 const mcLvl = () => Math.min(MC_MAX, Math.max(1, jpData('mente').lvl || 1));
@@ -147,7 +147,7 @@ function viewMemoria() {
   return `<section class="mt-home"><div class="gm-hero">${mcHero()}</div><h1 class="page-title gm-title">Mente Viva</h1>
     <p class="page-sub">Una carta tiene color. Míra bien dónde está: las cartas se voltean, se barajan y tú sigues la carta con la vista. Al final, tócala. Son <b>${MC_MAX} niveles</b> que suben poco a poco.</p>
     <div class="jg-prog" role="img" aria-label="Avance: nivel ${lv} de ${MC_MAX}"><i style="width:${Math.min(100, ((lv - 1) / MC_MAX) * 100)}%"></i></div>
-    <p class="small muted" style="text-align:center;margin:8px 0 14px">${lv > MC_MAX ? '¡Completaste los 200 niveles!' : `Vas en el nivel <b>${lv}</b> de ${MC_MAX}`}${D.best ? ` · mejor racha: <b>${D.best}</b> niveles` : ''}</p>
+    <p class="small muted" style="text-align:center;margin:8px 0 14px">${lv > MC_MAX ? `¡Completaste los ${MC_MAX} niveles!` : `Vas en el nivel <b>${lv}</b> de ${MC_MAX}`}${D.best ? ` · mejor racha: <b>${D.best}</b> niveles` : ''}</p>
     <button class="btn primary block gm-play" data-act="mc-start">${icon('play')}${lv > 1 ? `Continuar · nivel ${Math.min(lv, MC_MAX)}` : 'Empezar'}</button>
     ${lv > 1 ? `<button class="btn block" style="margin-top:8px" data-act="mc-start" data-from="1">Empezar desde el nivel 1</button>` : ''}
     <a class="btn block" href="#/skins" style="margin-top:8px" data-skin="c">${icon('star', 'sm')}Skins de cartas</a>
@@ -241,7 +241,7 @@ function mcStart(from) {
     if (st.posted) return; st.posted = true; st.state = 'over'; st.tok++;
     const secs = Math.max(1, Math.round((Date.now() - st.t0) / 1000));
     JG_TONE(why === 'win' ? 880 : 392, 0.3, 'sine', 0.05, why === 'win' ? 1175 : 330);
-    $('#mcWhy').textContent = why === 'win' ? '¡Completaste los 200 niveles!' : 'Se acabaron las hojas';
+    $('#mcWhy').textContent = why === 'win' ? `¡Completaste los ${MC_MAX} niveles!` : 'Se acabaron las hojas';
     $('#mcRes').innerHTML = `<div><b>${st.score}</b><small>Puntos</small></div><div><b>${st.cleared}</b><small>Niveles superados</small></div><div><b>${st.level}</b><small>Nivel alcanzado</small></div><div><b>${st.bestStreak}</b><small>Mejor racha</small></div>`;
     $('#mcCoins').textContent = st.coins ? `+${st.coins} ${st.coins === 1 ? 'moneda' : 'monedas'} para tu árbol` : ''; $('#mcRest').textContent = jgRestNote(MC.firstAt);
     $('#mcAgain').textContent = why === 'win' ? 'Jugar de nuevo' : 'Seguir';
@@ -271,7 +271,7 @@ function mcStart(from) {
 /* ======================================================================
    Enlaza — desenreda la red moviendo los puntos
    ====================================================================== */
-const EN_MAX = 200;
+const EN_MAX = 300;
 const EN = { run: null };
 const enLvl = () => Math.min(EN_MAX, Math.max(1, jpData('enlaza').lvl || 1));
 const enRng = (seed) => () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
@@ -312,7 +312,7 @@ function viewEnlaza() {
   return `<section class="mt-home"><div class="gm-hero">${enHero()}</div><h1 class="page-title gm-title">Enlaza</h1>
     <p class="page-sub">Los puntos están enredados. Arrástralos para que ninguna línea cruce a otra. Sin tiempo y sin prisa: <b>${EN_MAX} niveles</b> que empiezan fáciles y se van complicando.</p>
     <div class="jg-prog" role="img" aria-label="Avance: nivel ${lv} de ${EN_MAX}"><i style="width:${Math.min(100, ((lv - 1) / EN_MAX) * 100)}%"></i></div>
-    <p class="small muted" style="text-align:center;margin:8px 0 14px">${lv > EN_MAX ? '¡Desenredaste los 200 niveles!' : `Vas en el nivel <b>${lv}</b> de ${EN_MAX}`}${done ? ` · niveles resueltos: <b>${done}</b>` : ''}</p>
+    <p class="small muted" style="text-align:center;margin:8px 0 14px">${lv > EN_MAX ? `¡Desenredaste los ${EN_MAX} niveles!` : `Vas en el nivel <b>${lv}</b> de ${EN_MAX}`}${done ? ` · niveles resueltos: <b>${done}</b>` : ''}</p>
     <button class="btn primary block gm-play" data-act="en-start">${icon('play')}${lv > 1 ? `Continuar · nivel ${Math.min(lv, EN_MAX)}` : 'Empezar'}</button>
     ${lv > 1 ? `<button class="btn block" style="margin-top:8px" data-act="en-start" data-from="1">Empezar desde el nivel 1</button>` : ''}
     <a class="btn block" href="#/skins" style="margin-top:8px" data-skin="n">${icon('star', 'sm')}Skins de puntos</a>
@@ -373,7 +373,7 @@ function enStart(from) {
     let c = 0; if (first) { if (st.cleared % 2 === 0 && st.coins < 15) c += 1; if (st.level % 20 === 0) c += 3; if (stars === 3 && st.coins < 15) c += 1; } if (c) { st.coins += c; jgCoins(c); } jpSave();
     JG_TONE(660, 0.14, 'sine', 0.05, 880); setTimeout(() => JG_TONE(988, 0.16, 'triangle', 0.045, 1318), 130); JG_VIB(12);
     const secs = Math.round((Date.now() - st.lvT0) / 1000);
-    $('#enWhy').textContent = st.level >= EN_MAX ? '¡Desenredaste los 200 niveles!' : `Nivel ${st.level} resuelto`; $('#enStars').innerHTML = jgStarsHTML(stars);
+    $('#enWhy').textContent = st.level >= EN_MAX ? `¡Desenredaste los ${EN_MAX} niveles!` : `Nivel ${st.level} resuelto`; $('#enStars').innerHTML = jgStarsHTML(stars);
     $('#enRes').innerHTML = `<div><b>${mv}</b><small>Movimientos</small></div><div><b>+${pts}</b><small>Puntos</small></div><div><b>${st.score}</b><small>Total</small></div>`;
     $('#enCoins').textContent = c ? `+${c} ${c === 1 ? 'moneda' : 'monedas'} para tu árbol` : ''; $('#enRest').textContent = jgRestNote(EN.firstAt);
     $('#enNext').textContent = st.level >= EN_MAX ? 'Jugar de nuevo' : 'Siguiente nivel'; jgAnnounce(`Nivel ${st.level} resuelto con ${stars} estrellas`);
