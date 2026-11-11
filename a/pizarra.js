@@ -6,7 +6,10 @@
 
 const PZ = { mode: 'lienzo', view: null, drag: null, tone: 'papel' };
 const PZ_TONES = { papel: 'Papel', salvia: 'Salvia', cielo: 'Cielo', rosa: 'Rosa', miel: 'Miel' };
-const PZ_KIND = { note: 'Nota', link: 'Enlace', draft: 'Borrador', file: 'Archivo' };
+const PZ_KIND = { note: 'Nota', link: 'Enlace', draft: 'Borrador', file: 'Archivo', todo: 'Tarea', titulo: 'Título', fecha: 'Fecha', pregunta: 'Pregunta' };
+const PZ_SIZES = { s: 'Pequeña', m: 'Mediana', l: 'Grande' }; const PZ_FONTS = { sans: 'Normal', serif: 'Elegante', mono: 'Máquina' }; const PZ_BGS = { papel: 'Papel', cuadricula: 'Cuadrícula', puntos: 'Puntos', rayas: 'Rayas' };
+let PZ_FILTER = 'all';
+const pzOptVal = (name, def) => document.querySelector(`[data-opt="${name}"][aria-pressed="true"]`)?.dataset.v || def;
 const pzMetaId = () => `bm-${curFid()}`;
 const pzMeta = () => gGet(pzMetaId()) || { id: pzMetaId(), type: 'board', kind: 'meta', epoch: 0, archives: [] };
 const pzEpoch = () => +pzMeta().epoch || 0;
@@ -19,25 +22,39 @@ function pzCardHTML(it, ro) {
   if (it.kind === 'link') { const u = safeURL(it.link || ''); let host = ''; try { host = new URL(u).hostname.replace(/^www\./, ''); } catch { /* */ } body = `<b class="pz-t">${esc(it.title || host || 'Enlace')}</b><span class="pz-url">${icon('link', 'sm')}${esc(host || it.link || '')}</span>${it.text ? `<p>${esc(it.text)}</p>` : ''}`; }
   else if (it.kind === 'file') body = `<span class="pz-file">${pzFileGlyph(it.file)}<span><b class="pz-t">${esc(it.title || it.file || 'Archivo')}</b><span class="tiny faint">${esc(/\.pdf$/i.test(it.file || '') ? 'PDF' : 'Imagen')}${it.size ? ` · ${fmtSize(it.size)}` : ''}</span></span></span>${it.text ? `<p>${esc(it.text)}</p>` : ''}`;
   else if (it.kind === 'draft') body = `<b class="pz-t">${esc(it.title || 'Borrador')}</b><p class="pz-clip">${esc(it.text || '')}</p>`;
+  else if (it.kind === 'todo') body = `<span class="pz-todo"><button type="button" class="pz-chk ${it.done ? 'on' : ''}" data-act="pz-check" data-id="${it.id}" aria-pressed="${!!it.done}" aria-label="Marcar como hecha">${it.done ? icon('checkc', 'sm') : ''}</button><span class="pz-t ${it.done ? 'pz-done' : ''}">${linkify(it.text || '')}</span></span>`;
+  else if (it.kind === 'titulo') body = `<b class="pz-h">${esc(it.text || '')}</b>`;
+  else if (it.kind === 'fecha') { const d = pzDaysLeft(it.due); body = `<b class="pz-t">${linkify(it.text || '')}</b><span class="pz-date">${icon('hourglass', 'sm')}${it.due ? `${esc(pzDateLabel(it.due))}${d === null ? '' : d < 0 ? ' · ya pasó' : d === 0 ? ' · hoy' : ` · faltan ${d} ${d === 1 ? 'día' : 'días'}`}` : 'Sin fecha'}</span>`; }
+  else if (it.kind === 'pregunta') body = `<p class="pz-q">${linkify(it.text || '')}</p>`;
   else body = `<p>${linkify(it.text || '')}</p>`;
   const pos = PZ.mode === 'lienzo' ? ` style="left:${(it.x || 0) * 100}%;top:${Math.round((it.y || 0) * 620)}px"` : '';
-  return `<article class="pz-card t-${tone} k-${it.kind}" data-pz="${it.id}"${pos} ${ro ? '' : 'tabindex="0"'}>
+  return `<article class="pz-card t-${tone} k-${it.kind} sz-${it.sz || 'm'} f-${it.font || 'sans'}${it.pin ? ' pinned' : ''}${it.kind === 'todo' && it.done ? ' is-done' : ''}" data-pz="${it.id}"${pos} ${ro ? '' : 'tabindex="0"'}>
     <span class="pz-kind">${PZ_KIND[it.kind] || 'Nota'}</span>${body}
     <span class="pz-foot">${mini(it.by, 'xs')}<span>${esc(it.by || '')} · ${ago(it.u || it.at)}</span></span></article>`;
+}
+const pzDateLabel = (iso) => { const d = new Date(iso + 'T12:00:00'); return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }); };
+function pzDaysLeft(iso) { if (!iso) return null; const t = new Date(); t.setHours(12, 0, 0, 0); return Math.round((new Date(iso + 'T12:00:00') - t) / 86400000); }
+function pzOptsHTML(it, k) {
+  const sz = it.sz || 'm', font = it.font || 'sans';
+  const seg = (name, list, cur) => `<div class="seg pz-optseg" role="group">${Object.entries(list).map(([v, l]) => `<button type="button" data-act="pz-opt" data-opt="${name}" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`).join('')}</div>`;
+  return `<div class="field"><span class="lbl">Tamaño</span>${seg('sz', PZ_SIZES, sz)}</div>
+    <div class="field"><span class="lbl">Letra</span>${seg('font', PZ_FONTS, font)}</div>
+    ${k === 'fecha' ? `<div class="field"><label for="pzDue">Fecha</label><input id="pzDue" type="date" class="input" value="${esc(it.due || '')}"></div>` : ''}
+    <label class="pz-pin-row"><input type="checkbox" id="pzPin" ${it.pin ? 'checked' : ''}> Fijar en su lugar (no se mueve)</label>`;
 }
 function pzFileGlyph(name) { const pdf = /\.pdf$/i.test(name || ''); return `<svg class="pz-fg" viewBox="0 0 32 40" aria-hidden="true"><path d="M4 2h17l7 7v29H4z"/><path d="M21 2v7h7"/>${pdf ? '<path d="M9 28h14M9 23h14M9 18h8"/>' : '<circle cx="13" cy="18" r="3"/><path d="M6 33l7-8 5 5 4-4 6 7"/>'}</svg>`; }
 
 function viewPizarron() {
   const f = forestMeta(); if (!f) return '<div class="empty"><h3>Este Bosque ya no está</h3></div>';
   const meta = pzMeta(); const ep = PZ.view != null ? PZ.view : pzEpoch(); const ro = PZ.view != null;
-  const items = pzItems(ep).sort((a, b) => (a.y || 0) - (b.y || 0) || (a.at || 0) - (b.at || 0));
+  const items = pzItems(ep).filter((i) => PZ_FILTER === 'all' || i.kind === PZ_FILTER).sort((a, b) => (a.y || 0) - (b.y || 0) || (a.at || 0) - (b.at || 0));
   const arch = (meta.archives || []).slice().reverse();
   const head = groupHead(ro ? `Pizarrón archivado` : 'Pizarrón', ro ? `Archivado ${esc(relDay(toISO(new Date((meta.archives || []).find((a) => a.ep === ep)?.at || Date.now()))))}. Solo lectura.` : 'Suelta ideas, enlaces, borradores y PDFs. Todo el grupo lo ve y lo acomoda al instante.');
   const tools = ro ? `<div class="btn-row pz-tools"><button class="btn" data-act="pz-back">${icon('back')}Volver al pizarrón actual</button><button class="btn primary" data-act="pz-export" data-ep="${ep}">${icon('note')}Exportar a mis apuntes</button></div>`
-    : `<div class="pz-tools"><div class="pz-add">${[['note', 'Nota', 'note'], ['link', 'Enlace', 'link'], ['draft', 'Borrador', 'edit'], ['file', 'PDF o foto', 'upload']].map(([k, l, ic]) => `<button type="button" class="btn" data-act="pz-new" data-k="${k}">${icon(ic, 'sm')}${l}</button>`).join('')}</div>
-      <div class="seg" role="group" aria-label="Vista">${[['lienzo', 'Lienzo'], ['lista', 'Lista']].map(([k, l]) => `<button type="button" data-act="pz-mode" data-v="${k}" aria-pressed="${PZ.mode === k}">${l}</button>`).join('')}</div></div>`;
+    : `<div class="pz-tools"><div class="pz-add">${[['note', 'Nota', 'note'], ['link', 'Enlace', 'link'], ['draft', 'Borrador', 'edit'], ['file', 'PDF o foto', 'upload'], ['todo', 'Tarea', 'checkc'], ['titulo', 'Título', 'pen'], ['fecha', 'Fecha', 'hourglass'], ['pregunta', 'Pregunta', 'bulb']].map(([k, l, ic]) => `<button type="button" class="btn" data-act="pz-new" data-k="${k}">${icon(ic, 'sm')}${l}</button>`).join('')}</div>
+      <div class="pz-chips" role="group" aria-label="Filtrar">${[['all', 'Todo'], ['todo', 'Tareas'], ['note', 'Notas'], ['titulo', 'Títulos'], ['fecha', 'Fechas'], ['link', 'Enlaces'], ['draft', 'Borradores'], ['file', 'Archivos']].map(([k, l]) => `<button type="button" class="pz-chip" data-act="pz-filter" data-v="${k}" aria-pressed="${PZ_FILTER === k}">${l}</button>`).join('')}</div><button type="button" class="btn" data-act="pz-settings">${icon('palette', 'sm')}Ajustes del pizarrón</button><div class="seg" role="group" aria-label="Vista">${[['lienzo', 'Lienzo'], ['lista', 'Lista']].map(([k, l]) => `<button type="button" data-act="pz-mode" data-v="${k}" aria-pressed="${PZ.mode === k}">${l}</button>`).join('')}</div></div>`;
   const board = items.length
-    ? (PZ.mode === 'lienzo' ? `<div class="pz-board" id="pzBoard" style="--rows:${Math.max(6, Math.ceil(Math.max(...items.map((i) => (i.y || 0))) * 10) + 3)}">${items.map((i) => pzCardHTML(i, ro)).join('')}</div>` : `<div class="pz-list">${items.map((i) => pzCardHTML(i, ro)).join('')}</div>`)
+    ? (PZ.mode === 'lienzo' ? `<div class="pz-board bg-${pzMeta().bg || 'papel'}" id="pzBoard" style="--rows:${Math.max(6, Math.ceil(Math.max(...items.map((i) => (i.y || 0))) * 10) + 3)}">${items.map((i) => pzCardHTML(i, ro)).join('')}</div>` : `<div class="pz-list">${items.map((i) => pzCardHTML(i, ro)).join('')}</div>`)
     : `<div class="pz-empty"><svg viewBox="0 0 120 80" aria-hidden="true"><rect x="8" y="8" width="104" height="64" rx="6"/><path d="M22 24h30M22 32h22M70 22l20 6-6 20-20-6z M30 50h40"/></svg><h3>El pizarrón está en blanco</h3><p>Pega un enlace, escribe una idea o sube el PDF de las instrucciones. Lo que pongas aquí lo ve todo el Bosque, aunque estés sin internet.</p></div>`;
   const foot = ro ? '' : `<div class="pz-end"><button class="btn" data-act="pz-export" data-ep="${ep}" ${items.length ? '' : 'disabled'}>${icon('note', 'sm')}Exportar a mis apuntes</button><button class="btn" data-act="pz-archive" ${items.length ? '' : 'disabled'}>${icon('save', 'sm')}Terminar y archivar</button></div>
     <p class="small muted pz-help">Mueve las tarjetas arrastrándolas. Toca una para editarla. Al terminar el proyecto, archiva el pizarrón: queda guardado y empiezan uno limpio.</p>`;
@@ -70,9 +87,9 @@ function pzSheet(it) {
         ? `<div class="field"><label for="pzTitle">Título</label><input id="pzTitle" class="input" value="${esc(it.title || '')}" autocomplete="off" placeholder="Ej. Introducción del ensayo"></div><div class="field"><label for="pzText">Borrador</label><textarea id="pzText" class="input" rows="9" placeholder="Escriban aquí entre todos…">${esc(it.text || '')}</textarea></div>`
         : `<div class="field"><label for="pzText" class="sr">Nota</label><textarea id="pzText" class="input" rows="4" placeholder="Una idea, un dato, una pregunta…">${esc(it.text || '')}</textarea></div>`;
   openSheet(`${sheetHead(isNew ? `Nuevo: ${PZ_KIND[k].toLowerCase()}` : PZ_KIND[k])}<div class="sheet-body">${fields}
-    <div class="field"><span class="lbl">Color</span><div class="pz-tones" role="group">${Object.entries(PZ_TONES).map(([t, l]) => `<button type="button" class="pz-tone t-${t}" data-act="pz-tone" data-v="${t}" aria-pressed="${PZ.tone === t}" aria-label="${l}"></button>`).join('')}</div></div>
+    ${pzOptsHTML(it, k)}<div class="field"><span class="lbl">Color</span><div class="pz-tones" role="group">${Object.entries(PZ_TONES).map(([t, l]) => `<button type="button" class="pz-tone t-${t}" data-act="pz-tone" data-v="${t}" aria-pressed="${PZ.tone === t}" aria-label="${l}"></button>`).join('')}</div></div>
     ${!isNew ? `<p class="small muted" style="margin:6px 0 0">Última edición: ${esc(it.by || '')}, ${ago(it.u || it.at)}.</p>` : ''}</div>
-    <div class="sheet-foot">${isNew ? '<button class="btn" data-act="sheet-close">Cancelar</button>' : `<button class="btn danger" data-act="pz-del" data-id="${it.id}">${icon('trash', 'sm')}Quitar</button>${k !== 'file' ? `<button class="btn" data-act="pz-copy" data-id="${it.id}">${icon('note', 'sm')}A mis apuntes</button>` : ''}`}<span class="grow"></span><button class="btn primary" data-act="pz-save" data-id="${it.id}" data-k="${k}">${isNew ? 'Poner en el pizarrón' : 'Guardar'}</button></div>`);
+    <div class="sheet-foot">${isNew ? '<button class="btn" data-act="sheet-close">Cancelar</button>' : `<button class="btn" data-act="pz-dup" data-id="${it.id}">${icon('layers', 'sm')}Duplicar</button><button class="btn danger" data-act="pz-del" data-id="${it.id}">${icon('trash', 'sm')}Quitar</button>${k !== 'file' ? `<button class="btn" data-act="pz-copy" data-id="${it.id}">${icon('note', 'sm')}A mis apuntes</button>` : ''}`}<span class="grow"></span><button class="btn primary" data-act="pz-save" data-id="${it.id}" data-k="${k}">${isNew ? 'Poner en el pizarrón' : 'Guardar'}</button></div>`);
   PZ.editing = it;
   setTimeout(() => (document.getElementById(k === 'link' ? 'pzLink' : k === 'file' ? 'pzFile' : 'pzText'))?.focus(), 80);
 }
@@ -108,9 +125,11 @@ Object.assign(VIDA_ACTS, {
     const it = { ...(gGet(el.dataset.id) || PZ.editing) }; if (!it || !it.id) return;
     const v = (id) => (document.getElementById(id)?.value || '').trim();
     it.tone = PZ.tone; it.text = v('pzText');
+    it.sz = pzOptVal('sz', it.sz || 'm'); it.font = pzOptVal('font', it.font || 'sans'); it.pin = !!document.getElementById('pzPin')?.checked;
+    if (it.kind === 'fecha') { it.due = document.getElementById('pzDue')?.value || ''; if (!it.due) { toast('Elige la fecha.'); return; } }
     if (it.kind === 'link') { const u = safeURL(v('pzLink')) || safeURL('https://' + v('pzLink')); if (!u) { toast('Escribe un enlace válido.'); return; } it.link = u; it.title = v('pzTitle'); }
     if (it.kind === 'draft' || it.kind === 'file') it.title = v('pzTitle');
-    if (it.kind === 'note' && !it.text) { toast('Escribe algo en la nota.'); return; }
+    if (['note', 'todo', 'titulo', 'fecha', 'pregunta'].includes(it.kind) && !it.text) { toast('Escribe el texto de la tarjeta.'); return; }
     if (it.kind === 'draft' && !it.text && !it.title) { toast('Escribe el borrador.'); return; }
     if (it.kind === 'file' && !gGet(it.id)) {
       const f = document.getElementById('pzFile')?.files?.[0]; if (!f) { toast('Elige un PDF o una foto.'); return; }
@@ -169,7 +188,7 @@ document.addEventListener('pointerdown', (e) => {
   PZ.drag = { c, board, it, x0: e.clientX, y0: e.clientY, moved: false, id: e.pointerId, l: c.offsetLeft, t: c.offsetTop };
 });
 document.addEventListener('pointermove', (e) => {
-  const d = PZ.drag; if (!d || e.pointerId !== d.id || !d.board) return;
+  const d = PZ.drag; if (!d || e.pointerId !== d.id || !d.board || d.it.pin) return;
   const dx = e.clientX - d.x0, dy = e.clientY - d.y0;
   if (!d.moved && Math.hypot(dx, dy) < 7) return;
   if (!d.moved) { d.moved = true; d.c.classList.add('dragging'); try { d.c.setPointerCapture(e.pointerId); } catch { /* */ } }
@@ -188,7 +207,7 @@ const pzUp = (e) => {
     gput({ ...d.it, x: Math.round((d.nx || 0) * 1000) / 1000, y: Math.round((d.ny || 0) * 1000) / 1000 });
     if (typeof staleCheck === 'function') staleCheck();
     setTimeout(pzResolve, 80);
-  } else if (e.type === 'pointerup') pzRead(d.it);
+  } else if (e.type === 'pointerup' && !e.target.closest?.('[data-act]')) pzRead(d.it);
 };
 document.addEventListener('pointerup', pzUp);
 document.addEventListener('pointercancel', pzUp);
@@ -232,3 +251,42 @@ function pzRead(it) {
     `<button type="button" class="btn quiet" data-act="pz-edit-read" data-id="${f.id}">${icon('edit', 'sm')}Editar y comentar</button>`);
 }
 Object.assign(VIDA_ACTS, { 'pz-edit-read': (el) => { const it = gGet(el.dataset.id); if (it) pzSheet(it); } });
+
+/* ---------- Más opciones: tareas, títulos, fechas, preguntas, tamaños, fondos, ajustes ---------- */
+Object.assign(VIDA_ACTS, {
+  'pz-filter': (el) => { PZ_FILTER = el.dataset.v; render(); },
+  'pz-opt': (el) => { el.parentElement.querySelectorAll('[data-opt]').forEach((b) => b.setAttribute('aria-pressed', String(b === el))); },
+  'pz-check': (el) => { const it = gGet(el.dataset.id); if (it) gput({ ...it, done: !it.done }); },
+  'pz-dup': (el) => {
+    const it = gGet(el.dataset.id); if (!it) return;
+    const copy = { ...it, id: 'pz' + uid(), x: Math.min(0.9, (it.x || 0) + 0.03), y: (it.y || 0) + 0.3, done: false, deleted: false, u: undefined, at: Date.now() };
+    closeSheet(false); gput(copy); Snd.drop(); toast('Tarjeta duplicada.');
+  },
+  'pz-settings': () => {
+    const m = pzMeta(); const cur = m.bg || 'papel';
+    openSheet(`${sheetHead('Ajustes del pizarrón')}<div class="sheet-body">
+      <div class="field"><label for="pzBoardName">Nombre del pizarrón</label><input id="pzBoardName" class="input" maxlength="60" value="${esc(m.name || '')}" placeholder="Ej. Ideas del proyecto" autocomplete="off"></div>
+      <div class="field"><span class="lbl">Fondo</span><div class="seg pz-optseg" role="group">${Object.entries(PZ_BGS).map(([v, l]) => `<button type="button" data-act="pz-opt" data-opt="bg" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`).join('')}</div></div>
+      <div class="field"><span class="lbl">Organizar</span><div class="btn-row"><button class="btn" data-act="pz-arrange">${icon('layers', 'sm')}Acomodar en columnas</button><button class="btn" data-act="pz-clear-done">${icon('checkc', 'sm')}Quitar las tareas hechas</button></div></div>
+      <p class="small muted" style="margin:6px 0 0">Acomodar pone todas las tarjetas en dos columnas, sin encimarse. Quitar las hechas las borra para todo el grupo.</p>
+    </div><div class="sheet-foot"><button class="btn" data-act="sheet-close">Cancelar</button><button class="btn primary" data-act="pz-settings-save">Guardar</button></div>`);
+  },
+  'pz-settings-save': () => {
+    const meta = { ...pzMeta() }; meta.name = (document.getElementById('pzBoardName')?.value || '').trim().slice(0, 60);
+    meta.bg = pzOptVal('bg', meta.bg || 'papel'); meta.kind = 'meta'; meta.type = 'board';
+    closeSheet(false); gput(meta); toast('Ajustes guardados.');
+  },
+  'pz-arrange': () => {
+    const items = pzItems().filter((i) => !i.deleted).sort((a, b) => (a.at || 0) - (b.at || 0));
+    if (!items.length) return;
+    const cols = [0.02, 0.52], bottom = [0.02, 0.02]; const H = { s: 0.2, m: 0.28, l: 0.38 };
+    const plan = items.map((it) => { const i = bottom[0] <= bottom[1] ? 0 : 1; const y = bottom[i]; bottom[i] += (H[it.sz || 'm'] || 0.28) + 0.04; return { it, x: cols[i], y }; });
+    closeSheet(false); plan.forEach(({ it, x, y }) => gput({ ...it, x: Math.round(x * 1000) / 1000, y: Math.round(y * 1000) / 1000 })); toast('Tarjetas acomodadas.');
+  },
+  'pz-clear-done': async () => {
+    const done = pzItems().filter((i) => i.kind === 'todo' && i.done && !i.deleted); if (!done.length) { toast('No hay tareas hechas.'); return; }
+    const ok = await ask({ title: '¿Quitar las tareas hechas?', text: `Se quitan ${done.length} ${done.length === 1 ? 'tarea' : 'tareas'} del pizarrón para todo el grupo.`, ok: 'Quitar', danger: true });
+    if (!ok) return; closeSheet(false); done.forEach((it) => gput({ ...it, deleted: true })); toast('Tareas hechas quitadas.');
+  },
+});
+

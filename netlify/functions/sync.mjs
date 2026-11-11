@@ -826,10 +826,11 @@ export default async (req, context) => {
         const clean = { ...it, by: auth[as].name, byId: prev?.byId || as, at: +it.at || Date.now(), u: Date.now() };
         for (const k of ["title", "desc", "text", "subject", "link", "tag", "owner", "name"]) if (k in clean) clean[k] = clip(clean[k], k === "desc" || k === "text" ? 4000 : 300);
         if (clean.type === "board") {
-          clean.kind = ["note", "link", "file", "draft", "meta", "comment"].includes(it.kind) ? it.kind : "note";
+          clean.kind = ["note", "link", "file", "draft", "meta", "comment", "todo", "titulo", "fecha", "pregunta"].includes(it.kind) ? it.kind : "note";
           clean.parent = /^[a-z0-9-]{2,60}$/i.test(it.parent || "") ? it.parent : ""; clean.pa = /^[a-z0-9-]{2,60}$/i.test(it.pa || "") ? it.pa : ""; clean.act = clip(it.act, 20); clean.from = clip(it.from, 20);
           clean.x = Math.max(0, Math.min(1, +it.x || 0)); clean.y = Math.max(0, Math.min(12, +it.y || 0)); clean.ep = Math.max(0, Math.min(9999, Math.floor(+it.ep || 0)));
           if (clean.kind === "meta") { clean.epoch = Math.max(0, Math.min(9999, Math.floor(+it.epoch || 0))); clean.archives = Array.isArray(it.archives) ? it.archives.slice(-40).map((x) => ({ ep: Math.floor(+x.ep || 0), at: +x.at || 0, by: clip(x.by, 40), n: Math.floor(+x.n || 0), title: clip(x.title, 60) })) : []; }
+          clean.sz = ["s", "m", "l"].includes(it.sz) ? it.sz : "m"; clean.font = ["sans", "serif", "mono"].includes(it.font) ? it.font : "sans"; clean.pin = !!it.pin; clean.done = !!it.done; clean.due = /^\d{4}-\d{2}-\d{2}$/.test(it.due || "") ? it.due : ""; clean.bg = ["papel", "cuadricula", "puntos", "rayas"].includes(it.bg) ? it.bg : "papel";
           clean.tone = clip(it.tone, 12); clean.file = clip(it.file, 120); clean.size = Math.max(0, Math.min(5e6, +it.size || 0)); clean.archived = !!it.archived; clean.fileId = /^[a-z0-9-]{4,60}$/i.test(it.fileId || "") ? it.fileId : "";
         }
         if (clean.type === "tpl") {

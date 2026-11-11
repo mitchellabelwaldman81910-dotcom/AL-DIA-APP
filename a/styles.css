@@ -2780,3 +2780,32 @@ body.lb-open { overflow: hidden; }
 @keyframes nvau { from { transform: translateX(-12px); } to { transform: translateX(14px); } }
 @media (prefers-reduced-motion: reduce) { .nv-tw, .nv-b, .nv-snow, .nv-sp, .nv-ff, .nv-sh, .nv-lan, .nv-fire, .nv-au { animation: none; } .nv-snow, .nv-sh, .nv-lan { opacity: 0; } }
 body.gm-on .nv-snow, body.gm-on .nv-ff { animation-play-state: paused; }
+
+/* ===== 7.23 Pizarrón: más tipos, tamaños, letras y fondos ===== */
+.pz-chips { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+.pz-chip { min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent); background: var(--sheet); color: var(--ink); font: inherit; font-size: 12.5px; font-weight: 600; }
+.pz-chip[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.pz-board.bg-cuadricula { background-image: linear-gradient(color-mix(in srgb, var(--ink) 9%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--ink) 9%, transparent) 1px, transparent 1px); background-size: 24px 24px; }
+.pz-board.bg-puntos { background-image: radial-gradient(circle, color-mix(in srgb, var(--ink) 22%, transparent) 1.4px, transparent 1.8px); background-size: 20px 20px; }
+.pz-board.bg-rayas { background-image: repeating-linear-gradient(0deg, transparent 0 25px, color-mix(in srgb, var(--ink) 10%, transparent) 25px 26px); }
+.pz-board .pz-card.sz-s { width: 30%; } .pz-board .pz-card.sz-m { width: 46%; } .pz-board .pz-card.sz-l { width: 64%; }
+.pz-card.f-serif .pz-t, .pz-card.f-serif p { font-family: var(--display, Georgia, serif); }
+.pz-card.f-mono .pz-t, .pz-card.f-mono p { font-family: ui-monospace, Menlo, Consolas, monospace; }
+.pz-card.pinned { cursor: default; }
+.pz-card.pinned::before { content: ""; position: absolute; top: -6px; left: 50%; width: 12px; height: 12px; border-radius: 50%; transform: translateX(-50%); background: radial-gradient(circle at 35% 35%, #F08A8A, #B83A3A); box-shadow: 0 2px 3px rgba(0,0,0,.3); }
+.pz-todo { display: flex; align-items: flex-start; gap: 8px; }
+.pz-chk { flex: none; width: 22px; height: 22px; border-radius: 7px; border: 1.6px solid color-mix(in srgb, var(--ink) 40%, transparent); background: transparent; display: grid; place-items: center; padding: 0; margin-top: 1px; color: #fff; }
+.pz-chk.on { background: #3F9A5C; border-color: #3F9A5C; }
+.pz-chk .i { width: 14px; height: 14px; }
+.pz-done { text-decoration: line-through; opacity: .55; }
+.is-done { opacity: .8; }
+.pz-h { font-family: var(--display, Georgia, serif); font-size: 20px; line-height: 1.2; letter-spacing: -.01em; }
+.k-titulo { background: transparent !important; border-style: dashed; box-shadow: none !important; }
+.pz-q { font-style: italic; font-size: 14.5px; }
+.k-pregunta .pz-kind::after { content: " ?"; }
+.pz-date { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-2); }
+.pz-date .i { width: 14px; height: 14px; }
+.pz-optseg { flex-wrap: wrap; }
+.pz-optseg button[aria-pressed="true"] { background: var(--ink); color: var(--sheet); }
+.pz-pin-row { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-top: 4px; }
+
