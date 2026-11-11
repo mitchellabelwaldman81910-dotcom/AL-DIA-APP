@@ -277,7 +277,7 @@ export default async (req, context) => {
       if (kindQ === "gamerank") {
         const now = Date.now(); const as = url.searchParams.get("as") || "";
         const read = async (prefix, key = "score") => { const { blobs } = await store.list({ prefix }); const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean); return all.sort((x, y) => (y[key] || 0) - (x[key] || 0) || (x.at || 0) - (y.at || 0)).slice(0, 20); };
-        const P = url.searchParams.get("game") === "galope" ? "gg" : "gs";
+        const P = ({ galope: "gg", peloton: "gp", mente: "gv" })[url.searchParams.get("game") || ""] || "gs";
         const out = { ok: true, dia: await read(`${W}${P}/d/${dayOf(now)}/`), semana: await read(`${W}${P}/w/${weekOf(now)}/`), record: await read(`${W}${P}/a/`), manzanas: await read(`${W}${P}/t/`, "apples") };
         if (USER_RE.test(as)) { const a1 = await store.get(`${W}${P}/a/${as}`, { type: "json" }); const t1 = await store.get(`${W}${P}/t/${as}`, { type: "json" }); out.me = { best: a1?.score || 0, total: t1?.apples || 0, games: t1?.games || 0 }; }
         return json(out);
@@ -790,6 +790,37 @@ export default async (req, context) => {
       }
       case "game": {
         if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        if (body.game === "peloton") {
+          // Pelotón de Tareas: puntos = distancia + libros. "partidas" cuenta las carreras.
+          const score = Math.max(0, Math.floor(+body.score || 0)); const dur = Math.max(1, Math.floor(+body.dur || 0));
+          if (score < 1 || score > dur * 130 + 80 || dur > 36000) return json({ error: "Partida inválida" }, 400);
+          const now = Date.now(); const who = { id: as, name: auth[as].name, color: auth[as].color, av: auth[as].av || 0 };
+          const put = async (key) => { const prev = await store.get(key, { type: "json" }); if (!prev || score > (prev.score || 0)) { await store.setJSON(key, { ...who, score, apples: 0, at: now }); return true; } return false; };
+          await put(`${W}gp/d/${dayOf(now)}/${as}`); await put(`${W}gp/w/${weekOf(now)}/${as}`); const newBest = await put(`${W}gp/a/${as}`);
+          const t0 = (await store.get(`${W}gp/t/${as}`, { type: "json" })) || { games: 0 };
+          const games = (t0.games || 0) + 1;
+          await store.setJSON(`${W}gp/t/${as}`, { ...who, games, apples: games, score: games, at: now });
+          const best = (await store.get(`${W}gp/a/${as}`, { type: "json" }))?.score || score;
+          const { blobs } = await store.list({ prefix: `${W}gp/d/${dayOf(now)}/` });
+          const day = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean).sort((x, y) => y.score - x.score);
+          return json({ ok: true, best, newBest: newBest && score > 0, rankDay: day.findIndex((x) => x.id === as) + 1 });
+        }
+        if (body.game === "mente") {
+          // Mente Viva: el servidor calcula los puntos de cada nivel (no se fían del cliente). Hoy/Semana/Total suman; "Nivel" es el más alto.
+          const PAIRS = [2, 3, 4, 6, 8, 10];
+          const lvl = Math.floor(+body.lvl); const stars = Math.floor(+body.stars); const moves = Math.floor(+body.moves); const dur = Math.floor(+body.dur || 0);
+          if (!(lvl >= 0 && lvl < PAIRS.length) || !(stars >= 1 && stars <= 3) || !(moves >= PAIRS[lvl]) || moves > 500 || dur < PAIRS[lvl]) return json({ error: "Partida inválida" }, 400);
+          const points = (lvl + 1) * 10 + stars * 5;
+          const now = Date.now(); const who = { id: as, name: auth[as].name, color: auth[as].color, av: auth[as].av || 0 };
+          const add = async (key) => { const prev = await store.get(key, { type: "json" }); const score = (prev?.score || 0) + points; await store.setJSON(key, { ...who, score, apples: 0, at: now }); return score; };
+          await add(`${W}gv/d/${dayOf(now)}/${as}`); await add(`${W}gv/w/${weekOf(now)}/${as}`); const total = await add(`${W}gv/a/${as}`);
+          const t0 = (await store.get(`${W}gv/t/${as}`, { type: "json" })) || { games: 0, apples: 0 };
+          const level = Math.max(t0.apples || 0, lvl + 1); const games = (t0.games || 0) + 1;
+          await store.setJSON(`${W}gv/t/${as}`, { ...who, games, apples: level, score: level, at: now });
+          const { blobs } = await store.list({ prefix: `${W}gv/d/${dayOf(now)}/` });
+          const day = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean).sort((x, y) => y.score - x.score);
+          return json({ ok: true, best: total, newBest: false, points, rankDay: day.findIndex((x) => x.id === as) + 1 });
+        }
         if (body.game === "galope") {
           // Galope: su propio ranking. Puntos = distancia; no hay manzanas, así que "partidas" cuenta las partidas.
           const score = Math.max(0, Math.floor(+body.score || 0)); const dur = Math.max(1, Math.floor(+body.dur || 0));

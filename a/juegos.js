@@ -4,7 +4,7 @@
 function viewJuegos() {
   const best = typeof glBest === 'function' ? glBest() : 0; const row = (href, ic, t, d) => `<li><a href="${href}"><span class="ico">${icon(ic)}</span><span class="txt"><b>${t}</b><span>${d}</span></span>${icon('chev', 'chev')}</a></li>`;
   return `<h1 class="page-title">Juegos</h1><p class="page-sub">Un rato para despejarte. Compites con los demás en el ranking y ganas skins con las monedas de tu árbol.</p>
-    <ul class="rows" style="margin-top:18px">${row('#/juego', 'tree', 'Cosecha', 'Atrapa frutas con tu canasta. Cada 100 cambia el paisaje y la fruta.')}${row('#/galope', 'play', 'Galope', best ? `Salta con tu caballo. Tu récord: ${best} puntos.` : 'Salta con tu caballo por la pradera.')}${row('#/skins', 'star', 'Skins', 'Canastas y caballos nuevos, de los baratos a los legendarios')}</ul>`;
+    <ul class="rows" style="margin-top:18px">${row('#/juego', 'tree', `Cosecha ${typeof gmTrophy === 'function' ? gmTrophy('sm') : ''}`, 'Atrapa frutas con tu canasta. Cada 100 cambia el paisaje y la fruta.')}${row('#/galope', 'play', 'Galope', best ? `Salta con tu caballo. Tu récord: ${best} puntos.` : 'Salta con tu caballo por la pradera.')}${row('#/skins', 'star', 'Skins', 'Canastas y caballos nuevos, de los baratos a los legendarios')}</ul>`;
 }
 EXTRA_VIEWS.juegos = viewJuegos;
 ['juegos', 'juego', 'galope', 'skins'].forEach((k) => { EXTRA_NAV[k] = 'juegos'; });

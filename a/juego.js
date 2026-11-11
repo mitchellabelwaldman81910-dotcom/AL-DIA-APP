@@ -7,12 +7,18 @@ const GAME = { run: null, raf: 0, rank: null, tab: 'dia' };
 function viewJuego() {
   const nm = !REG.me || !tokens()[REG.me];
   return `<section class="gm-home"><div class="gm-hero">${gmHeroArt()}</div>
-    <h1 class="page-title gm-title">Cosecha</h1><p class="page-sub">Atrapa las manzanas que caen del gran manzano. La normal vale <b>1</b>, la dorada vale <b>5</b>. Cada vez caen más rápido; si se te caen 3, se acaba. Si pierdes vidas, a veces cae una manzana verde curativa que te devuelve una. Cada 100 manzanas el paisaje cambia: pradera, jungla, desierto y montaña nevada.</p>
+    <h1 class="page-title gm-title">Cosecha <span class="gm-star" title="Nuestro juego estrella">${gmTrophy()}<em>Juego estrella</em></span></h1><p class="page-sub">Atrapa las manzanas que caen del gran manzano. La normal vale <b>1</b>, la dorada vale <b>5</b>. Cada vez caen más rápido; si se te caen 3, se acaba. Si pierdes vidas, a veces cae una manzana verde curativa que te devuelve una. Cada 100 manzanas el paisaje cambia: pradera, jungla, desierto y montaña nevada.</p>
     <button class="btn primary block gm-play" data-act="gm-start">${icon('play')}Jugar</button>
     ${nm ? '<p class="small muted" style="text-align:center">Entra con tu usuario para aparecer en el ranking.</p>' : ''}
     <div id="gmRank">${gmRankHTML()}</div></section>`;
 }
 EXTRA_VIEWS.juego = viewJuego; EXTRA_NAV.juego = 'mas'; GROUP_VIEWS.juego = viewJuego; GROUP_NAV.juego = 'mas';
+let GM_TR = 0;
+/* mini trofeo dorado: marca a Cosecha como el juego estrella */
+function gmTrophy(cls = '') {
+  const id = `gmt${++GM_TR}`;
+  return `<svg class="gm-trophy ${cls}" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE9A0"/><stop offset=".55" stop-color="#E8B23A"/><stop offset="1" stop-color="#B07A1C"/></linearGradient></defs><path d="M7 3h10v5.2a5 5 0 0 1-10 0z" fill="url(#${id})"/><path d="M7 5H4.4c0 3 1.2 4.7 3.1 5.2M17 5h2.6c0 3-1.2 4.7-3.1 5.2" fill="none" stroke="#C48A22" stroke-width="1.5" stroke-linecap="round"/><path d="M12 13.2v3.2" stroke="#B07A1C" stroke-width="2"/><path d="M8.4 21h7.2l-.9-3.6H9.3z" fill="url(#${id})"/><path d="M12 5.1l.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2L9.1 7.3l2-.3z" fill="#fff" opacity=".9"/></svg>`;
+}
 function gmHeroArt() {
   return `<svg viewBox="0 0 360 150" aria-hidden="true"><defs><linearGradient id="gmh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCE3B0"/><stop offset="1" stop-color="#F4F0E2"/></linearGradient></defs>
     <rect width="360" height="150" rx="18" fill="url(#gmh)"/><g class="gm-sun"><circle cx="300" cy="42" r="16" fill="#F6C55B"/>${Array.from({ length: 12 }, (_, i) => `<path d="M300 42m${(Math.cos(i * 0.5236) * 22).toFixed(1)} ${(Math.sin(i * 0.5236) * 22).toFixed(1)}l${(Math.cos(i * 0.5236) * 7).toFixed(1)} ${(Math.sin(i * 0.5236) * 7).toFixed(1)}" stroke="#F0B445" stroke-width="2" stroke-linecap="round"/>`).join('')}</g>
