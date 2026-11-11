@@ -196,7 +196,7 @@ export default async (req, context) => {
         const nowT = Date.now();
         for (const u of users) {
           const sn = await store.get(`${W}seen/${u.id}`, { type: "json" });
-          u.seen = sn?.at || 0; u.online = !!sn && nowT - sn.at < 60000; u.since = sn?.since || 0; u.prevAt = sn?.prevAt || 0;
+          u.seen = sn?.at || 0; u.online = !!sn && nowT - sn.at < 60000; u.since = sn?.since || 0; u.prevAt = sn?.prevAt || 0; u.total = sn?.total || 0;
         }
         users.sort((a, b) => (b.online - a.online) || ((b.seen || b.at) - (a.seen || a.at)));
         return json({ ok: true, users, forests, now: nowT });
@@ -497,7 +497,10 @@ export default async (req, context) => {
         const prev = await store.get(`${W}seen/${who}`, { type: "json" });
         const now = Date.now();
         const first = !prev || now - (prev.at || 0) > 120000;
-        await store.setJSON(`${W}seen/${who}`, { at: now, since: first ? now : (prev.since || now), prevAt: first ? (prev?.at || 0) : (prev.prevAt || 0) });
+        // tiempo total: suma el intervalo desde el último latido, solo si no pasó demasiado (evita contar horas cerrada la app)
+        const gap = prev && !first ? Math.max(0, now - (prev.at || 0)) : 0;
+        const total = (prev?.total || 0) + gap;
+        await store.setJSON(`${W}seen/${who}`, { at: now, since: first ? now : (prev.since || now), prevAt: first ? (prev?.at || 0) : (prev.prevAt || 0), total });
         return json({ ok: true });
       }
       case "presence": {

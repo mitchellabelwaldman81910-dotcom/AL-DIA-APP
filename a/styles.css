@@ -3077,3 +3077,5 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
 .am-reply button { min-height: 40px; border-radius: 999px; border: 0; padding: 0 16px; background: #2A7F53; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
 .adm-say input { font-size: 16px; }
 .am-bub.old { opacity: 1; transform: scale(.97); }
+.adm-total { display: block; color: var(--muted, #5a6b62); margin-top: 2px; }
+.adm-total b { color: var(--ink); font-weight: 650; }
