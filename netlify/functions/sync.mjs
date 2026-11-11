@@ -157,8 +157,13 @@ export default async (req, context) => {
         const since = +url.searchParams.get("since") || 0; const now = Date.now();
         const pres = (await Promise.all((await store.list({ prefix: `${W}presence/${me}-` })).blobs.map((b) => store.get(b.key, { type: "json" })))).filter((v) => v && v.viewing === me && now - v.at < 20000);
         const keys = (await store.list({ prefix: `${W}am/${me}/` })).blobs.map((b) => b.key).filter((k) => +k.split("/").pop().split("-")[0] > since).sort().slice(-20);
-        const msgs = (await Promise.all(keys.map((k) => store.get(k, { type: "json" })))).filter(Boolean);
-        return json({ ok: true, now, presence: pres, msgs });
+        const msgs = (await Promise.all(keys.map((k) => store.get(k, { type: "json" })))).filter((m) => m && m.from !== me);
+        let replies = [];
+        if (ADMINS.includes(me)) {
+          const rk = (await store.list({ prefix: `${W}amr/${me}/` })).blobs.map((b) => b.key).filter((k) => +k.split("/").pop().split("-")[0] > since).sort().slice(-20);
+          replies = (await Promise.all(rk.map((k) => store.get(k, { type: "json" })))).filter(Boolean);
+        }
+        return json({ ok: true, now, presence: pres, msgs, replies });
       }
       if (kindQ === "amsg") {
         const to = String(url.searchParams.get("to") || "");
@@ -455,6 +460,22 @@ export default async (req, context) => {
         await store.setJSON(`${W}l/${l.id}`, { id: l.id, from: l.from, to: l.to, text: clip(l.text, 4000), at, tz: clip(l.tz, 40), read: !!l.read });
         await bump(store, [l.from, l.to]);
         return json({ ok: true });
+      }
+      case "amreply": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const text = clip(body.text, 1000).trim();
+        if (!text || !/^[a-z0-9]{6,30}$/i.test(body.id || "")) return json({ error: "mensaje inválido" }, 400);
+        const thread = (await store.list({ prefix: `${W}am/${as}/` })).blobs.map((b) => b.key).sort();
+        let to = ADMINS[0];
+        for (const k of thread.slice().reverse()) { const v = await store.get(k, { type: "json" }); if (v && v.from !== as && ADMINS.includes(v.from)) { to = v.from; break; } }
+        if (!thread.length) return json({ error: "Solo puedes responder cuando administración te escribe" }, 403);
+        const at = Date.now(); const rec = { id: body.id, from: as, fromName: auth[as].name, to, reply: true, text, at };
+        await store.setJSON(`${W}am/${as}/${at}-${body.id}`, rec);
+        await store.setJSON(`${W}amr/${to}/${at}-${body.id}`, rec);
+        const rk = (await store.list({ prefix: `${W}amr/${to}/` })).blobs.map((b) => b.key).sort();
+        for (const k of rk.slice(0, Math.max(0, rk.length - 200))) await store.delete(k);
+        if (context?.waitUntil) context.waitUntil(pushTo(store, [to], url.origin, { title: "Respuesta de " + auth[as].name, body: clip(text, 140), url: "#/panel", tag: "amr-" + as }, ""));
+        return json({ ok: true, at });
       }
       case "adminmsg": {
         if (!admin) return json({ error: "Solo la cuenta de administración puede escribir aquí" }, 403);

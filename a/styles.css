@@ -3065,3 +3065,15 @@ html[data-theme="dark"] .eye-pill .eye3 { --e3-white: #EEF4EF; }
 html[data-theme="dark"] .eye-pill .eye3 .e3-halo { stroke: #cfd8d2; }
 .eye-pill .eye3 .e3-line { stroke-width: 2.8; }
 html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-pill .eye3 .e3-line { filter: drop-shadow(0 0 1.2px rgba(255,255,255,.75)); }
+/* respuestas a administración */
+.am-rlist { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
+.am-bub.them, .am-bub.my-reply { background: #F3F7F4; color: #14281D; border-color: rgba(20,40,29,.18); }
+.am-bub.them small, .am-bub.my-reply small { color: #3B6E52; }
+.am-bub.failed { background: #FBE9E7; color: #7A2318; } .am-bub.failed small { color: #A33A2B; }
+.am-msg.them { align-self: flex-start; background: var(--sheet, #F3F7F4); color: var(--ink); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; }
+.am-reply { display: flex; gap: 8px; width: 100%; margin-top: 2px; background: #1E3A2B; padding: 6px; border-radius: 999px; box-shadow: 0 12px 30px -14px rgba(0,0,0,.55); }
+.am-reply[hidden] { display: none; }
+.am-reply input { flex: 1; min-width: 0; min-height: 40px; border-radius: 999px; border: 0; padding: 0 14px; font: inherit; font-size: 16px; background: #F3F7F4; color: #1E3A2B; }
+.am-reply button { min-height: 40px; border-radius: 999px; border: 0; padding: 0 16px; background: #2A7F53; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+.adm-say input { font-size: 16px; }
+.am-bub.old { opacity: 1; transform: scale(.97); }

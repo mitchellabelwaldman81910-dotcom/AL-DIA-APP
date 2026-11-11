@@ -81,16 +81,17 @@ const amId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString
 const amTime = (ms) => new Date(ms).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
 function amListHTML(to) {
   const l = AMSG.lists[to] || [];
-  return l.length ? l.map((m) => `<div class="am-msg"><p>${esc(m.text)}</p><small>${m.pending ? 'Enviando…' : esc(amTime(m.at))}${m.failed ? ' · no se envió' : ''}</small></div>`).join('') : '<p class="am-empty">Aún no le has escrito. Lo que mandes aparece aquí.</p>';
+  return l.length ? l.map((m) => `<div class="am-msg${m.reply ? ' them' : ''}"><p>${esc(m.text)}</p><small>${m.reply ? esc(m.fromName || m.from) + ' · ' : ''}${m.pending ? 'Enviando…' : esc(amTime(m.at))}${m.failed ? ' · no se envió' : ''}</small></div>`).join('') : '<p class="am-empty">Aún no le has escrito. Lo que mandes aparece aquí.</p>';
 }
 function amPaint(to) {
   const box = document.getElementById('amList'); if (box && box.dataset.to === to) { const stick = box.scrollTop + box.clientHeight >= box.scrollHeight - 30; box.innerHTML = amListHTML(to); if (stick) box.scrollTop = box.scrollHeight; }
   amBubbles(to);
 }
 async function amLoad(to) {
-  try { const r = await cloudFetch('GET', null, 'kind=amsg&to=' + encodeURIComponent(to)); const keep = (AMSG.lists[to] || []).filter((m) => m.pending || m.failed); AMSG.lists[to] = [...(r.msgs || []), ...keep]; amPaint(to); } catch (e) { /* sin red */ }
+  try { const r = await cloudFetch('GET', null, 'kind=amsg&to=' + encodeURIComponent(to)); const keep = (AMSG.lists[to] || []).filter((m) => m.pending || m.failed); AMSG.lists[to] = [...(r.msgs || []), ...keep]; amPaint(to);
+    const lr = Math.max(0, ...(r.msgs || []).filter((m) => m.reply).map((m) => m.at)); if (lr > (OJOLIVE.since || 0)) { OJOLIVE.since = lr; try { localStorage.setItem(amSeenKey(), String(lr)); } catch { /* */ } } } catch (e) { /* sin red */ }
 }
-function bubbleHTML(m) { return `${esc(m.text)}<small>${m.pending ? 'Enviando…' : esc(amTime(m.at))}${m.failed ? ' · no se envió' : ''}</small>`; }
+function bubbleHTML(m) { return `${esc(m.text)}<small>${m.reply ? esc(m.fromName || m.from) + ' respondió · ' : ''}${m.pending ? 'Enviando…' : esc(amTime(m.at))}${m.failed ? ' · no se envió' : ''}</small>`; }
 function amBubbles(to) {
   const box = document.getElementById('admBubbles'); if (!box || box.dataset.to !== to) return;
   const msgs = (AMSG.lists[to] || []).slice(-4).reverse();
@@ -101,7 +102,7 @@ function amBubbles(to) {
   msgs.forEach((m, idx) => {
     let el = box.querySelector(`[data-id="${m.id}"]`);
     if (!el) { el = document.createElement('div'); el.className = 'am-bub'; el.dataset.id = m.id; fresh.push(el); }
-    el.innerHTML = bubbleHTML(m); el.style.opacity = m.pending ? '.7' : ''; el.classList.toggle('old', idx > 1);
+    el.classList.toggle('them', !!m.reply); el.innerHTML = bubbleHTML(m); el.style.opacity = m.pending ? '.7' : ''; el.classList.toggle('old', idx > 1);
     if (box.children[idx] !== el) box.insertBefore(el, box.children[idx] || null);
   });
   [...box.children].forEach((c) => { const t0 = before.get(c.dataset.id); if (t0 != null) { const dy = t0 - c.getBoundingClientRect().top; if (Math.abs(dy) > 1) c.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.3,1.35,.5,1)' }); } });
@@ -135,7 +136,7 @@ function amChatEl() {
   }
 }
 setInterval(amChatEl, 700);
-setInterval(() => { const el = document.getElementById('admBubbles'); if (el && document.visibilityState === 'visible') amLoad(el.dataset.to); }, 8000);
+setInterval(() => { const el = document.getElementById('admBubbles'); if (el && document.visibilityState === 'visible') amLoad(el.dataset.to); }, 3000);
 Object.assign(VIDA_ACTS, {
   'adm-msg': (el) => {
     const to = el.dataset.id; const nm = el.dataset.name || to;
@@ -151,40 +152,74 @@ const OJOLIVE = { busy: false, t: null, shown: [], since: 0 };
 const amSeenKey = () => 'aldia:am:' + REG.me;
 function amRecvBox() {
   let box = document.getElementById('amRecv');
-  if (!box) { box = document.createElement('div'); box.id = 'amRecv'; box.className = 'adm-bubbles am-recv'; box.setAttribute('aria-live', 'polite'); document.body.appendChild(box); }
+  if (!box) {
+    box = document.createElement('div'); box.id = 'amRecv'; box.className = 'adm-bubbles am-recv'; box.setAttribute('aria-live', 'polite');
+    box.innerHTML = '<div class="am-rlist" id="amRList"></div><form class="am-reply" id="amReply" hidden><input id="amReplyIn" maxlength="1000" placeholder="Responder…" autocomplete="off" enterkeyhint="send" aria-label="Responder"><button type="submit">Enviar</button></form>';
+    document.body.appendChild(box);
+    box.querySelector('#amReply').addEventListener('submit', (e) => { e.preventDefault(); const i = box.querySelector('#amReplyIn'); const t = i.value.trim(); if (!t) return; i.value = ''; amReplySend(t); });
+  }
   box.classList.toggle('under-eye', !!document.getElementById('eye'));
   return box;
 }
-function amReceive(msgs) {
-  if (!msgs.length) return;
-  const box = amRecvBox();
-  msgs.forEach((m) => {
-    if (box.querySelector(`[data-id="${m.id}"]`)) return;
-    const before = new Map([...box.children].map((c) => [c, c.getBoundingClientRect().top]));
-    const el = document.createElement('button'); el.type = 'button'; el.className = 'am-bub'; el.dataset.id = m.id;
-    el.innerHTML = `${esc(m.text)}<small>${esc(m.fromName || 'Administración')} · ${esc(amTime(m.at))} · toca para cerrar</small>`;
-    el.addEventListener('click', () => { el.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-12px) scale(.9)' }], { duration: 260 }).onfinish = () => el.remove(); });
-    box.insertBefore(el, box.firstChild);
-    before.forEach((t0, c) => { const dy = t0 - c.getBoundingClientRect().top; if (Math.abs(dy) > 1) c.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.3,1.35,.5,1)' }); });
-    el.animate([{ transform: 'translateY(-34px) scale(.55,.2)', opacity: 0 }, { transform: 'translateY(6px) scale(1.04,.96)', opacity: 1, offset: .65 }, { transform: 'none', opacity: 1 }], { duration: 560, easing: 'cubic-bezier(.3,.9,.4,1)' });
-    setTimeout(() => { if (el.isConnected) el.click(); }, 120000);
+function amReplyBarSync() {
+  const box = document.getElementById('amRecv'); if (!box) return;
+  const hasAdmin = !!box.querySelector('#amRList .am-bub.from-admin');
+  const f = box.querySelector('#amReply'); const was = !f.hidden; f.hidden = !hasAdmin;
+  if (hasAdmin && !was) f.animate([{ opacity: 0, transform: 'translateY(-8px)' }, { opacity: 1, transform: 'none' }], { duration: 300 });
+  const nm = box.querySelector('#amRList .am-bub.from-admin')?.dataset.name; if (nm) box.querySelector('#amReplyIn').placeholder = `Responder a ${nm}…`;
+}
+function amBubbleAdd(m, kind) {
+  const box = amRecvBox(); const list = box.querySelector('#amRList');
+  if (list.querySelector(`[data-id="${m.id}"]`)) return null;
+  const before = new Map([...list.children].map((c) => [c, c.getBoundingClientRect().top]));
+  const el = document.createElement('button'); el.type = 'button'; el.className = 'am-bub ' + kind; el.dataset.id = m.id; el.dataset.name = m.fromName || '';
+  const meta = kind === 'from-admin' ? `${esc(m.fromName || 'Administración')} · ${esc(amTime(m.at))}`
+    : kind === 'my-reply' ? `Tú · ${m.pending ? 'enviando…' : esc(amTime(m.at))}`
+    : `${esc(m.fromName || m.from)} te respondió · ${esc(amTime(m.at))} · toca para contestar`;
+  el.innerHTML = `${esc(m.text)}<small>${meta}</small>`;
+  const close = () => { el.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-12px) scale(.9)' }], { duration: 260 }).onfinish = () => { el.remove(); amReplyBarSync(); }; };
+  el.addEventListener('click', () => {
+    if (kind === 'reply-in' && typeof VIDA_ACTS['adm-msg'] === 'function') { VIDA_ACTS['adm-msg']({ dataset: { id: m.from, name: m.fromName || m.from } }); }
+    if (kind === 'from-admin' && !box.querySelector('#amReply').hidden && document.activeElement === box.querySelector('#amReplyIn')) return;
+    close();
   });
-  [...box.children].slice(5).forEach((c) => c.remove());
+  list.insertBefore(el, list.firstChild);
+  before.forEach((t0, c) => { const dy = t0 - c.getBoundingClientRect().top; if (Math.abs(dy) > 1) c.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.3,1.35,.5,1)' }); });
+  el.animate([{ transform: 'translateY(-34px) scale(.55,.2)', opacity: 0 }, { transform: 'translateY(6px) scale(1.04,.96)', opacity: 1, offset: .65 }, { transform: 'none', opacity: 1 }], { duration: 560, easing: 'cubic-bezier(.3,.9,.4,1)' });
+  el._timer = setTimeout(() => { if (el.isConnected && document.activeElement !== box.querySelector('#amReplyIn')) close(); else if (el.isConnected) el._timer = setTimeout(close, 60000); }, 180000);
+  [...list.children].slice(6).forEach((c) => c.remove());
+  amReplyBarSync();
+  return el;
+}
+function amReceive(msgs, kind = 'from-admin') {
+  if (!msgs.length) return;
+  msgs.forEach((m) => amBubbleAdd(m, kind));
   const last = Math.max(...msgs.map((m) => m.at)); OJOLIVE.since = Math.max(OJOLIVE.since, last);
   try { localStorage.setItem(amSeenKey(), String(OJOLIVE.since)); } catch { /* */ }
-  eyeReact('talk');
+  if (kind === 'from-admin') eyeReact('talk');
   if (Snd.on()) Snd.bell(660, 0, 1, 0.05);
   if (navigator.vibrate) try { navigator.vibrate(30); } catch { /* */ }
+}
+async function amReplySend(text) {
+  const m = { id: amId(), text, at: Date.now(), pending: true };
+  const el = amBubbleAdd(m, 'my-reply');
+  try {
+    const r = await cloudFetch('POST', { kind: 'amreply', as: REG.me, id: m.id, text });
+    if (el) el.querySelector('small').textContent = 'Tú · ' + amTime(r.at || m.at) + ' · enviado';
+  } catch (e) {
+    if (el) { el.querySelector('small').textContent = 'No se envió · toca para cerrar'; el.classList.add('failed'); }
+    toast(e.message || 'No se pudo enviar. Revisa tu internet.');
+  }
 }
 async function liveTick() {
   clearTimeout(OJOLIVE.t);
   const mine = REG.me && REG.current === REG.me && !choosing;
   if (mine && !OJOLIVE.busy && document.visibilityState === 'visible') {
     OJOLIVE.busy = true;
-    if (!OJOLIVE.since) { try { OJOLIVE.since = +localStorage.getItem(amSeenKey()) || 0; } catch { /* */ } if (!OJOLIVE.since) OJOLIVE.since = Date.now() - 86400000; }
+    if (!OJOLIVE.since) { try { OJOLIVE.since = +localStorage.getItem(amSeenKey()) || 0; } catch { /* */ } if (!OJOLIVE.since) OJOLIVE.since = Date.now() - 7200000; }
     try {
       const r = await cloudFetch('GET', null, `kind=live&me=${encodeURIComponent(REG.me)}&since=${OJOLIVE.since}`);
-      if (REG.me && REG.current === REG.me) { showPresence(r.presence || []); amReceive((r.msgs || []).filter((m) => m.at > OJOLIVE.since).sort((x, y) => x.at - y.at)); }
+      if (REG.me && REG.current === REG.me) { showPresence(r.presence || []); const since0 = OJOLIVE.since; amReceive((r.msgs || []).filter((m) => m.at > since0).sort((x, y) => x.at - y.at)); amReceive((r.replies || []).filter((m) => m.at > since0).sort((x, y) => x.at - y.at), 'reply-in'); }
     } catch (e) { /* sin red: lo intenta de nuevo */ }
     OJOLIVE.busy = false;
     const rb = document.getElementById('amRecv'); if (rb) rb.classList.toggle('under-eye', !!document.getElementById('eye'));

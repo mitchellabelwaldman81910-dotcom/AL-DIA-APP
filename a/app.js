@@ -1763,11 +1763,13 @@ async function cloudSync(opts = {}) {
   if (!navigator.onLine || !Object.keys(tokens()).length) return;
   CLOUD.busy = true; CLOUD.error = '';
   try {
+    const sentTok = { ...tokens() };
     const remote = await cloudFetch('GET');
     let changedCurrent = false;
     const live = Object.keys(remote.users || {});
     let lost = false;
-    for (const id of Object.keys(tokens())) if (!live.includes(id)) { delete tokens()[id]; lost = true; }
+    // solo se descarta una sesión que se envió en ESTA petición y sigue igual (si se agregó o cambió mientras tanto, se respeta)
+    for (const id of Object.keys(tokens())) if (!live.includes(id) && sentTok[id] && sentTok[id] === tokens()[id]) { delete tokens()[id]; lost = true; }
     saveReg();
     const forestChanged = applyForests(remote);
     showPresence(remote.presence);
