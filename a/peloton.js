@@ -298,23 +298,25 @@ function pmStart() {
     g.restore();
   };
   const drawRunner = (x, y) => {
-    const k = V.S, ph = st.runT, run = st.state === 'run', bob = run ? Math.abs(Math.sin(ph)) * 5 : Math.sin(st.t * 2 + st.sc) * 1.2;
+    const K0 = pmSkinCur(), K = K0.rainbow ? { ...K0, jersey: `hsl(${(st.t * 60) % 360},75%,58%)`, shorts: `hsl(${(st.t * 60 + 180) % 360},60%,45%)` } : K0, k = V.S, ph = st.runT, run = st.state === 'run', bob = run ? Math.abs(Math.sin(ph)) * 5 : Math.sin(st.t * 2 + st.sc) * 1.2;
     const lean = Math.max(-0.28, Math.min(0.28, (laneX(st.lane) - st.x) / V.laneW * 0.32));
     g.save(); g.translate(x, y); g.scale(k, k);
     g.fillStyle = 'rgba(10,15,25,.32)'; g.beginPath(); g.ellipse(0, 0, 24 - bob, 6 - bob * 0.3, 0, 0, 6.3); g.fill();
     if (st.inv > 0 && Math.floor(st.inv * 14) % 2 === 0) g.globalAlpha = 0.45;
+    if (K.aura) { const ag = g.createRadialGradient(0, -56, 6, 0, -56, 74); ag.addColorStop(0, K.aura + '55'); ag.addColorStop(1, K.aura + '00'); g.fillStyle = ag; g.beginPath(); g.arc(0, -56, 74, 0, 6.3); g.fill(); }
     g.rotate(lean);
     for (const sd of [-1, 1]) { const sw = run ? Math.sin(ph + (sd > 0 ? Math.PI : 0)) : 0, lift = Math.max(0, sw) * 14, fy = -lift - 2;
-      g.fillStyle = '#2B3A55'; pmRR(g, sd * 9 - 6, -42 - bob, 12, 42 + fy + bob, 5); g.fill();
-      g.fillStyle = '#F7F7F7'; pmRR(g, sd * 9 - 8, fy - 7, 16, 9, 4); g.fill(); g.fillStyle = '#E9B44C'; g.fillRect(sd * 9 - 8, fy - 2, 16, 2.4); }
+      g.fillStyle = K.shorts; pmRR(g, sd * 9 - 6, -42 - bob, 12, 42 + fy + bob, 5); g.fill();
+      g.fillStyle = K.shoe; pmRR(g, sd * 9 - 8, fy - 7, 16, 9, 4); g.fill(); g.fillStyle = K.trim; g.fillRect(sd * 9 - 8, fy - 2, 16, 2.4); }
     for (const sd of [-1, 1]) { const sw = run ? Math.sin(ph + (sd > 0 ? 0 : Math.PI)) : 0, hy = -50 - bob + sw * 9;
-      g.strokeStyle = '#1F6A45'; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(sd * 21, -76 - bob); g.lineTo(sd * 26, hy); g.stroke();
+      g.strokeStyle = K.arm; g.lineWidth = 9; g.lineCap = 'round'; g.beginPath(); g.moveTo(sd * 21, -76 - bob); g.lineTo(sd * 26, hy); g.stroke();
       g.fillStyle = '#F0C7A0'; g.beginPath(); g.arc(sd * 26, hy + 3, 5, 0, 6.3); g.fill(); }
-    g.fillStyle = '#2A7F53'; g.beginPath(); g.moveTo(-20, -78 - bob); g.quadraticCurveTo(0, -84 - bob, 20, -78 - bob); g.lineTo(15, -38 - bob); g.lineTo(-15, -38 - bob); g.closePath(); g.fill();
-    g.fillStyle = '#E9B44C'; pmRR(g, -15, -74 - bob, 30, 32, 8); g.fill(); g.fillStyle = '#C98F2C'; pmRR(g, -10, -52 - bob, 20, 12, 4); g.fill(); g.fillRect(-1, -74 - bob, 2, 20);
+    g.fillStyle = K.jersey; g.beginPath(); g.moveTo(-20, -78 - bob); g.quadraticCurveTo(0, -84 - bob, 20, -78 - bob); g.lineTo(15, -38 - bob); g.lineTo(-15, -38 - bob); g.closePath(); g.fill();
+    g.fillStyle = K.trim; pmRR(g, -15, -74 - bob, 30, 32, 8); g.fill(); g.fillStyle = K.trim2; pmRR(g, -10, -52 - bob, 20, 12, 4); g.fill(); g.fillRect(-1, -74 - bob, 2, 20);
     g.fillStyle = '#F0C7A0'; g.fillRect(-4, -84 - bob, 8, 8);
-    g.fillStyle = '#2A2320'; g.beginPath(); g.arc(0, -95 - bob, 13, 0, 6.3); g.fill(); g.fillStyle = '#1B1613'; g.beginPath(); g.arc(0, -99 - bob, 10, Math.PI, 6.3); g.fill();
-    g.fillStyle = '#E9B44C'; g.fillRect(-13, -97 - bob, 26, 3.4);
+    g.fillStyle = K.hair; g.beginPath(); g.arc(0, -95 - bob, 13, 0, 6.3); g.fill(); g.fillStyle = K.hair; g.beginPath(); g.arc(0, -99 - bob, 10, Math.PI, 6.3); g.fill();
+    g.fillStyle = K.trim; g.fillRect(-13, -97 - bob, 26, 3.4);
+    if (K.spark) { g.fillStyle = K.spark; for (let q = 0; q < 4; q++) { const tq = (st.t * 1.3 + q * 0.27) % 1; g.globalAlpha = Math.sin(tq * Math.PI) * 0.9; g.beginPath(); g.arc(Math.sin(q * 2.1) * 22, -20 - tq * 90, 2 + (q % 2), 0, 6.3); g.fill(); } g.globalAlpha = 1; }
     g.restore();
     if (st.shield) { const pl = (Math.sin(st.t * 6) + 1) / 2; g.save(); g.translate(x, y - 56 * k); const bg = g.createRadialGradient(0, -6, 6, 0, 0, 62 * k); bg.addColorStop(0, 'rgba(160,220,255,.06)'); bg.addColorStop(1, `rgba(120,200,255,${0.3 + pl * 0.15})`); g.fillStyle = bg; g.beginPath(); g.arc(0, 0, 62 * k, 0, 6.3); g.fill(); g.strokeStyle = `rgba(200,240,255,${0.7 + pl * 0.25})`; g.lineWidth = 2.2; g.stroke(); g.strokeStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.arc(0, 0, 50 * k, 3.6, 4.5); g.stroke(); g.restore(); }
   };

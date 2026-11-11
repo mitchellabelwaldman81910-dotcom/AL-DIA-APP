@@ -38,7 +38,9 @@ const SK_HORSES = [
   ['pegaso', 'Pegaso', 16000, 'Alas de plumas blancas y halo.', { coat: '#F6F3EE', coat2: '#D8D3C8', hi: '#FFFFFF', mane: ['#FFFFFF', '#DDEBFF', '#9FC4F0'], wings: ['#FFFFFF', '#B8D4F5'], aura: '#FFFFFF', hoof: '#B8C4D6', spark: '#FFFFFF', eye: '#2F62E8' }],
   ['cosmico', 'Alicornio estelar', 22000, 'Galaxia con alas, cuerno y aura.', { coat: '#2A1A7A', coat2: '#150A52', hi: '#6B4BE8', mane: ['#FF7AF0', '#8A6BFF', '#5CE0FF'], pat: 'stars', wings: ['#C58BFF', '#3FC8FF'], horn: ['#FFFFFF', '#FFD84A'], aura: '#8A6BFF', hoof: '#0A0630', spark: '#FFFFFF', eye: '#FFFFFF', sock: '#8A6BFF' }],
 ];
-const skList = (t) => (t === 'b' ? SK_BASKETS : SK_HORSES);
+/* tipos extra de skins (los registran los juegos nuevos): { titulo, lista, ver(g,W,H,P), nombre } */
+const SK_TYPES = {};
+const skList = (t) => (t === 'b' ? SK_BASKETS : t === 'h' ? SK_HORSES : (SK_TYPES[t] || { lista: SK_HORSES }).lista);
 const skFind = (t, id) => skList(t).find((x) => x[0] === id) || skList(t)[0];
 const skKey = (t, id) => `sk:${t}_${id}`;
 const skOwned = (t, id) => skFind(t, id)[2] === 0 || (typeof shopOwns === 'function' && shopOwns(skKey(t, id)));
@@ -46,8 +48,8 @@ function skEq(t) { try { const id = (vidaData().skins || {})[t]; return id && sk
 const glSkinCur = () => skFind('h', skEq('h'))[4];
 const gmSkinCur = () => skFind('b', skEq('b'))[4];
 {
-  const basePrice = priceOf; priceOf = function (key) { if (key.startsWith('sk:')) { const [, t, id] = key.match(/^sk:([bh])_(.+)$/) || []; return t ? skFind(t, id)[2] : 0; } return basePrice(key); };
-  const baseName = nameOf; nameOf = function (key) { if (key.startsWith('sk:')) { const [, t, id] = key.match(/^sk:([bh])_(.+)$/) || []; return t ? (t === 'b' ? 'Canasta ' : 'Caballo ') + skFind(t, id)[1] : key; } return baseName(key); };
+  const basePrice = priceOf; priceOf = function (key) { if (key.startsWith('sk:')) { const [, t, id] = key.match(/^sk:([a-z])_(.+)$/) || []; return t ? skFind(t, id)[2] : 0; } return basePrice(key); };
+  const baseName = nameOf; nameOf = function (key) { if (key.startsWith('sk:')) { const [, t, id] = key.match(/^sk:([a-z])_(.+)$/) || []; return t ? (t === 'b' ? 'Canasta ' : t === 'h' ? 'Caballo ' : ((SK_TYPES[t] || {}).nombre || '') + ' ') + skFind(t, id)[1] : key; } return baseName(key); };
 }
 
 /* ---------- la canasta ---------- */
@@ -92,6 +94,7 @@ function skPreview(t, id) {
     const bgc = g.createLinearGradient(0, 0, 0, H); bgc.addColorStop(0, '#CFE6F5'); bgc.addColorStop(1, '#F6EBD3'); g.fillStyle = bgc; g.fillRect(0, 0, W, H); g.fillStyle = 'rgba(126,164,150,.55)'; g.beginPath(); g.moveTo(0, 100); for (let x = 0; x <= W; x += 40) g.lineTo(x, 82 - Math.sin(x * 0.04) * 14); g.lineTo(W, H); g.lineTo(0, H); g.fill(); g.fillStyle = '#9DC193'; g.fillRect(0, 112, W, 40);
     const P = skFind(t, id)[4];
     if (t === 'b') gmBasket(g, W / 2, 62, 118, 0, P);
+    else if (SK_TYPES[t]) SK_TYPES[t].ver(g, W, H, P);
     else { g.save(); g.translate(W / 2 - 6, 40); g.scale(1.3, 1.3); glDrawHorse(g, 0, 70, 0.1, false, 0, false, P); g.restore(); }
     SKN.img[k] = c.toDataURL('image/png');
   } catch { SKN.img[k] = ''; }
@@ -108,9 +111,9 @@ function skBiomesHTML() {
 }
 function viewSkins() {
   const bal = coins(); const t = SKN.tab;
-  return `<section class="sk"><h1 class="page-title">Skins</h1><p class="page-sub">Cambia la canasta de Cosecha y el caballo de Galope. Se pagan con las monedas que ganas al subir tu árbol. Solo cambian el aspecto.</p>
+  return `<section class="sk"><h1 class="page-title">Skins</h1><p class="page-sub">Cambia tu canasta, tu caballo, las cartas, los puntos, el uniforme del Pelotón y tu gusano. Se pagan con las monedas que ganas al subir tu árbol. Solo cambian el aspecto.</p>
     <div class="sk-bal">${coinSVG()}<b>${bal.toLocaleString('es-MX')}</b> monedas</div>
-    <div class="seg" role="tablist" style="margin:6px 0 14px">${[['b', 'Canastas'], ['h', 'Caballos'], ['a', 'Ambientes']].map(([k, n]) => `<button role="tab" data-act="sk-tab" data-t="${k}" aria-pressed="${t === k}">${n}</button>`).join('')}</div>
+    <div class="seg" role="tablist" style="margin:6px 0 14px">${[['b', 'Canastas'], ['h', 'Caballos'], ...Object.entries(SK_TYPES).map(([k, v]) => [k, v.titulo]), ['a', 'Ambientes']].map(([k, n]) => `<button role="tab" data-act="sk-tab" data-t="${k}" aria-pressed="${t === k}">${n}</button>`).join('')}</div>
     ${t === 'a' ? skBiomesHTML() : `<div class="sk-grid">${skList(t).map((e) => skCard(t, e)).join('')}</div>`}</section>`;
 }
 EXTRA_VIEWS.skins = viewSkins; EXTRA_NAV.skins = 'mas';
