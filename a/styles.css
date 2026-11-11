@@ -3037,3 +3037,20 @@ html[data-theme="dark"] #fauna { filter: brightness(.62) saturate(.85); }
 .adm-say input { flex: 1; min-width: 0; min-height: 40px; border-radius: 999px; border: 0; padding: 0 14px; font: inherit; font-size: 15px; background: #F3F7F4; color: #1E3A2B; }
 .adm-say button { min-height: 40px; border-radius: 999px; border: 0; padding: 0 16px; background: #2A7F53; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .eye2 .e2-gaze, .eye2 .e2-lid, .eye2 .e2-pupil { transition: none; } }
+/* ojo v3: limpio, expresivo */
+.eye3 { --e3-ink: var(--pen); --e3-i1: color-mix(in srgb, var(--pen) 55%, #9fe0b8); --e3-i2: var(--pen); --e3-white: #fff; width: 58px; height: 50px; margin: -8px 0; }
+.adm-banner .eye3 { --e3-ink: #6FCF97; --e3-i1: #9FE6BD; --e3-i2: #2A7F53; --e3-white: #F3F7F4; width: 52px; height: 45px; margin: -10px 0; }
+html[data-theme="dark"] .eye-pill .eye3 { --e3-white: #EEF4EF; }
+.eye3 .e3-halo { fill: none; stroke: var(--e3-ink); stroke-width: 1.4; opacity: 0; transform-origin: 32px 20px; animation: e3halo 2.8s ease-out infinite; }
+.eye3 .e3-body { transform-origin: 32px 20px; transform: scaleY(calc(1 - var(--lid, 0) * .9)); transition: transform .12s ease-in; }
+.eye3 .e3-white { fill: var(--e3-white); }
+.eye3 .e3-line { fill: none; stroke: var(--e3-ink); stroke-width: 3.2; stroke-linejoin: round; }
+.eye3 .e2-pupil { fill: #08130d; }
+.eye3 .e3-hi { fill: #fff; } .eye3 .e3-hi2 { fill: #fff; opacity: .7; }
+.eye3 .e3-lash path { stroke: var(--e3-ink); stroke-width: 3; stroke-linecap: round; transform-origin: 32px 20px; transform: scaleY(calc(1 - var(--lid, 0) * .9)); transition: transform .12s ease-in; }
+.eye3 .e3-lash { transform-origin: 32px 20px; }
+@keyframes e3halo { 0% { opacity: .55; transform: scale(.75); } 100% { opacity: 0; transform: scale(1.45); } }
+.am-recv { top: calc(max(8px, env(safe-area-inset-top)) + 12px); z-index: 95; pointer-events: auto; }
+.am-recv.under-eye { top: calc(var(--safe-t, 0px) + 74px); }
+.am-recv .am-bub { cursor: pointer; font: inherit; font-size: 14.5px; text-align: center; }
+@media (prefers-reduced-motion: reduce) { .eye3 .e3-halo { animation: none; } }

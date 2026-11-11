@@ -151,6 +151,15 @@ export default async (req, context) => {
         for (const k of dl.blobs.map((b) => b.key).sort().reverse().slice(0, 60)) { const v = await store.get(k, { type: "json" }); if (v && v.data) daily.push(sum(v, { day: k.split("/").pop() })); }
         return json({ ok: true, list, daily });
       }
+      if (kindQ === "live") {
+        const me = String(url.searchParams.get("me") || "");
+        if (!USER_RE.test(me) || !allowed(me)) return json({ error: "Inicia sesión primero" }, 401);
+        const since = +url.searchParams.get("since") || 0; const now = Date.now();
+        const pres = (await Promise.all((await store.list({ prefix: `${W}presence/${me}-` })).blobs.map((b) => store.get(b.key, { type: "json" })))).filter((v) => v && v.viewing === me && now - v.at < 20000);
+        const keys = (await store.list({ prefix: `${W}am/${me}/` })).blobs.map((b) => b.key).filter((k) => +k.split("/").pop().split("-")[0] > since).sort().slice(-20);
+        const msgs = (await Promise.all(keys.map((k) => store.get(k, { type: "json" })))).filter(Boolean);
+        return json({ ok: true, now, presence: pres, msgs });
+      }
       if (kindQ === "amsg") {
         const to = String(url.searchParams.get("to") || "");
         if (!USER_RE.test(to) || !(allowed(to) || admin)) return json({ error: "Inicia sesión primero" }, 403);
@@ -320,7 +329,7 @@ export default async (req, context) => {
         const now = Date.now();
         for (const b of pres.blobs) {
           const v = await store.get(b.key, { type: "json" });
-          if (v && now - v.at < 60000 && authList.includes(v.viewing)) out.presence.push(v);
+          if (v && now - v.at < 20000 && authList.includes(v.viewing)) out.presence.push(v);
         }
         const seen = new Set();
         for (const u of authList) {
@@ -472,7 +481,8 @@ export default async (req, context) => {
       }
       case "presence": {
         if (!USER_RE.test(String(body.viewing)) || !USER_RE.test(String(body.viewer)) || body.viewer === body.viewing) return json({ error: "presencia inválida" }, 400);
-        if (!allowed(body.viewing)) return json({ error: "Inicia sesión primero" }, 401);
+        if (!allowed(body.viewing) && !(body.leave && allowed(body.viewer))) return json({ error: "Inicia sesión primero" }, 401);
+        if (body.leave) { await store.delete(`${W}presence/${body.viewing}-${body.viewer}`); return json({ ok: true }); }
         await store.setJSON(`${W}presence/${body.viewing}-${body.viewer}`, { viewer: body.viewer, viewing: body.viewing, name: auth[body.viewer]?.name || clip(body.name, 40) || body.viewer, at: Date.now() });
         await bump(store, [body.viewing]);
         return json({ ok: true });

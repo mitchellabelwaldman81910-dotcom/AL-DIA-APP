@@ -1,38 +1,18 @@
 /* Ojo realista que reacciona + mensajes del administrador que "caen" de la barra */
 let _eyeN = 0;
 function eyeSVG() {
-  const n = ++_eyeN, id = (k) => `e2${k}${n}`;
-  const P = (t) => { const u = 1 - t; return [u*u*u*3 + 3*u*u*t*15 + 3*u*t*t*49 + t*t*t*61, u*u*u*20 + 3*u*u*t*3 + 3*u*t*t*3 + t*t*t*20]; };
-  const D = (t) => { const u = 1 - t; return [3*u*u*(15-3) + 6*u*t*(49-15) + 3*t*t*(61-49), 3*u*u*(3-20) + 6*u*t*(3-3) + 3*t*t*(20-3)]; };
-  let lashes = '';
-  for (let k = 0; k < 9; k++) {
-    const t = 0.1 + k * 0.1; const [x, y] = P(t); const [dx, dy] = D(t); const L = Math.hypot(dx, dy) || 1;
-    let nx = dy / L, ny = -dx / L; if (ny > 0) { nx = -nx; ny = -ny; }
-    const len = 3.2 + Math.sin(k * 1.7) * 0.8 + (k > 5 ? 1 : 0);
-    const ex = x + nx * len + (t > .5 ? 1.2 : -1.2) * 0.6, ey = y + ny * len;
-    lashes += `<path d="M${x.toFixed(1)} ${y.toFixed(1)} Q${(x + nx * len * .5 + (t > .5 ? .9 : -.9)).toFixed(1)} ${(y + ny * len * .6).toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}"/>`;
-  }
-  let fib = '';
-  for (let k = 0; k < 9; k++) { const a = (k * 40 + (k % 3) * 9) * Math.PI / 180, r1 = 5.6 + (k % 2), r2 = 10.2 + (k % 3) * 0.6; fib += `<path d="M${(32 + Math.cos(a) * r1).toFixed(1)} ${(20 + Math.sin(a) * r1).toFixed(1)} L${(32 + Math.cos(a + .08) * r2).toFixed(1)} ${(20 + Math.sin(a + .08) * r2).toFixed(1)}" stroke="${k % 2 ? 'rgba(255,255,255,.16)' : 'rgba(0,0,0,.22)'}"/>`; }
-  const alm = 'M3 20 C15 3 49 3 61 20 C49 37 15 37 3 20Z';
-  return `<svg viewBox="0 -4 64 46" class="eye2" aria-hidden="true"><defs>
-    <clipPath id="${id('c')}"><path d="${alm}"/></clipPath>
-    <radialGradient id="${id('s')}" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#fbf8f4"/><stop offset=".7" stop-color="#efe6dd"/><stop offset="1" stop-color="#c9b5a8"/></radialGradient>
-    <radialGradient id="${id('i')}" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#d8c066"/><stop offset=".38" stop-color="#7fa653"/><stop offset=".78" stop-color="#2f6040"/><stop offset="1" stop-color="#10251a"/></radialGradient>
-    <linearGradient id="${id('t')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".5"/><stop offset=".45" stop-color="#000" stop-opacity="0"/></linearGradient>
-    <linearGradient id="${id('l')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d7a688"/><stop offset="1" stop-color="#b57f64"/></linearGradient></defs>
-    <g class="e2-lashes" fill="none" stroke="#0e1a13" stroke-width="1.15" stroke-linecap="round">${lashes}</g>
-    <g clip-path="url(#${id('c')})"><rect x="0" y="0" width="64" height="40" fill="url(#${id('s')})"/>
-      <ellipse cx="5" cy="20.5" rx="2.6" ry="3" fill="#e0958e"/>
-      <g class="e2-gaze"><circle cx="32" cy="20" r="12.2" fill="url(#${id('i')})"/><g fill="none" stroke-width=".7" stroke-linecap="round">${fib}</g>
-        <circle cx="32" cy="20" r="12.2" fill="none" stroke="#0b1710" stroke-width="1.6"/>
-        <circle class="e2-pupil" cx="32" cy="20" r="4.7" fill="#050807"/>
-        <ellipse cx="27.6" cy="15" rx="2.9" ry="1.9" fill="#fff" opacity=".88" transform="rotate(-28 27.6 15)"/><circle cx="36.6" cy="24.4" r="1.05" fill="#fff" opacity=".5"/></g>
-      <rect x="0" y="0" width="64" height="40" fill="url(#${id('t')})"/>
-      <rect class="e2-lid" x="-2" y="-6" width="68" height="50" fill="url(#${id('l')})"/>
+  const n = ++_eyeN, g = `e3g${n}`;
+  return `<svg viewBox="0 -8 64 56" class="eye2 eye3" aria-hidden="true"><defs>
+    <radialGradient id="${g}" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="var(--e3-i1)"/><stop offset="1" stop-color="var(--e3-i2)"/></radialGradient></defs>
+    <circle class="e3-halo" cx="32" cy="20" r="20"/>
+    <g class="e3-body">
+      <path class="e3-white" d="M5 20 Q32 -6 59 20 Q32 46 5 20Z"/>
+      <g class="e2-gaze"><circle cx="32" cy="20" r="11" fill="url(#${g})"/>
+        <circle class="e2-pupil" cx="32" cy="20" r="5.2"/>
+        <circle class="e3-hi" cx="28" cy="15.5" r="3"/><circle class="e3-hi2" cx="36" cy="24" r="1.3"/></g>
+      <path class="e3-line" d="M5 20 Q32 -6 59 20 Q32 46 5 20Z"/>
     </g>
-    <path d="${alm}" fill="none" stroke="#6d4636" stroke-width="1.2" stroke-linejoin="round"/>
-    <path d="M6 16 C17 -1 47 -1 58 16" fill="none" stroke="#9b6c55" stroke-width="1.2" stroke-linecap="round" opacity=".7"/></svg>`;
+    <g class="e3-lash"><path d="M17 8.5 L14 3.5"/><path d="M32 3.6 L32 -2.2"/><path d="M47 8.5 L50 3.5"/></g></svg>`;
 }
 /* movimiento: mira a su alrededor, parpadea, y reacciona */
 const EYE = { gx: 0, gy: 0, hold: 0, dil: 1, until: 0 };
@@ -133,18 +113,64 @@ Object.assign(VIDA_ACTS, {
   },
 });
 
-/* ---------- Persona: recibe el mensaje ---------- */
+/* ---------- En vivo: ojo y mensajes llegan en ~3 segundos ---------- */
+const OJOLIVE = { busy: false, t: null, shown: [], since: 0 };
 const amSeenKey = () => 'aldia:am:' + REG.me;
-async function amCheck() {
-  if (!REG.me || REG.current !== REG.me || choosing || document.visibilityState !== 'visible' || !cloudOn() || document.getElementById('amPop')) return;
-  let last = 0; try { last = +localStorage.getItem(amSeenKey()) || 0; } catch { /* */ }
-  let r; try { r = await cloudFetch('GET', null, 'kind=amsg&to=' + encodeURIComponent(REG.me)); } catch (e) { return; }
-  const fresh = (r.msgs || []).filter((m) => m.at > last);
-  if (!fresh.length) return;
-  const el = document.createElement('div'); el.id = 'amPop'; el.className = 'am-pop'; el.setAttribute('role', 'alertdialog'); el.setAttribute('aria-label', 'Mensaje de administración');
-  el.innerHTML = `<b>Mensaje de ${esc(fresh[fresh.length - 1].fromName || 'administración')}</b>${fresh.map((m) => `<p>${esc(m.text)}</p>`).join('')}<button class="btn primary" type="button">Entendido</button>`;
-  el.querySelector('button').addEventListener('click', () => { try { localStorage.setItem(amSeenKey(), String(fresh[fresh.length - 1].at)); } catch { /* */ } el.remove(); });
-  document.body.appendChild(el);
-  if (Snd.on()) Snd.bell(660, 0, 1, 0.05);
+function amRecvBox() {
+  let box = document.getElementById('amRecv');
+  if (!box) { box = document.createElement('div'); box.id = 'amRecv'; box.className = 'adm-bubbles am-recv'; box.setAttribute('aria-live', 'polite'); document.body.appendChild(box); }
+  box.classList.toggle('under-eye', !!document.getElementById('eye'));
+  return box;
 }
-setInterval(amCheck, 15000); setTimeout(amCheck, 3500);
+function amReceive(msgs) {
+  if (!msgs.length) return;
+  const box = amRecvBox();
+  msgs.forEach((m) => {
+    if (box.querySelector(`[data-id="${m.id}"]`)) return;
+    const before = new Map([...box.children].map((c) => [c, c.getBoundingClientRect().top]));
+    const el = document.createElement('button'); el.type = 'button'; el.className = 'am-bub'; el.dataset.id = m.id;
+    el.innerHTML = `${esc(m.text)}<small>${esc(m.fromName || 'Administración')} · ${esc(amTime(m.at))} · toca para cerrar</small>`;
+    el.addEventListener('click', () => { el.animate([{ opacity: 1 }, { opacity: 0, transform: 'translateY(-12px) scale(.9)' }], { duration: 260 }).onfinish = () => el.remove(); });
+    box.insertBefore(el, box.firstChild);
+    before.forEach((t0, c) => { const dy = t0 - c.getBoundingClientRect().top; if (Math.abs(dy) > 1) c.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.3,1.35,.5,1)' }); });
+    el.animate([{ transform: 'translateY(-34px) scale(.55,.2)', opacity: 0 }, { transform: 'translateY(6px) scale(1.04,.96)', opacity: 1, offset: .65 }, { transform: 'none', opacity: 1 }], { duration: 560, easing: 'cubic-bezier(.3,.9,.4,1)' });
+    setTimeout(() => { if (el.isConnected) el.click(); }, 120000);
+  });
+  [...box.children].slice(5).forEach((c) => c.remove());
+  const last = Math.max(...msgs.map((m) => m.at)); OJOLIVE.since = Math.max(OJOLIVE.since, last);
+  try { localStorage.setItem(amSeenKey(), String(OJOLIVE.since)); } catch { /* */ }
+  eyeReact('talk');
+  if (Snd.on()) Snd.bell(660, 0, 1, 0.05);
+  if (navigator.vibrate) try { navigator.vibrate(30); } catch { /* */ }
+}
+async function liveTick() {
+  clearTimeout(OJOLIVE.t);
+  const mine = REG.me && REG.current === REG.me && !choosing;
+  if (mine && !OJOLIVE.busy && document.visibilityState === 'visible') {
+    OJOLIVE.busy = true;
+    if (!OJOLIVE.since) { try { OJOLIVE.since = +localStorage.getItem(amSeenKey()) || 0; } catch { /* */ } if (!OJOLIVE.since) OJOLIVE.since = Date.now() - 86400000; }
+    try {
+      const r = await cloudFetch('GET', null, `kind=live&me=${encodeURIComponent(REG.me)}&since=${OJOLIVE.since}`);
+      if (REG.me && REG.current === REG.me) { showPresence(r.presence || []); amReceive((r.msgs || []).filter((m) => m.at > OJOLIVE.since).sort((x, y) => x.at - y.at)); }
+    } catch (e) { /* sin red: lo intenta de nuevo */ }
+    OJOLIVE.busy = false;
+    const rb = document.getElementById('amRecv'); if (rb) rb.classList.toggle('under-eye', !!document.getElementById('eye'));
+  }
+  OJOLIVE.t = setTimeout(liveTick, mine ? 3000 : 6000);
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') liveTick(); });
+setTimeout(liveTick, 1200);
+
+/* Administrador: avisa más seguido que está mirando, y avisa al salir */
+const ADMLIVE = { viewing: null };
+setInterval(() => {
+  const on = REG.current && isAdminView() && REG.me && REG.current !== REG.me ? REG.current : null;
+  if (on && on !== ADMLIVE.viewing) cloudFetch('POST', { kind: 'presence', viewer: REG.me, viewing: on, name: profile(REG.me)?.name || '' }).catch(() => {});
+  if (ADMLIVE.viewing && ADMLIVE.viewing !== on) { const v = ADMLIVE.viewing; cloudFetch('POST', { kind: 'presence', viewer: REG.me, viewing: v, leave: true }).catch(() => {}); }
+  ADMLIVE.viewing = on;
+}, 500);
+setInterval(() => {
+  if (!ADMLIVE.viewing || document.visibilityState !== 'visible') return;
+  cloudFetch('POST', { kind: 'presence', viewer: REG.me, viewing: ADMLIVE.viewing, name: profile(REG.me)?.name || '' }).catch(() => {});
+}, 5000);
+window.addEventListener('pagehide', () => { if (ADMLIVE.viewing) try { cloudFetch('POST', { kind: 'presence', viewer: REG.me, viewing: ADMLIVE.viewing, leave: true }); } catch { /* */ } });
