@@ -30,7 +30,7 @@ EXTRA_VIEWS.panel = viewPanel; EXTRA_NAV.panel = 'mas';
   save = function () { if (REG.current && isAdminView()) return; return baseSave(); };
   const baseFetch = cloudFetch;
   cloudFetch = function (method, body, query) {
-    if (method && method !== 'GET' && REG.current && isAdminView() && !(body && ['adminenter', 'restore', 'grestore', 'ping', 'presence'].includes(body.kind))) return Promise.reject(new Error('Estás revisando esta cuenta en solo lectura: no se puede modificar.'));
+    if (method && method !== 'GET' && REG.current && isAdminView() && !(body && ['adminenter', 'restore', 'grestore', 'ping', 'presence', 'adminmsg'].includes(body.kind))) return Promise.reject(new Error('Estás revisando esta cuenta en solo lectura: no se puede modificar.'));
     return baseFetch.apply(this, arguments);
   };
   const bar = () => {

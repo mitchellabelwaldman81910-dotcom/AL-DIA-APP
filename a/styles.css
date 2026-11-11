@@ -3004,3 +3004,41 @@ html[data-theme="dark"] #fauna { filter: brightness(.62) saturate(.85); }
 .lc-del .btn { min-height: 36px; font-size: 13px; }
 .adm-seen.on { color: var(--green, #5f9b6a); font-weight: 600; }
 .adm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; margin-right: 6px; vertical-align: 1px; }
+/* ojo vigía */
+.eye2 { width: 46px; height: 29px; flex: none; overflow: visible; color: var(--pen); }
+.adm-banner .eye2 { width: 36px; height: 22px; color: #6FCF97; }
+.eye2 .e2-rim { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linejoin: round; }
+.eye2 .e2-iris { fill: color-mix(in srgb, currentColor 16%, transparent); stroke: currentColor; stroke-width: 1.2; }
+.eye2 .e2-ticks line { stroke: currentColor; stroke-width: 1.1; stroke-linecap: round; opacity: .75; }
+.eye2 .e2-ticks { transform-origin: 32px 20px; animation: e2spin 14s linear infinite; }
+.eye2 .e2-ring { fill: none; stroke: currentColor; stroke-width: 1.3; stroke-dasharray: 3 2.2; transform-origin: 32px 20px; animation: e2spin 7s linear infinite reverse; }
+.eye2 .e2-pupil { fill: currentColor; transform-origin: 32px 20px; animation: e2pulse 3.2s ease-in-out infinite; }
+.eye2 .e2-glint { fill: #fff; opacity: .9; }
+.eye2 .e2-look { animation: e2look 7s ease-in-out infinite; }
+.eye2 .e2-scan { fill: currentColor; opacity: .18; animation: e2scan 4.2s ease-in-out infinite; }
+.eye2 .e2-lid { fill: var(--sheet, #1E3A2B); transform-origin: 50% 0; transform: scaleY(0); animation: e2blink 5.5s ease-in-out infinite; }
+.adm-banner .eye2 .e2-lid { fill: #1E3A2B; }
+@keyframes e2spin { to { transform: rotate(360deg); } }
+@keyframes e2pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.35); } }
+@keyframes e2look { 0%, 100% { transform: translateX(0); } 30% { transform: translateX(-6px); } 65% { transform: translateX(6px); } }
+@keyframes e2scan { 0% { transform: translateX(-6px); } 50% { transform: translateX(66px); } 100% { transform: translateX(-6px); } }
+@keyframes e2blink { 0%, 92%, 100% { transform: scaleY(0); } 95.5% { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .eye2 * { animation: none !important; } }
+/* chat del administrador */
+.adm-chat { position: fixed; z-index: 8999; left: 50%; transform: translateX(-50%); top: calc(max(8px, env(safe-area-inset-top)) + 46px); width: min(92vw, 420px); background: #1E3A2B; color: #F3F7F4; border-radius: 18px; box-shadow: 0 14px 36px -14px rgba(0,0,0,.55); overflow: hidden; }
+.am-head { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: none; border: 0; color: inherit; padding: 9px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+.am-head span { color: #9FD9B7; font-size: 12px; }
+.adm-chat.shut .am-body { display: none; }
+.am-list { max-height: 28vh; overflow-y: auto; padding: 4px 12px; display: flex; flex-direction: column; gap: 6px; }
+.am-msg { align-self: flex-end; max-width: 86%; background: #2A7F53; color: #fff; border-radius: 14px 14px 4px 14px; padding: 7px 11px; }
+.am-msg p { margin: 0; font-size: 14px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.am-msg small { display: block; font-size: 10.5px; opacity: .8; text-align: right; margin-top: 2px; }
+.am-empty { margin: 6px 0; font-size: 12.5px; opacity: .75; }
+.am-form { display: flex; gap: 8px; padding: 8px 10px 10px; }
+.am-form .input { flex: 1; min-width: 0; min-height: 42px; }
+.am-form .btn { min-height: 42px; }
+.am-sheet { max-height: 40vh; padding: 4px 0; }
+.am-sheet .am-msg { background: var(--pen); color: #fff; }
+.am-pop { position: fixed; z-index: 9500; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom) + 90px); width: min(92vw, 400px); background: var(--sheet, #fff); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; box-shadow: 0 18px 44px -16px rgba(0,0,0,.5); animation: eyein .6s cubic-bezier(.22,1.4,.36,1) both; }
+.am-pop p { margin: 8px 0; font-size: 15px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.am-pop .btn { margin-top: 4px; }

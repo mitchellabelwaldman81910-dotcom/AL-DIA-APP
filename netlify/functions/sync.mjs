@@ -151,6 +151,13 @@ export default async (req, context) => {
         for (const k of dl.blobs.map((b) => b.key).sort().reverse().slice(0, 60)) { const v = await store.get(k, { type: "json" }); if (v && v.data) daily.push(sum(v, { day: k.split("/").pop() })); }
         return json({ ok: true, list, daily });
       }
+      if (kindQ === "amsg") {
+        const to = String(url.searchParams.get("to") || "");
+        if (!USER_RE.test(to) || !(allowed(to) || admin)) return json({ error: "Inicia sesión primero" }, 403);
+        const { blobs } = await store.list({ prefix: `${W}am/${to}/` });
+        const msgs = (await Promise.all(blobs.map((b) => b.key).sort().slice(-60).map((k) => store.get(k, { type: "json" })))).filter(Boolean);
+        return json({ ok: true, msgs });
+      }
       if (kindQ === "admin") {
         if (!admin) return json({ error: "Solo la cuenta de administración puede ver esto" }, 403);
         const { blobs } = await store.list({ prefix: `${W}a/` });
@@ -439,6 +446,20 @@ export default async (req, context) => {
         await store.setJSON(`${W}l/${l.id}`, { id: l.id, from: l.from, to: l.to, text: clip(l.text, 4000), at, tz: clip(l.tz, 40), read: !!l.read });
         await bump(store, [l.from, l.to]);
         return json({ ok: true });
+      }
+      case "adminmsg": {
+        if (!admin) return json({ error: "Solo la cuenta de administración puede escribir aquí" }, 403);
+        const to = String(body.to || "");
+        if (!USER_RE.test(to) || !(await meta(to))) return json({ error: "cuenta inválida" }, 400);
+        const text = clip(body.text, 1000).trim();
+        if (!text || !/^[a-z0-9]{6,30}$/i.test(body.id || "")) return json({ error: "mensaje inválido" }, 400);
+        const at = Date.now();
+        await store.setJSON(`${W}am/${to}/${at}-${body.id}`, { id: body.id, from: adminId, fromName: auth[adminId]?.name || adminId, to, text, at });
+        const ks = (await store.list({ prefix: `${W}am/${to}/` })).blobs.map((b) => b.key).sort();
+        for (const k of ks.slice(0, Math.max(0, ks.length - 100))) await store.delete(k);
+        await bump(store, [to]);
+        if (context?.waitUntil) context.waitUntil(pushTo(store, [to], url.origin, { title: "Mensaje de " + (auth[adminId]?.name || "administración"), body: clip(text, 140), url: "#/hoy", tag: "am" }, ""));
+        return json({ ok: true, at });
       }
       case "ping": {
         const who = String(body.who || "");
