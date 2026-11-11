@@ -91,7 +91,7 @@ function gmStart() {
     const r2 = rnd(seedOf('gmt')); for (let i = 0; i < 26; i++) {
       const x = r2() * W, y = H * (0.73 + r2() * 0.08), s = 0.5 + r2() * 0.75;
       if (B.deco === 'palm') { b.strokeStyle = '#5B4426'; b.lineWidth = 3 * s; b.beginPath(); b.moveTo(x, y + 4); b.quadraticCurveTo(x + 8 * s, y - 20 * s, x + 3 * s, y - 38 * s); b.stroke(); b.fillStyle = 'rgba(38,110,64,.85)'; for (let k = 0; k < 6; k++) { const an = -Math.PI / 2 + (k - 2.5) * 0.62; b.beginPath(); b.moveTo(x + 3 * s, y - 38 * s); b.quadraticCurveTo(x + 3 * s + Math.cos(an) * 20 * s, y - 38 * s + Math.sin(an) * 16 * s - 6, x + 3 * s + Math.cos(an) * 34 * s, y - 38 * s + Math.sin(an) * 24 * s + 12 * s); b.quadraticCurveTo(x + 3 * s + Math.cos(an) * 20 * s, y - 38 * s + Math.sin(an) * 16 * s + 2, x + 3 * s, y - 38 * s); b.fill(); } }
-      else if (B.deco === 'cactus') { b.fillStyle = 'rgba(96,128,72,.9)'; const w = 6 * s; b.beginPath(); b.roundRect(x - w / 2, y - 34 * s, w, 38 * s, w / 2); b.fill(); b.beginPath(); b.roundRect(x - 13 * s, y - 24 * s, 5 * s, 14 * s, 2.5 * s); b.roundRect(x - 13 * s, y - 14 * s, 13 * s, 4 * s, 2); b.fill(); b.beginPath(); b.roundRect(x + 8 * s, y - 28 * s, 5 * s, 16 * s, 2.5 * s); b.roundRect(x, y - 14 * s, 13 * s, 4 * s, 2); b.fill(); }
+      else if (typeof gmDeco === 'function' && B.deco && B.deco !== 'cactus' && gmDeco(b, B, x, y, s)) { /* decoración del ambiente */ } else if (B.deco === 'cactus') { b.fillStyle = 'rgba(96,128,72,.9)'; const w = 6 * s; b.beginPath(); b.roundRect(x - w / 2, y - 34 * s, w, 38 * s, w / 2); b.fill(); b.beginPath(); b.roundRect(x - 13 * s, y - 24 * s, 5 * s, 14 * s, 2.5 * s); b.roundRect(x - 13 * s, y - 14 * s, 13 * s, 4 * s, 2); b.fill(); b.beginPath(); b.roundRect(x + 8 * s, y - 28 * s, 5 * s, 16 * s, 2.5 * s); b.roundRect(x, y - 14 * s, 13 * s, 4 * s, 2); b.fill(); }
       else { b.fillStyle = B.pine; b.beginPath(); b.moveTo(x, y - 34 * s); b.lineTo(x - 12 * s, y); b.lineTo(x + 12 * s, y); b.fill(); b.fillRect(x - 1.5, y, 3, 6 * s); if (B.snow) { b.fillStyle = 'rgba(255,255,255,.85)'; b.beginPath(); b.moveTo(x, y - 34 * s); b.lineTo(x - 6 * s, y - 18 * s); b.lineTo(x + 6 * s, y - 18 * s); b.fill(); } }
     }
     b.fillStyle = B.g2; b.beginPath(); b.moveTo(0, H); b.lineTo(0, H * 0.9); b.bezierCurveTo(W * 0.4, H * 0.86, W * 0.6, H * 0.93, W, H * 0.89); b.lineTo(W, H); b.fill();
@@ -163,7 +163,7 @@ function gmStart() {
         vib(a.gold ? [30, 40, 30, 40, 60] : 18); flash(a.gold ? 'gm-gold' : 'gm-ok');
         if (a.heal) { st.lives = Math.min(3, st.lives + 1); lives(); msg('¡Manzana curativa! +1 vida', 1400); gmSound('heal'); vib([20, 40, 20, 40, 80]); flash('gm-ok'); }
         else gmSound(a.gold ? 'gold' : 'catch', st.combo);
-        if (!a.heal && st.apples > 0 && st.apples % 100 === 0) { st.biome = Math.floor(st.apples / 100) % GM_BIOMES.length; scene(true); setTimeout(() => msg(GM_BIOMES[st.biome].name, 1800), 900); }
+        if (!a.heal && st.apples > 0 && st.apples % 100 === 0) { st.biome = Math.min(GM_BIOMES.length - 1, Math.floor(st.apples / 100)); scene(true); setTimeout(() => msg(GM_BIOMES[st.biome].name + (GM_FRUITS[GM_BIOMES[st.biome].fruit] ? ' · ' + GM_FRUITS[GM_BIOMES[st.biome].fruit].n : ''), 2200), 900); }
         if (st.combo && st.combo % 10 === 0) { msg(`¡${st.combo} seguidas!`); gmSound('combo', st.combo); }
         else if (a.gold) msg('¡Manzana dorada! +5', 900);
         if (st.apples % 25 === 0) msg('¡Más rápido!', 1000);
@@ -187,6 +187,7 @@ function gmStart() {
     st.squash = Math.max(0, st.squash - dt * 5); st.shake = Math.max(0, st.shake - dt);
     st.sunA += dt * 0.25;
     // lluvia suave (solo ambiente: no toca manzanas ni canasta)
+    const GB = GM_BIOMES[st.biome || 0]; if (GB.rain === false) { st.rainLeft = 0; if (st.rainT == null || st.rainT < 5) st.rainT = 20; }
     st.rainT = (st.rainT ?? 25 + Math.random() * 25) - dt;
     if (st.rainT <= 0) { if (!st.rainLeft) { st.rainLeft = 14 + Math.random() * 10; st.rainT = 1e9; } }
     if (st.rainLeft > 0) { st.rainLeft -= dt; if (st.rainLeft <= 0) { st.rainLeft = 0; st.rainT = 40 + Math.random() * 40; } }
@@ -196,14 +197,17 @@ function gmStart() {
     g.save(); if (st.shake) g.translate((Math.random() - 0.5) * 10 * st.shake, 0);
     g.drawImage(bg, 0, 0, W, H); if (st.fade > 0 && bgOld) { st.fade = Math.max(0, st.fade - dt / 1.4); g.globalAlpha = st.fade; g.drawImage(bgOld, 0, 0, W, H); g.globalAlpha = 1; }
     // sol girando
-    const sx = W * 0.82, sy = H * 0.3, sr = Math.min(W, H) * 0.06;
+    const NB = GM_BIOMES[st.biome || 0].night; const sx = W * 0.82, sy = H * 0.3, sr = Math.min(W, H) * 0.06;
+    if (NB) { if (typeof gmMoon === 'function') gmMoon(g, sx, sy, sr, now); } else {
     const halo = g.createRadialGradient(sx, sy, sr * 0.5, sx, sy, sr * 4); halo.addColorStop(0, 'rgba(255,220,140,.55)'); halo.addColorStop(1, 'rgba(255,220,140,0)'); g.fillStyle = halo; g.beginPath(); g.arc(sx, sy, sr * 4, 0, Math.PI * 2); g.fill();
     g.save(); g.translate(sx, sy); g.rotate(st.sunA); g.strokeStyle = 'rgba(240,180,70,.85)'; g.lineWidth = 3; g.lineCap = 'round';
     for (let i = 0; i < 16; i++) { const an = (i / 16) * Math.PI * 2; const r1 = sr * 1.35, r2 = sr * (i % 2 ? 1.75 : 2.05); g.beginPath(); g.moveTo(Math.cos(an) * r1, Math.sin(an) * r1); g.lineTo(Math.cos(an) * r2, Math.sin(an) * r2); g.stroke(); }
     g.restore(); const sg = g.createRadialGradient(sx - sr * 0.3, sy - sr * 0.3, 2, sx, sy, sr); sg.addColorStop(0, '#FFF1C2'); sg.addColorStop(1, '#F6B848'); g.fillStyle = sg; g.beginPath(); g.arc(sx, sy, sr, 0, Math.PI * 2); g.fill();
+    }
     // nubes
     for (const cl of st.clouds) { cl.x += cl.v * dt; if (cl.x > W + 80) cl.x = -80; g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.ellipse(cl.x, cl.y, 34 * cl.s, 12 * cl.s, 0, 0, Math.PI * 2); g.ellipse(cl.x + 18 * cl.s, cl.y - 8 * cl.s, 20 * cl.s, 12 * cl.s, 0, 0, Math.PI * 2); g.ellipse(cl.x - 16 * cl.s, cl.y - 4 * cl.s, 16 * cl.s, 10 * cl.s, 0, 0, Math.PI * 2); g.fill(); }
     if (st.rainK > 0) { g.fillStyle = `rgba(40,70,100,${0.16 * st.rainK})`; g.fillRect(0, 0, W, H); g.strokeStyle = `rgba(210,230,250,${0.5 * st.rainK})`; g.lineWidth = 1.2; g.beginPath(); for (const d of st.drops) { g.moveTo(d.x, d.y); g.lineTo(d.x + d.l * 0.12, d.y - d.l); } g.stroke(); }
+    if (typeof gmFx === 'function') gmFx(g, st, GB, dt, W, H, now);
     // manzanas colgando (tiemblan)
     for (const a of st.hang) { const wob = Math.sin(a.t * 40) * 3 * (a.t / a.wob); gmApple(g, a.x + wob, a.y, a.gold ? 15 : 14, a.gold, 0, now, a.heal); }
     for (const a of st.apples_) gmApple(g, a.x, a.y, a.r, a.gold, a.rot, now, a.heal);

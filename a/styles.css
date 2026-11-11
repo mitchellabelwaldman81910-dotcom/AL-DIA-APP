@@ -2896,3 +2896,28 @@ body.cam-on { overflow: hidden; }
 .cam-shot { width: 74px; height: 74px; border-radius: 50%; border: 4px solid #fff; background: transparent; padding: 5px; } .cam-shot i { display: block; width: 100%; height: 100%; border-radius: 50%; background: #fff; } .cam-shot:active i { transform: scale(.88); }
 .cam-side { width: 62px; height: 42px; border-radius: 999px; border: 0; background: rgba(255,255,255,.16); color: #fff; font: 600 13px var(--sans, system-ui); } .cam-side[aria-pressed="true"] { background: #fff; color: #111; } .cam-side[hidden] { display: block; visibility: hidden; }
 .adm-sec { display: block; } .adm-warn { color: var(--red, #c0392b); }
+
+/* ===== 7.27 · Skins ===== */
+.sk-bal { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; background: var(--sheet-2); font-size: 15px; }
+.sk-bal .coin { width: 20px; height: 20px; }
+.sk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 12px; }
+.sk-card { background: var(--sheet); border: 1px solid var(--line, rgba(22,35,63,.12)); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(22,35,63,.06); }
+.sk-card.on { outline: 2px solid var(--accent, #2F6B3F); }
+.sk-card.rar { box-shadow: 0 0 0 1px rgba(70,130,220,.35), 0 4px 14px rgba(70,130,220,.12); }
+.sk-card.epi { box-shadow: 0 0 0 1px rgba(160,90,230,.45), 0 4px 16px rgba(160,90,230,.18); }
+.sk-card.leg { box-shadow: 0 0 0 1.5px rgba(230,170,40,.7), 0 6px 22px rgba(230,170,40,.28); }
+.sk-pv { position: relative; aspect-ratio: 22 / 15; background: var(--sheet-2); }
+.sk-pv img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sk-tier { position: absolute; top: 8px; left: 8px; font-style: normal; font-size: 11px; font-weight: 700; letter-spacing: .04em; padding: 3px 8px; border-radius: 999px; background: rgba(22,35,63,.72); color: #fff; }
+.sk-card.leg .sk-tier { background: linear-gradient(90deg, #E0A92B, #F5D77A); color: #3A2704; }
+.sk-card.epi .sk-tier { background: #7B3FC4; }
+.sk-tx { padding: 10px 12px 4px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.sk-tx b { font-size: 15px; }
+.sk-tx span { font-size: 12.5px; color: var(--ink-2); line-height: 1.35; }
+.sk-bt { padding: 8px 12px 12px; }
+.sk-bt .btn { width: 100%; justify-content: center; }
+.sk-bt .coin { width: 16px; height: 16px; margin-right: 4px; }
+.sk-bio { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sk-bio li { display: grid; grid-template-columns: 52px 1fr auto; gap: 8px; align-items: center; padding: 9px 12px; background: var(--sheet-2); border-radius: 12px; font-size: 14px; }
+.sk-bio .n { font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 12.5px; }
+.sk-bio span:last-child { color: var(--ink-2); font-size: 13px; }
