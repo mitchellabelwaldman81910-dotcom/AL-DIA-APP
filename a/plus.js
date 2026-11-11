@@ -96,7 +96,7 @@ document.addEventListener('input', (e) => {
   if (e.target.id !== 'fTitle' || typeof draft === 'undefined' || !draft) return;
   clearTimeout(microHintT);
   microHintT = setTimeout(() => {
-    const box = document.getElementById('microHint'); if (!box) return;
+    const box = document.getElementById('microHint'); if (!box || !draft) return;
     const k = detectMicro(e.target.value, draft.type);
     if (k === 'tarea' || (draft.steps || []).length || e.target.value.trim().length < 4) { box.hidden = true; return; }
     const M = MICRO[k]; const steps = microBuild(k, microDefaults(k));
@@ -187,6 +187,7 @@ Object.assign(PLUS_ACTS, {
     }
     if (!+draft.estimate) {
       const v = await ask({ title: '¿Cuánto crees que te tomará?', text: 'Dilo antes de empezar. Después comparo con tu tiempo real y aprendes a calcular mejor.', cancel: 'Sin calcular', options: ESTIMATES.filter(([v]) => v > 0).map(([v, l]) => ({ value: String(v), label: l })) });
+      if (!draft || !draft.id) return;
       if (v) draft.estimate = +v;
     }
     draft.trk = Date.now(); draftDirty = true; saveDraftTask(true); renderTaskSheet();

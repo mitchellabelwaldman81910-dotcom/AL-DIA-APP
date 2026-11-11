@@ -3320,6 +3320,15 @@ async function shareText(title, text) {
   if (navigator.share) { try { await navigator.share({ title, text }); return; } catch (e) { if (e.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(text); toast('Copiado. Pégalo donde quieras.'); } catch { toast('No se pudo compartir.'); }
 }
+function tasksCSV() {
+  const q = (v) => { const x = String(v == null ? '' : v).replace(/\r?\n/g, ' '); return /[",;]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
+  const head = ['Título', 'Materia', 'Tipo', 'Entrega', 'Hora', 'Prioridad', 'Estado', 'Entregada el', 'Calificación', 'Descripción'];
+  const rows = S.tasks.slice().sort((a, b) => String(a.due || '9').localeCompare(String(b.due || '9'))).map((t) => [
+    t.title, subj(t.subjectId)?.name || '', (TYPES[t.type] || {}).label || t.type || '', t.due || '', t.time || '',
+    ({ 1: 'Baja', 2: 'Normal', 3: 'Alta' })[t.priority] || '', t.done ? 'Entregada' : 'Pendiente',
+    t.doneAt ? toISO(new Date(t.doneAt)) : '', t.grade == null ? '' : t.grade, t.desc || '']);
+  return '\ufeff' + [head, ...rows].map((r) => r.map(q).join(',')).join('\r\n');
+}
 function downloadFile(name, content, type) {
   const blob = new Blob([content], { type });
   // En iPhone (sobre todo con la app instalada) las descargas normales no funcionan: se usa la hoja de compartir
