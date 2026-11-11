@@ -138,7 +138,7 @@ function gmStart() {
     const grav = 600 + lv * 70;
     for (const a of st.apples_) {
       a.vy += grav * dt; a.y += a.vy * dt; a.x += a.vx * dt; a.rot += a.vr * dt; if (a.x < 16 || a.x > W - 16) a.vx *= -1;
-      if (!a.done && a.y + a.r >= by - 6 && a.y < by + 14 && Math.abs(a.x - st.bx) < bw / 2 + 4) {
+      if (!a.done && a.y + a.r >= by - 6 && (a.y + a.r) - a.vy * dt <= by + 14 && Math.abs(a.x - st.bx) < bw / 2 + 4) {
         a.done = 'catch'; const pts = a.heal ? 0 : a.gold ? 5 : 1; st.score += pts; if (!a.heal) st.apples++; if (a.gold) st.golden++; st.combo++; st.squash = 1;
         st.floats.push({ x: a.x, y: by - 30, t: 0, txt: a.heal ? '+1 ♥' : `+${pts}`, gold: a.gold, heal: a.heal });
         for (let i = 0; i < (a.gold ? 26 : 12); i++) st.parts.push({ x: a.x, y: by - 10, vx: (Math.random() - 0.5) * 260, vy: -80 - Math.random() * 260, t: 0, life: 0.7 + Math.random() * 0.5, gold: a.gold, leaf: Math.random() < 0.4 });
