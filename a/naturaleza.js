@@ -139,13 +139,13 @@ Object.assign(VIDA_ACTS, {
 
 /* ===================== Jardín: muchas decoraciones nuevas ===================== */
 const GARDEN2 = [
-  ['piedras', 'Piedras apiladas', 25, 1, 'gem'], ['tulipan', 'Tulipanes', 30, 2, 'leaf'], ['caracol', 'Caracolito', 35, 3, 'paw'], ['girasol', 'Girasoles', 40, 3, 'sun'],
-  ['lavanda', 'Lavanda', 50, 4, 'leaf'], ['mariposas', 'Mariposas azules', 70, 7, 'spark'], ['luciernagas', 'Luciérnagas doradas', 90, 11, 'spark'], ['colmena', 'Colmena y abejas', 80, 9, 'home'],
-  ['cometa', 'Papalote', 90, 12, 'wind'], ['campanas', 'Campanas de viento', 100, 13, 'bell'], ['guirnalda', 'Guirnalda de luces', 110, 14, 'lamp'], ['huerto', 'Huerto', 120, 16, 'leaf'],
-  ['bonsai', 'Bonsái', 130, 18, 'leaf'], ['columpio', 'Columpio', 140, 19, 'home'], ['toro', 'Linterna de piedra', 150, 22, 'lamp'], ['gato', 'Gatito dormido', 160, 24, 'paw'],
-  ['buho', 'Búho', 180, 27, 'paw'], ['hamaca', 'Hamaca', 200, 30, 'home'], ['pozo', 'Pozo de los deseos', 220, 33, 'drop'], ['rosas', 'Arco de rosas', 240, 36, 'heart'],
-  ['telescopio', 'Telescopio', 260, 40, 'target'], ['puente', 'Puente de madera', 280, 43, 'home'], ['ciervo', 'Venado', 300, 46, 'paw'], ['koi', 'Estanque koi', 340, 50, 'drop'],
-  ['invernadero', 'Invernadero', 380, 56, 'home'], ['kiosco', 'Kiosco', 420, 62, 'home'], ['faro', 'Faro en la colina', 480, 68, 'lamp'], ['cabana', 'Cabaña del bosque', 600, 80, 'home'],
+  ['piedras', 'Piedras apiladas', 100, 1, 'gem'], ['tulipan', 'Tulipanes', 120, 2, 'leaf'], ['caracol', 'Caracolito', 140, 3, 'paw'], ['girasol', 'Girasoles', 160, 3, 'sun'],
+  ['lavanda', 'Lavanda', 200, 4, 'leaf'], ['mariposas', 'Mariposas azules', 280, 7, 'spark'], ['luciernagas', 'Luciérnagas doradas', 360, 11, 'spark'], ['colmena', 'Colmena y abejas', 320, 9, 'home'],
+  ['cometa', 'Papalote', 360, 12, 'wind'], ['campanas', 'Campanas de viento', 400, 13, 'bell'], ['guirnalda', 'Guirnalda de luces', 440, 14, 'lamp'], ['huerto', 'Huerto', 480, 16, 'leaf'],
+  ['bonsai', 'Bonsái', 520, 18, 'leaf'], ['columpio', 'Columpio', 560, 19, 'home'], ['toro', 'Linterna de piedra', 600, 22, 'lamp'], ['gato', 'Gatito dormido', 640, 24, 'paw'],
+  ['buho', 'Búho', 720, 27, 'paw'], ['hamaca', 'Hamaca', 800, 30, 'home'], ['pozo', 'Pozo de los deseos', 880, 33, 'drop'], ['rosas', 'Arco de rosas', 960, 36, 'heart'],
+  ['telescopio', 'Telescopio', 1040, 40, 'target'], ['puente', 'Puente de madera', 1120, 43, 'home'], ['ciervo', 'Venado', 1200, 46, 'paw'], ['koi', 'Estanque koi', 1360, 50, 'drop'],
+  ['invernadero', 'Invernadero', 1520, 56, 'home'], ['kiosco', 'Kiosco', 1680, 62, 'home'], ['faro', 'Faro en la colina', 1920, 68, 'lamp'], ['cabana', 'Cabaña del bosque', 2400, 80, 'home'],
 ];
 for (const [id, name, cost, lvl, emoji] of GARDEN2) if (!GARDEN.some((g) => g.id === id)) GARDEN.push({ id, name, cost, lvl, emoji });
 GARDEN.sort((a, b) => a.lvl - b.lvl || a.cost - b.cost);

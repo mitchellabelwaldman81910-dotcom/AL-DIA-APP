@@ -233,12 +233,12 @@ function libretaBarHTML() {
    4. Jardín, semillas y misiones del día (el minijuego)
    ========================================================= */
 const GARDEN = [
-  { id: 'mush', name: 'Hongos mágicos', cost: 20, lvl: 2, emoji: 'mushroom' }, { id: 'bench', name: 'Banca de madera', cost: 35, lvl: 5, emoji: 'bench' },
-  { id: 'lantern', name: 'Farol de luz', cost: 45, lvl: 8, emoji: 'lamp' }, { id: 'fence', name: 'Cerquita', cost: 55, lvl: 10, emoji: 'home' },
-  { id: 'birdhouse', name: 'Casita de pájaros', cost: 60, lvl: 12, emoji: 'home' }, { id: 'bunny', name: 'Conejito', cost: 90, lvl: 16, emoji: 'paw' },
-  { id: 'windmill', name: 'Molino', cost: 120, lvl: 22, emoji: 'wind' }, { id: 'fox', name: 'Zorrito', cost: 150, lvl: 28, emoji: 'paw' },
-  { id: 'fountain', name: 'Fuente', cost: 200, lvl: 35, emoji: 'drop' }, { id: 'balloon', name: 'Globo aerostático', cost: 260, lvl: 45, emoji: 'balloon' },
-  { id: 'tent', name: 'Casita de campaña', cost: 320, lvl: 55, emoji: 'tent' }, { id: 'chest', name: 'Cofre del tesoro', cost: 400, lvl: 70, emoji: 'gem' },
+  { id: 'mush', name: 'Hongos mágicos', cost: 80, lvl: 2, emoji: 'mushroom' }, { id: 'bench', name: 'Banca de madera', cost: 140, lvl: 5, emoji: 'bench' },
+  { id: 'lantern', name: 'Farol de luz', cost: 180, lvl: 8, emoji: 'lamp' }, { id: 'fence', name: 'Cerquita', cost: 220, lvl: 10, emoji: 'home' },
+  { id: 'birdhouse', name: 'Casita de pájaros', cost: 240, lvl: 12, emoji: 'home' }, { id: 'bunny', name: 'Conejito', cost: 360, lvl: 16, emoji: 'paw' },
+  { id: 'windmill', name: 'Molino', cost: 480, lvl: 22, emoji: 'wind' }, { id: 'fox', name: 'Zorrito', cost: 600, lvl: 28, emoji: 'paw' },
+  { id: 'fountain', name: 'Fuente', cost: 800, lvl: 35, emoji: 'drop' }, { id: 'balloon', name: 'Globo aerostático', cost: 1040, lvl: 45, emoji: 'balloon' },
+  { id: 'tent', name: 'Casita de campaña', cost: 1280, lvl: 55, emoji: 'tent' }, { id: 'chest', name: 'Cofre del tesoro', cost: 1600, lvl: 70, emoji: 'gem' },
 ];
 /* gardenSVG: ver linea.js */
 function vidaData() { return (S.vida ||= { garden: [], bonus: 0, claimed: {} }); }
@@ -248,10 +248,10 @@ function questsToday() {
   const sameDay = (ms) => ms && toISO(new Date(ms)) === t0;
   const dueToday = S.tasks.filter((t) => t.due === t0);
   const Q = [
-    { id: 'entrega', icon: 'checkc', text: 'Entrega una tarea', ok: S.tasks.some((t) => t.done && sameDay(t.doneAt)), reward: 6 },
-    { id: 'nueva', icon: 'plus', text: 'Sube una tarea nueva', ok: S.tasks.some((t) => sameDay(t.created)), reward: 3 },
-    { id: 'apunte', icon: 'notebook', text: 'Escribe un apunte o pensamiento', ok: S.notes.some((n) => sameDay(n.updated)) || S.thoughts.some((x) => sameDay(x.at)), reward: 4 },
-    { id: 'hoy', icon: 'target', text: 'Termina todo lo de hoy', ok: dueToday.length > 0 && dueToday.every((t) => t.done), reward: 8 },
+    { id: 'entrega', icon: 'checkc', text: 'Entrega una tarea', ok: S.tasks.some((t) => t.done && sameDay(t.doneAt)), reward: 24 },
+    { id: 'nueva', icon: 'plus', text: 'Sube una tarea nueva', ok: S.tasks.some((t) => sameDay(t.created)), reward: 12 },
+    { id: 'apunte', icon: 'notebook', text: 'Escribe un apunte o pensamiento', ok: S.notes.some((n) => sameDay(n.updated)) || S.thoughts.some((x) => sameDay(x.at)), reward: 16 },
+    { id: 'hoy', icon: 'target', text: 'Termina todo lo de hoy', ok: dueToday.length > 0 && dueToday.every((t) => t.done), reward: 32 },
   ];
   return Q.map((q) => ({ ...q, claimed: !!v.claimed[`${t0}:${q.id}`] }));
 }

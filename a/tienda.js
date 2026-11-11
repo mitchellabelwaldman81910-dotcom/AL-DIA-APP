@@ -6,22 +6,22 @@
 
 const TREE_SHOP = [
   ['roble', 0, 'El árbol con el que empezaste. Fuerte y sereno.'],
-  ['cedro', 120, 'Perenne y elegante, con pisos de agujas finas.'],
-  ['olivo', 180, 'Hojas plateadas y tronco antiguo, mediterráneo.'],
-  ['arce', 260, 'Hojas rojas de otoño que caen despacio.'],
-  ['jacaranda', 340, 'Una nube de flores lilas, como en primavera.'],
-  ['cerezo', 420, 'Flores rosas y pétalos que vuelan con el viento.'],
-  ['flamboyan', 520, 'Copa ancha encendida de rojo, como en el Caribe.'],
-  ['sauce', 640, 'Ramas que caen como cortina, junto al agua.'],
-  ['ginkgo', 780, 'Hojas de abanico doradas: el árbol más antiguo del mundo.'],
-  ['luz', 1200, 'Un árbol que brilla con destellos de oro.'],
+  ['cedro', 480, 'Perenne y elegante, con pisos de agujas finas.'],
+  ['olivo', 720, 'Hojas plateadas y tronco antiguo, mediterráneo.'],
+  ['arce', 1040, 'Hojas rojas de otoño que caen despacio.'],
+  ['jacaranda', 1360, 'Una nube de flores lilas, como en primavera.'],
+  ['cerezo', 1680, 'Flores rosas y pétalos que vuelan con el viento.'],
+  ['flamboyan', 2080, 'Copa ancha encendida de rojo, como en el Caribe.'],
+  ['sauce', 2560, 'Ramas que caen como cortina, junto al agua.'],
+  ['ginkgo', 3120, 'Hojas de abanico doradas: el árbol más antiguo del mundo.'],
+  ['luz', 4800, 'Un árbol que brilla con destellos de oro.'],
 ];
 const FX_SHOP = [
-  ['arcoiris', 'Arcoíris tenue', 180, 'Un arco de color detrás de las montañas.'],
-  ['nieve', 'Nevada suave', 200, 'Copos lentos que caen sobre tu paisaje.'],
-  ['faroles', 'Faroles flotantes', 220, 'Luces de papel que suben al cielo.'],
-  ['fugaces', 'Estrellas fugaces', 260, 'De vez en cuando cruza una estrella.'],
-  ['aurora', 'Aurora boreal', 320, 'Velos de luz verde y violeta en el cielo.'],
+  ['arcoiris', 'Arcoíris tenue', 720, 'Un arco de color detrás de las montañas.'],
+  ['nieve', 'Nevada suave', 800, 'Copos lentos que caen sobre tu paisaje.'],
+  ['faroles', 'Faroles flotantes', 880, 'Luces de papel que suben al cielo.'],
+  ['fugaces', 'Estrellas fugaces', 1040, 'De vez en cuando cruza una estrella.'],
+  ['aurora', 'Aurora boreal', 1280, 'Velos de luz verde y violeta en el cielo.'],
 ];
 const levelReward = (l) => 10 + l;
 
