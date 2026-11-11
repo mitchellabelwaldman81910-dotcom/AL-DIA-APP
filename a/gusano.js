@@ -23,6 +23,16 @@ const GW_ENVS = [
   { n: 'Templo antiguo', sky: ['#E8D6A6', '#F7EED6'], wall: ['#C2A26E', '#8A6A3E', '#664C2A'], fr: ['#F2C84A', '#C9921F'], p: ['dust', '#E0C890'], deco: 'dunes', dc: ['#DFC48E', '#CDAE76'] },
   { n: 'Pantano brumoso', sky: ['#A8C8A0', '#E0EAD6'], wall: ['#5E7E4C', '#3C3E2A', '#2A2C1C'], fr: ['#A8D840', '#6F9E1E'], p: ['cloud', '#F2F8EC'], deco: 'trees', dc: ['#8FB088', '#789C72'] },
   { n: 'Paraíso arcoíris', sky: ['#FFB3D9', '#B3E0FF'], wall: ['#8AE0A8', '#4FA878', '#388860'], fr: ['#FF7AB6', '#C2449A'], p: ['sparkle', '#FFFFFF'], deco: 'rainbow', dc: ['#FFE0A8', '#C0F0D0'] },
+  { n: 'Lago helado', sky: ['#BFE6F5', '#F2FBFF'], wall: ['#E9F6FF', '#9CC8E0', '#6FA0C0'], fr: ['#EE7A8C', '#C24A64'], p: ['cloud', '#FFFFFF'], deco: 'peaks', dc: ['#D7ECF8', '#C4DEEF'] },
+  { n: 'Campo de lavanda', sky: ['#E4D4F7', '#FBF3E0'], wall: ['#B79AE0', '#7A5CA8', '#5A4080'], fr: ['#FFB35C', '#D9822A'], p: ['petal', '#E6D8FF'], deco: 'hills', dc: ['#D4BDF0', '#C3A8E6'] },
+  { n: 'Arrozal', sky: ['#CFEFB5', '#F6F8D8'], wall: ['#8FCB5A', '#6A7A3A', '#4C5A28'], fr: ['#F2C84A', '#C9921F'], p: ['cloud', '#FFFFFF'], deco: 'hills', dc: ['#B6DE8A', '#A2D072'] },
+  { n: 'Sabana', sky: ['#F8D79A', '#FCEFD2'], wall: ['#C9A24A', '#8A6A2E', '#664A1C'], fr: ['#E0584A', '#A83428'], p: ['dust', '#F0D8A0'], deco: 'dunes', dc: ['#EDC27A', '#DDAE60'] },
+  { n: 'Isla tropical', sky: ['#7FDCEA', '#FFF3C9'], wall: ['#F2DCA0', '#C9A55A', '#A8863F'], fr: ['#FF7A5A', '#C9442A'], p: ['cloud', '#FFFFFF'], deco: 'waves', dc: ['#52C4DC', '#38AECA'] },
+  { n: 'Castillo', sky: ['#C9D3E8', '#F1EEF8'], wall: ['#A8A4B8', '#6A6680', '#4A465E'], fr: ['#E04A5A', '#A82A3C'], p: ['cloud', '#FFFFFF'], deco: 'skyline', dc: ['#B0B8D0', '#9CA4C0'] },
+  { n: 'Jardín japonés', sky: ['#F8D8E0', '#FFF6EC'], wall: ['#E89AB0', '#7A5A44', '#58402E'], fr: ['#E0443A', '#A82A22'], p: ['petal', '#FFD0DC'], deco: 'trees', dc: ['#F0B4C6', '#E49CB2'] },
+  { n: 'Cañón rojo', sky: ['#F2B08A', '#FAE0C8'], wall: ['#D0704A', '#9A4A2A', '#74341A'], fr: ['#7BC043', '#4C8A24'], p: ['dust', '#F0C0A0'], deco: 'peaks', dc: ['#E39A78', '#D3825C'] },
+  { n: 'Bosque de bambú', sky: ['#C4E8C0', '#F0F8E0'], wall: ['#6AB86A', '#8A9A4A', '#5E6C2E'], fr: ['#F2A23A', '#C0701A'], p: ['leaf', '#8CC868'], deco: 'trees', dc: ['#8CCB8A', '#74BA78'] },
+  { n: 'Amanecer en la cima', sky: ['#FFC9A0', '#FFF0D6'], wall: ['#F0A878', '#8A6A62', '#664A44'], fr: ['#FFD84A', '#E0A81F'], p: ['cloud', '#FFFFFF'], deco: 'peaks', dc: ['#F4B48C', '#E89E74'] },
 ];
 const GW_SKINS = [
   ['liso', 'Gusano de color', 0, 'Elige el color que quieras, gratis.', { free: 1, pat: '' }],
@@ -47,7 +57,7 @@ const gwData = () => jpData('gusano');
 const gwMax = () => Math.min(GW_N(), Math.max(1, gwData().max || 1));
 const gwStarsAt = (l) => +((gwData().s || '')[l - 1] || 0);
 const gwSetStars = (l, v) => { const D = gwData(); let s = (D.s || '').padEnd(l, '0'); s = s.slice(0, l - 1) + v + s.slice(l); D.s = s; };
-const gwEnvOf = (l) => Math.min(GW_ENVS.length - 1, Math.floor((l - 1) / 50));
+const gwEnvOf = (l) => Math.min(GW_ENVS.length - 1, Math.floor((l - 1) / 10));
 const gwSkinCur = () => { const P = skFind('g', skEq('g'))[4]; if (P.free) { const c = gwData().col || GW_COLORS[0]; return { ...P, a: c, b: gwShade(c, -0.32), pc: gwShade(c, 0.5) }; } return P; };
 function gwShade(hex, f) { const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255; const t = f < 0 ? 0 : 255, p = Math.abs(f); r = Math.round((t - r) * p + r); g = Math.round((t - g) * p + g); b = Math.round((t - b) * p + b); return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`; }
 const GWUI = { env: -1 };
@@ -83,38 +93,28 @@ function gwDrawWorm(g, pts, cs, P, o) {
   const hg = g.createRadialGradient(hx - R * 0.35, hy - R * 0.45, R * 0.1, hx, hy, R * 1.05); hg.addColorStop(0, gwShade(a.startsWith('#') ? a : '#bde08a', 0.28)); hg.addColorStop(0.55, a); hg.addColorStop(1, b);
   g.fillStyle = hg; g.beginPath(); g.arc(hx, hy, R, 0, 7); g.fill();
   /* cara */
-  const lx = Math.max(-1, Math.min(1, look.x)), ly = Math.max(-1, Math.min(1, look.y)); const blink = (now % 3400) < 130 && mood === 'idle';
-  const ex = R * 0.42, ey = -R * 0.1, er = R * 0.36;
+  const lx = Math.max(-1, Math.min(1, look.x)), ly = Math.max(-1, Math.min(1, look.y)); const blink = (now % 5200) < 110 && mood === 'idle';
+  const ex = R * 0.4, ey = -R * 0.04, er = R * 0.24;
   const eye = (sx) => {
     const x = hx + sx * ex + lx * R * 0.06, y = hy + ey + ly * R * 0.05;
     if (mood === 'win') { g.strokeStyle = '#26202A'; g.lineWidth = R * 0.12; g.beginPath(); g.arc(x, y + er * 0.25, er * 0.62, Math.PI * 1.1, Math.PI * 1.9); g.stroke(); return; }
     if (mood === 'dead') { g.strokeStyle = '#26202A'; g.lineWidth = R * 0.11; const k = er * 0.5; g.beginPath(); g.moveTo(x - k, y - k); g.lineTo(x + k, y + k); g.moveTo(x + k, y - k); g.lineTo(x - k, y + k); g.stroke(); return; }
-    const big = mood === 'fall' || mood === 'hungry' ? 1.18 : 1;
+    const big = 1;
     g.fillStyle = '#fff'; g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = R * 0.04; g.beginPath(); g.ellipse(x, y, er * big, blink ? er * 0.16 : er * 1.12 * big, 0, 0, 7); g.fill(); g.stroke();
     if (!blink) {
-      const pr = er * (mood === 'fall' ? 0.36 : 0.52); const px = x + lx * er * 0.42 * (mood === 'fall' ? 0 : 1), py = y + ly * er * 0.42 * (mood === 'fall' ? 0 : 1) + (mood === 'fall' ? -er * 0.1 : 0);
-      g.fillStyle = '#231C26'; g.beginPath(); g.arc(px, py, pr, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(px - pr * 0.32, py - pr * 0.34, pr * 0.34, 0, 7); g.fill(); g.beginPath(); g.arc(px + pr * 0.34, py + pr * 0.3, pr * 0.16, 0, 7); g.fill();
+      const pr = er * 0.6; const px = x + lx * er * 0.25, py = y + ly * er * 0.25;
+      g.fillStyle = '#231C26'; g.beginPath(); g.arc(px, py, pr, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.arc(px - pr * 0.3, py - pr * 0.3, pr * 0.22, 0, 7); g.fill();
     }
-    /* cejas */
-    g.strokeStyle = 'rgba(30,20,32,.7)'; g.lineWidth = R * 0.075; g.beginPath(); const by = y - er * 1.35 * big;
-    if (mood === 'fall') { g.moveTo(x - sx * er * 0.9, by + er * 0.55); g.lineTo(x + sx * er * 0.5 * 0 + sx * (-er * 0.2) * 0, by - er * 0.1); g.lineTo(x + sx * er * 0.2, by + er * 0.2); }
-    else if (mood === 'hungry' || mood === 'eat') { g.arc(x, by + er * 0.7, er * 0.9, Math.PI * 1.15, Math.PI * 1.85); }
-    else { g.moveTo(x - er * 0.7, by + er * 0.3); g.quadraticCurveTo(x, by - er * 0.15, x + er * 0.7, by + er * 0.3); }
-    g.stroke();
   };
   eye(-1); eye(1);
-  /* mejillas */
-  g.fillStyle = 'rgba(255,120,150,.32)'; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(hx + s * R * 0.7, hy + R * 0.28, R * 0.17, R * 0.1, 0, 0, 7); g.fill(); }
   /* boca */
   const my = hy + R * 0.42 + ly * R * 0.04, mx = hx + lx * R * 0.1; g.lineCap = 'round';
-  if (mood === 'eat') { const ch = Math.abs(Math.sin(now / 90)); g.fillStyle = '#5A1F2C'; g.beginPath(); g.ellipse(mx, my, R * 0.26, R * (0.08 + ch * 0.18), 0, 0, 7); g.fill(); }
-  else if (mood === 'hungry') { g.fillStyle = '#5A1F2C'; g.beginPath(); g.ellipse(mx, my, R * 0.2, R * 0.24, 0, 0, 7); g.fill(); g.fillStyle = '#F2748A'; g.beginPath(); g.ellipse(mx, my + R * 0.1, R * 0.12, R * 0.08, 0, 0, 7); g.fill(); }
-  else if (mood === 'fall') { g.fillStyle = '#5A1F2C'; g.beginPath(); g.ellipse(mx, my + R * 0.04, R * 0.2, R * 0.3, 0, 0, 7); g.fill(); }
-  else if (mood === 'dead') { g.strokeStyle = '#26202A'; g.lineWidth = R * 0.09; g.beginPath(); g.moveTo(mx - R * 0.24, my + R * 0.12); g.quadraticCurveTo(mx, my - R * 0.08, mx + R * 0.24, my + R * 0.12); g.stroke(); g.fillStyle = '#F2748A'; g.beginPath(); g.ellipse(mx + R * 0.14, my + R * 0.2, R * 0.08, R * 0.14, 0, 0, 7); g.fill(); }
-  else if (mood === 'win') { g.fillStyle = '#5A1F2C'; g.beginPath(); g.moveTo(mx - R * 0.34, my - R * 0.06); g.quadraticCurveTo(mx, my + R * 0.52, mx + R * 0.34, my - R * 0.06); g.closePath(); g.fill(); g.fillStyle = '#F2748A'; g.beginPath(); g.ellipse(mx, my + R * 0.15, R * 0.14, R * 0.08, 0, 0, 7); g.fill(); }
-  else { g.strokeStyle = '#3A2430'; g.lineWidth = R * 0.085; g.beginPath(); g.moveTo(mx - R * 0.22, my - R * 0.02); g.quadraticCurveTo(mx, my + R * 0.2, mx + R * 0.22, my - R * 0.02); g.stroke(); }
+  const sm = mood === 'win' ? 0.3 : mood === 'eat' ? 0.12 : 0.16, wd = mood === 'win' ? 0.26 : 0.2;
+  g.strokeStyle = '#3A2430'; g.lineWidth = R * 0.075;
+  if (mood === 'dead') { g.beginPath(); g.moveTo(mx - R * 0.16, my + R * 0.06); g.lineTo(mx + R * 0.16, my + R * 0.06); g.stroke(); }
+  else { g.beginPath(); g.moveTo(mx - R * wd, my - R * 0.02); g.quadraticCurveTo(mx, my + R * sm * 1.2, mx + R * wd, my - R * 0.02); g.stroke(); }
   /* firma de Cinnavia: pecas y un brotecito (nuestro sello, distinto a cualquier otro gusano) */
-  g.fillStyle = 'rgba(120,60,40,.45)'; for (const sx of [-1, 1]) for (const [fx, fy] of [[0.72, 0.3], [0.58, 0.42], [0.84, 0.44]]) { g.beginPath(); g.arc(hx + sx * R * fx, hy + R * fy, R * 0.035, 0, 7); g.fill(); }
+  g.fillStyle = 'rgba(120,60,40,.3)'; for (const sx of [-1, 1]) for (const [fx, fy] of [[0.72, 0.3], [0.58, 0.42], [0.84, 0.44]]) { g.beginPath(); g.arc(hx + sx * R * fx, hy + R * fy, R * 0.035, 0, 7); g.fill(); }
   if (!P.hat || P.hat === 'none') { const sx0 = hx - R * 0.08, sy0 = hy - R * 0.98; g.strokeStyle = '#3E8A4F'; g.lineWidth = R * 0.07; g.lineCap = 'round'; g.beginPath(); g.moveTo(sx0, sy0 + R * 0.1); g.quadraticCurveTo(sx0 - R * 0.02, sy0 - R * 0.14, sx0 + R * 0.05, sy0 - R * 0.24); g.stroke();
     g.fillStyle = '#5BBF6A'; for (const s of [-1, 1]) { g.beginPath(); g.ellipse(sx0 + R * 0.05 + s * R * 0.14, sy0 - R * 0.26, R * 0.17, R * 0.08, s * -0.5, 0, 7); g.fill(); } }
   /* accesorios (arriba de la cabeza) */
@@ -147,18 +147,18 @@ function gwHero() {
 }
 function gwTotalStars() { const s = gwData().s || ''; let t = 0; for (const ch of s) t += +ch; return t; }
 function gwEnvGrid(ei) {
-  const a = ei * 50 + 1, b = Math.min(GW_N(), a + 49), mx = gwMax(); let h = '';
+  const a = ei * 10 + 1, b = Math.min(GW_N(), a + 9), mx = gwMax(); let h = '';
   for (let l = a; l <= b; l++) { const lock = l > mx, s = gwStarsAt(l); h += `<button type="button" class="gw-lv${lock ? ' lock' : ''}${l === mx ? ' cur' : ''}" ${lock ? 'disabled' : ''} data-act="gw-play" data-l="${l}" aria-label="Nivel ${l}${s ? `, ${s} estrellas` : lock ? ', bloqueado' : ''}"><b>${l}</b><i>${s ? '★'.repeat(s) : lock ? '' : ''}</i></button>`; }
   return `<div class="gw-lvs">${h}</div>`;
 }
 function viewGusano() {
   const D = gwData(), mx = gwMax(), N = GW_N(); const openEnv = GWUI.env >= 0 ? GWUI.env : gwEnvOf(mx);
   if (!N) return '<div class="empty"><h3>Cargando niveles…</h3></div>';
-  const envs = GW_ENVS.slice(0, Math.ceil(N / 50)).map((e, i) => { const a = i * 50 + 1, b = Math.min(N, a + 49); let done = 0; for (let l = a; l <= b; l++) if (gwStarsAt(l)) done++; const lock = a > mx;
+  const envs = GW_ENVS.slice(0, Math.ceil(N / 10)).map((e, i) => { const a = i * 10 + 1, b = Math.min(N, a + 9); let done = 0; for (let l = a; l <= b; l++) if (gwStarsAt(l)) done++; const lock = a > mx;
     return `<details class="gw-env${lock ? ' lock' : ''}" ${i === openEnv ? 'open' : ''} data-env="${i}"><summary style="--c1:${e.sky[0]};--c2:${e.sky[1]}"><i class="gw-sw"></i><span><b>${e.n}</b><small>Niveles ${a}–${b} · ${done}/${b - a + 1}</small></span></summary>${i === openEnv ? gwEnvGrid(i) : ''}</details>`; }).join('');
   const colors = GW_COLORS.map((c) => `<button type="button" class="gw-col${(D.col || GW_COLORS[0]) === c ? ' on' : ''}" style="background:${c}" data-act="gw-col" data-c="${c}" aria-label="Color ${c}"></button>`).join('');
   return `<section class="mt-home"><div class="gm-hero">${gwHero()}</div><h1 class="page-title gm-title">Gusano Goloso</h1>
-    <p class="page-sub">Desliza para mover al gusano. Si come una manzana, crece. Hay gravedad: si no tiene dónde apoyarse, cae. Llega a la salida en cada uno de los <b>${N} niveles</b>; cada 50 niveles cambia el ambiente.</p>
+    <p class="page-sub">Desliza para mover al gusano. Si come una manzana, crece. Hay gravedad: si no tiene dónde apoyarse, cae. Llega a la salida en cada uno de los <b>${N} niveles</b>; cada 10 niveles cambia el lugar.</p>
     <div class="jg-prog" role="img" aria-label="Avance: nivel ${mx} de ${N}"><i style="width:${Math.min(100, ((mx - 1) / N) * 100)}%"></i></div>
     <p class="small muted" style="text-align:center;margin:8px 0 14px">Vas en el nivel <b>${mx}</b> de ${N} · estrellas: <b>${gwTotalStars()}</b></p>
     <button class="btn primary block gm-play" data-act="gw-play" data-l="${mx}">${icon('play')}${mx > 1 ? `Continuar · nivel ${mx}` : 'Empezar'}</button>
@@ -227,7 +227,7 @@ function gwPlay(level) {
   const load = (lv) => {
     R.level = lv; R.maxL = Math.max(R.maxL, lv); R.L = gwParse(GW_LV[lv - 1]); R.st = gwStart(R.L); R.hist = []; R.anim = null; R.busy = false; R.q = []; R.hints = 0; R.fails = 0; R.hintDir = -1; R.dead = false; R.won = false; R.dir = { x: 1, y: 0 }; R.seed = lv * 3.7; R.eaten = 0; skipBtn();
     $('#gwLv').textContent = `Nivel ${lv}`; $('#gwEnv').textContent = E().n; $('#gwOver').classList.remove('show'); $('#gwOver').hidden = true; fit(); initParts(); hud(); pillOpt(); R.fx = []; R.mood = 'idle'; R.moodUntil = 0;
-    toast(lv % 50 === 1 && lv > 1 ? `Nuevo ambiente: ${E().n}` : (lv === 1 ? 'Come las manzanas y llega al portal' : `Nivel ${lv} · ${E().n}`), 2000);
+    toast(lv % 10 === 1 && lv > 1 ? `Nuevo lugar: ${E().n}` : (lv === 1 ? 'Come las manzanas y llega al portal' : `Nivel ${lv} · ${E().n}`), 2000);
   };
   const posOf = (idx) => [R.ox + (idx % R.L.w) * R.cs + R.cs / 2, R.oy + Math.floor(idx / R.L.w) * R.cs + R.cs / 2];
   const lerpPts = (A, B, t) => B.map((bi, i) => { const a = A[Math.min(i, A.length - 1)]; return [a[0] + (bi[0] - a[0]) * t, a[1] + (bi[1] - a[1]) * t]; });
@@ -321,7 +321,7 @@ function gwPlay(level) {
   const win = () => {
     if (R.won) return; R.won = true; { const hp = posOf(R.st.worm[0]); burst(hp[0], hp[1], ['#FFD84A', '#FF7AB6', '#7DF0AC', '#5CB8FF', '#B07AFF', '#FFFFFF'], 46, 1.7); setTimeout(() => { if (GW.run === R) burst(R.W / 2, R.H * 0.3, ['#FFD84A', '#FF7AB6', '#7DF0AC', '#5CB8FF', '#FFFFFF'], 40, 1.9); }, 350); }
      const mv = R.hist.length, opt = R.L.opt; let stars = mv <= Math.ceil(opt * 1.25) + 1 ? 3 : mv <= Math.ceil(opt * 2.2) + 3 ? 2 : 1; if (R.hints) stars = Math.min(stars, 2);
-    const prevS = gwStarsAt(R.level); let c = 0; if (!prevS) c = 1 + stars; else if (stars > prevS) c = stars - prevS; if (R.level % 50 === 0 && !prevS) c += 5;
+    const prevS = gwStarsAt(R.level); let c = 0; if (!prevS) c = 1 + stars; else if (stars > prevS) c = stars - prevS; if (R.level % 10 === 0 && !prevS) c += 2;
     const pts = 100 + stars * 20 + Math.floor(R.level / 10); R.score += pts; R.cleared++; if (c) { R.coins += c; jgCoins(c); }
     if (stars > prevS) gwSetStars(R.level, stars); D.max = Math.max(D.max || 1, Math.min(GW_N(), R.level + 1)); jpSave();
     JG_TONE(660, 0.14, 'sine', 0.05, 880); setTimeout(() => JG_TONE(988, 0.16, 'triangle', 0.045, 1318), 130); setTimeout(() => JG_TONE(1318, 0.2, 'sine', 0.04), 280); JG_VIB(14);
