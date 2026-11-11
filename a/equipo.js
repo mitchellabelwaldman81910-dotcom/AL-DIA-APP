@@ -287,7 +287,7 @@ const pzComments = (id) => gAll('board').filter((x) => x.kind === 'comment' && x
   };
 }
 function pzActivity() {
-  const all = gAll('board').concat(gItems().filter((x) => x.type === 'board' && x.deleted)).filter((x) => x.kind !== 'meta').sort((a, b) => (b.u || b.at) - (a.u || a.at)).slice(0, 10);
+  const all = gAll('board').concat(gItems().filter((x) => x.type === 'board' && x.deleted)).filter((x) => x.kind !== 'meta' && x.kind !== 'tinta').sort((a, b) => (b.u || b.at) - (a.u || a.at)).slice(0, 10);
   if (!all.length) return '';
   const verb = (x) => (x.deleted ? 'quitó' : x.kind === 'comment' ? 'comentó' : x.act ? x.act : (x.u && x.at && x.u - x.at > 4000) ? 'editó' : 'agregó');
   const what = (x) => { if (x.kind === 'comment') { const p = gGet(x.parent); return `en «${esc(((p && (p.title || p.text)) || 'una tarjeta').slice(0, 40))}»: ${esc(x.text.slice(0, 60))}`; } return `${{ note: 'una nota', link: 'un enlace', draft: 'un borrador', file: 'un archivo' }[x.kind] || 'algo'}${x.title || x.text ? ` · ${esc((x.title || x.text).slice(0, 40))}` : ''}`; };

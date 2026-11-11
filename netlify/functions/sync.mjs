@@ -81,6 +81,18 @@ async function bump(store, users) {
   await Promise.all([...new Set(users)].filter((u) => u && (USER_RE.test(String(u)) || u === "_lobby" || u === "_lib")).map((u) => store.set(revKey(u), r)));
 }
 
+// trazos de pintura (hojas y tinta del pizarrón): solo números enteros y colores válidos, con tope de tamaño
+function cleanStrokes(arr) {
+  if (!Array.isArray(arr)) return [];
+  const out = []; let total = 0;
+  for (const s of arr.slice(-600)) {
+    if (!s || !Array.isArray(s.p) || s.p.length < 2) continue;
+    const p = []; for (const n of s.p.slice(0, 3000)) { const v = Math.round(+n); if (!Number.isFinite(v)) { p.length = 0; break; } p.push(Math.max(-100000, Math.min(100000, v))); }
+    if (p.length < 2 || p.length % 2) continue; total += p.length; if (total > 60000) break;
+    out.push({ id: String(s.id || "").replace(/[^a-z0-9-]/gi, "").slice(0, 20), c: /^#[0-9a-f]{6}$/i.test(s.c || "") ? s.c : "a", w: Math.max(1, Math.min(60, +s.w || 4)), a: Math.max(0.05, Math.min(1, +s.a || 1)), k: s.k === "m" ? "m" : "p", u: +s.u || 0, p });
+  }
+  return out;
+}
 export default async (req, context) => {
   const url = new URL(req.url);
   const store = getStore({ name: "aldia", consistency: "strong" });
@@ -806,20 +818,20 @@ export default async (req, context) => {
           return json({ ok: true, best, newBest: newBest && score > 0, rankDay: day.findIndex((x) => x.id === as) + 1 });
         }
         if (body.game === "mente") {
-          // Mente Viva: el servidor calcula los puntos de cada nivel (no se fían del cliente). Hoy/Semana/Total suman; "Nivel" es el más alto.
-          const PAIRS = [2, 3, 4, 6, 8, 10];
-          const lvl = Math.floor(+body.lvl); const stars = Math.floor(+body.stars); const moves = Math.floor(+body.moves); const dur = Math.floor(+body.dur || 0);
-          if (!(lvl >= 0 && lvl < PAIRS.length) || !(stars >= 1 && stars <= 3) || !(moves >= PAIRS[lvl]) || moves > 500 || dur < PAIRS[lvl]) return json({ error: "Partida inválida" }, 400);
-          const points = (lvl + 1) * 10 + stars * 5;
+          // Mente Viva: multiplicaciones contra el reloj. Puntos máximos por acierto = 25 x multiplicador de dificultad.
+          const MULT = [0, 1, 1.5, 2];
+          const mode = Math.floor(+body.mode); const correct = Math.floor(+body.correct); const score = Math.floor(+body.score); const dur = Math.floor(+body.dur || 0);
+          if (!(mode >= 1 && mode <= 3) || !(correct >= 1 && correct <= 3000) || score < 1 || score > Math.ceil(correct * 25 * MULT[mode]) + 5 || dur < Math.ceil(correct * 0.6) || dur > 36000) return json({ error: "Partida inválida" }, 400);
           const now = Date.now(); const who = { id: as, name: auth[as].name, color: auth[as].color, av: auth[as].av || 0 };
-          const add = async (key) => { const prev = await store.get(key, { type: "json" }); const score = (prev?.score || 0) + points; await store.setJSON(key, { ...who, score, apples: 0, at: now }); return score; };
-          await add(`${W}gv/d/${dayOf(now)}/${as}`); await add(`${W}gv/w/${weekOf(now)}/${as}`); const total = await add(`${W}gv/a/${as}`);
-          const t0 = (await store.get(`${W}gv/t/${as}`, { type: "json" })) || { games: 0, apples: 0 };
-          const level = Math.max(t0.apples || 0, lvl + 1); const games = (t0.games || 0) + 1;
-          await store.setJSON(`${W}gv/t/${as}`, { ...who, games, apples: level, score: level, at: now });
+          const put = async (key) => { const prev = await store.get(key, { type: "json" }); if (!prev || score > (prev.score || 0)) { await store.setJSON(key, { ...who, score, apples: 0, at: now }); return true; } return false; };
+          await put(`${W}gv/d/${dayOf(now)}/${as}`); await put(`${W}gv/w/${weekOf(now)}/${as}`); const newBest = await put(`${W}gv/a/${as}`);
+          const t0 = (await store.get(`${W}gv/t/${as}`, { type: "json" })) || { games: 0 };
+          const games = (t0.games || 0) + 1;
+          await store.setJSON(`${W}gv/t/${as}`, { ...who, games, apples: games, score: games, at: now });
+          const best = (await store.get(`${W}gv/a/${as}`, { type: "json" }))?.score || score;
           const { blobs } = await store.list({ prefix: `${W}gv/d/${dayOf(now)}/` });
           const day = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean).sort((x, y) => y.score - x.score);
-          return json({ ok: true, best: total, newBest: false, points, rankDay: day.findIndex((x) => x.id === as) + 1 });
+          return json({ ok: true, best, newBest: newBest && score > 0, rankDay: day.findIndex((x) => x.id === as) + 1 });
         }
         if (body.game === "galope") {
           // Galope: su propio ranking. Puntos = distancia; no hay manzanas, así que "partidas" cuenta las partidas.
@@ -926,13 +938,15 @@ export default async (req, context) => {
         const clean = { ...it, by: auth[as].name, byId: prev?.byId || as, at: +it.at || Date.now(), u: Date.now() };
         for (const k of ["title", "desc", "text", "subject", "link", "tag", "owner", "name"]) if (k in clean) clean[k] = clip(clean[k], k === "desc" || k === "text" ? 4000 : 300);
         if (clean.type === "board") {
-          clean.kind = ["note", "link", "file", "draft", "meta", "comment", "todo", "titulo", "fecha", "pregunta"].includes(it.kind) ? it.kind : "note";
+          clean.kind = ["note", "link", "file", "draft", "meta", "comment", "todo", "titulo", "fecha", "pregunta", "pintura", "tinta"].includes(it.kind) ? it.kind : "note";
           clean.parent = /^[a-z0-9-]{2,60}$/i.test(it.parent || "") ? it.parent : ""; clean.pa = /^[a-z0-9-]{2,60}$/i.test(it.pa || "") ? it.pa : ""; clean.act = clip(it.act, 20); clean.from = clip(it.from, 20);
           clean.x = Math.max(0, Math.min(1, +it.x || 0)); clean.y = Math.max(0, Math.min(12, +it.y || 0)); clean.ep = Math.max(0, Math.min(9999, Math.floor(+it.ep || 0)));
           if (clean.kind === "meta") { clean.epoch = Math.max(0, Math.min(9999, Math.floor(+it.epoch || 0))); clean.archives = Array.isArray(it.archives) ? it.archives.slice(-40).map((x) => ({ ep: Math.floor(+x.ep || 0), at: +x.at || 0, by: clip(x.by, 40), n: Math.floor(+x.n || 0), title: clip(x.title, 60) })) : []; }
           clean.sz = ["s", "m", "l"].includes(it.sz) ? it.sz : "m"; clean.font = ["sans", "serif", "mono"].includes(it.font) ? it.font : "sans"; clean.pin = !!it.pin; clean.done = !!it.done; clean.due = /^\d{4}-\d{2}-\d{2}$/.test(it.due || "") ? it.due : ""; clean.bg = ["papel", "cuadricula", "puntos", "rayas"].includes(it.bg) ? it.bg : "papel";
           clean.tone = clip(it.tone, 12); clean.file = clip(it.file, 120); clean.size = Math.max(0, Math.min(5e6, +it.size || 0)); clean.archived = !!it.archived; clean.fileId = /^[a-z0-9-]{4,60}$/i.test(it.fileId || "") ? it.fileId : "";
         }
+        if (clean.type === "board" && (clean.kind === "pintura" || clean.kind === "tinta")) { clean.strokes = cleanStrokes(it.strokes); clean.pbg = ["liso", "cuadricula", "rayas", "puntos", "oscuro"].includes(it.pbg) ? it.pbg : "liso"; clean.pw = 800; clean.ph = 600; if (clean.kind === "tinta") { clean.x = 0; clean.y = 0; } }
+        else if (clean.type === "board") delete clean.strokes;
         if (clean.type === "tpl") {
           clean.steps = Array.isArray(it.steps) ? it.steps.slice(0, 30).map((x) => ({ text: clip(x && x.text, 120), min: Math.max(0, Math.min(600, +(x && x.min) || 0)) })) : [];
           clean.kind = clip(it.kind, 20); clean.est = Math.max(0, Math.min(600, +it.est || 0));

@@ -54,9 +54,10 @@ const LZP = new Map();
 document.addEventListener('pointerdown', (e) => {
   const view = e.target.closest && e.target.closest('#lzView'); if (!view) return;
   if (e.target.closest('.lz-ctl') || e.target.closest('[data-act]')) return;
-  LZP.set(e.pointerId, { x: e.clientX, y: e.clientY }); try { view.setPointerCapture(e.pointerId); } catch { /* */ }
+  LZP.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (!LZ.paint) { try { view.setPointerCapture(e.pointerId); } catch { /* */ } }
   if (LZP.size === 2) { const [a, b] = [...LZP.values()]; LZ.g = { type: 'pinch', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: lzData().view.z }; return; }
   if (LZP.size > 2) return;
+  if (LZ.paint) { LZ.g = { type: 'ink' }; return; } /* pintando: un dedo dibuja (lo maneja pintura.js), dos dedos acercan */
   const rs = e.target.closest('[data-rs]'); const card = e.target.closest('[data-lz]'); const c = card && lzData().cards.find((x) => x.id === card.dataset.lz);
   if (rs && c) { LZ.g = { type: 'resize', c, w0: c.w || 190, h0: c.h || 220, sx: e.clientX, sy: e.clientY, moved: false }; return; }
   if (c) {
