@@ -1,6 +1,6 @@
 /* Cinnavia — service worker: funciona sin internet y manda avisos. */
-const VERSION = 'aldia-v7.33.0';
-const V = '?v=7.33.0';
+const VERSION = 'aldia-v7.34.0';
+const V = '?v=7.34.0';
 const SHELL = [
   './',
   './index.html',
