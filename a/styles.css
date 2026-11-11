@@ -3312,3 +3312,7 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
 .gd-sc{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line,#e4e4df)}
 .gd-sc .input{max-width:90px;text-align:right}
 .gd-low{color:#C0463A}
+.gw-pad button.hint{background:#FFD84A;color:#2A2412;box-shadow:0 0 0 3px rgba(255,216,74,.45);animation:gwHint 1s ease-in-out infinite}
+@keyframes gwHint{50%{transform:scale(1.08)}}
+#gwUndo.pulse{animation:gwHint .6s ease-in-out 3;box-shadow:0 0 0 3px rgba(255,216,74,.6)}
+.gw-act{flex-wrap:wrap}

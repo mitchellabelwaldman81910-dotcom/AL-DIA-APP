@@ -205,13 +205,13 @@ function gwPlay(level) {
   wrap.innerHTML = `<button class="gm-x gl-x" id="gwX" aria-label="Salir del juego">${icon('x')}</button>
     <div class="gw-top"><div class="gw-title"><b id="gwLv">Nivel 1</b><small id="gwEnv"></small></div><div class="gw-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7c-5-3-9 1-8 7 1 5 5 8 8 6 3 2 7-1 8-6 1-6-3-10-8-7z" fill="#E0443A"/><path d="M12 7c0-3 1-4 3-5" stroke="#5A3A22" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M13 5c2-2 5-1 5-1-1 3-3 4-5 2z" fill="#4C9A48"/></svg><b id="gwAp">0/0</b></div><div class="gw-pill"><small>pasos</small><b id="gwMv">0</b><em id="gwOpt"></em></div></div>
     <div class="gw-board" id="gwBoard"><canvas id="gwCv" aria-label="Tablero del Gusano Goloso" role="img"></canvas><div class="gw-toast" id="gwToast"></div></div>
-    <div class="gw-ctl"><div class="gw-act"><button type="button" class="btn" id="gwUndo">${icon('reset', 'sm')}Deshacer</button><button type="button" class="btn" id="gwRetry">Reiniciar</button></div>
+    <div class="gw-ctl"><div class="gw-act"><button type="button" class="btn" id="gwUndo">${icon('reset', 'sm')}Deshacer</button><button type="button" class="btn" id="gwRetry">Reiniciar</button><button type="button" class="btn" id="gwHint">${icon('bulb', 'sm')}Pista</button><button type="button" class="btn" id="gwSkip" hidden>Saltar nivel</button></div>
       <div class="gw-pad" id="gwPad"><button type="button" data-d="0" aria-label="Arriba">▲</button><button type="button" data-d="3" aria-label="Izquierda">◀</button><button type="button" data-d="2" aria-label="Abajo">▼</button><button type="button" data-d="1" aria-label="Derecha">▶</button></div></div>
     <div class="gl-over mt-over gw-win" id="gwOver" hidden><b id="gwWhy">¡Nivel superado!</b><div id="gwStars"></div><div class="mt-res" id="gwRes"></div><span id="gwCoins" class="pm-gain"></span><span class="small muted" id="gwRank"></span><span class="small muted" id="gwRest"></span>
       <div class="btn-row" style="justify-content:center"><button class="btn primary" id="gwNext">Siguiente nivel</button><button class="btn" id="gwAgain">Repetir</button><button class="btn" id="gwDone">Menú</button></div></div>`;
   document.body.appendChild(wrap); document.body.classList.add('gm-on');
   const $ = (s) => wrap.querySelector(s); const cv = $('#gwCv'), g = cv.getContext('2d'); const D = gwData();
-  const R = { level, L: null, st: null, hist: [], anim: null, busy: false, dir: { x: 1, y: 0 }, dead: false, won: false, score: 0, cleared: 0, coins: 0, t0: Date.now(), maxL: level, posted: 0, parts: [], fx: [], mood: 'idle', moodUntil: 0, pulse: 0, falling: false, shake: 0, id: 0, cs: 40, ox: 0, oy: 0, W: 0, H: 0, seed: 0, t: 0, eaten: 0 };
+  const R = { level, L: null, st: null, hist: [], anim: null, busy: false, q: [], hints: 0, fails: 0, hintDir: -1, dir: { x: 1, y: 0 }, dead: false, won: false, score: 0, cleared: 0, coins: 0, t0: Date.now(), maxL: level, posted: 0, parts: [], fx: [], mood: 'idle', moodUntil: 0, pulse: 0, falling: false, shake: 0, id: 0, cs: 40, ox: 0, oy: 0, W: 0, H: 0, seed: 0, t: 0, eaten: 0 };
   GW.run = R; GW.firstAt = GW.firstAt || Date.now();
   const fit = () => {
     const b = $('#gwBoard'), dpr = Math.min(2, devicePixelRatio || 1), w = b.clientWidth, h = b.clientHeight; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + 'px'; cv.style.height = h + 'px';
@@ -225,7 +225,7 @@ function gwPlay(level) {
   const hud = () => { const tot = R.L.apples.length; let left = 0; for (let i = 0; i < tot; i++) if (!((R.st.mask >> i) & 1)) left++; $('#gwAp').textContent = `${tot - left}/${tot}`; $('#gwMv').textContent = R.hist.length; };
   const pillOpt = () => { const o = $('#gwOpt'); if (o) o.textContent = `mín. ${R.L.opt}`; };
   const load = (lv) => {
-    R.level = lv; R.maxL = Math.max(R.maxL, lv); R.L = gwParse(GW_LV[lv - 1]); R.st = gwStart(R.L); R.hist = []; R.anim = null; R.busy = false; R.dead = false; R.won = false; R.dir = { x: 1, y: 0 }; R.seed = lv * 3.7; R.eaten = 0;
+    R.level = lv; R.maxL = Math.max(R.maxL, lv); R.L = gwParse(GW_LV[lv - 1]); R.st = gwStart(R.L); R.hist = []; R.anim = null; R.busy = false; R.q = []; R.hints = 0; R.fails = 0; R.hintDir = -1; R.dead = false; R.won = false; R.dir = { x: 1, y: 0 }; R.seed = lv * 3.7; R.eaten = 0; skipBtn();
     $('#gwLv').textContent = `Nivel ${lv}`; $('#gwEnv').textContent = E().n; $('#gwOver').classList.remove('show'); $('#gwOver').hidden = true; fit(); initParts(); hud(); pillOpt(); R.fx = []; R.mood = 'idle'; R.moodUntil = 0;
     toast(lv % 50 === 1 && lv > 1 ? `Nuevo ambiente: ${E().n}` : (lv === 1 ? 'Come las manzanas y llega al portal' : `Nivel ${lv} · ${E().n}`), 2000);
   };
@@ -305,22 +305,22 @@ function gwPlay(level) {
     nextFrame();
   };
   const tryMove = (d) => {
-    if (R.busy || R.dead || R.won) return; const r = gwStep(R.L, R.st, d); if (!r) { JG_TONE(150, 0.06, 'sine', 0.03); JG_VIB(6); bump(d); return; }
+    if (R.dead || R.won) return; if (R.busy) { if (R.q.length < 3) R.q.push(d); return; } padHint(-1); const r = gwStep(R.L, R.st, d); if (!r) { JG_TONE(150, 0.06, 'sine', 0.03); JG_VIB(6); bump(d); return; }
     R.dir = { x: GW_DX[d], y: GW_DY[d] }; const before = R.st; R.hist.push(before); R.eatIdx = -1;
     if (r.eat) { R.eatIdx = r.frames[0][0]; R.eaten++; R.pulse = 1; setMood('eat', 750); const ep = posOf(r.frames[0][0]); burst(ep[0], ep[1], [E().fr[0], E().fr[1], '#FFFFFF', '#FFE066'], 14, 1.1); }
     const from = before.worm; R.st = r.state;
     JG_TONE(r.eat ? 520 + R.eaten * 40 : 260, r.eat ? 0.12 : 0.05, r.eat ? 'triangle' : 'sine', r.eat ? 0.055 : 0.02, r.eat ? 780 + R.eaten * 40 : 0);
     if (r.frames.length > 1) setTimeout(() => JG_TONE(330, 0.18, 'sine', 0.03, 140), 150);
-    hud(); const fin = () => { hud(); if (r.status === 'win') win(); else if (r.status === 'dead') die(); };
+    hud(); const fin = () => { hud(); if (r.status === 'win') win(); else if (r.status === 'dead') { R.q = []; die(); } else if (R.q.length) tryMove(R.q.shift()); else deadCheck(); };
     runFrames(from, r.frames, fin);
   };
   const bump = (d) => { const c = $('#gwBoard'); c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); };
   const die = () => { R.dead = true; R.shake = 10; { const hp = posOf(R.st.worm[0]); burst(hp[0], hp[1], ['#FFD84A', '#FF8A3A', '#FFFFFF'], 16, 1.2); } JG_TONE(200, 0.35, 'sawtooth', 0.04, 90); JG_VIB([20, 40, 20]); toast('¡Ay! Deshaz el último paso', 1600); setTimeout(() => { if (GW.run === R && R.dead && !R.won) undo(); }, 1100); };
-  const undo = () => { if (R.busy || R.won) return; if (!R.hist.length) return; R.st = R.hist.pop(); R.dead = false; R.moodUntil = 0; R.anim = null; hud(); JG_TONE(380, 0.07, 'sine', 0.03); };
-  const retry = () => { if (R.busy) return; R.st = gwStart(R.L); R.hist = []; R.dead = false; R.won = false; R.anim = null; R.eaten = 0; hud(); };
+  const undo = () => { if (R.busy || R.won) return; if (!R.hist.length) return; R.q = []; padHint(-1); R.st = R.hist.pop(); R.dead = false; R.moodUntil = 0; R.anim = null; hud(); JG_TONE(380, 0.07, 'sine', 0.03); };
+  const retry = () => { if (R.busy) return; R.q = []; padHint(-1); R.fails++; skipBtn(); R.st = gwStart(R.L); R.hist = []; R.dead = false; R.won = false; R.anim = null; R.eaten = 0; hud(); };
   const win = () => {
     if (R.won) return; R.won = true; { const hp = posOf(R.st.worm[0]); burst(hp[0], hp[1], ['#FFD84A', '#FF7AB6', '#7DF0AC', '#5CB8FF', '#B07AFF', '#FFFFFF'], 46, 1.7); setTimeout(() => { if (GW.run === R) burst(R.W / 2, R.H * 0.3, ['#FFD84A', '#FF7AB6', '#7DF0AC', '#5CB8FF', '#FFFFFF'], 40, 1.9); }, 350); }
-     const mv = R.hist.length, opt = R.L.opt; const stars = mv <= Math.ceil(opt * 1.25) + 1 ? 3 : mv <= Math.ceil(opt * 2.2) + 3 ? 2 : 1;
+     const mv = R.hist.length, opt = R.L.opt; let stars = mv <= Math.ceil(opt * 1.25) + 1 ? 3 : mv <= Math.ceil(opt * 2.2) + 3 ? 2 : 1; if (R.hints) stars = Math.min(stars, 2);
     const prevS = gwStarsAt(R.level); let c = 0; if (!prevS) c = 1 + stars; else if (stars > prevS) c = stars - prevS; if (R.level % 50 === 0 && !prevS) c += 5;
     const pts = 100 + stars * 20 + Math.floor(R.level / 10); R.score += pts; R.cleared++; if (c) { R.coins += c; jgCoins(c); }
     if (stars > prevS) gwSetStars(R.level, stars); D.max = Math.max(D.max || 1, Math.min(GW_N(), R.level + 1)); jpSave();
@@ -333,14 +333,27 @@ function gwPlay(level) {
     if (R.cleared % 5 === 0) post();
   };
   const post = () => { if (R.cleared < 1 || R.posted === R.cleared) return; R.posted = R.cleared; jgPost({ game: 'gusano', score: R.score, level: Math.min(GW_N(), R.maxL), cleared: R.cleared, dur: Math.max(1, Math.round((Date.now() - R.t0) / 1000)) }).then((rec) => { const l = $('#gwRank'); if (rec && l && wrap.isConnected && rec.rankDay) l.textContent = `Hoy vas en el lugar #${rec.rankDay}`; }); };
+  /* ---- ayudas: pista, aviso de camino sin salida y saltar nivel ---- */
+  const padHint = (d) => { R.hintDir = d; wrap.querySelectorAll('#gwPad [data-d]').forEach((b) => b.classList.toggle('hint', +b.dataset.d === d)); };
+  const skipBtn = () => { const b = $('#gwSkip'); if (b) b.hidden = !(R.fails >= 3 || R.hints >= 2) || R.won; };
+  const solveNow = () => gwSolve(R.L, 150000, 80, R.st);
+  const deadCheck = () => { const lv = R.level, st = R.st; setTimeout(() => { if (GW.run !== R || R.level !== lv || R.st !== st || R.busy || R.won || R.dead) return; if (!solveNow()) { toast('Por aquí ya no hay salida. Toca Deshacer', 2600); const u = $('#gwUndo'); u.classList.remove('pulse'); void u.offsetWidth; u.classList.add('pulse'); } }, 30); };
+  const hint = () => {
+    if (R.busy || R.won) return; if (R.dead) { undo(); return; }
+    const r = solveNow();
+    if (!r) { toast('Por aquí ya no hay salida. Toca Deshacer', 2600); return; }
+    R.hints++; skipBtn(); padHint(r.path[0]); const nm = ['arriba', 'derecha', 'abajo', 'izquierda'][r.path[0]]; toast(`Pista: ${nm} · faltan ${r.moves} pasos`, 2400); jgAnnounce(`Pista: ${nm}`);
+  };
+  $('#gwHint').addEventListener('click', hint);
+  $('#gwSkip').addEventListener('click', async () => { if (R.level >= GW_N()) return; const ok = await ask({ title: '¿Saltar este nivel?', text: 'Pasas al siguiente sin estrellas ni monedas. Puedes volver cuando quieras.', ok: 'Saltar', cancel: 'Seguir intentando' }); if (!ok) return; D.max = Math.max(D.max || 1, Math.min(GW_N(), R.level + 1)); jpSave(); load(R.level + 1); });
   /* ---- controles ---- */
   const key = { ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3, w: 0, d: 1, s: 2, a: 3, W: 0, D: 1, S: 2, A: 3 };
   const onKey = (e) => { if (e.key === 'Escape') { exit(); return; } if (e.key in key) { e.preventDefault(); tryMove(key[e.key]); } else if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey || true)) undo(); else if (e.key === 'r' || e.key === 'R') retry(); };
   addEventListener('keydown', onKey);
   $('#gwPad').addEventListener('pointerdown', (e) => { const b = e.target.closest('[data-d]'); if (!b) return; e.preventDefault(); tryMove(+b.dataset.d); });
   let sw = null; const board = $('#gwBoard');
-  board.addEventListener('pointerdown', (e) => { sw = { x: e.clientX, y: e.clientY, t: Date.now() }; });
-  board.addEventListener('pointermove', (e) => { if (!sw) return; const dx = e.clientX - sw.x, dy = e.clientY - sw.y; if (Math.hypot(dx, dy) > 26) { tryMove(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0)); sw = { x: e.clientX, y: e.clientY, t: Date.now() }; } });
+  board.addEventListener('pointerdown', (e) => { sw = { x: e.clientX, y: e.clientY, t: Date.now(), used: false }; });
+  board.addEventListener('pointermove', (e) => { if (!sw) return; const dx = e.clientX - sw.x, dy = e.clientY - sw.y; if (!sw.used && Math.hypot(dx, dy) > 26) { sw.used = true; tryMove(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0)); } });
   const endSw = (e) => { if (sw && Date.now() - sw.t < 250 && Math.hypot(e.clientX - sw.x, e.clientY - sw.y) < 10 && R.L) { /* toque: hacia el lado donde tocas respecto a la cabeza */ const hp = posOf(R.st.worm[0]); const r = cv.getBoundingClientRect(); const dx = e.clientX - r.left - hp[0], dy = e.clientY - r.top - hp[1]; if (Math.hypot(dx, dy) > R.cs * 0.6) tryMove(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0)); } sw = null; };
   board.addEventListener('pointerup', endSw); board.addEventListener('pointercancel', () => { sw = null; });
   $('#gwUndo').addEventListener('click', undo); $('#gwRetry').addEventListener('click', retry);

@@ -44,9 +44,9 @@ function gwStart(L) {
   }
   return st;
 }
-function gwSolve(L, cap, maxDepth) {
+function gwSolve(L, cap, maxDepth, from) {
   /* búsqueda en anchura: devuelve { moves, apples, path:[dirs] } o null; cap = máximo de estados */
-  cap = cap || 200000; const s0 = gwStart(L); const key = (s) => s.worm.join(',') + '/' + s.mask;
+  cap = cap || 200000; const s0 = from || gwStart(L); const key = (s) => s.worm.join(',') + '/' + s.mask;
   const seen = new Map(); seen.set(key(s0), null); let cur = [{ s: s0, k: key(s0) }]; let depth = 0, total = 1;
   while (cur.length) {
     depth++; if (maxDepth && depth > maxDepth) return null; const nxt = [];
