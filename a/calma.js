@@ -54,6 +54,7 @@ function calmHome() {
   const up = []; for (let k = 1; k <= 14 && up.length < 6; k++) { const iso = addDays(today(), k); clItemsFor(iso).forEach((x) => up.length < 6 && up.push({ ...x, iso })); }
   return `<h1 class="page-title">${greet}${name ? `, ${esc(name)}` : ''}</h1><p class="page-sub">${esc(cap(longDate(today())))}</p>
     <div class="cm-quick"><a class="btn block" href="#/lienzo">${icon('board')}Pizarrón</a><a class="btn block" href="#/cerebro">${icon('network')}Cerebro</a></div>
+    <button type="button" class="btn primary block" data-act="pl-quick" style="margin-bottom:6px">${icon('note', 'sm')}Nueva planeación de clase</button>
     <h2 class="sec">Hoy</h2>${hoy.length ? `<ul class="cm-list">${hoy.map(clRow).join('')}</ul>` : '<p class="muted">Sin eventos ni recordatorios para hoy.</p>'}
     <h2 class="sec">Próximos días</h2>${up.length ? `<ul class="cm-list">${up.map((x) => clRow(x).replace('<span class="cm-t">', `<span class="cm-t"><em>${esc(cap(relDay(x.iso)))}</em>`)).join('')}</ul>` : '<p class="muted">Nada programado en las próximas dos semanas.</p>'}
     <div class="btn-row" style="margin-top:16px"><button class="btn primary" data-act="cl-ev-new">${icon('plus', 'sm')}Nuevo evento</button><button class="btn" data-act="rc-new">${icon('bell', 'sm')}Nuevo recordatorio</button></div>

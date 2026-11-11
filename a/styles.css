@@ -3357,3 +3357,18 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
 :root[data-calm] .toast { background: var(--ink) !important; color: var(--paper) !important; border-radius: 8px; box-shadow: none; }
 :root[data-calm] .toast svg, :root[data-calm] .toast .i { display: none; }
 :root[data-calm] .cal .day { border-radius: 6px; box-shadow: none; }
+/* 7.47 — Planeación de clase */
+.k-plan .pl-meta { margin: 2px 0 10px; font-size: 13px; color: var(--ink-3); }
+.pl-sec { border-top: 1px solid var(--line); padding: 10px 0 2px; }
+.pl-sec h4 { margin: 0 0 4px; font-size: 11.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.pl-sec p { margin: 0 0 6px; line-height: 1.5; }
+.pl-lh { display: flex; align-items: baseline; justify-content: space-between; }
+.pl-cmd { display: flex; gap: 8px; } .pl-cmd .input { flex: 1; }
+.pl-go { margin: 0 0 12px; }
+#plPrint { display: none; }
+@media print {
+  body.pl-printing > *:not(#plPrint) { display: none !important; }
+  body.pl-printing #plPrint { display: block !important; position: static; padding: 8mm; color: #000; background: #fff; font: 12pt/1.5 Georgia, serif; }
+  #plPrint h1 { font-size: 20pt; margin: 0 0 4px; } #plPrint h2 { font-size: 11pt; text-transform: uppercase; letter-spacing: .06em; margin: 16px 0 4px; border-top: 1px solid #999; padding-top: 8px; } #plPrint p { margin: 0 0 6px; } .pl-pm { color: #444; }
+}
+:root[data-calm] .lb-page::before, :root[data-calm] .lb-page::after { display: none !important; content: none !important; }
