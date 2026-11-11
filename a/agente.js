@@ -86,7 +86,7 @@ function agentCardHTML() {
   const k = agentKey();
   return `<section class="agent-card ag-${k}">
     <div class="ag-top"><span class="ag-ico">${agentGlyph(k)}</span><span class="ag-name">${esc(AGENTS[k].name)}</span><a class="ag-chg" href="#/asistente">Cambiar estilo</a></div>
-    ${m.meme ? `<div class="ag-meme">${memeArt(t.id)}<b>${esc(m.meme[0])}</b><b>${esc(m.meme[1])}</b></div>` : ''}
+    ${m.meme ? `<div class="ag-memebox">${memeArt(t.id)}<b>${esc(m.meme[0])}</b><b>${esc(m.meme[1])}</b></div>` : ''}
     <h3 class="ag-t">${esc(m.t)}</h3><p class="ag-b">${esc(m.b)}</p>
     <div class="btn-row"><button class="btn primary" data-act="ag-start" data-id="${t.id}">${icon('timer', 'sm')}Empezar 25 min</button><button class="btn" data-act="open-task" data-id="${t.id}">Ver tarea</button><button class="btn quiet" data-act="help-open" data-id="${t.id}">${icon('help', 'sm')}Pedir ayuda</button></div></section>`;
 }
