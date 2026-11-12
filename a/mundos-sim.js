@@ -12,7 +12,7 @@ function mdLog(txt) { MDS.log.unshift({ txt, t: MDS.t }); if (MDS.log.length > 4
 /* ---------- mundo ---------- */
 const mdAmp = { alps: 1.9, canyon: 1.5, volcano: 1.5, dunes: 1.2, ice: 0.9, savanna: 0.8, coast: 0.7, jungle: 1, swamp: 0.5, farm: 0.5, fuji: 1, bamboo: 1, hills: 1 };
 const mdH = { bush: [34, 52], flower: [22, 34], tuft: [16, 26], fern: [30, 48], reed: [40, 70], mush: [22, 34], rock: [26, 60], cactus: [50, 100], dune: [40, 70], hay: [26, 34], barn: [100, 130], igloo: [50, 70], iceberg: [60, 140], crystal: [40, 80], seagrass: [30, 60], kelp: [100, 220], coral: [30, 60], anemone: [20, 34], tube: [24, 40], bamboo: [150, 220] };
-const mdFruity = new Set(['oak', 'jungle', 'palm', 'maple', 'bush', 'sakura']);
+const mdFruity = new Set(['oak', 'jungle', 'palm', 'bush', 'sakura', 'platanero']);
 function mdHashStr(s) { let h = 7; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
 function mdGY(x) { const g = MDS.GY, i = mdCl(x / 8, 0, g.length - 1.001), k = Math.floor(i), f = i - k; return g[k] + (g[k + 1] - g[k]) * f; }
 const mdDepth = (x) => mdGY(x) - MDS.surf();
