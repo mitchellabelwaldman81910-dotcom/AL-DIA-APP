@@ -117,6 +117,7 @@ function mdDanger(a) { let best = null, bd = 1e9; for (const d of MDS.dang) { co
 
 /* ---------- decidir ---------- */
 function mdSay(a, txt) {  if (!a.say || a.say.t <= 0) a.say = { txt, t: 2.4 }; }
+const MD_NOTREE = new Set(['pato', 'flamenco', 'pinguino', 'gaviota', 'pelicano', 'avestruz', 'gallina', 'ganso', 'cisne', 'buhonieve', 'ibisrojo', 'hoatzin_', 'kiwi', 'emu']);
 const MD_VOICE = { conejo: 'Ñam ñam', ardilla: 'Chii chii', venado: 'Brrr', oveja: '¡Beee!', vaca: '¡Muuu!', cerdo: '¡Oink!', gallina: '¡Pío pío!', pajaro: '¡Pío!', loro: '¡Hola, hola!', lobo: '¡Auuu!', perro: '¡Guau!', leon: '¡Grrr!', mono: '¡Uh uh ah!', rana: '¡Croac!', pato: '¡Cuac!', caballo: 'Iiiih', cabra: '¡Mee!', gato: 'Miau', elefante: 'Pruuum', buho: 'Uu uu', aguila: '¡Kiii!', pinguino: '¡Kuak!', delfin: 'Ii ii ii', ballena: 'Uuuuu', foca: '¡Auk auk!', tortuga: 'Hmm…', perezoso: 'Zzz… hola…', zorro: '¡Yip!', oso: 'Grrrmm', jirafa: 'Mmm', cebra: '¡Iji!' };
 const MD_SAYS = { q: ['Mmm…', '¿Y la comida?', '¡Hola!', 'Qué rico día', 'Cerca de ti', 'Ay, qué sueño'], b: ['¡Pío!', '¡Tuiit!', 'Cuiii', '¡Hola, amigos!'], f: ['Blub', 'Blub blub', '¡Burbujas!'], x: ['Mmm…', '¡Hola!', 'Hola…'] };
 function mdVoice(a) { return MD_VOICE[a.sp] || mdPick(MD_SAYS[a.S.t] || MD_SAYS.q); }
@@ -172,7 +173,7 @@ function mdThink(a, dt) {
   if (a.state === 'hunt') mdSetState(a, 'idle', 1);
   if (needFood && (!carn || (carn && !S.prey) )) {
     if (a.layer === 'water' || a.layer === 'floor') { mdSetState(a, S.d === 'f' ? 'plank' : 'browse', 7 + mdR() * 4); a.tx = mdCl(a.x + a.dir * (20 + mdR() * 120), 30, MDS.WW - 30); if (a.layer === 'water') a.ty = mdCl(a.y + (mdR() - 0.5) * 80, MDS.surf() + 16, mdGY(a.x) - 12); return; }
-    if ((S.d === 'h' || S.d === 'o') && (a.arb || a.layer === 'air') && mdR() < 0.7) { const tr = mdNearestTree(a.x, 900, true) || mdNearestTree(a.x, 900); if (tr) { a.tree = tr; a.tx = tr.x; if (a.layer === 'air') { a.ty = tr.y - tr.h * 0.7; a.flying = true; } mdSetState(a, 'fruit', 8); return; } }
+    if ((S.d === 'h' || S.d === 'o') && (a.arb || a.layer === 'air') && !MD_NOTREE.has(a.sp) && mdR() < 0.7) { const tr = mdNearestTree(a.x, 900, true) || mdNearestTree(a.x, 900); if (tr) { a.tree = tr; a.tx = tr.x; if (a.layer === 'air') { a.ty = tr.y - tr.h * 0.7; a.flying = true; } mdSetState(a, 'fruit', 8); return; } }
     mdSetState(a, 'graze', 7 + mdR() * 6); a.tx = a.x + a.dir * (10 + mdR() * 50); if (a.layer === 'air' && a.flying) { a.tx = mdCl(a.x + (mdR() - 0.5) * 200, 30, MDS.WW - 30); if (mdDepth(a.tx) > 0 && a.S.h !== 'M') a.tx = mdHighGround(a.tx); a.ty = mdGY(a.tx); a.landing = true; } return;
   }
   /* trepar */
@@ -197,7 +198,7 @@ function mdThink(a, dt) {
   if (a.layer === 'floor') { a.tx = mdCl(a.x + (mdR() - 0.5) * 240, 30, MDS.WW - 30); a.running = false; mdSetState(a, 'wander', 6); return; }
   if (a.layer === 'air') {
     if (a.flying && a.S.t === 'b') {
-      if (mdR() < 0.4 && !wantSleep) { const tr = mdNearestTree(a.x + (mdR() - 0.5) * 1400, 900); if (tr) { a.perchT = tr; { const pp = mdPerchPick(tr, a), q = mdPerchXY(tr, pp); a.tx = q.x; a.ty = q.y - 3; } a.landing = true; mdSetState(a, 'fly', 8); return; } }
+      if (mdR() < 0.4 && !wantSleep && !MD_NOTREE.has(a.sp)) { const tr = mdNearestTree(a.x + (mdR() - 0.5) * 1400, 900); if (tr) { a.perchT = tr; { const pp = mdPerchPick(tr, a), q = mdPerchXY(tr, pp); a.tx = q.x; a.ty = q.y - 3; } a.landing = true; mdSetState(a, 'fly', 8); return; } }
       if (mdR() < 0.25 && S.h === 'M') { const wx = MDS.waterXs.length ? mdPick(MDS.waterXs) : null; if (wx) { a.tx = wx; a.ty = MDS.surf() - 3; a.landing = true; a.onWater = true; mdSetState(a, 'fly', 8); return; } }
       if (mdR() < 0.2) { a.tx = mdCl(a.x + (mdR() - 0.5) * 300, 30, MDS.WW - 30); a.ty = mdGY(a.tx) - 2; a.landing = true; mdSetState(a, 'fly', 8); return; }
       a.tx = mdCl((far ? hc.x : a.x) + (mdR() - 0.5) * 1200, 30, MDS.WW - 30); a.ty = mdCl(a.y + (mdR() - 0.5) * 140, 70, MDS.S - 150); a.landing = false; a.dir = a.tx >= a.x ? 1 : -1; mdSetState(a, 'fly', 5 + mdR() * 5); return;
