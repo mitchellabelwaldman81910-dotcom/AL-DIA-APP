@@ -3527,3 +3527,14 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
 .md-rrow .md-petb{flex:1;text-align:left}
 .md-star{border:1px solid var(--line,#d9ded8);background:none;border-radius:8px;padding:6px 8px;font:600 11px system-ui;color:inherit}
 .md-star.on{background:#2f7a55;color:#fff;border-color:#2f7a55}
+.md-q{width:28px;height:28px;border-radius:50%;border:1.5px solid currentColor;background:none;font:700 14px system-ui;color:inherit;margin-left:auto;margin-right:6px;flex:none}
+.md-q + .md-x{margin-left:0}
+.md-info{position:fixed;inset:0;z-index:9999;background:var(--bg,#f4f7f4);color:var(--ink,#1c2a22);overflow:auto;-webkit-overflow-scrolling:touch}
+.md-info[hidden]{display:none}
+.md-ih{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:inherit;border-bottom:1px solid rgba(0,0,0,.1)}
+.md-ih b{display:block;font:700 20px Georgia,serif}.md-ih span{font:13px system-ui;opacity:.7}
+.md-ib2{padding:8px 16px 60px;max-width:640px;margin:0 auto}
+.md-is{margin:18px 0}.md-is h3{font:700 13px system-ui;text-transform:uppercase;letter-spacing:.05em;opacity:.65;margin:0 0 6px}
+.md-is p{font:15px/1.5 system-ui;margin:6px 0}.md-is ul{margin:6px 0 6px 18px;padding:0;font:15px/1.5 system-ui}
+.md-ir{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed rgba(0,0,0,.12);font:14px system-ui}.md-ir b{text-align:right;font-weight:600}
+@media (prefers-color-scheme:dark){.md-info{background:#14201a;color:#e8f0ea}.md-ih{border-color:rgba(255,255,255,.12)}.md-ir{border-color:rgba(255,255,255,.14)}}

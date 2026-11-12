@@ -4,81 +4,44 @@ const MD_NM = ['Bruno', 'Max', 'Toby', 'Rocky', 'Simón', 'Teo', 'Lucas', 'Nico'
 const MD_NF = ['Luna', 'Nube', 'Mora', 'Canela', 'Coco', 'Olivia', 'Perla', 'Alba', 'Lola', 'Mía', 'Flor', 'Kiara', 'Nala', 'Sol', 'Dulce', 'Pepa', 'Lía', 'Rosa', 'Tina', 'Vera', 'Ximena', 'Zoe', 'Aurora', 'Brisa'];
 { const base = mdNew; mdNew = function (k, x, o) { const a = base(k, x, o); if (a && !(o && o.name)) { const pool = a.male ? MD_NM : MD_NF; let n = mdPick(pool), g = 0; while (g++ < 6 && MDS.an.some((q) => q.sp === k && q.name === n && q !== a)) n = mdPick(pool); a.name = n; } return a; }; }
 
-/* ---------- textos realistas ---------- */
-const MD_TXT = {
-  idle: ['Observo los alrededores con calma.', 'Quieto: así gasto menos energía.', 'Huelo el aire; todo parece tranquilo.', 'Vigilo que nada se acerque.', 'Escucho ramas y pasos lejanos.', 'Me oriento por el olor del viento.'],
-  wander: ['Recorro mi territorio de siempre.', 'Sigo el rastro de ayer.', 'Busco un sitio con mejor comida.', 'Camino contra el viento para oler más.', 'Reviso los límites de mi zona.', 'Avanzo despacio para no llamar la atención.'],
-  graze: ['Mastico despacio: la hierba es dura.', 'La hierba tierna crece junto al agua.', 'Como un poco aquí y avanzo.', 'Con la cabeza baja pierdo vigilancia.', 'Llenar el estómago ahora, rumiar luego.'],
-  browse: ['Rasco el fondo buscando algas.', 'Las algas jóvenes son las más tiernas.', 'Pico plantas pegadas a las rocas.'],
-  plank: ['Filtro el agua: cada trago es comida.', 'El plancton sube de noche; espero.', 'Dejo pasar la corriente por la boca.'],
-  fruit: ['Esta fruta está en su punto.', 'Las semillas viajarán en mi panza.', 'Elijo las frutas más blandas.', 'Sin fruta caída tendré que subir.'],
-  drink: ['Bebo rápido y miro alrededor.', 'Los abrevaderos son zona de riesgo.', 'Con sed no se piensa: agua primero.'],
-  flee: ['¡Algo me persigue, corro en zigzag!', 'Hay que llegar a un refugio ya.', 'No miro atrás: cada segundo cuenta.', 'El zigzag complica al que me persigue.'],
-  hunt: ['Me acerco contra el viento.', 'Elijo al más lento del grupo.', 'Mejor esperar un buen momento.', 'Agazapado, sin hacer ruido.', 'Cada persecución gasta mucha energía.'],
-  eat: ['Como rápido: otros vendrán por lo suyo.', 'Aprovecho cada bocado.', 'Después de comer toca descansar.'],
-  rest: ['Descanso para digerir tranquilo.', 'Cierro los ojos pero sigo escuchando.', 'Recupero fuerzas para después.'],
-  sleep: ['Zzz… duermo ligero, atento a ruidos.', 'Zzz… un sitio seguro para dormir.', 'Zzz… la noche es para descansar.'],
-  shelter: ['La tormenta pasa antes si me abrigo.', 'Mejor esperar bajo cubierto.', 'Con tanta lluvia no se ve ni se huele.'],
-  raft: ['Me agarro: el agua sube muy rápido.', 'Nadar cansa; este tronco flota.', 'Cuando baje el agua vuelvo a casa.'],
-  fly: ['Aprovecho una corriente cálida y planeo.', 'Desde arriba veo todo el valle.', 'Vuelo bajo para evitar el viento.'],
-  perch: ['Desde esta rama vigilo mi territorio.', 'Me acicalo las plumas una por una.', 'Canto para marcar mi espacio.'],
-  brood: ['Giro los huevos para que se calienten parejo.', 'No puedo dejar el nido ni un rato.', 'Mantengo los huevos calientes.'],
-  nestbuild: ['Traigo ramitas y hierba para el nido.', 'Un nido firme aguanta viento y lluvia.', 'Elijo un sitio alto y escondido.'],
-  feed: ['Las crías piden comida cada poco rato.', 'Les traigo lo más tierno que encuentro.', 'Cuido que ningún depredador las vea.'],
-  follow: ['Sigo de cerca a mamá, no me separo.', 'Aprendo mirando lo que hace mamá.', 'Si me pierdo, me encuentra por el olor.'],
-  climb: ['Subo agarrando bien con manos y pies.', 'Arriba hay menos peligro y más fruta.', 'Un pie, una mano, sin mirar abajo.'],
-  canopy: ['Entre las hojas nadie me ve.', 'Desde la copa se ve todo el bosque.', 'La rama aguanta, pero con cuidado.'],
-  swing: ['Me suelto de una liana a la siguiente.', 'Calculo la distancia antes de saltar.', 'La cola ayuda a no perder el agarre.'],
-  swim: ['Nado despacio, ahorrando energía.', 'La corriente me lleva sin esfuerzo.', 'Sigo la zona con más comida.'],
-  school: ['Nado pegado al grupo: más ojos ven más.', 'Giro con el cardumen para confundir.', 'En el centro del grupo estoy más seguro.'],
-  dizzy: ['Me duele el golpe, me quedo quieto.', 'Todo da vueltas, necesito un momento.'],
-  panic: ['El suelo tiembla, hay que alejarse.', 'Algo pasa; mejor no quedarme aquí.'],
-  chat: ['Intercambio señales con el grupo.', 'Aviso con un sonido que estoy aquí.', 'Respondo al llamado de otros.'],
-  mate: ['Es época de buscar pareja.', 'Marco territorio para atraer pareja.'],
-  nest: ['Me quedo en el nido, es lo más seguro.', 'Aún no sé volar; espero a mis padres.'],
-  play: ['Jugar enseña a cazar sin riesgo.', 'Corro y brinco: fortalezco las patas.', 'Jugar entrena para la vida adulta.'],
-  home: ['En mi refugio hay silencio y calor.', 'Aquí dentro estoy a salvo.', 'Descanso resguardado.'],
-  gohome: ['Se acerca la noche: vuelvo a mi refugio.', 'Mejor guardarme antes de que llueva.'],
-  hang: ['Cuelgo de la liana con cola y brazos.', 'Los brazos largos sirven para columpiarse.', 'Desde aquí vigilo el suelo.'],
-  banana: ['Pelo el plátano antes de comer.', 'Pruebo si el plátano está maduro.', 'Bajo un racimo para compartir.'],
-  groom: ['Quitar parásitos une al grupo.', 'Acicalar es también hacer amigos.', 'Le reviso el pelo con paciencia.'],
-  chase: ['Persigo en juego, sin morder.', 'Corremos para ver quién gana.'],
-  falling: ['¡Perdí el agarre!', '¡La rama cedió!'],
-  eatcarr: ['Aprovecho los restos: nada se desperdicia.', 'Comer carroña ahorra una cacería.', 'Limpio lo que otros dejaron.']
+/* ---------- ruidos y sonidos reales (sin texto hablado) ---------- */
+const MD_CALL = {
+  perro: ['Guau', 'bark'], gato: ['Miau', 'squeak'], vaca: ['Muuu', 'low'], oveja: ['Beee', 'low'], cabra: ['Meee', 'low'], cerdo: ['Oink', 'growl'], caballo: ['Iiiih', 'whinny'], pony: ['Iiiih', 'whinny'], burro: ['Iaaah', 'whinny'], alpaca: ['Hmmm', 'low'],
+  gallina: ['Cloc cloc', 'tweet'], pavo: ['Glu glu', 'tweet'], pato: ['Cuac', 'tweet'], lobo: ['Auuu', 'howl'], coyote: ['Auuu', 'howl'], dingo: ['Auuu', 'howl'], zorro: ['Yip', 'bark'], zorroart: ['Yip', 'bark'], leon: ['Grrraoo', 'growl'], tigre: ['Grrr', 'growl'], jaguar: ['Grrr', 'growl'], puma: ['Rrraao', 'growl'], pantera: ['Rrraao', 'growl'], leopnieve: ['Grrr', 'growl'], lince: ['Miau', 'growl'], ocelote: ['Rrrr', 'growl'], oso: ['Grrr', 'growl'], osopolar: ['Grrr', 'growl'], hiena: ['Jii jii jii', 'bark'],
+  elefante: ['Pruuum', 'trumpet'], rino: ['Fffh', 'growl'], hipo: ['Hooonk', 'low'], jirafa: null, cebra: ['Iji iji', 'whinny'], bufalo: ['Muuu', 'low'], bisonte: ['Gruuu', 'low'], venado: ['Bruu', 'low'], ciervorojo: ['Buuur', 'low'], alce: ['Buuur', 'low'],
+  rana: ['Croac', 'croak'], ranaflecha: ['Tri tri', 'croak'], ajolote: null, serpiente: ['Ssss', 'hiss'], cocodrilo: ['Grrooar', 'growl'], lagarto: null, iguana: null,
+  mono: ['Uh uh ah', 'ooh'], monoarana: ['Iih iih', 'ooh'], titi: ['Tsii', 'squeak'], capuchino: ['Iih iih', 'ooh'], aullador: ['Uuuaaa', 'growl'], gibon: ['Uu-aa-aa', 'ooh'], gorila: ['Uh uh', 'growl'], orangutan: ['Hmmmm', 'low'], lemur: ['Oo oo', 'ooh'], babuino: ['Uagh', 'bark'], mandril: ['Uagh', 'bark'], macaco: ['Kya', 'ooh'], colobo: ['Rrr', 'growl'], langur: ['Kheh', 'bark'], monoardilla: ['Chii chii', 'squeak'], tamarino: ['Tsii', 'squeak'],
+  buho: ['Uu uuu', 'tweet'], buhonieve: ['Uu uuu', 'tweet'], aguila: ['Kiii', 'tweet'], harpia: ['Kiii', 'tweet'], halcon: ['Kii kii', 'tweet'], loro: ['Craa', 'tweet'], guacamaya: ['Raaak', 'tweet'], cacatua: ['Kriii', 'tweet'], tucan: ['Rrrak', 'tweet'], colibri: ['Zzzz', 'tweet'], cuervo: ['Cra cra', 'tweet'], paloma: ['Currr', 'tweet'], gorrion: ['Pip pip', 'tweet'], canario: ['Tuiu tuiu', 'tweet'], cardenal: ['Chip chip', 'tweet'], gaviota: ['Kiaa', 'tweet'], pinguino: ['Kuak', 'low'], flamenco: ['Honk', 'tweet'], pavoreal: ['Miaaau', 'tweet'], quetzal: ['Kiuu', 'tweet'], hoatzin: ['Cruaa', 'tweet'], ibisrojo: ['Hrr', 'tweet'], garza: ['Kraak', 'tweet'], cigueña: ['Clac clac', 'tweet'], pelicano: null, buitre: ['Hsss', 'hiss'], condor: null,
+  ardilla: ['Chrr chrr', 'squeak'], suricata: ['Wiik', 'squeak'], marmota: ['Fiiii', 'squeak'], raton: ['Iii', 'squeak'], hamster: null, cuyo: ['Wiik wiik', 'squeak'], conejo: null, liebre: null,
+  ballena: ['Uuuuuu', 'whale'], jorobada: ['Uuuuuu', 'whale'], orca: ['Iii-uu', 'whale'], delfin: ['Ii ii ii', 'squeak'], narval: null, beluga: ['Iii-uu', 'whale'], foca: ['Auk auk', 'bark'], leonmarino: ['Aurr aurr', 'bark'], morsa: ['Hoonk', 'low'], manati: null
 };
-const MD_CTX = {
-  rain: ['La lluvia borra mis huellas.', 'Con lluvia hay más lombrices y brotes.', 'Me mojo: busco dónde cubrirme.'],
-  storm: ['Los truenos me ponen en alerta.', 'Evito el árbol más alto.'],
-  night: ['De noche mis sentidos trabajan más.', 'La oscuridad ayuda a pasar desapercibido.', 'Hace frío: me acurruco.'],
-  snow: ['La nieve tapa la comida; hay que escarbar.', 'Gasto más energía para mantenerme caliente.'],
-  hot: ['El calor cansa: busco sombra y agua.', 'Me muevo poco en las horas de más sol.'],
-  hungryH: ['Llevo horas sin comer.', 'Necesito encontrar comida pronto.'],
-  hungryC: ['Tengo mucha hambre: hoy debo cazar.', 'Sin presa hoy, mañana habrá menos fuerza.'],
-  hungryF: ['Busco algo que comer en la corriente.', 'El hambre me lleva a zonas nuevas.'],
-  cub: ['¡Mamá, ven!', 'Tengo hambre.', 'Todo es nuevo y enorme.', 'Me quedo cerca de mamá.'],
-  hurt: ['Me duele; voy más despacio.', 'La herida sana con descanso.', 'Cojear me hace blanco fácil.'],
-  flung: ['El viento me levanta, no hay dónde agarrarse.', 'Giro sin control.'],
-  fallhit: ['Caí de muy alto; el golpe duele.', 'Mi cuerpo aguantó, esta vez.'],
-  wake: ['Amanece: hay que buscar comida.', 'Me estiro y reviso los alrededores.']
-};
-function mdLine(a, ctx) {
-  const E = MDS.E || {}, S = a.S, W = MDS.def, pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-  if (ctx && MD_CTX[ctx]) return pick(MD_CTX[ctx]);
-  if (a.hurt > MDS.t && Math.random() < 0.5) return pick(MD_CTX.hurt);
-  if (a.age < 0.5 && Math.random() < 0.55) return S.t === 'b' && a.state === 'nest' ? 'Pi pi pi… ¡tengo hambre!' : pick(MD_CTX.cub);
-  const r = Math.random();
-  if (r < 0.32) {
-    if (E.storm > 0.4 || E.thunder > 0.3) return pick(MD_CTX.storm);
-    if (E.rain > 0.4) return pick(MD_CTX.rain);
-    if (E.snow > 0.4) return pick(MD_CTX.snow);
-    if (E.night > 0.6) return pick(MD_CTX.night);
-    if (W && W.clim && W.clim.t > 0.85 && !MDS.sea) return pick(MD_CTX.hot);
-    if (a.hunger > 0.65) return pick(S.t === 'f' ? MD_CTX.hungryF : S.d === 'c' ? MD_CTX.hungryC : MD_CTX.hungryH);
-  }
-  const p = MD_TXT[a.state]; return p ? pick(p) : pick(MD_TXT.idle);
+function mdCallOf(a) { if (!a || !a.S) return null; const k = a.sp, c = MD_CALL[k]; if (c === null) return null; if (c) return c; const S = a.S; if (S.t === 'f') return null; if (S.t === 'b') return ['Pío', 'tweet']; if (S.sh === 'frog') return ['Croac', 'croak']; if (S.t === 'x') return null; return S.d === 'c' ? ['Grrr', 'growl'] : ['Mmmh', 'low']; }
+function mdLine(a) { const c = mdCallOf(a); return c ? c[0] : null; }
+/* sonido sintetizado (se activa con el botón Sonido) */
+const MD_AU = { ctx: null };
+function mdPlay(a, kind) {
+  if (!MDV.sound || !MD_AU.ctx) return; const vw = typeof mdVW === 'function' ? mdVW() : 800, d = Math.abs(a.x - (MDV.camX + vw / 2)); if (d > vw * 0.65) return; const vol = 0.14 * (1 - d / (vw * 0.65)) * Math.min(1, 0.6 + (MDV.zoom || 1) * 0.3); if (vol <= 0.005) return;
+  const ctx = MD_AU.ctx, t0 = ctx.currentTime, g = ctx.createGain(); g.connect(ctx.destination); g.gain.setValueAtTime(0.0001, t0);
+  const env = (dur, atk = 0.04) => { g.gain.linearRampToValueAtTime(vol, t0 + atk); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur); };
+  const osc = (type, f0, f1, dur, lp) => { const o = ctx.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t0); o.frequency.linearRampToValueAtTime(f1, t0 + dur); let n = o; if (lp) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; o.connect(f); n = f; } n.connect(g); o.start(t0); o.stop(t0 + dur + 0.05); return o; };
+  const noise = (dur, hp) => { const len = Math.floor(ctx.sampleRate * dur), buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; const s = ctx.createBufferSource(); s.buffer = buf; const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp; s.connect(f); f.connect(g); s.start(t0); };
+  const j = 0.85 + Math.random() * 0.3;
+  if (kind === 'tweet') { env(0.5, 0.01); for (let i = 0; i < 3; i++) { const o = ctx.createOscillator(); o.type = 'sine'; const s = t0 + i * 0.12; o.frequency.setValueAtTime(2600 * j, s); o.frequency.linearRampToValueAtTime(3800 * j, s + 0.07); o.connect(g); o.start(s); o.stop(s + 0.09); } }
+  else if (kind === 'low') { env(1.0, 0.1); osc('sawtooth', 110 * j, 85 * j, 1.0, 420); }
+  else if (kind === 'howl') { env(1.8, 0.2); const o = osc('sine', 380 * j, 640 * j, 1.8); const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 5; lg.gain.value = 14; l.connect(lg); lg.connect(o.frequency); l.start(t0); l.stop(t0 + 1.9); }
+  else if (kind === 'growl') { env(0.9, 0.08); const o = osc('sawtooth', 70 * j, 55 * j, 0.9, 300); const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 24; lg.gain.value = 20; l.connect(lg); lg.connect(o.frequency); l.start(t0); l.stop(t0 + 1); }
+  else if (kind === 'croak') { env(0.6, 0.01); for (let i = 0; i < 3; i++) { const o = ctx.createOscillator(); o.type = 'square'; const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900; o.frequency.value = 170 * j; o.connect(f); f.connect(g); o.start(t0 + i * 0.15); o.stop(t0 + i * 0.15 + 0.08); } }
+  else if (kind === 'hiss') { env(0.9, 0.1); noise(0.9, 3800); }
+  else if (kind === 'squeak') { env(0.25, 0.01); osc('sine', 1700 * j, 2500 * j, 0.22); }
+  else if (kind === 'whinny') { env(1.0, 0.05); const o = osc('sawtooth', 520 * j, 380 * j, 1.0, 1400); const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 9; lg.gain.value = 40; l.connect(lg); lg.connect(o.frequency); l.start(t0); l.stop(t0 + 1.1); }
+  else if (kind === 'bark') { env(0.3, 0.005); noise(0.12, 900); osc('sawtooth', 380 * j, 260 * j, 0.25, 1200); }
+  else if (kind === 'ooh') { env(0.8, 0.02); for (let i = 0; i < 3; i++) { const o = ctx.createOscillator(); o.type = 'triangle'; const s = t0 + i * 0.2; o.frequency.setValueAtTime(520 * j, s); o.frequency.linearRampToValueAtTime(880 * j, s + 0.14); o.connect(g); o.start(s); o.stop(s + 0.17); } }
+  else if (kind === 'trumpet') { env(1.2, 0.1); osc('sawtooth', 280 * j, 520 * j, 1.2, 1600); }
+  else if (kind === 'whale') { env(2.4, 0.4); osc('sine', 120 * j, 210 * j, 2.4); }
 }
-mdSay = function (a, txt) { if (a.say && a.say.t > 0) return; const call = txt && typeof MD_VOICE !== 'undefined' && MD_VOICE[a.sp] === txt; a.say = { txt: call ? txt : mdLine(a), t: 3.8 }; a.talkT = MDS.t + 8; };
-mdVoice = function (a) { return typeof MD_VOICE !== 'undefined' && MD_VOICE[a.sp] ? MD_VOICE[a.sp] : mdLine(a); };
+function mdVoiceNow(a) { const c = mdCallOf(a); if (!c) return false; a.say = { txt: c[0], t: 2.6 }; a.talkT = MDS.t + 12 + Math.random() * 20; mdPlay(a, c[1]); return true; }
+mdSay = function (a) { if (a.say && a.say.t > 0) return; mdVoiceNow(a); };
+mdVoice = function (a) { return mdLine(a); };
 
 /* ---------- familias: un macho, una hembra y una cría por especie ---------- */
 function mdYoungOf(sp) { let n = 0; for (const a of MDS.an) if (a.sp === sp && !a.dead && a.age < 1) n++; for (const q of MDS.nests) if (q.sp === sp) n++; return n; }
@@ -117,7 +80,7 @@ function mdFamTick(dt) {
   MDS.famT -= dt; if (MDS.famT <= 0) { MDS.famT = 1; mdFamLeave(); mdCarrion(); }
   MDS.talkT -= dt; if (MDS.talkT <= 0) {
     MDS.talkT = 1.6; const vw = typeof mdVW === 'function' ? mdVW() : 800, x0 = MDV.camX - 60, x1 = MDV.camX + vw + 60; let live = 0; for (const a of MDS.an) if (a.say && a.say.t > 0 && a.x > x0 && a.x < x1) live++;
-    if (live < 5) for (const a of MDS.an) { if (a.dead || a.inHome || a.say || a.x < x0 || a.x > x1 || (a.talkT || 0) > MDS.t) continue; if (Math.random() < 0.3) { a.say = { txt: mdLine(a), t: 3.8 }; a.talkT = MDS.t + 9 + Math.random() * 16; if (++live >= 5) break; } else a.talkT = MDS.t + 2; }
+    if (live < 4) for (const a of MDS.an) { if (a.dead || a.inHome || a.say || a.x < x0 || a.x > x1 || (a.talkT || 0) > MDS.t) continue; if (Math.random() < 0.22) { if (mdVoiceNow(a) && ++live >= 4) break; } else a.talkT = MDS.t + 3; }
   }
   MDS.rosT = (MDS.rosT || 0) - dt; if (MDS.rosT <= 0) { MDS.rosT = 2; mdRosterRender(); }
 }
@@ -135,7 +98,7 @@ function mdCarrion() { if (!MDS.carc) return; MDS.carc = MDS.carc.filter((c) => 
   if (a.digest > MDS.t && a.layer === 'land' && !a.inHome && (a.state === 'idle' || a.state === 'wander' || a.state === 'hunt')) { mdSetState(a, 'rest', 4); return; }
   if (MD_SCAV.has(a.sp) && a.layer === 'land' && !a.inHome && a.hunger > 0.4 && a.age >= 1 && MDS.carc && MDS.carc.length && a.state !== 'flee' && a.state !== 'sleep') {
     let c = null, bd = 900; for (const q of MDS.carc) { const d = Math.abs(q.x - a.x); if (d < bd && q.left > 0) { bd = d; c = q; } }
-    if (c) { if (bd > 36) { a.tx = c.x; a.running = false; if (a.state !== 'wander') mdSetState(a, 'wander', 3); a.timer = Math.max(a.timer, 2); return; } mdSetState(a, 'eat', 2); a.tx = a.x; a.hunger = Math.max(0, a.hunger - 0.035); c.left -= 0.012; if (!c.logged) { c.logged = true; mdLog(`${a.S.n} ${a.name} se alimenta de los restos de ${MD_SP[c.sp].n.toLowerCase()}.`); } if (!a.say && Math.random() < 0.1) a.say = { txt: mdLine(a, 'x') && MD_TXT.eatcarr[Math.floor(Math.random() * 3)], t: 3.4 }; return; }
+    if (c) { if (bd > 36) { a.tx = c.x; a.running = false; if (a.state !== 'wander') mdSetState(a, 'wander', 3); a.timer = Math.max(a.timer, 2); return; } mdSetState(a, 'eat', 2); a.tx = a.x; a.hunger = Math.max(0, a.hunger - 0.035); c.left -= 0.012; if (!c.logged) { c.logged = true; mdLog(`${a.S.n} ${a.name} se alimenta de los restos de ${MD_SP[c.sp].n.toLowerCase()}.`); } return; }
   }
   base(a, dt);
 }; }
@@ -157,6 +120,7 @@ function mdRosterHTML() {
 }
 function mdRosterRender() { const el = document.getElementById('mdRoster'); if (!el || el.hidden) return; if (MDV.editing) return; el.innerHTML = mdRosterHTML(); }
 Object.assign(VIDA_ACTS, {
+  'md-sound': () => { MDV.sound = !MDV.sound; if (MDV.sound) { try { MD_AU.ctx = MD_AU.ctx || new (window.AudioContext || window.webkitAudioContext)(); if (MD_AU.ctx.state === 'suspended') MD_AU.ctx.resume(); } catch { MDV.sound = false; toast('Tu dispositivo no permite sonido aquí.'); } } const b = document.querySelector('[data-act=md-sound]'); if (b) b.textContent = MDV.sound ? 'Sonido: encendido' : 'Sonido: apagado'; },
   'md-roster': () => { const el = document.getElementById('mdRoster'), b = document.querySelector('[data-act=md-roster]'); if (!el) return; el.hidden = !el.hidden; if (b) b.textContent = el.hidden ? 'Animales y nombres' : 'Ocultar animales y nombres'; if (!el.hidden) el.innerHTML = mdRosterHTML(); },
   'md-mark': (el) => { const a = MDS.an.find((o) => o.id === +el.dataset.id && !o.dead); if (!a) return; a.pet = !a.pet; MDS.pets = MDS.pets || []; const i = MDS.pets.findIndex((p) => p.id === a.id); if (a.pet && i < 0) MDS.pets.push({ id: a.id, name: a.name, sp: a.sp }); if (!a.pet && i >= 0) MDS.pets.splice(i, 1); mdRosterRender(); }
 });

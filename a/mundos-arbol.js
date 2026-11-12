@@ -28,7 +28,7 @@ function mdBranchY(f, p, x) { const b = mdTreeBr(f)[p.bi] || mdTreeBr(f)[0]; con
   if (tree && !f.burnt && f.kind !== 'pine' && f.kind !== 'fir' || (f.kind === 'pine' || f.kind === 'fir') && !f.burnt) {
     const br = mdTreeBr(f), h = f.h, leaf = mdPalFor(W, f.kind), hi = mdSh(leaf, 0.12), bark = f.kind === 'sakura' ? '#5a3a40' : f.kind === 'eucalyptus' ? '#b0a898' : '#5a3e2a', sw = Math.sin(time * 0.0007 + f.seed) * (1.4 + (wind || 0) * 3) * (h / 200) * 0.25; c.save(); c.lineCap = 'round';
     for (const b of br) { if (!b.draw) continue; const x0 = b.side * 2, y0 = -h * b.t, tip = { x: b.side * b.len + sw, y: y0 - b.rise };
-      c.strokeStyle = bark; c.lineWidth = b.w; c.beginPath(); c.moveTo(x0, y0 + 2); c.quadraticCurveTo(b.side * b.len * 0.5, y0 - b.rise * 0.2 + 3, tip.x, tip.y); c.stroke();
+      { const cxp = b.side * b.len * 0.5, cyp = y0 - b.rise * 0.2 + 3; let px = x0, py = y0 + 2; c.strokeStyle = bark; for (let i = 1; i <= 6; i++) { const t = i / 6, ix = (1 - t) * (1 - t) * x0 + 2 * (1 - t) * t * cxp + t * t * tip.x, iy = (1 - t) * (1 - t) * (y0 + 2) + 2 * (1 - t) * t * cyp + t * t * tip.y; c.lineWidth = Math.max(1.2, b.w * (1.25 - t * 0.95)); c.beginPath(); c.moveTo(px, py); c.lineTo(ix, iy); c.stroke(); px = ix; py = iy; } }
       c.lineWidth = Math.max(1, b.w * 0.45); c.beginPath(); c.moveTo(b.side * b.len * 0.55, y0 - b.rise * 0.3 + 1); c.lineTo(b.side * b.len * 0.7 + sw * 0.5, tip.y - h * 0.045); c.moveTo(b.side * b.len * 0.35, y0 - b.rise * 0.1 + 2); c.lineTo(b.side * b.len * 0.42, y0 + h * 0.03); c.stroke();
       if (f.kind !== 'dead') { c.fillStyle = leaf; for (let k = 0; k < 3; k++) mdE(c, b.side * b.len * (0.55 + k * 0.22) + sw * (k * 0.3), tip.y + (k - 1) * 4 - 3 + b.rise * (0.6 - k * 0.25) * 0.4, h * 0.035, h * 0.022, b.side * 0.4); c.fillStyle = hi; mdE(c, tip.x, tip.y - 3, h * 0.03, h * 0.02, b.side * 0.4); }
     } c.restore(); }
@@ -56,3 +56,18 @@ function mdBranchY(f, p, x) { const b = mdTreeBr(f)[p.bi] || mdTreeBr(f)[0]; con
   }
   base(a, dt);
 }; }
+
+/* tronco y copa más naturales */
+mdTrunk = function (c, h, w, col, lean) {
+  const g = c.createLinearGradient(-w, 0, w, 0); g.addColorStop(0, mdSh(col, 0.16)); g.addColorStop(0.55, col); g.addColorStop(1, mdSh(col, -0.32)); c.fillStyle = g;
+  c.beginPath(); c.moveTo(-w * 1.05, 0); c.bezierCurveTo(-w * 0.55, -h * 0.12, -w * 0.42, -h * 0.5, -w * 0.34 + lean, -h); c.lineTo(w * 0.34 + lean, -h); c.bezierCurveTo(w * 0.45, -h * 0.5, w * 0.6, -h * 0.12, w * 1.05, 0); c.fill();
+  c.strokeStyle = mdSh(col, -0.4); c.globalAlpha = 0.35; c.lineWidth = Math.max(0.8, w * 0.06); c.beginPath(); for (let i = -2; i <= 2; i++) { c.moveTo(i * w * 0.28, -h * 0.02); c.bezierCurveTo(i * w * 0.24, -h * 0.3, i * w * 0.18 + lean * 0.4, -h * 0.6, i * w * 0.14 + lean, -h * 0.97); } c.stroke(); c.globalAlpha = 1;
+};
+mdCanopy = function (c, cx, cy, r, col, hi, seed) {
+  const R = mdRng(seed + 3), dark = mdSh(col, -0.22), mid = col, lite = mdSh(col, 0.14), n = 16;
+  const cl = []; for (let i = 0; i < n; i++) { const a = R() * mdTau, d = r * (0.15 + Math.sqrt(R()) * 0.85); cl.push({ x: cx + Math.cos(a) * d * 1.05, y: cy + Math.sin(a) * d * 0.78, s: r * (0.3 + R() * 0.22), sh: (Math.cos(a) * -0.5 - Math.sin(a) * 0.5) }); }
+  cl.sort((p, q) => p.y - q.y);
+  for (const k of cl) { c.fillStyle = dark; c.beginPath(); c.arc(k.x + 2, k.y + 3, k.s, 0, mdTau); c.fill(); }
+  for (const k of cl) { c.fillStyle = k.sh > 0.15 ? lite : k.sh < -0.15 ? dark : mid; c.beginPath(); c.arc(k.x, k.y, k.s, 0, mdTau); c.fill(); c.fillStyle = k.sh > 0 ? lite : mid; c.beginPath(); c.arc(k.x - k.s * 0.25, k.y - k.s * 0.3, k.s * 0.55, 0, mdTau); c.fill(); }
+  c.strokeStyle = dark; c.globalAlpha = 0.28; c.lineWidth = 1; c.beginPath(); for (let i = 0; i < 26; i++) { const a = R() * mdTau, d = r * R() * 0.95, x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d * 0.78; c.moveTo(x, y); c.lineTo(x + 4, y + 3); } c.stroke(); c.globalAlpha = 1;
+};
