@@ -17,7 +17,7 @@
   for (const k in N) if (!MD_SP[k]) MD_SP[k] = N[k];
   const PR = { mono: { fun: 1, face: '#f8e6c8', b: '#f6e4c2', c: '#a0683e' }, monoarana: { long: 1 }, titi: {}, lemur: { ring: 1, snout: 1 }, orangutan: { ape: 1, shaggy: 1 }, gorila: { ape: 1, brow: 1 } };
   for (const k in PR) if (MD_SP[k]) Object.assign(MD_SP[k].look, { pr: 1 }, PR[k]);
-  if (MD_SP.mono) MD_SP.mono.fantasy = true;
+  if (MD_SP.mono) { MD_SP.mono.fantasy = true; MD_SP.mono.z = 0.6; }
   for (const k of Object.keys(N)) MD_MONKEY.add(k); for (const k of ['mono', 'monoarana', 'titi', 'lemur', 'orangutan']) MD_MONKEY.add(k);
   const W = (id, ...pairs) => { const w = MD_WORLDS.find((x) => x.id === id); if (!w) return; for (const [k, n] of pairs) { if (!MD_SP[k]) continue; const e = w.sp.find((x) => x[0] === k); if (!e) w.sp.push([k, n]); } };
   W('selva', ['capuchino', 3], ['aullador', 3], ['monoardilla', 3], ['tamarino', 2], ['gibon', 2], ['colobo', 2]);
@@ -109,7 +109,7 @@ function mdFunHead(c, x, y, r, col, belly, face, st, P, time) {
   const tilt = Math.sin(time * 0.004 + P.id) * 0.09, closed = P.eyesClosed || st === 'sleep', happy = st === 'groom' || st === 'banana' || st === 'play' || st === 'chase', scared = st === 'flee' || st === 'panic', dizzy = st === 'dizzy' || st === 'falling', tongue = st === 'banana' || st === 'hang' || st === 'swing' || dizzy;
   c.save(); c.translate(x, y); c.rotate(tilt);
   c.fillStyle = mdSh(col, -0.1); mdE(c, -r * 0.7, -r * 0.1, r * 0.36, r * 0.36); c.fillStyle = '#f2a79a'; mdE(c, -r * 0.7, -r * 0.1, r * 0.22, r * 0.22);
-  c.fillStyle = col; mdE(c, 0, 0, r, r * 0.95); c.fillStyle = mdSh(col, 0.12); mdE(c, -r * 0.2, -r * 0.55, r * 0.5, r * 0.28);
+  c.fillStyle = col; mdE(c, 0, 0, r, r * 0.95); c.fillStyle = mdSh(col, -0.14); mdE(c, r * 0.1, r * 0.55, r * 0.85, r * 0.4); c.fillStyle = col; mdE(c, 0, -r * 0.05, r * 0.98, r * 0.88); c.fillStyle = mdSh(col, 0.12); mdE(c, -r * 0.2, -r * 0.55, r * 0.5, r * 0.28);
   c.strokeStyle = mdSh(col, -0.25); c.lineWidth = Math.max(1, r * 0.07); c.lineCap = 'round'; c.beginPath(); c.moveTo(-r * 0.1, -r * 0.92); c.quadraticCurveTo(r * 0.05, -r * 1.25, r * 0.25, -r * 0.95); c.moveTo(r * 0.1, -r * 0.95); c.quadraticCurveTo(r * 0.3, -r * 1.2, r * 0.45, -r * 0.85); c.stroke();
   c.fillStyle = face; mdE(c, -r * 0.1, -r * 0.05, r * 0.46, r * 0.5); mdE(c, r * 0.3, -r * 0.05, r * 0.52, r * 0.52); mdE(c, r * 0.2, r * 0.36, r * 0.66, r * 0.44);
   c.globalAlpha = 0.5; c.fillStyle = '#ff8f9c'; mdE(c, r * 0.5, r * 0.3, r * 0.2, r * 0.13); mdE(c, -r * 0.12, r * 0.32, r * 0.15, r * 0.1); c.globalAlpha = 1;
@@ -117,7 +117,7 @@ function mdFunHead(c, x, y, r, col, belly, face, st, P, time) {
     if (closed || happy && Math.sin(time * 0.003 + P.id) > 0.2) { c.strokeStyle = '#2a1a10'; c.lineWidth = Math.max(1, r * 0.08); c.beginPath(); c.arc(ex, ey + r * 0.05, r * 0.15 * k, 3.4, 6.0); c.stroke(); return; }
     c.fillStyle = '#fff'; mdE(c, ex, ey, r * 0.22 * k, r * 0.26 * k); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(ex, ey, r * 0.22 * k, r * 0.26 * k, 0, 0, 6.3); c.stroke();
     if (dizzy) { c.strokeStyle = '#2a1a10'; c.lineWidth = r * 0.06; c.beginPath(); c.moveTo(ex - r * 0.1, ey - r * 0.1); c.lineTo(ex + r * 0.1, ey + r * 0.1); c.moveTo(ex + r * 0.1, ey - r * 0.1); c.lineTo(ex - r * 0.1, ey + r * 0.1); c.stroke(); return; }
-    const lx = scared ? 0 : r * 0.07 + Math.sin(time * 0.0017 + P.id) * r * 0.04; c.fillStyle = '#2a1a10'; mdE(c, ex + lx, ey + r * 0.02, r * 0.13 * k, r * 0.16 * k); c.fillStyle = '#fff'; mdE(c, ex + lx + r * 0.04, ey - r * 0.05, r * 0.045, r * 0.045);
+    const lx = scared ? 0 : r * 0.07 + Math.sin(time * 0.0017 + P.id) * r * 0.04; c.fillStyle = '#2a1a10'; mdE(c, ex + lx, ey + r * 0.02, r * 0.13 * k, r * 0.16 * k); c.fillStyle = '#fff'; mdE(c, ex + lx + r * 0.05, ey - r * 0.07, r * 0.06, r * 0.06); mdE(c, ex + lx - r * 0.03, ey + r * 0.06, r * 0.03, r * 0.03);
   };
   eye(r * 0.46, -r * 0.14, 1); eye(-r * 0.02, -r * 0.14, 0.92);
   c.strokeStyle = '#4a2c1a'; c.lineWidth = Math.max(1, r * 0.06); c.beginPath(); const up = scared ? -r * 0.12 : 0; c.moveTo(r * 0.3, -r * 0.46 + up); c.quadraticCurveTo(r * 0.46, -r * 0.55 + up, r * 0.62, -r * 0.44); c.moveTo(-r * 0.18, -r * 0.44 + up); c.quadraticCurveTo(-r * 0.02, -r * 0.54 + up, r * 0.14, -r * 0.46); c.stroke();
