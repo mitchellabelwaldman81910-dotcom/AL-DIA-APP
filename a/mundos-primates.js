@@ -38,7 +38,7 @@ function mdDrawPrimate(c, a, S, time, P) {
   const hang = st === 'hang' || st === 'swing', cling = st === 'climb', fall = st === 'falling' || st === 'flung' || st === 'dead';
   const sit = !hang && !cling && !fall && !mv && (st === 'rest' || st === 'sleep' || st === 'canopy' || st === 'groom' || st === 'banana' || st === 'nest' || (st === 'idle' && P.id % 2 === 0) || st === 'chat');
   const fun = !!L.fun;
-  const legL = u * (fun ? 0.6 : ape ? 0.62 : 0.78), tor = u * (fun ? 0.72 : ape ? 0.95 : 0.8), armL = u * (L.long ? 1.15 : ape ? 1.1 : 0.9), hr = u * (fun ? 0.4 : ape ? 0.31 : 0.28) * (1 + kid * 0.3), w = u * (fun ? 0.27 : ape ? 0.36 : 0.2);
+  const legL = u * (fun ? 0.6 : ape ? 0.62 : 0.78), tor = u * (fun ? 0.72 : ape ? 0.95 : 0.8), armL = u * (L.long ? 1.15 : ape ? 1.1 : 0.9), hr = u * (fun ? 0.42 : ape ? 0.31 : 0.28) * (1 + kid * (fun ? 0.5 : 0.3)), w = u * (fun ? 0.27 : ape ? 0.36 : 0.2);
   const lean = cling ? 0.06 : hang ? 0 : fall ? 0.5 : sit ? 0.14 : (ape ? 0.7 : 0.32) + (P.run ? 0.12 : 0);
   const bob = mv && !hang && !cling ? Math.abs(Math.sin(ph)) * u * (fun ? 0.12 : 0.04) : Math.sin(time * 0.0018 + P.id) * u * 0.008;
   const hipY = (hang ? -legL * 0.5 : sit ? -u * 0.2 : cling ? -u * 0.75 : -legL) - bob, hipX = sit ? -u * 0.05 : 0;
@@ -112,12 +112,12 @@ function mdFunHead(c, x, y, r, col, belly, face, st, P, time) {
   c.fillStyle = col; mdE(c, 0, 0, r, r * 0.95); c.fillStyle = mdSh(col, -0.14); mdE(c, r * 0.1, r * 0.55, r * 0.85, r * 0.4); c.fillStyle = col; mdE(c, 0, -r * 0.05, r * 0.98, r * 0.88); c.fillStyle = mdSh(col, 0.12); mdE(c, -r * 0.2, -r * 0.55, r * 0.5, r * 0.28);
   c.strokeStyle = mdSh(col, -0.25); c.lineWidth = Math.max(1, r * 0.07); c.lineCap = 'round'; c.beginPath(); c.moveTo(-r * 0.1, -r * 0.92); c.quadraticCurveTo(r * 0.05, -r * 1.25, r * 0.25, -r * 0.95); c.moveTo(r * 0.1, -r * 0.95); c.quadraticCurveTo(r * 0.3, -r * 1.2, r * 0.45, -r * 0.85); c.stroke();
   c.fillStyle = face; mdE(c, -r * 0.1, -r * 0.05, r * 0.46, r * 0.5); mdE(c, r * 0.3, -r * 0.05, r * 0.52, r * 0.52); mdE(c, r * 0.2, r * 0.36, r * 0.66, r * 0.44);
-  c.globalAlpha = 0.5; c.fillStyle = '#ff8f9c'; mdE(c, r * 0.5, r * 0.3, r * 0.2, r * 0.13); mdE(c, -r * 0.12, r * 0.32, r * 0.15, r * 0.1); c.globalAlpha = 1;
+  c.globalAlpha = 0.6; c.fillStyle = '#ff8f9c'; mdE(c, r * 0.52, r * 0.3, r * 0.26, r * 0.16); mdE(c, -r * 0.14, r * 0.32, r * 0.19, r * 0.12); c.globalAlpha = 1;
   const eye = (ex, ey, k) => {
     if (closed || happy && Math.sin(time * 0.003 + P.id) > 0.2) { c.strokeStyle = '#2a1a10'; c.lineWidth = Math.max(1, r * 0.08); c.beginPath(); c.arc(ex, ey + r * 0.05, r * 0.15 * k, 3.4, 6.0); c.stroke(); return; }
-    c.fillStyle = '#fff'; mdE(c, ex, ey, r * 0.22 * k, r * 0.26 * k); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(ex, ey, r * 0.22 * k, r * 0.26 * k, 0, 0, 6.3); c.stroke();
+    c.fillStyle = '#fff'; mdE(c, ex, ey, r * 0.26 * k, r * 0.3 * k); c.strokeStyle = 'rgba(0,0,0,.25)'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(ex, ey, r * 0.26 * k, r * 0.3 * k, 0, 0, 6.3); c.stroke();
     if (dizzy) { c.strokeStyle = '#2a1a10'; c.lineWidth = r * 0.06; c.beginPath(); c.moveTo(ex - r * 0.1, ey - r * 0.1); c.lineTo(ex + r * 0.1, ey + r * 0.1); c.moveTo(ex + r * 0.1, ey - r * 0.1); c.lineTo(ex - r * 0.1, ey + r * 0.1); c.stroke(); return; }
-    const lx = scared ? 0 : r * 0.07 + Math.sin(time * 0.0017 + P.id) * r * 0.04; c.fillStyle = '#2a1a10'; mdE(c, ex + lx, ey + r * 0.02, r * 0.13 * k, r * 0.16 * k); c.fillStyle = '#fff'; mdE(c, ex + lx + r * 0.05, ey - r * 0.07, r * 0.06, r * 0.06); mdE(c, ex + lx - r * 0.03, ey + r * 0.06, r * 0.03, r * 0.03);
+    const lx = scared ? 0 : r * 0.07 + Math.sin(time * 0.0017 + P.id) * r * 0.04; c.fillStyle = '#2a1a10'; mdE(c, ex + lx, ey + r * 0.03, r * 0.17 * k, r * 0.2 * k); c.fillStyle = '#fff'; mdE(c, ex + lx + r * 0.05, ey - r * 0.07, r * 0.06, r * 0.06); mdE(c, ex + lx - r * 0.03, ey + r * 0.06, r * 0.03, r * 0.03);
   };
   eye(r * 0.46, -r * 0.14, 1); eye(-r * 0.02, -r * 0.14, 0.92);
   c.strokeStyle = '#4a2c1a'; c.lineWidth = Math.max(1, r * 0.06); c.beginPath(); const up = scared ? -r * 0.12 : 0; c.moveTo(r * 0.3, -r * 0.46 + up); c.quadraticCurveTo(r * 0.46, -r * 0.55 + up, r * 0.62, -r * 0.44); c.moveTo(-r * 0.18, -r * 0.44 + up); c.quadraticCurveTo(-r * 0.02, -r * 0.54 + up, r * 0.14, -r * 0.46); c.stroke();
