@@ -1792,7 +1792,7 @@ async function cloudSync(opts = {}) {
         if (isCur) changedCurrent = true;
       } else if (dirty || (!rdoc && hasLocal && (local.tasks.length || local.subjects.length))) { push = true; if (rdoc && rdoc.data && !trust) next = { ...mergeDocs(local, migrate(rdoc.data), base, false), cloudAt: local.cloudAt }; }
       next.owner = id;
-      if (push && !(REG.adminView && REG.adminView[id])) {
+      if (push && !viewOnlyNow()) {
         const data = JSON.parse(JSON.stringify(next)); delete data.timer; data.owner = id;
         const res = await cloudFetch('PUT', { kind: 'profile', profile: id, device: CLOUD.device, data });
         next.cloudAt = res.at;
@@ -1819,8 +1819,7 @@ async function cloudSync(opts = {}) {
     for (const l of mine.values()) if (!remoteIds.has(l.id) && tokens()[l.from]) toPush.push(l);
     REG.letters = [...mine.values()].sort((a, b) => a.at - b.at); saveReg();
     if (!viewOnlyNow()) for (const l of toPush) { try { await cloudFetch('POST', { kind: 'letter', letter: l }); } catch { /* se reintenta */ } }
-    await flushForestOutbox();
-    await postTrees(live);
+    if (!viewOnlyNow()) { await flushForestOutbox(); await postTrees(live); }
     CLOUD.last = Date.now();
     if (lost) { choosing = true; render(); toast('Tu contraseña cambió en otro dispositivo. Vuelve a entrar.'); }
     else if (changedCurrent && !choosing) { if (softRender()) applyTheme(); }
