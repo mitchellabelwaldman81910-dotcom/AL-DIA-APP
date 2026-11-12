@@ -32,7 +32,7 @@ function mdDrawPrimate(c, a, S, time, P) {
   const L = S.look, u = 18 * P.sc, kid = 1 - P.age, col = P.col || L.c, belly = L.b || col, dk = mdSh(col, -0.34), face = L.face || mdSh(belly, 0.04), ape = !!L.ape, st = a.state, ph = P.ph || 0, mv = P.moving;
   const hang = st === 'hang' || st === 'swing', cling = st === 'climb', fall = st === 'falling' || st === 'flung' || st === 'dead';
   const sit = !hang && !cling && !fall && !mv && (st === 'rest' || st === 'sleep' || st === 'canopy' || st === 'groom' || st === 'banana' || st === 'nest' || (st === 'idle' && P.id % 2 === 0) || st === 'chat');
-  const legL = u * (ape ? 0.62 : 0.78), tor = u * (ape ? 0.95 : 0.8), armL = u * (L.long ? 1.15 : ape ? 1.1 : 0.9), hr = u * (ape ? 0.3 : 0.25) * (1 + kid * 0.3), w = u * (ape ? 0.36 : 0.2);
+  const legL = u * (ape ? 0.62 : 0.78), tor = u * (ape ? 0.95 : 0.8), armL = u * (L.long ? 1.15 : ape ? 1.1 : 0.9), hr = u * (ape ? 0.31 : 0.28) * (1 + kid * 0.35), w = u * (ape ? 0.36 : 0.2);
   const lean = cling ? 0.06 : hang ? 0 : fall ? 0.5 : sit ? 0.14 : (ape ? 0.7 : 0.32) + (P.run ? 0.12 : 0);
   const bob = mv && !hang && !cling ? Math.abs(Math.sin(ph)) * u * 0.04 : Math.sin(time * 0.0018 + P.id) * u * 0.008;
   const hipY = (hang ? -legL * 0.5 : sit ? -u * 0.2 : cling ? -u * 0.75 : -legL) - bob, hipX = sit ? -u * 0.05 : 0;
@@ -40,8 +40,8 @@ function mdDrawPrimate(c, a, S, time, P) {
   let hdX = shX + Math.sin(lean) * hr * 0.4 + hr * 0.45, hdY = shY - hr * 0.55;
   if (st === 'sleep') { hdX = shX + hr * 0.7; hdY = shY + hr * 0.1; }
   c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
-  const seg = (x1, y1, x2, y2, x3, y3, wd, colr) => { c.strokeStyle = colr; c.lineWidth = wd; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.lineTo(x3, y3); c.stroke(); };
-  const hand = (x, y, colr) => { c.fillStyle = colr; mdE(c, x, y, u * 0.09, u * 0.075); };
+  const seg = (x1, y1, x2, y2, x3, y3, wd, colr) => { c.strokeStyle = colr; c.lineWidth = wd; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); c.lineWidth = wd * 0.72; c.beginPath(); c.moveTo(x2, y2); c.lineTo(x3, y3); c.stroke(); c.fillStyle = colr; c.beginPath(); c.arc(x2, y2, wd * 0.5, 0, 6.3); c.fill(); };
+  const hand = (x, y, colr) => { c.fillStyle = mdSh(colr, -0.12); mdE(c, x, y, u * 0.1, u * 0.08); c.strokeStyle = mdSh(colr, -0.12); c.lineWidth = u * 0.035; c.beginPath(); c.moveTo(x + u * 0.05, y); c.lineTo(x + u * 0.14, y + u * 0.04); c.moveTo(x + u * 0.04, y + u * 0.03); c.lineTo(x + u * 0.11, y + u * 0.09); c.stroke(); };
   const leg = (i, colr) => {
     let fx, fy, kx, ky; const hx = hipX, hy = hipY;
     if (hang) { fx = hx + (i ? -u * 0.15 : u * 0.1) + Math.sin(time * 0.003 + i) * u * 0.05; fy = hy + legL * 0.95; kx = (hx + fx) / 2 + u * 0.05; ky = (hy + fy) / 2; }
@@ -66,12 +66,14 @@ function mdDrawPrimate(c, a, S, time, P) {
   if (L.tl && L.tl !== 'none' && !L.notail) {
     c.strokeStyle = L.mantle ? belly : col; c.lineWidth = Math.max(1.5, u * (L.mantle ? 0.16 : 0.1)); c.beginPath(); c.moveTo(hipX - u * 0.08, hipY + u * 0.02);
     if (hang) c.bezierCurveTo(hipX - u * 0.4, hipY + u * 0.3, hipX - u * 0.5, hipY + u * 0.7, hipX - u * 0.2, hipY + u * 0.95); else if (sit || cling) c.bezierCurveTo(hipX - u * 0.5, hipY + u * 0.1, hipX - u * 0.8, hipY - u * 0.1, hipX - u * 0.75, hipY - u * 0.55); else c.bezierCurveTo(hipX - u * 0.55, hipY - u * 0.1, hipX - u * 0.9, hipY - u * 0.3 + Math.sin(ph) * u * 0.05, hipX - u * 1.0, hipY - u * 0.8); c.stroke();
+    c.fillStyle = L.mantle ? '#f2f0ea' : mdSh(col, -0.12); { const tx = hang ? hipX - u * 0.2 : (sit || cling) ? hipX - u * 0.75 : hipX - u * 1.0, ty = hang ? hipY + u * 0.95 : (sit || cling) ? hipY - u * 0.55 : hipY - u * 0.8; mdE(c, tx, ty, u * (L.mantle ? 0.14 : 0.08), u * (L.mantle ? 0.2 : 0.09)); }
     if (L.ring) { c.strokeStyle = '#2a2a2e'; c.setLineDash([u * 0.1, u * 0.1]); c.beginPath(); c.moveTo(hipX - u * 0.4, hipY - u * 0.05); c.quadraticCurveTo(hipX - u * 0.8, hipY - u * 0.2, hipX - u * 0.95, hipY - u * 0.75); c.stroke(); c.setLineDash([]); }
   }
   /* torso */
   const mx = (hipX + shX) / 2, my = (hipY + shY) / 2, ang = lean; c.save(); c.translate(mx, my); c.rotate(ang);
   const g = c.createLinearGradient(-w, 0, w, 0); g.addColorStop(0, mdSh(col, 0.1)); g.addColorStop(1, mdSh(col, -0.28)); c.fillStyle = g; mdE(c, 0, 0, w * 0.95, tor * 0.58);
-  c.fillStyle = L.mantle ? belly : mdSh(belly, -0.05); mdE(c, w * 0.35, tor * 0.06, w * 0.55, tor * 0.38);
+  { const gb = c.createRadialGradient(w * 0.4, tor * 0.05, 1, w * 0.4, tor * 0.05, tor * 0.42); gb.addColorStop(0, mdSh(belly, 0.08)); gb.addColorStop(1, mdSh(belly, -0.12)); c.fillStyle = L.mantle ? belly : gb; mdE(c, w * 0.35, tor * 0.06, w * 0.58, tor * 0.4); }
+  c.strokeStyle = mdSh(col, 0.3); c.globalAlpha = 0.35; c.lineWidth = u * 0.05; c.beginPath(); c.ellipse(0, 0, w * 0.95, tor * 0.58, 0, 3.7, 5.2); c.stroke(); c.globalAlpha = 1;
   c.globalAlpha = 0.25; c.strokeStyle = dk; c.lineWidth = 0.8; c.beginPath(); for (let k = 0; k < 14; k++) { const fx = (mdHash(k * 3 + S.z * 4) - 0.5) * w * 1.6, fy = (mdHash(k * 7 + 1) - 0.5) * tor * 1.0; c.moveTo(fx, fy); c.lineTo(fx - u * 0.05, fy + u * 0.1); } c.stroke(); c.globalAlpha = 1; c.restore();
   /* pierna cercana */
   leg(0, col);
@@ -84,7 +86,9 @@ function mdDrawPrimate(c, a, S, time, P) {
   if (L.mustache) { c.fillStyle = '#f4f0e6'; mdE(c, hdX + hr * 0.7, hdY + hr * 0.5, hr * 0.5, hr * 0.12); }
   c.strokeStyle = '#2a1a14'; c.lineWidth = Math.max(0.8, hr * 0.06); c.beginPath(); c.moveTo(hdX + hr * 0.45, hdY + hr * 0.52); c.lineTo(hdX + hr * (L.snout ? 1.15 : 0.85), hdY + hr * 0.46); c.stroke();
   if (ape && L.brow) { c.fillStyle = dk; mdE(c, hdX + hr * 0.35, hdY - hr * 0.28, hr * 0.5, hr * 0.14); }
-  mdEye(c, hdX + hr * 0.38, hdY - hr * 0.1, hr * 0.17, P.eyesClosed || st === 'sleep', false);
+  c.fillStyle = mdSh(face, 0.1); c.globalAlpha = 0.5; mdE(c, hdX + hr * 0.2, hdY + hr * 0.3, hr * 0.3, hr * 0.2); c.globalAlpha = 1;
+  if (P.eyesClosed || st === 'sleep') mdEye(c, hdX + hr * 0.4, hdY - hr * 0.08, hr * 0.2, true, false); else { c.fillStyle = '#f1e8d8'; mdE(c, hdX + hr * 0.4, hdY - hr * 0.08, hr * 0.2, hr * 0.17); c.fillStyle = '#2a1a10'; mdE(c, hdX + hr * 0.45, hdY - hr * 0.07, hr * 0.12, hr * 0.12); c.fillStyle = '#fff'; mdE(c, hdX + hr * 0.48, hdY - hr * 0.11, hr * 0.04, hr * 0.04); c.strokeStyle = mdSh(col, -0.45); c.lineWidth = Math.max(0.8, hr * 0.06); c.beginPath(); c.moveTo(hdX + hr * 0.2, hdY - hr * 0.27); c.quadraticCurveTo(hdX + hr * 0.42, hdY - hr * 0.36, hdX + hr * 0.62, hdY - hr * 0.24); c.stroke(); }
+  c.fillStyle = mdSh(col, 0.12); for (let k = 0; k < 3; k++) mdE(c, hdX - hr * 0.2 - k * hr * 0.08, hdY + hr * (0.55 + k * 0.08), hr * 0.18, hr * 0.1, 0.5);
   c.fillStyle = mdSh(col, -0.12); mdE(c, hdX - hr * 0.45, hdY - hr * 0.05, hr * 0.25, hr * 0.28); c.fillStyle = face; mdE(c, hdX - hr * 0.43, hdY - hr * 0.03, hr * 0.14, hr * 0.17);
   if (L.shaggy) { c.strokeStyle = mdSh(col, -0.15); c.lineWidth = 1; c.beginPath(); for (let k = 0; k < 8; k++) { c.moveTo(hdX - hr * 0.6 + k * hr * 0.15, hdY - hr * 0.8); c.lineTo(hdX - hr * 0.8 + k * hr * 0.17, hdY - hr * 0.2); } c.stroke(); }
   /* brazo cercano */
