@@ -29,11 +29,12 @@ function mdDraw(ts) {
   /* objetos ordenados por profundidad */
   const items = [];
   for (const f of MDS.fl) { if (f.x < x0 - 200 || f.x > x1 + 200) continue; items.push({ y: f.under ? f.y - 0.5 : (MD_TREES.has(f.kind) || f.kind === 'barn' || f.kind === 'igloo' || f.kind === 'dune' ? f.y - 1 - (f.kind === 'barn' ? 2 : 0) : f.y), f }); }
-  for (const a of MDS.an) { if (a.dead || a.x < x0 || a.x > x1) continue; if (a.layer === 'under') continue; const yy = a.layer === 'air' && a.flying ? 9000 : a.layer === 'water' || a.layer === 'floor' ? a.y - 1000 : a.y + 0.01; items.push({ y: yy, a }); }
+  for (const a of MDS.an) { if (a.dead || a.x < x0 || a.x > x1) continue; if (a.layer === 'under') continue; let yy = a.layer === 'air' && a.flying ? 9000 : a.layer === 'water' || a.layer === 'floor' ? a.y - 1000 : a.y + 0.01; if (a.inHome && MDS.homes) { const h = MDS.homes.find((q) => q.id === a.inHome); if (h && MD_HOME_HIDE.has(h.type)) continue; if (h) yy = h.type === 'burrow' ? a.y : h.y; } if (a.arb && a.tree && a.up > 0.05 && a.state !== 'falling') yy = a.tree.y + 0.5; if (a.state === 'falling') yy = 8999; items.push({ y: yy, a }); }
   for (const n of MDS.nests) if (n.x > x0 && n.x < x1) items.push({ y: n.tree ? n.tree.y - 0.5 : n.y + 0.02, n });
   for (const r of MDS.rafts) if (r.x > x0 - 100 && r.x < x1 + 100) items.push({ y: r.y + 0.03, r });
   const tor = MDS.ev.find((e) => e.type === 'tornado'); if (tor) items.push({ y: mdGY(tor.x) + 40, tor });
   if (typeof mdBugItems === 'function') mdBugItems(items, x0, x1);
+  if (typeof mdHomeItems === 'function') mdHomeItems(items, x0, x1);
   items.sort((p, q) => p.y - q.y); MDV.bubbles = [];
   const snowy = E.ice || (W.clim.t < 0.3);
   for (const it of items) {
@@ -45,6 +46,7 @@ function mdDraw(ts) {
     else if (it.bug) it.draw(c, time);
   }
   mdDrawWater(c, x0, x1, W, E, time, true);
+  if (MDS.sea) mdDeepDark(c, x0, x1, camY, vh, time);
   mdDrawFrontGrass(c, x0, x1, W, time);
   mdDrawParts(c, x0, x1, time);
   /* rayo */
@@ -75,7 +77,7 @@ function mdDrawWater(c, x0, x1, W, E, time, front) {
   const sf = MDS.surf(), segs = mdWaterSegs(x0, x1); if (!segs.length) return; const wt = W.pal.wt;
   for (const [a, b] of segs) {
     const xa = a - 8, xb = b + 8; c.beginPath(); c.moveTo(xa, sf); for (let x = xa; x <= xb; x += 12) c.lineTo(x, sf + Math.sin(x * 0.03 + time * 0.0016) * 2 + Math.sin(x * 0.011 - time * 0.001) * 1.5); for (let x = xb; x >= xa; x -= 8) c.lineTo(x, MDS.sea ? 1300 : Math.max(sf, mdGY(x) + 2)); c.closePath();
-    if (!front) { const deep = MDS.sea ? (MDS.def.id === 'abismo' ? 1100 : 760) : sf + 160; const g = c.createLinearGradient(0, sf, 0, deep); g.addColorStop(0, wt[0]); g.addColorStop(1, wt[1]); c.globalAlpha = MDS.sea ? 1 : 0.86; c.fillStyle = g; c.fill(); c.globalAlpha = 1;
+    if (!front) { const deep = MDS.sea ? MDS.S + 1300 : sf + 160; const g = c.createLinearGradient(0, sf, 0, deep); g.addColorStop(0, wt[0]); g.addColorStop(MDS.sea ? 0.35 : 1, wt[1]); if (MDS.sea) g.addColorStop(1, '#030a1a'); c.globalAlpha = MDS.sea ? 1 : 0.86; c.fillStyle = g; c.fill(); c.globalAlpha = 1;
       if (MDS.sea) { c.save(); c.clip(); c.globalAlpha = 0.08; c.fillStyle = '#fff'; for (let i = 0; i < 6; i++) { const rx = xa + ((i * 340 + time * 0.01) % (xb - xa + 400)); c.beginPath(); c.moveTo(rx, sf); c.lineTo(rx + 60, sf); c.lineTo(rx - 120, sf + 420); c.lineTo(rx - 200, sf + 420); c.fill(); } c.restore(); c.globalAlpha = 1; } }
     else { c.globalAlpha = MDS.sea ? 0.1 : 0.24; c.fillStyle = wt[0]; c.fill(); c.globalAlpha = 0.55; c.strokeStyle = '#ffffff'; c.lineWidth = 1.5; c.beginPath(); for (let x = xa; x <= xb; x += 12) { const y = sf + Math.sin(x * 0.03 + time * 0.0016) * 2 + Math.sin(x * 0.011 - time * 0.001) * 1.5; if (x === xa) c.moveTo(x, y); else c.lineTo(x, y); } c.stroke(); c.globalAlpha = 1;
       if (E.rain > 0.2) { c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 1; for (let i = 0; i < 12; i++) { const rx = xa + mdHash(i + Math.floor(time / 300)) * (xb - xa); const rr = ((time / 300) % 1) * 8; c.beginPath(); c.ellipse(rx, sf, rr + 2, (rr + 2) * 0.3, 0, 0, mdTau); c.stroke(); } } }
@@ -84,6 +86,12 @@ function mdDrawWater(c, x0, x1, W, E, time, front) {
 function mdDrawFrontGrass(c, x0, x1, W, time) {
   if (MDS.sea) return; const g = W.pal.g2, snow = MDS.E.ice; const col = snow ? '#e8f0f5' : mdSh(g, -0.08), col2 = snow ? '#d4e2ec' : mdSh(g, 0.06);
   for (let x = Math.floor(x0 / 18) * 18; x < x1; x += 18) { if (mdDepth(x) > 2) continue; const y = mdGY(x) + 44, h = 9 + mdHash(x * 1.3) * 10; const sw = Math.sin(time * 0.00045 + x * 0.004) * 2.2; c.fillStyle = mdHash(x) < 0.5 ? col : col2; c.beginPath(); c.moveTo(x - 4, y); c.quadraticCurveTo(x - 1 + sw * 0.5, y - h * 0.6, x + sw, y - h); c.quadraticCurveTo(x + 1 + sw * 0.5, y - h * 0.5, x + 4, y); c.fill(); c.beginPath(); c.moveTo(x + 3, y); c.quadraticCurveTo(x + 6 + sw * 0.5, y - h * 0.4, x + 9 + sw, y - h * 0.7); c.quadraticCurveTo(x + 7, y - h * 0.3, x + 8, y); c.fill(); }
+}
+function mdDeepDark(c, x0, x1, camY, vh, time) {
+  const top = MDS.S + 260, bot = (MDS.maxFloor || 1400) + 100; if (camY + vh < top) return; const g = c.createLinearGradient(0, top, 0, Math.max(top + 10, MDS.S + 1500)); g.addColorStop(0, 'rgba(2,8,24,0)'); g.addColorStop(1, 'rgba(2,8,24,.82)'); c.fillStyle = g; c.fillRect(x0, top, x1 - x0, bot - top + 200);
+  /* bioluminiscencia: se dibuja encima de la oscuridad */
+  for (const a of MDS.an) { if (a.dead || a.x < x0 || a.x > x1 || a.y < top) continue; const gl = a.S.glow; if (!gl && a.S.sh !== 'angler' && a.S.sh !== 'jelly') continue; const deep = mdCl((a.y - top) / 900, 0, 1); const r = (8 + a.S.z * 10) * (0.6 + 0.4 * Math.sin(time * 0.003 + a.id)); c.save(); c.globalAlpha = 0.25 + deep * 0.45; const rg = c.createRadialGradient(a.x, a.y, 0, a.x, a.y, r * 1.8); rg.addColorStop(0, gl || '#9ad8ff'); rg.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = rg; c.fillRect(a.x - r * 2, a.y - r * 2, r * 4, r * 4); c.globalAlpha = 0.5 + deep * 0.4; c.translate(a.x, a.y); c.scale(a.dir, 1); try { mdDrawCritter(c, a, a.S, time); } catch (e) { /* */ } c.restore(); }
+  /* nieve marina */ c.fillStyle = 'rgba(220,230,255,.35)'; for (let i = 0; i < 70; i++) { const x = x0 + (mdHash(i) * (x1 - x0) + time * 0.004) % (x1 - x0), y = top + 100 + ((mdHash(i + 9) * 1600 + time * 0.012) % 1600); mdE(c, x, y, 1.1, 1.1); }
 }
 function mdDrawRaft(c, r) { c.save(); c.translate(r.x, r.y); c.fillStyle = '#8a6238'; for (let i = -3; i <= 3; i++) { c.fillRect(i * 9 - 60 + 63 - 4, -6, 8, 10); } c.fillStyle = '#a77a48'; c.fillRect(-60, -7, 120, 4); c.fillRect(-60, 1, 120, 3); c.strokeStyle = '#5a3d20'; c.lineWidth = 1; c.strokeRect(-60, -7, 120, 11); c.restore(); }
 function mdDrawTornado(c, e, time) { const gy = mdGY(e.x); c.save(); const g = c.createLinearGradient(0, gy - 560, 0, gy); g.addColorStop(0, 'rgba(90,94,104,.9)'); g.addColorStop(1, 'rgba(120,112,100,.85)'); c.fillStyle = g; c.beginPath(); const N = 24; const pts = []; for (let i = 0; i <= N; i++) { const t = i / N, y = gy - t * 560, w = 10 + Math.pow(t, 1.8) * 170, off = Math.sin(time * 0.004 + t * 5) * (8 + t * 40); pts.push([e.x + off, y, w]); } c.moveTo(pts[0][0] - pts[0][2], pts[0][1]); for (const p of pts) c.lineTo(p[0] - p[2], p[1]); for (let i = pts.length - 1; i >= 0; i--) c.lineTo(pts[i][0] + pts[i][2], pts[i][1]); c.closePath(); c.fill(); c.strokeStyle = 'rgba(220,224,230,.35)'; c.lineWidth = 2; for (let i = 0; i < 12; i++) { const t = ((i / 12) + time * 0.0006) % 1, y = gy - t * 540, w = 10 + Math.pow(t, 1.8) * 170, off = Math.sin(time * 0.004 + t * 5) * (8 + t * 40); c.beginPath(); c.ellipse(e.x + off, y, w * 0.9, 4 + t * 8, 0, 0.2, Math.PI - 0.2); c.stroke(); } c.fillStyle = 'rgba(160,140,110,.45)'; c.beginPath(); c.ellipse(e.x, gy - 6, 90 + Math.sin(time * 0.01) * 8, 18, 0, 0, mdTau); c.fill(); c.restore(); }
@@ -103,7 +111,7 @@ function mdDrawWeather(c, w, h, E, time, camY, k) {
   if (E.fog > 0.05) { c.fillStyle = `rgba(232,238,244,${E.fog * 0.35})`; c.fillRect(0, 0, w, h); }
   const ash = E.ash; if (ash > 0) { c.fillStyle = `rgba(70,50,40,${ash * 0.25})`; c.fillRect(0, 0, w, h); c.fillStyle = 'rgba(80,70,65,.6)'; for (let i = 0; i < 60 * ash; i++) { const x = (mdHash(i) * w + time * 0.02) % w, y = (mdHash(i + 9) * h + time * 0.04) % h; c.fillRect(x, y, 2, 2); } }
   const dark = E.night * (MDS.def.id === 'magico' ? 0.3 : 0.42) + E.gloom * 0.12; if (dark > 0.01) { c.fillStyle = `rgba(8,16,48,${dark})`; c.fillRect(0, 0, w, h); }
-  if (MDS.sea) { const depthTop = (MDS.S - camY) * k; if (depthTop < h) { const g = c.createLinearGradient(0, Math.max(0, depthTop), 0, h); g.addColorStop(0, 'rgba(0,10,40,0)'); g.addColorStop(1, `rgba(0,10,40,${MDS.def.id === 'abismo' ? 0.55 : 0.25})`); c.fillStyle = g; c.fillRect(0, Math.max(0, depthTop), w, h); } }
+  
   if (MDS.flash > 0) { c.fillStyle = `rgba(255,255,240,${MDS.flash * 0.55})`; c.fillRect(0, 0, w, h); }
   if (typeof mdDrawGlow === 'function') mdDrawGlow(c, w, h, time, k);
 }
@@ -111,6 +119,14 @@ function mdDrawAnimal(c, a, time) {
   const S = a.S; c.save(); const lane = a.layer === 'land' || (a.layer === 'air' && !a.flying) ? 1 + a.lane / 260 : 1; c.translate(a.x, a.y);
   /* sombra */
   if ((a.layer === 'land' || a.layer === 'floor') && a.state !== 'flung' && (a.up || 0) < 0.3 && !a.raft && !mdInW(a)) { c.fillStyle = 'rgba(0,0,0,.14)'; mdE(c, 0, 1, (10 + S.z * 9) * (0.5 + a.age * 0.5), 3 + S.z); }
+  if (a.arb && a.tree && (a.inCanopy || a.state === 'hang' || a.state === 'swing')) {
+    const st = a.state, zz = 10 + S.z * 8;
+    if (st === 'hang' || st === 'swing') { c.strokeStyle = '#4f7a34'; c.lineWidth = 2.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -zz * 2.6); c.bezierCurveTo(3, -zz * 1.8, -3, -zz * 1.1, 0, -zz * 0.5); c.stroke(); c.fillStyle = '#5d9a3e'; for (let i = 0; i < 4; i++) { const yy = -zz * (2.3 - i * 0.5); mdE(c, (i % 2 ? 4 : -4), yy, 3.2, 1.6, i % 2 ? 0.5 : -0.5); } }
+    else if (st === 'canopy' || st === 'sleep' || st === 'banana') { c.strokeStyle = '#6a4a2c'; c.lineWidth = 4; c.lineCap = 'round'; c.beginPath(); c.moveTo(-26, 3); c.lineTo(26, 2); c.stroke(); c.strokeStyle = '#4f7a34'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(-18, 3); c.lineTo(-22, 8); c.moveTo(20, 2); c.lineTo(24, 7); c.stroke(); }
+    if (st === 'banana') { c.strokeStyle = '#f1cf3a'; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath(); c.arc(a.dir * 11, -zz * 0.8, 6, 0.3, 2.6); c.stroke(); c.strokeStyle = '#6a5a1a'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(a.dir * 11 + 5, -zz * 0.8 + 2); c.lineTo(a.dir * 11 + 7, -zz * 0.8 + 1); c.stroke(); }
+  }
+  if (a.state === 'hang') { c.translate(0, 2); c.rotate(Math.PI); c.translate(0, -(10 + S.z * 8)); }
+  if (a.state === 'falling') c.rotate(Math.sin(MDS.t * 8) * 0.6 + 0.8);
   if (a.state === 'flung') c.rotate(Math.sin(a.ang || 0) * 0.8 + (a.t2 || 0) * 2);
   if (a.state === 'dead') c.rotate(Math.PI);
   if (a.arb && a.state === 'climb' && a.up > 0 && a.up < 1) c.rotate(-a.dir * 1.1);
@@ -120,8 +136,9 @@ function mdDrawAnimal(c, a, time) {
   c.restore();
   if (a.preg > 0 && a.layer !== 'water' && MDV.zoom > 0.8) { c.fillStyle = '#ff8fa3'; c.globalAlpha = 0.85; const s = 2.6, x = a.x, y = a.y - 26 - S.z * 12; c.beginPath(); c.moveTo(x, y + s * 0.6); c.bezierCurveTo(x - s * 1.4, y - s * 0.4, x - s * 0.5, y - s * 1.4, x, y - s * 0.5); c.bezierCurveTo(x + s * 0.5, y - s * 1.4, x + s * 1.4, y - s * 0.4, x, y + s * 0.6); c.fill(); c.globalAlpha = 1; }
   if (a.state === 'sleep' && MDV.zoom > 0.7) { c.fillStyle = 'rgba(255,255,255,.85)'; c.font = `600 ${9}px system-ui`; const z = (time * 0.001 + a.id) % 2; c.globalAlpha = 1 - z / 2; c.fillText('z', a.x + 8 + z * 4, a.y - 18 - S.z * 10 - z * 8); c.globalAlpha = 1; }
+  if (a.pet) { const bs = mdCl(1 / MDV.zoom, 0.4, 1.1), ty = a.y - (14 + S.z * 12) * (0.5 + a.age * 0.5) - (a.say ? 26 * bs : 0); c.save(); c.translate(a.x, ty); c.scale(bs, bs); c.font = '700 10px system-ui'; const tw = c.measureText(a.name).width + 10; c.fillStyle = 'rgba(47,122,85,.92)'; c.beginPath(); if (c.roundRect) c.roundRect(-tw / 2, -14, tw, 14, 7); else c.rect(-tw / 2, -14, tw, 14); c.fill(); c.fillStyle = '#fff'; c.fillText(a.name, -tw / 2 + 5, -3.5); c.restore(); }
   if (a.state === 'dizzy') { c.fillStyle = '#ffe14a'; for (let i = 0; i < 3; i++) { const an = time * 0.006 + i * 2.09; mdE(c, a.x + Math.cos(an) * 10, a.y - 20 - S.z * 12 + Math.sin(an) * 3, 2, 2); } }
-  if (a.say && a.say.t > 0 && !(a.say.delay > 0) && !MDV.bubbles.some((q) => Math.abs(q[0] - a.x) < 90 / MDV.zoom && Math.abs(q[1] - a.y) < 40 / MDV.zoom)) { MDV.bubbles.push([a.x, a.y]); const t = a.say.txt, bs = mdCl(1.15 / MDV.zoom, 0.35, 1.2), by = a.y - (18 + S.z * 12) * (0.5 + a.age * 0.5); c.save(); c.translate(a.x, by); c.scale(bs, bs); c.font = '600 11px system-ui'; const tw = c.measureText(t).width + 12; c.globalAlpha = Math.min(1, a.say.t * 2); c.fillStyle = 'rgba(255,255,255,.95)'; c.beginPath(); if (c.roundRect) c.roundRect(-tw / 2, -30, tw, 18, 9); else c.rect(-tw / 2, -30, tw, 18); c.fill(); c.beginPath(); c.moveTo(-4, -12.5); c.lineTo(0, -7); c.lineTo(4, -12.5); c.fill(); c.fillStyle = '#2a2a30'; c.fillText(t, -tw / 2 + 6, -17); c.restore(); c.globalAlpha = 1; }
+  if (false && a.say && a.say.t > 0 && !(a.say.delay > 0) && !MDV.bubbles.some((q) => Math.abs(q[0] - a.x) < 90 / MDV.zoom && Math.abs(q[1] - a.y) < 40 / MDV.zoom)) { MDV.bubbles.push([a.x, a.y]); const t = a.say.txt, bs = mdCl(1.15 / MDV.zoom, 0.35, 1.2), by = a.y - (18 + S.z * 12) * (0.5 + a.age * 0.5); c.save(); c.translate(a.x, by); c.scale(bs, bs); c.font = '600 11px system-ui'; const tw = c.measureText(t).width + 12; c.globalAlpha = Math.min(1, a.say.t * 2); c.fillStyle = 'rgba(255,255,255,.95)'; c.beginPath(); if (c.roundRect) c.roundRect(-tw / 2, -30, tw, 18, 9); else c.rect(-tw / 2, -30, tw, 18); c.fill(); c.beginPath(); c.moveTo(-4, -12.5); c.lineTo(0, -7); c.lineTo(4, -12.5); c.fill(); c.fillStyle = '#2a2a30'; c.fillText(t, -tw / 2 + 6, -17); c.restore(); c.globalAlpha = 1; }
 }
 
 /* ---------- bucle ---------- */
@@ -139,7 +156,7 @@ function mdLoop(ts) {
   MDV.raf = requestAnimationFrame(mdLoop);
 }
 function mdResize() { const cv = MDV.cv; if (!cv) return; const r = cv.getBoundingClientRect(); const dpr = Math.min(window.devicePixelRatio || 1, 2) * MDV.q; const w = Math.max(200, Math.round(r.width * dpr)), h = Math.max(200, Math.round(r.height * dpr)); if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; } mdClampCam(); }
-function mdClampCam() { const vw = mdVW(), vh = 720 / MDV.zoom; MDV.camX = mdCl(MDV.camX, 0, Math.max(0, MDS.WW - vw)); const maxY = MDS.sea ? Math.max(0, (MDS.def.id === 'abismo' ? 760 : 700) - vh) : 1180 - vh; MDV.camY = mdCl(MDV.camY, Math.min(0, MDS.sea ? 0 : 0), Math.max(0, maxY)); }
+function mdClampCam() { const vw = mdVW(), vh = 720 / MDV.zoom; MDV.camX = mdCl(MDV.camX, 0, Math.max(0, MDS.WW - vw)); const maxY = MDS.sea ? Math.max(0, (MDS.maxFloor || 700) + 70 - vh) : 1180 - vh; MDV.camY = mdCl(MDV.camY, Math.min(0, MDS.sea ? 0 : 0), Math.max(0, maxY)); }
 function mdCamera(dt) {
   const vw = mdVW(), vh = 720 / MDV.zoom; let tx = null, ty = null;
   if (MDV.follow && MDV.sel && !MDV.sel.dead) { tx = MDV.sel.x - vw / 2; ty = MDV.sel.y - vh * (MDV.cardH ? 0.36 : 0.6); }
@@ -183,15 +200,16 @@ function mdCardHTML(a) {
     <div class="md-stats"><span><b>${a.kids}</b> crías</span><span><b>${a.kills}</b> presas</span><span><b>${Math.round(a.dist / 40)}</b> m recorridos</span><span><b>${mins}:${String(secs).padStart(2, '0')}</b> de vida</span></div>` : ''}
   ${MDV.tab === 'comida' ? `<p class="small"><b>${MD_DIET_TXT[S.d]}.</b> Come: ${esc(mdFoodOf(a.sp))}.</p><p class="small">Lo cazan: ${esc(pred || 'nadie en este mundo')}.</p><p class="md-chain">${chain.map((x) => `<span>${esc(x)}</span>`).join('<i>→</i>')}</p>` : ''}
   ${MDV.tab === 'datos' ? `<p class="small">${esc(S.fx || '')}</p><div class="md-stats"><span>Vive en: <b>${MD_HAB_TXT[S.h] || 'Tierra'}</b></span><span>Activo: <b>${MD_PAT_TXT[S.pat] || '—'}</b></span><span>Grupo: <b>${S.g > 1 ? 'hasta ' + S.g : 'solitario'}</b></span><span>Crías: <b>${S.lit[0]}${S.lit[1] > S.lit[0] ? '–' + S.lit[1] : ''} ${esc(S.bn)}${S.lit[1] > 1 ? 's' : ''}</b></span><span>Tamaño: <b>${S.z < 0.8 ? 'pequeño' : S.z < 1.6 ? 'mediano' : S.z < 3 ? 'grande' : 'gigante'}</b></span><span>Velocidad: <b>${Math.round((S.v[1] || S.v[0]) / 4)} km/h</b></span></div>` : ''}
-  <div class="md-card-b"><button type="button" class="md-btn" data-act="md-follow" aria-pressed="${MDV.follow}">${MDV.follow ? 'Dejar de seguir' : 'Seguir'}</button><button type="button" class="md-btn" data-act="md-zoomsel">Acercar</button></div>`;
+  <div class="md-card-b"><button type="button" class="md-btn" data-act="md-follow" aria-pressed="${MDV.follow}">${MDV.follow ? 'Dejar de seguir' : 'Seguir'}</button><button type="button" class="md-btn" data-act="md-zoomsel">Acercar</button><button type="button" class="md-btn" data-act="md-name">${a.pet ? 'Cambiar nombre' : 'Ponerle nombre'}</button></div>`;
 }
 function mdUiTick(force) {
   const E = MDS.E; if (!E) return;
-  const t = document.getElementById('mdTime'); if (t) t.textContent = `${mdTimeName(E)} · ${mdWeatherName(E)}`;
+  const t = document.getElementById('mdTime'); if (t) { const dm = MDS.sea ? Math.round(MDV.camY + 360 / MDV.zoom - MDS.S) : 0; t.textContent = `${mdTimeName(E)} · ${mdWeatherName(E)}${dm > 40 ? ` · ${dm} m de profundidad` : ''}`; }
   const pc = document.getElementById('mdPopN'); if (pc) pc.textContent = `${MDS.an.length} animales${typeof mdBugCount === 'function' ? ' · ' + mdBugCount() + ' bichitos' : ''}`;
-  const card = document.getElementById('mdCard'); if (card) { MDV.cardH = !card.hidden && card.offsetHeight > (MDV.cv ? MDV.cv.clientHeight * 0.3 : 200); if (MDV.sel && !MDV.sel.dead) { card.hidden = false; card.innerHTML = mdCardHTML(MDV.sel); } else if (MDV.selBug && typeof mdBugCard === 'function') { card.hidden = false; card.innerHTML = mdBugCard(MDV.selBug); } else { card.hidden = true; if (MDV.sel && MDV.sel.dead) { MDV.sel = null; MDV.follow = false; } } }
+  const card = document.getElementById('mdCard'); if (card && MDV.editing) { /* escribiendo nombre */ } else if (card) { MDV.cardH = !card.hidden && card.offsetHeight > (MDV.cv ? MDV.cv.clientHeight * 0.3 : 200); if (MDV.sel && !MDV.sel.dead) { card.hidden = false; card.innerHTML = mdCardHTML(MDV.sel); } else if (MDV.selBug && typeof mdBugCard === 'function') { card.hidden = false; card.innerHTML = mdBugCard(MDV.selBug); } else { card.hidden = true; if (MDV.sel && MDV.sel.dead) { MDV.sel = null; MDV.follow = false; } } }
   MDV.slow = (MDV.slow || 0) + 1; if (MDV.slow % 4 && !force) return;
   const pop = document.getElementById('mdPop'); if (pop) { const counts = {}; for (const a of MDS.an) if (!a.dead) { const c = counts[a.sp] || (counts[a.sp] = { n: 0, b: 0 }); c.n++; if (a.age < 1) c.b++; } pop.innerHTML = Object.keys(MDS.init).concat(Object.keys(counts).filter((k) => !(k in MDS.init))).map((k) => { const c = counts[k] || { n: 0, b: 0 }; return `<li><button type="button" data-act="md-findsp" data-sp="${k}"><span>${esc(MD_SP[k].n)}</span><b>${c.n}${c.b ? `<small> · ${c.b} crías</small>` : ''}</b></button></li>`; }).join(''); }
+  const pl = document.getElementById('mdPets'); if (pl) { const ps = MDS.pets || []; pl.innerHTML = ps.length ? ps.map((p) => { const a = MDS.an.find((o) => o.id === p.id && !o.dead); return `<li><button type="button" class="md-petb" data-act="md-findpet" data-id="${p.id}" ${a ? '' : 'disabled'}><b>${esc(p.name)}</b> · ${esc(MD_SP[p.sp].n)} — ${a ? esc(MD_STATE[a.state] || 'Tranquilo') : esc(p.cause || 'ya no está')}</button></li>`; }).join('') : '<li class="faint">Toca un animal y elige «Ponerle nombre».</li>'; }
   const lg = document.getElementById('mdLog'); if (lg && (MDS.logDirty || force)) { MDS.logDirty = false; lg.innerHTML = MDS.log.slice(0, 14).map((l) => `<li>${esc(l.txt)}</li>`).join('') || '<li class="faint">Todo está en calma…</li>'; }
   const st = document.getElementById('mdStats'); if (st) st.innerHTML = `<span><b>${MDS.stat.born}</b> nacimientos</span><span><b>${MDS.stat.hatched}</b> huevos eclosionados</span><span><b>${MDS.nests.length}</b> nidos activos</span><span><b>${MDS.stat.eaten}</b> cacerías</span>`;
 }
@@ -230,7 +248,7 @@ function mdWorldHTML() {
   <div class="md-wrap" id="mdWrap"><canvas id="mdCv" role="img" aria-label="${esc(W.name)}: mundo vivo con animales"></canvas>
     <div class="md-hud"><span class="md-badge" id="mdTime">…</span><span class="md-badge" id="mdPopN">…</span></div>
     <div class="md-tools"><button type="button" class="md-ib" data-act="md-pause" id="mdPauseB" aria-label="Pausar">${MDV.paused ? '▶' : '❚❚'}</button><button type="button" class="md-ib" data-act="md-speed" id="mdSpeedB" aria-label="Velocidad">${MDS.speed}×</button><button type="button" class="md-ib" data-act="md-full" aria-label="Pantalla completa">⤢</button></div>
-    <div class="md-zoom"><button type="button" class="md-ib" data-act="md-zoom" data-v="1" aria-label="Acercar">+</button><span id="mdZoomTxt">${MDV.zoom.toFixed(1)}×</span><button type="button" class="md-ib" data-act="md-zoom" data-v="-1" aria-label="Alejar">−</button>${MDS.sea ? '' : '<button type="button" class="md-ib md-ib-s" data-act="md-under" aria-label="Ver bajo tierra">▾</button>'}</div>
+    <div class="md-zoom"><button type="button" class="md-ib" data-act="md-zoom" data-v="1" aria-label="Acercar">+</button><span id="mdZoomTxt">${MDV.zoom.toFixed(1)}×</span><button type="button" class="md-ib" data-act="md-zoom" data-v="-1" aria-label="Alejar">−</button><button type="button" class="md-ib md-ib-s" data-act="md-under" aria-label="${MDS.sea ? 'Bajar a las profundidades' : 'Ver bajo tierra'}">▾</button></div>
     <div class="md-card" id="mdCard" hidden></div></div>
   <p class="tiny faint md-hint">Arrastra para moverte, pellizca o usa + y − para hacer zoom (bajo tierra viven topos, lombrices y hormigas). Toca un animal para ver su ficha y seguirlo.</p>
   ${haz.length ? `<h2 class="sec">Catástrofes</h2><div class="md-cats">${haz.map((h) => `<button type="button" class="md-cat" data-act="md-cat" data-v="${h}"><b>${MD_CATS[h][0]}</b><span>${MD_CATS[h][1]}</span></button>`).join('')}</div>` : ''}
@@ -239,6 +257,7 @@ function mdWorldHTML() {
   <h2 class="sec">Estadísticas del mundo</h2><div class="md-stats md-wstats" id="mdStats"></div>
   <h2 class="sec">Habitantes</h2><p class="tiny faint">Toca una especie para encontrar a uno.</p><ul class="md-pop" id="mdPop"></ul>
   <h2 class="sec">Cadena alimenticia</h2><div class="md-chainbox">${mdChainHTML()}</div>
+  <h2 class="sec">Tus animalitos con nombre</h2><ul class="md-log" id="mdPets"></ul>
   <h2 class="sec">Diario del mundo</h2><ul class="md-log" id="mdLog"></ul></div>`;
 }
 function mdStart() { if (!MDV.raf) { MDV.last = 0; MDV.raf = requestAnimationFrame(mdLoop); } }
@@ -258,13 +277,18 @@ Object.assign(VIDA_ACTS, {
   'md-speed': (el) => { MDS.speed = MDS.speed === 1 ? 2 : MDS.speed === 2 ? 4 : 1; el.textContent = MDS.speed + '×'; },
   'md-full': () => { const w = document.getElementById('mdWrap'); if (!w) return; w.classList.toggle('md-fullscr'); document.body.classList.toggle('gb-noscroll', w.classList.contains('md-fullscr')); MDV.sizeChk = ''; },
   'md-zoom': (el) => { const cv = MDV.cv; if (!cv) return; const f = +el.dataset.v > 0 ? 1.5 : 1 / 1.5; if (MDV.sel && MDV.follow) { MDV.zoom = mdCl(MDV.zoom * f, 0.7, 9); } else mdZoomAt(f, cv.width / 2, cv.height / 2); const zb = document.getElementById('mdZoomTxt'); if (zb) zb.textContent = MDV.zoom.toFixed(1) + '×'; },
-  'md-under': () => { MDV.follow = false; MDV.zoom = Math.max(MDV.zoom, 1.4); MDV.camY = MDS.S - 60; mdClampCam(); MDV.lastUser = performance.now(); const zb = document.getElementById('mdZoomTxt'); if (zb) zb.textContent = MDV.zoom.toFixed(1) + '×'; },
+  'md-under': () => { MDV.follow = false; MDV.zoom = Math.max(MDV.zoom, MDS.sea ? 1 : 1.4); const vh0 = 720 / MDV.zoom; MDV.camY = MDS.sea ? (MDV.camY > MDS.S + 600 ? 0 : (MDS.maxFloor || 900) + 70 - vh0) : MDS.S - 60; mdClampCam(); MDV.lastUser = performance.now(); const zb = document.getElementById('mdZoomTxt'); if (zb) zb.textContent = MDV.zoom.toFixed(1) + '×'; },
   'md-cat': (el) => { mdStartCat(el.dataset.v); mdUiTick(true); toast(MD_CATS[el.dataset.v][0]); },
   'md-ov': (el) => { const g = el.dataset.g, v = el.dataset.v; if (g === 'time') MDS.ov.time = v === '' ? null : +v; else MDS.ov.weather = v || null; if (v === 'aurora') MDS.ov.time = 0; mdEnv(); document.querySelectorAll('.md-chip').forEach((b) => { const gg = b.dataset.g, vv = b.dataset.v; const cur = gg === 'time' ? MDS.ov.time : MDS.ov.weather; b.setAttribute('aria-pressed', String(vv === '' ? cur == null : String(cur) === vv)); }); },
   'md-unsel': () => { MDV.sel = null; MDV.selBug = null; MDV.follow = false; mdUiTick(true); },
   'md-follow': () => { MDV.follow = !MDV.follow; MDV.auto = false; mdUiTick(true); },
   'md-zoomsel': () => { MDV.follow = true; MDV.zoom = Math.max(MDV.zoom, MDV.selBug ? 6 : 2.2); const zb = document.getElementById('mdZoomTxt'); if (zb) zb.textContent = MDV.zoom.toFixed(1) + '×'; mdUiTick(true); },
+  'md-name': () => { const a = MDV.sel; const card = document.getElementById('mdCard'); if (!a || !card) return; MDV.editing = true; MDV.paused0 = MDV.paused; card.innerHTML = `<div class="md-card-h"><b>Ponle nombre</b><span>${esc(a.S.n)}</span></div><form class="md-nameform"><input id="mdNameIn" maxlength="18" value="${esc(a.pet ? a.name : '')}" placeholder="Ej. ${esc(a.name)}" autocomplete="off" aria-label="Nombre del animalito"><div class="md-card-b"><button type="button" class="md-btn" data-act="md-name-save">Guardar</button><button type="button" class="md-btn" data-act="md-name-cancel">Cancelar</button></div></form><p class="tiny faint">Puede vivir mucho, pero recuerda: en su cadena alimenticia también lo pueden cazar.</p>`; const inp = document.getElementById('mdNameIn'); if (inp) inp.focus(); },
+  'md-name-save': () => { const a = MDV.sel, inp = document.getElementById('mdNameIn'); MDV.editing = false; if (!a || !inp) { mdUiTick(true); return; } const v = inp.value.replace(/\s+/g, ' ').trim().slice(0, 18); if (v) { a.name = v; a.pet = true; MDS.pets = MDS.pets || []; const p = MDS.pets.find((q) => q.id === a.id); if (p) p.name = v; else MDS.pets.push({ id: a.id, name: v, sp: a.sp }); mdLog(`Ahora ${a.S.n.toLowerCase()} se llama ${v}.`); MDV.follow = true; } mdUiTick(true); },
+  'md-name-cancel': () => { MDV.editing = false; mdUiTick(true); },
+  'md-findpet': (el) => { const a = MDS.an.find((o) => o.id === +el.dataset.id && !o.dead); if (!a) return; MDV.sel = a; MDV.selBug = null; MDV.follow = true; MDV.tab = 'info'; mdUiTick(true); const w = document.getElementById('mdWrap'); if (w) w.scrollIntoView({ behavior: 'smooth', block: 'center' }); },
   'md-tab': (el) => { MDV.tab = el.dataset.v; mdUiTick(true); },
   'md-findsp': (el) => { const sp = el.dataset.sp; const list = MDS.an.filter((a) => a.sp === sp && !a.dead); if (!list.length) { toast('No queda ninguno ahora; pronto llegarán más.'); return; } MDV.findI = ((MDV.findI || 0) + 1) % list.length; MDV.sel = list[MDV.findI]; MDV.selBug = null; MDV.follow = true; MDV.tab = 'info'; mdUiTick(true); const w = document.getElementById('mdWrap'); if (w) w.scrollIntoView({ behavior: 'smooth', block: 'center' }); },
 });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { const w = document.getElementById('mdWrap'); if (w && w.classList.contains('md-fullscr')) { w.classList.remove('md-fullscr'); document.body.classList.remove('gb-noscroll'); MDV.sizeChk = ''; } } });
+document.addEventListener('submit', (e) => { if (e.target && e.target.classList && e.target.classList.contains('md-nameform')) { e.preventDefault(); VIDA_ACTS['md-name-save'](); } });

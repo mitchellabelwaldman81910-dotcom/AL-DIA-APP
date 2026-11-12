@@ -8,18 +8,18 @@ const mdHash = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; retu
 
 /* ojo grande y brillante + mejilla */
 function mdEye(c, x, y, r, closed, big) {
-  if (closed) { c.strokeStyle = '#2a1d16'; c.lineWidth = Math.max(1, r * 0.5); c.lineCap = 'round'; c.beginPath(); c.arc(x, y - r * 0.2, r * 0.9, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke(); return; }
-  if (big) { c.fillStyle = '#fff'; mdE(c, x, y, r * 1.35, r * 1.45); }
-  c.fillStyle = '#1b1210'; mdE(c, x, y, r, r * 1.08); c.fillStyle = '#fff'; mdE(c, x + r * 0.32, y - r * 0.38, r * 0.38, r * 0.38); c.globalAlpha = 0.8; mdE(c, x - r * 0.35, y + r * 0.35, r * 0.18, r * 0.18); c.globalAlpha = 1;
+  r *= 0.8;
+  if (closed) { c.strokeStyle = '#2a1d16'; c.lineWidth = Math.max(1, r * 0.4); c.lineCap = 'round'; c.beginPath(); c.arc(x, y - r * 0.1, r * 0.8, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke(); return; }
+  c.fillStyle = '#17110d'; mdE(c, x, y, r, r * 0.95); c.fillStyle = 'rgba(255,255,255,.55)'; mdE(c, x + r * 0.3, y - r * 0.3, r * 0.2, r * 0.2);
 }
-const mdBlush = (c, x, y, r) => { c.globalAlpha = 0.45; c.fillStyle = '#ff8fa3'; mdE(c, x, y, r * 1.1, r * 0.7); c.globalAlpha = 1; };
+const mdBlush = () => {};
 
 /* ------------------------- CUADRÚPEDOS ------------------------- */
 function mdDrawQuad(c, a, S, time, P) {
   const L0 = S.look, z = P.sc, u = 18 * z, kid = 1 - P.age;
   const ln = (L0.ln || 1) * u * 0.9, lg = (L0.lg || 0.8) * u * 0.55 * (1 - P.lie * 0.78), bh = u * (L0.hm ? 0.7 : 0.62) * (L0.fl ? 1.12 : 1);
   const cy = -(lg + bh * 0.42), nk = (L0.nk || 0) * u * 0.7;
-  const hr = u * (0.34 + (L0.w ? 0.04 : 0)) * (1 + kid * 0.55) * (S.z > 3 ? 0.78 : 1);
+  const hr = u * (0.34 + (L0.w ? 0.04 : 0)) * (1 + kid * 0.3) * (S.z > 3 ? 0.78 : 1);
   const col = P.col || L0.c, belly = L0.b || col, dark = mdSh(col, -0.28), light = mdSh(col, 0.22);
   const sw = P.moving ? Math.sin(P.ph) : 0, sw2 = P.moving ? Math.sin(P.ph + Math.PI) : 0, amp = (P.run ? 0.62 : 0.36) * (L0.arms ? 0.5 : 1);
   const bob = P.moving ? Math.abs(Math.sin(P.ph)) * u * (P.run ? 0.07 : 0.025) : Math.sin(time * 0.002 + P.id) * u * 0.008 * (1 - P.lie);
@@ -300,9 +300,13 @@ function mdDrawSpecial(c, a, S, time, P) {
   const L = S.look, u = 18 * P.sc, kid = 1 - P.age, col = P.col || L.c, belly = L.b || col, sh = S.sh, dark = mdSh(col, -0.25), sw = P.moving ? Math.sin(P.ph) : 0;
   c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
   if (sh === 'frog') {
-    const hop = P.hop || 0; c.translate(0, -hop * u * 0.9); const r = u * 0.55; c.fillStyle = dark; mdE(c, -r * 0.65, -r * 0.2, r * 0.55, r * 0.32, 0.3); c.fillStyle = col; mdE(c, 0, -r * 0.55, r * 0.95, r * 0.62); c.fillStyle = belly; mdE(c, r * 0.1, -r * 0.35, r * 0.6, r * 0.32);
-    mdE(c, r * 0.6, -r * 0.7, r * 0.5, r * 0.4); c.fillStyle = col; for (const s of [0, 1]) { mdE(c, r * (0.4 + s * 0.3), -r * 1.05, r * 0.24, r * 0.24); } mdEye(c, r * 0.4, -r * 1.07, r * 0.13, P.eyesClosed, true); mdEye(c, r * 0.72, -r * 1.07, r * 0.13, P.eyesClosed, true); mdBlush(c, r * 0.35, -r * 0.55, r * 0.14); c.strokeStyle = '#3a2a1a'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(r * 0.55, -r * 0.55); c.quadraticCurveTo(r * 0.9, -r * 0.45, r * 1.05, -r * 0.62); c.stroke(); c.fillStyle = dark; mdE(c, r * 0.35, -r * 0.1, r * 0.22, r * 0.1);
-    if (P.tongue) { c.strokeStyle = '#e85a6a'; c.lineWidth = u * 0.1; c.beginPath(); c.moveTo(r * 1.0, -r * 0.55); c.lineTo(r * 1.0 + P.tongue * u * 1.6, -r * 0.7); c.stroke(); }
+    const k = u / 13, hop = (P.hop || 0) * u * 0.9; c.translate(0, -hop); c.scale(k, k);
+    c.fillStyle = col; c.beginPath(); c.ellipse(0, -4, 6.5, 4.4, 0, 0, 6.3); c.fill();
+    c.fillStyle = belly; c.beginPath(); c.ellipse(1, -2, 4.4, 2.4, 0, 0, 6.3); c.fill();
+    c.fillStyle = col; c.beginPath(); c.arc(3, -9, 2.8, 0, 6.3); c.arc(-1, -9, 2.8, 0, 6.3); c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(3.2, -9.3, 1.3, 0, 6.3); c.arc(-0.8, -9.3, 1.3, 0, 6.3); c.fill();
+    c.fillStyle = '#111'; c.beginPath(); c.arc(3.6, -9.3, 0.7, 0, 6.3); c.arc(-0.4, -9.3, 0.7, 0, 6.3); c.fill();
+    if (P.tongue) { c.strokeStyle = '#e85a6a'; c.lineWidth = 1; c.beginPath(); c.moveTo(7, -5); c.lineTo(7 + P.tongue * 14, -7); c.stroke(); }
   } else if (sh === 'snail') {
     const r = u * 0.42, st = P.moving ? Math.sin(P.ph * 0.5) * u * 0.05 : 0, hide = P.lie; c.fillStyle = belly; c.beginPath(); c.moveTo(-r * 1.3, 0); c.quadraticCurveTo(-r * 0.3, -r * 0.5 + st, r * 1.2, -r * 0.2); if (!hide) { c.quadraticCurveTo(r * 1.6, -r * 0.6, r * 1.45, -r * 0.05); } c.lineTo(r * 1.3, 0); c.fill();
     if (!hide) { c.strokeStyle = belly; c.lineWidth = u * 0.06; c.beginPath(); c.moveTo(r * 1.35, -r * 0.4); c.lineTo(r * 1.55, -r * 1.05); c.moveTo(r * 1.2, -r * 0.4); c.lineTo(r * 1.15, -r * 0.95); c.stroke(); c.fillStyle = '#1b1210'; mdE(c, r * 1.55, -r * 1.08, u * 0.05, u * 0.05); mdE(c, r * 1.15, -r * 0.98, u * 0.045, u * 0.045); mdBlush(c, r * 1.3, -r * 0.2, u * 0.05); }

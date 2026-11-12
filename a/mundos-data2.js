@@ -116,3 +116,62 @@
   W('algas', ['camaron', 16], ['langosta', 6]);
   for (const w of MD_WORLDS) w.sp = w.sp.filter((e) => MD_SP[e[0]] && e[1] > 0 && !MD_SP[e[0]].rb);
 })();
+/* 7.54 — profundidades del océano, cangrejos y langostas, y refugios de cada especie */
+(() => {
+  const f = (n, sh, z, v, g, lit, bn, d, look, fx, extra) => Object.assign({ n, t: 'f', sh, h: 'W', d, z, v: [v], pat: 'a', g, lit, bn, prey: [], look, fx, dz: 'deep' }, extra || {});
+  Object.assign(MD_SP, {
+    calamargig: f('Calamar gigante', 'squid', 3.2, 18, 1, [4, 8], 'calamarcito', 'c', { c: '#c84a3a', b: '#e88a7a' }, 'Tiene los ojos más grandes del reino animal: ¡como un balón!', { prey: ['pezhacha', 'pezlinterna', 'pez'] }),
+    pezvibora: f('Pez víbora', 'fish', 0.8, 20, 1, [4, 8], 'pecesito víbora', 'c', { c: '#2a3040', b: '#4a5068', s: '#7ab8ff', teeth: 1, slim: 1 }, 'Sus dientes son tan largos que no le caben en la boca.', { prey: ['pezlinterna', 'pezhacha'], glow: '#7ab8ff' }),
+    pulpodumbo: f('Pulpo dumbo', 'octo', 0.8, 10, 1, [3, 6], 'pulpito dumbo', 'o', { c: '#f2a0b8', b: '#ffd0dc' }, 'Nada moviendo sus aletas como orejitas de elefante.', { prey: ['camaron', 'isopodo'] }),
+    cangrejoyeti: { n: 'Cangrejo yeti', t: 'f', sh: 'crab', h: 'W', d: 'o', z: 0.7, v: [8], pat: 'a', g: 4, lit: [4, 8], bn: 'cangrejito yeti', prey: [], look: { c: '#f4efe4', b: '#fffaf2' }, fx: 'Vive junto a fuentes de agua caliente y tiene brazos peludos.', dz: 'deep' },
+    isopodo: { n: 'Isópodo gigante', t: 'f', sh: 'crab', h: 'W', d: 'o', z: 0.8, v: [6], pat: 'a', g: 3, lit: [3, 6], bn: 'isopodito', prey: [], look: { c: '#c8b8c8', b: '#e8dce8' }, fx: 'Es primo de la cochinilla, ¡pero del tamaño de un gato!', dz: 'deep' },
+    medusaabisal: f('Medusa abisal', 'jelly', 0.9, 7, 3, [4, 8], 'medusita', 'f', { c: '#ff5a7a', b: '#ffb0c0', glow: 1 }, 'Brilla en rojo y azul en la oscuridad total.', { glow: '#ff7a9a' }),
+    pezhacha: f('Pez hacha', 'fish', 0.45, 18, 10, [4, 8], 'pecesito hacha', 'f', { c: '#c8d0dc', b: '#eef2f8', s: '#8a98b0' }, 'Su pancita brilla para que no se le vea la sombra desde abajo.', { glow: '#a8d8ff' }),
+    pezlinterna: f('Pez linterna', 'fish', 0.4, 22, 12, [4, 8], 'pecesito linterna', 'f', { c: '#3a4a6a', b: '#6a7a9a', s: '#7ae8ff' }, 'Tiene lucecitas por todo el cuerpo y sube de noche a comer.', { glow: '#7ae8ff' }),
+    tiburonduende: f('Tiburón duende', 'shark', 2, 16, 1, [2, 6], 'tiburoncito duende', 'c', { c: '#e8b0b8', b: '#f4d0d4' }, 'Su mandíbula sale disparada para atrapar comida.', { prey: ['pezvibora', 'pezlinterna', 'pezhacha', 'calamar'] }),
+  });
+  if (MD_SP.anglerfish) { MD_SP.anglerfish.dz = 'deep'; MD_SP.anglerfish.glow = '#fff3a0'; MD_SP.anglerfish.prey = [...new Set([...(MD_SP.anglerfish.prey || []), 'pezlinterna', 'pezhacha', 'camaron'])]; }
+  for (const k of ['ballena', 'jorobada', 'delfin', 'orca', 'foca', 'leonmarino', 'morsa', 'nutria', 'tortugamar', 'tortugalaud', 'narval', 'beluga', 'manati', 'sardina', 'atun', 'manta', 'medusa', 'payaso', 'caballito', 'cirujano', 'angel', 'pezglobo']) if (MD_SP[k]) MD_SP[k].dz = 'surf';
+  for (const k of ['calamar']) if (MD_SP[k]) MD_SP[k].dz = 'deep';
+  if (MD_SP.cangrejo) MD_SP.cangrejo.dz = 'deep'; if (MD_SP.langosta) { MD_SP.langosta.dz = 'deep'; MD_SP.langosta.h = 'W'; }
+  if (MD_SP.cachalote == null && MD_SP.ballena) { MD_SP.cachalote = Object.assign({}, MD_SP.ballena, { n: 'Cachalote', dz: 'mid', d: 'c', prey: ['calamargig', 'calamar'], look: { c: '#5a5a62', b: '#8a8a92' }, fx: 'Baja más de 2000 metros a cazar calamares gigantes aguantando la respiración una hora.' }); }
+  const W = (id, ...pairs) => { const w = MD_WORLDS.find((x) => x.id === id); if (!w) return; for (const [k, n] of pairs) { if (!MD_SP[k]) continue; const e = w.sp.find((x) => x[0] === k); if (e) e[1] = Math.max(e[1], n); else w.sp.push([k, n]); } };
+  W('pacifico', ['cangrejo', 10], ['langosta', 8], ['pezlinterna', 30], ['pezhacha', 24], ['calamargig', 2], ['pezvibora', 6], ['medusaabisal', 8], ['cachalote', 2], ['pulpodumbo', 3], ['isopodo', 6]);
+  W('atlantico', ['cangrejo', 10], ['langosta', 10], ['pezlinterna', 30], ['pezhacha', 20], ['calamargig', 2], ['anglerfish', 4], ['medusaabisal', 6], ['cachalote', 2], ['isopodo', 6]);
+  W('indico', ['cangrejo', 10], ['langosta', 6], ['pezlinterna', 24], ['pezhacha', 16], ['pezvibora', 4], ['medusaabisal', 6], ['pulpodumbo', 2]);
+  W('artico', ['cangrejo', 12], ['langosta', 4], ['pezlinterna', 16], ['isopodo', 6]);
+  W('abismo', ['cangrejoyeti', 14], ['isopodo', 10], ['pezlinterna', 36], ['pezhacha', 30], ['pezvibora', 10], ['medusaabisal', 14], ['pulpodumbo', 6], ['calamargig', 3], ['tiburonduende', 2], ['cachalote', 2], ['langosta', 4]);
+  W('arrecife', ['langosta', 6], ['cangrejo', 14]); W('algas', ['langosta', 6], ['cangrejo', 12]);
+  W('playa', ['cangrejo', 14]); W('costa', ['cangrejo', 12]); W('manglar', ['cangrejo', 16]);
+  /* refugios como en la vida real */
+  const H = { burrow: ['conejo', 'liebre', 'zorro', 'zorroart', 'fenec', 'suricata', 'marmota', 'raton', 'hamster', 'armadillo', 'wombat', 'chinchilla', 'cuyo', 'erizo', 'puercoespin', 'coyote', 'dingo'], cave: ['oso', 'osopolar', 'lobo', 'puma', 'leopnieve', 'pantera', 'hiena', 'tigre', 'gorila'], log: ['mapache', 'zorrillo', 'lince', 'serpiente', 'rana', 'lagarto'], hollow: ['buho', 'buhonieve', 'carpintero', 'ardilla', 'loro', 'guacamaya', 'cacatua', 'tucan'], barn: ['vaca', 'oveja', 'cerdo', 'caballo', 'cabra', 'gallina', 'pony', 'burro', 'perro', 'gato', 'alpaca', 'pavo'], seacave: ['pulpo', 'langosta', 'cangrejo', 'pulpodumbo', 'isopodo', 'cangrejoyeti', 'calamar', 'caballito'], anemone: ['payaso'], lodge: ['castor'] };
+  for (const [t, ks] of Object.entries(H)) for (const k of ks) if (MD_SP[k]) MD_SP[k].home = t;
+  for (const w of MD_WORLDS) w.sp = w.sp.filter((e) => MD_SP[e[0]] && e[1] > 0 && !MD_SP[e[0]].rb);
+})();
+
+/* 7.54 — LA GRAN JUNGLA: mundo nuevo con 10 especies más */
+(() => {
+  const q = (n, z, v, pat, g, lit, bn, d, look, fx, extra) => Object.assign({ n, t: 'q', h: 'L', d, z, v, pat, g, lit, bn, prey: [], look, fx }, extra || {});
+  const b = (n, z, v, pat, g, lit, bn, d, nest, look, fx, extra) => Object.assign({ n, t: 'b', h: 'A', d, z, v: [v], pat, g, lit, bn, nest, prey: [], look, fx }, extra || {});
+  const N = {
+    ocelote: q('Ocelote', 1.2, [30, 110], 'n', 1, [1, 2], 'ocelotito', 'c', { c: '#d8a860', b: '#f6ead0', s: '#4a3020', pt: 'spots', e: 'point', n: 0.3, tl: 'long', ln: 1.05, lg: 0.55 }, 'Caza de noche y ve muy bien en la oscuridad.', { prey: ['aguti', 'raton', 'iguana', 'ranaflecha', 'kinkaju'] }),
+    coati: q('Coatí', 0.9, [24, 90], 'd', 4, [2, 4], 'coatí bebé', 'o', { c: '#8a5a3a', b: '#d8c0a0', s: '#3a2a20', e: 'small', n: 0.7, tl: 'long', ln: 1, lg: 0.5 }, 'Husmea la tierra con su nariz larga buscando insectos.', { prey: ['caracol'] }),
+    aguti: q('Agutí', 0.7, [24, 100], 'd', 2, [2, 3], 'agutí bebé', 'h', { c: '#a8683a', b: '#e8c890', e: 'small', n: 0.3, tl: 'none', ln: 0.95, lg: 0.55 }, 'Entierra semillas y así siembra nuevos árboles.'),
+    pecari: q('Pecarí', 1.0, [22, 80], 'd', 6, [2, 3], 'pecarí bebé', 'o', { c: '#4a4038', b: '#8a8070', s: '#2a241e', e: 'small', n: 0.5, tl: 'none', ln: 1, lg: 0.5 }, 'Anda en manadas y se avisa con un olor fuerte.'),
+    kinkaju: q('Kinkajú', 0.75, [20, 70], 'n', 1, [1, 1], 'kinkajú bebé', 'o', { c: '#c89a58', b: '#e8d0a0', e: 'roundbig', n: 0.2, tl: 'long', ln: 0.9, lg: 0.4 }, 'Su cola larga le sirve como una quinta mano para trepar.', { arb: 1 }),
+    iguana: q('Iguana verde', 0.95, [14, 60], 'd', 2, [3, 6], 'iguanita', 'h', { c: '#6aa84a', b: '#b8d078', s: '#3a6a28', e: 'none', n: 0.4, tl: 'croc', ln: 1.3, lg: 0.3, ls: 1 }, 'Pasa horas al sol y se lanza al agua si hay peligro.'),
+    harpia: b('Águila harpía', 1.8, 80, 'd', 1, [1, 1], 'aguilucho', 'c', 'tree', { c: '#4a4a52', b: '#f2f0ea', head: '#9a9aa2', beak: 'hook', bc: '#2a2a2a', tail: 'fan', big: 1, crest: 'tuft' }, 'Atrapa monos y perezosos entre las ramas.', { prey: ['mono', 'monoarana', 'titi', 'perezoso', 'kinkaju'] }),
+    hoatzin: b('Hoatzín', 0.9, 55, 'd', 5, [2, 3], 'pichón', 'h', 'tree', { c: '#8a6a3a', b: '#d8b070', head: '#4a6ab0', beak: 'short', bc: '#c8a050', tail: 'fan', crest: 'tuft' }, 'Sus crías tienen garritas en las alas para trepar.', { h: 'M' }),
+    ibisrojo: b('Ibis escarlata', 1.0, 75, 'd', 5, [2, 3], 'ibis bebé', 'c', 'tree', { c: '#e8503a', b: '#f08a6a', beak: 'long', bc: '#3a2a2a', tail: 'short', leg: 'long', neck: 0.7 }, 'Su color rojo viene de los camarones que come.', { prey: ['camaron', 'pez'], h: 'M' }),
+    ranaflecha: { n: 'Rana flecha', t: 'x', sh: 'frog', h: 'M', d: 'c', z: 0.5, v: [14, 70], pat: 'a', g: 3, lit: [3, 5], bn: 'renacuajo', prey: [], look: { c: '#2a6ad8', b: '#8ab8f0', s: '#1a3a8a' }, fx: 'Su color brillante avisa que su piel es venenosa.' }
+  };
+  for (const k in N) if (!MD_SP[k]) MD_SP[k] = N[k];
+  const sel = MD_WORLDS.find((w) => w.id === 'selva');
+  const w = JSON.parse(JSON.stringify(sel));
+  Object.assign(w, { id: 'granjungla', name: 'La Gran Jungla', desc: 'Selva inmensa: monos en las lianas, felinos, aves y ranas de colores.' });
+  w.flora = [['jungle', 2.6, 180, 320], ['palm', 0.9, 150, 250], ['fern', 1.8], ['flower', 0.8]];
+  w.waters = [['river', 5200, 6200]];
+  w.sp = [['mono', 10], ['monoarana', 8], ['titi', 8], ['orangutan', 2], ['loro', 8], ['guacamaya', 8], ['tucan', 6], ['quetzal', 3], ['perezoso', 4], ['capibara', 4], ['jaguar', 2], ['ocelote', 3], ['pantera', 1], ['coati', 5], ['aguti', 5], ['pecari', 5], ['kinkaju', 3], ['iguana', 4], ['harpia', 2], ['hoatzin', 5], ['ibisrojo', 5], ['ranaflecha', 8], ['rana', 5], ['tapir', 3], ['osohormiguero', 2], ['serpiente', 3], ['tortuga', 3], ['cocodrilo', 2], ['pez', 10], ['pirana', 8], ['colibri', 6], ['caracol', 4]];
+  w.sp = w.sp.filter((e) => MD_SP[e[0]]);
+  const i = MD_WORLDS.findIndex((x) => x.id === 'selva'); MD_WORLDS.splice(i + 1, 0, w);
+})();
