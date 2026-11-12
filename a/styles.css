@@ -3554,3 +3554,7 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
 .mw-cat{margin:8px 0;border-radius:14px;border:1px solid var(--line,#ddd);padding:0 8px 8px}.mw-cat summary{padding:10px 4px;font-weight:600;cursor:pointer}.mw-cat summary small{font-weight:400;opacity:.65;margin-left:6px}
 .mw-tot{font-weight:400;opacity:.65;font-size:12px}.mw-warn{background:#fff3cd;color:#664d03;padding:8px 12px;border-radius:10px;font-size:13px}
 .mw-bar{background:linear-gradient(transparent,var(--bg,#f2f7f4) 40%);position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);padding:10px 0;z-index:3}
+
+/* 7.58 — video «¿Qué es Cinnavia?» dentro del cuadro de bienvenida */
+#sheet .pv-v{max-height:56vh;margin-left:auto;margin-right:auto}
+#sheet .pv-box{margin-top:6px}
