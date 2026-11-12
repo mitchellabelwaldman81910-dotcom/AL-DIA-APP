@@ -1,4 +1,4 @@
-/* Cinnavia 7.41 — Gusano Goloso: puzzle de 1000 niveles. Come manzanas para crecer, llega a la salida.
+/* Cinnavia 7.48 — The Worn: puzzle de 1000 niveles. Come manzanas para crecer, llega a la salida.
    Las reglas viven en gusano-motor.js; los niveles de gusano-niveles.js están resueltos con ese mismo motor. */
 'use strict';
 const GW_N = () => (typeof GW_LV !== 'undefined' ? GW_LV.length : 0);
@@ -157,7 +157,7 @@ function viewGusano() {
   const envs = GW_ENVS.slice(0, Math.ceil(N / 10)).map((e, i) => { const a = i * 10 + 1, b = Math.min(N, a + 9); let done = 0; for (let l = a; l <= b; l++) if (gwStarsAt(l)) done++; const lock = a > mx;
     return `<details class="gw-env${lock ? ' lock' : ''}" ${i === openEnv ? 'open' : ''} data-env="${i}"><summary style="--c1:${e.sky[0]};--c2:${e.sky[1]}"><i class="gw-sw"></i><span><b>${e.n}</b><small>Niveles ${a}–${b} · ${done}/${b - a + 1}</small></span></summary>${i === openEnv ? gwEnvGrid(i) : ''}</details>`; }).join('');
   const colors = GW_COLORS.map((c) => `<button type="button" class="gw-col${(D.col || GW_COLORS[0]) === c ? ' on' : ''}" style="background:${c}" data-act="gw-col" data-c="${c}" aria-label="Color ${c}"></button>`).join('');
-  return `<section class="mt-home"><div class="gm-hero">${gwHero()}</div><h1 class="page-title gm-title">Gusano Goloso</h1>
+  return `<section class="mt-home"><div class="gm-hero">${gwHero()}</div><h1 class="page-title gm-title">The Worn</h1>
     <p class="page-sub">Desliza para mover al gusano. Si come una manzana, crece. Hay gravedad: si no tiene dónde apoyarse, cae. Llega a la salida en cada uno de los <b>${N} niveles</b>; cada 10 niveles cambia el lugar.</p>
     <div class="jg-prog" role="img" aria-label="Avance: nivel ${mx} de ${N}"><i style="width:${Math.min(100, ((mx - 1) / N) * 100)}%"></i></div>
     <p class="small muted" style="text-align:center;margin:8px 0 14px">Vas en el nivel <b>${mx}</b> de ${N} · estrellas: <b>${gwTotalStars()}</b></p>
@@ -204,7 +204,7 @@ function gwPlay(level) {
   const wrap = document.createElement('div'); wrap.className = 'gl-stage gw-stage';
   wrap.innerHTML = `<button class="gm-x gl-x" id="gwX" aria-label="Salir del juego">${icon('x')}</button>
     <div class="gw-top"><div class="gw-title"><b id="gwLv">Nivel 1</b><small id="gwEnv"></small></div><div class="gw-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7c-5-3-9 1-8 7 1 5 5 8 8 6 3 2 7-1 8-6 1-6-3-10-8-7z" fill="#E0443A"/><path d="M12 7c0-3 1-4 3-5" stroke="#5A3A22" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M13 5c2-2 5-1 5-1-1 3-3 4-5 2z" fill="#4C9A48"/></svg><b id="gwAp">0/0</b></div><div class="gw-pill"><small>pasos</small><b id="gwMv">0</b><em id="gwOpt"></em></div></div>
-    <div class="gw-board" id="gwBoard"><canvas id="gwCv" aria-label="Tablero del Gusano Goloso" role="img"></canvas><div class="gw-toast" id="gwToast"></div></div>
+    <div class="gw-board" id="gwBoard"><canvas id="gwCv" aria-label="Tablero del The Worn" role="img"></canvas><div class="gw-toast" id="gwToast"></div></div>
     <div class="gw-ctl"><div class="gw-act"><button type="button" class="btn" id="gwUndo">${icon('reset', 'sm')}Deshacer</button><button type="button" class="btn" id="gwRetry">Reiniciar</button><button type="button" class="btn" id="gwHint">${icon('bulb', 'sm')}Pista</button><button type="button" class="btn" id="gwSkip" hidden>Saltar nivel</button></div>
       <div class="gw-pad" id="gwPad"><button type="button" data-d="0" aria-label="Arriba">▲</button><button type="button" data-d="3" aria-label="Izquierda">◀</button><button type="button" data-d="2" aria-label="Abajo">▼</button><button type="button" data-d="1" aria-label="Derecha">▶</button></div></div>
     <div class="gl-over mt-over gw-win" id="gwOver" hidden><b id="gwWhy">¡Nivel superado!</b><div id="gwStars"></div><div class="mt-res" id="gwRes"></div><span id="gwCoins" class="pm-gain"></span><span class="small muted" id="gwRank"></span><span class="small muted" id="gwRest"></span>
@@ -227,7 +227,9 @@ function gwPlay(level) {
   const load = (lv) => {
     R.level = lv; R.maxL = Math.max(R.maxL, lv); R.L = gwParse(GW_LV[lv - 1]); R.st = gwStart(R.L); R.hist = []; R.anim = null; R.busy = false; R.q = []; R.hints = 0; R.fails = 0; R.hintDir = -1; R.dead = false; R.won = false; R.dir = { x: 1, y: 0 }; R.seed = lv * 3.7; R.eaten = 0; skipBtn();
     $('#gwLv').textContent = `Nivel ${lv}`; $('#gwEnv').textContent = E().n; $('#gwOver').classList.remove('show'); $('#gwOver').hidden = true; fit(); initParts(); hud(); pillOpt(); R.fx = []; R.mood = 'idle'; R.moodUntil = 0;
-    toast(lv % 10 === 1 && lv > 1 ? `Nuevo lugar: ${E().n}` : (lv === 1 ? 'Come las manzanas y llega al portal' : `Nivel ${lv} · ${E().n}`), 2000);
+    const NEW = [['K', 'key', 'Nuevo: la llave abre las puertas de madera. Recógela primero.'], ['C', 'crack', 'Nuevo: la tierra agrietada se rompe cuando te apoyas solo en ella.']]; let intro = null;
+    for (const [ch, id, msg] of NEW) if (R.L.g.includes(ch) && !(D.seen || '').includes(id)) { intro = msg; D.seen = (D.seen || '') + id + ','; jpSave(); break; }
+    if (intro) toast(intro, 4200); else toast(lv % 10 === 1 && lv > 1 ? `Nuevo lugar: ${E().n}` : (lv === 1 ? 'Come las manzanas y llega al portal' : `Nivel ${lv} · ${E().n}`), 2000);
   };
   const posOf = (idx) => [R.ox + (idx % R.L.w) * R.cs + R.cs / 2, R.oy + Math.floor(idx / R.L.w) * R.cs + R.cs / 2];
   const lerpPts = (A, B, t) => B.map((bi, i) => { const a = A[Math.min(i, A.length - 1)]; return [a[0] + (bi[0] - a[0]) * t, a[1] + (bi[1] - a[1]) * t]; });
@@ -242,6 +244,9 @@ function gwPlay(level) {
     const cs = R.cs, t = R.t; g.save(); g.translate(x, y); const gl = g.createRadialGradient(0, 0, 2, 0, 0, cs * 0.75); gl.addColorStop(0, 'rgba(255,255,255,.95)'); gl.addColorStop(0.4, 'rgba(170,140,255,.55)'); gl.addColorStop(1, 'rgba(170,140,255,0)'); g.fillStyle = gl; g.beginPath(); g.arc(0, 0, cs * 0.75, 0, 7); g.fill();
     for (let k = 0; k < 3; k++) { g.strokeStyle = `rgba(${k ? '255,255,255' : '120,90,230'},${0.9 - k * 0.2})`; g.lineWidth = cs * 0.07; g.beginPath(); g.ellipse(0, 0, cs * (0.4 - k * 0.1), cs * (0.18 + k * 0.05), t * (1.2 + k * 0.5), 0, 7); g.stroke(); } g.restore();
   };
+  const drawDoor = (x, y) => { const cs = R.cs; g.fillStyle = '#7A5230'; g.fillRect(x, y, cs + 0.6, cs + 0.6); g.fillStyle = '#92643A'; for (let k = 0; k < 3; k++) g.fillRect(x + cs * (0.06 + k * 0.32), y + cs * 0.04, cs * 0.28, cs * 0.92); g.strokeStyle = '#4C321B'; g.lineWidth = Math.max(1.5, cs * 0.04); g.strokeRect(x + 1, y + 1, cs - 2, cs - 2); g.fillStyle = '#E6B93C'; g.strokeStyle = '#8A6A14'; g.lineWidth = 1.5; g.beginPath(); g.arc(x + cs / 2, y + cs * 0.52, cs * 0.14, 0, 7); g.fill(); g.stroke(); g.fillStyle = '#4C321B'; g.fillRect(x + cs * 0.47, y + cs * 0.5, cs * 0.06, cs * 0.14); };
+  const drawKey = (x, y) => { const cs = R.cs, b = Math.sin(R.t * 2.2) * cs * 0.04; g.save(); g.translate(x, y + b); g.shadowColor = 'rgba(255,214,90,.8)'; g.shadowBlur = cs * 0.3; g.strokeStyle = '#B98A14'; g.fillStyle = '#F2C94C'; g.lineWidth = cs * 0.07; g.beginPath(); g.arc(-cs * 0.16, 0, cs * 0.15, 0, 7); g.stroke(); g.shadowBlur = 0; g.beginPath(); g.moveTo(-cs * 0.01, 0); g.lineTo(cs * 0.3, 0); g.moveTo(cs * 0.2, 0); g.lineTo(cs * 0.2, cs * 0.14); g.moveTo(cs * 0.3, 0); g.lineTo(cs * 0.3, cs * 0.11); g.stroke(); g.restore(); };
+  const drawCrack = (x, y) => { const e = E(), cs = R.cs; g.fillStyle = e.wall[1]; g.fillRect(x, y, cs + 0.6, cs + 0.6); g.fillStyle = 'rgba(255,255,255,.26)'; g.fillRect(x, y, cs + 0.6, cs + 0.6); g.fillStyle = e.wall[0]; g.fillRect(x, y, cs + 0.6, cs * 0.2); g.strokeStyle = 'rgba(40,28,20,.7)'; g.lineWidth = Math.max(1.5, cs * 0.05); g.lineJoin = 'round'; g.beginPath(); g.moveTo(x + cs * 0.3, y + cs * 0.06); g.lineTo(x + cs * 0.42, y + cs * 0.38); g.lineTo(x + cs * 0.28, y + cs * 0.58); g.lineTo(x + cs * 0.46, y + cs * 0.94); g.moveTo(x + cs * 0.42, y + cs * 0.38); g.lineTo(x + cs * 0.7, y + cs * 0.52); g.lineTo(x + cs * 0.82, y + cs * 0.9); g.stroke(); g.setLineDash([cs * 0.1, cs * 0.08]); g.strokeStyle = 'rgba(40,28,20,.35)'; g.lineWidth = 1.5; g.strokeRect(x + 1, y + 1, cs - 2, cs - 2); g.setLineDash([]); };
   const drawSpike = (x, y) => { const cs = R.cs; g.fillStyle = '#8A93A6'; g.strokeStyle = '#4A5160'; g.lineWidth = 1.5; for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(x + k * cs / 3 + 1, y + cs); g.lineTo(x + (k + 0.5) * cs / 3, y + cs * 0.4); g.lineTo(x + (k + 1) * cs / 3 - 1, y + cs); g.closePath(); g.fill(); g.stroke(); } };
   const frame = (now) => {
     R.t = now / 1000; const e = E(), W = R.W, H = R.H; g.setTransform(R.dpr, 0, 0, R.dpr, 0, 0); g.clearRect(0, 0, W, H);
@@ -272,6 +277,9 @@ function gwPlay(level) {
       const c = R.L.g[i], x = R.ox + (i % w) * R.cs, y = R.oy + Math.floor(i / w) * R.cs;
       if (c === '#') drawWall(x, y, c, i >= w && R.L.g[i - w] === '#');
       else if (c === 'S') drawSpike(x, y);
+      else if (c === 'D') { if (!(R.st.mask & R.L.kmask)) drawDoor(x, y); }
+      else if (c === 'K') { if (!((R.st.mask >> R.L.kIdx[i]) & 1)) drawKey(x + R.cs / 2, y + R.cs / 2); }
+      else if (c === 'C') { if (!((R.st.mask >> R.L.cIdx[i]) & 1)) drawCrack(x, y); }
       else if (c === 'E') drawExit(x + R.cs / 2, y + R.cs / 2);
       else if (c === 'A') { const ai = R.L.aIdx[i]; if (!((R.st.mask >> ai) & 1) || (R.anim && R.anim.eatIdx === i && R.anim.t < 0.5)) gwFruit(g, e, x + R.cs / 2, y + R.cs / 2, R.cs, R.t, ai % 5 === 4 && R.level > 80); }
     }
@@ -309,6 +317,8 @@ function gwPlay(level) {
     R.dir = { x: GW_DX[d], y: GW_DY[d] }; const before = R.st; R.hist.push(before); R.eatIdx = -1;
     if (r.eat) { R.eatIdx = r.frames[0][0]; R.eaten++; R.pulse = 1; setMood('eat', 750); const ep = posOf(r.frames[0][0]); burst(ep[0], ep[1], [E().fr[0], E().fr[1], '#FFFFFF', '#FFE066'], 14, 1.1); }
     const from = before.worm; R.st = r.state;
+    if (r.key) { const kp = posOf(r.frames[0][0]); burst(kp[0], kp[1], ['#F2C94C', '#FFFFFF', '#FFE9A0'], 16, 1.2); toast('Llave recogida: las puertas se abren', 1800); JG_TONE(880, 0.12, 'triangle', 0.05, 1200); for (let i = 0; i < R.L.g.length; i++) if (R.L.g[i] === 'D') { const dp = posOf(i); burst(dp[0], dp[1], ['#92643A', '#E6B93C'], 6, 0.8); } }
+    { const nb = r.state.mask & ~before.mask; for (const ci of R.L.cracks) if ((nb >> R.L.cIdx[ci]) & 1) { const cp = posOf(ci); burst(cp[0], cp[1], ['#D4C6A4', '#8A7A5C', '#FFFFFF'], 14, 1.0); JG_TONE(150, 0.14, 'sawtooth', 0.03, 90); } }
     JG_TONE(r.eat ? 520 + R.eaten * 40 : 260, r.eat ? 0.12 : 0.05, r.eat ? 'triangle' : 'sine', r.eat ? 0.055 : 0.02, r.eat ? 780 + R.eaten * 40 : 0);
     if (r.frames.length > 1) setTimeout(() => JG_TONE(330, 0.18, 'sine', 0.03, 140), 150);
     hud(); const fin = () => { hud(); if (r.status === 'win') win(); else if (r.status === 'dead') { R.q = []; die(); } else if (R.q.length) tryMove(R.q.shift()); else deadCheck(); };

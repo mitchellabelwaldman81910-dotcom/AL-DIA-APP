@@ -6,7 +6,7 @@ import { createHmac, pbkdf2Sync, randomBytes, timingSafeEqual, createHash } from
 import webpush from "web-push";
 
 const W = "w/";
-const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done", "focus", "tpl", "board", "event", "poll", "vote", "pin", "pomo", "aviso", "asist", "eval"];
+const GTYPES = ["task", "team", "join", "part", "post", "idea", "like", "done", "focus", "tpl", "board", "event", "poll", "vote", "pin", "pomo", "aviso", "asist", "eval", "book"];
 const GUARD_TYPES = ["aviso", "asist", "eval"];
 // administración: estas cuentas pueden entrar a cualquier otra (para dar soporte y recuperar datos)
 const ADMINS = ["mitchell"];
@@ -964,6 +964,13 @@ export default async (req, context) => {
           clean.steps = Array.isArray(it.steps) ? it.steps.slice(0, 30).map((x) => ({ text: clip(x && x.text, 120), min: Math.max(0, Math.min(600, +(x && x.min) || 0)) })) : [];
           clean.kind = clip(it.kind, 20); clean.est = Math.max(0, Math.min(600, +it.est || 0));
         }
+        if (clean.type === "book") {
+          if (prev && prev.byId !== as && auth[as].role !== "guardian") return json({ error: "Solo quien subió el libro puede cambiarlo" }, 403);
+          clean.author = clip(it.author, 120); clean.fileId = /^[a-z0-9-]{4,60}$/i.test(it.fileId || "") ? it.fileId : (prev?.fileId || "");
+          clean.pages = Math.max(0, Math.min(5000, Math.floor(+it.pages || 0))); clean.size = Math.max(0, Math.min(5e6, +it.size || 0));
+          clean.color = clip(it.color, 12); clean.cat = clip(it.cat, 30); clean.deleted = !!it.deleted;
+          if (!clean.fileId && !clean.deleted) return json({ error: "Falta el archivo del libro" }, 400);
+        }
         if (clean.type === "aviso") { clean.pin = !!it.pin; clean.due = /^\d{4}-\d{2}-\d{2}$/.test(it.due || "") ? it.due : ""; }
         if (clean.type === "asist") {
           clean.date = /^\d{4}-\d{2}-\d{2}$/.test(it.date || "") ? it.date : dayOf(Date.now());
@@ -986,8 +993,8 @@ export default async (req, context) => {
         }
         await store.setJSON(key, clean);
         await bump(store, f.members);
-        if ((!prev || (clean.type === "focus" && !clean.joined && (prev.deleted || prev.start !== clean.start))) && !clean.deleted && !(clean.type === "focus" && clean.joined) && ["task", "team", "idea", "focus", "tpl", "aviso"].includes(clean.type) && !(clean.type === "focus" && clean.ghost)) {
-          const what = clean.type === "task" ? "subió una tarea" : clean.type === "focus" ? "empezó a concentrarse: ¡únete a la sala de enfoque!" : clean.type === "aviso" ? "publicó un aviso" : clean.type === "tpl" ? "compartió una plantilla de estudio" : clean.type === "team" ? "creó un trabajo en equipo" : "compartió una idea";
+        if ((!prev || (clean.type === "focus" && !clean.joined && (prev.deleted || prev.start !== clean.start))) && !clean.deleted && !(clean.type === "focus" && clean.joined) && ["task", "team", "idea", "focus", "tpl", "aviso", "book"].includes(clean.type) && !(clean.type === "focus" && clean.ghost)) {
+          const what = clean.type === "task" ? "subió una tarea" : clean.type === "focus" ? "empezó a concentrarse: ¡únete a la sala de enfoque!" : clean.type === "aviso" ? "publicó un aviso" : clean.type === "tpl" ? "compartió una plantilla de estudio" : clean.type === "book" ? "agregó un libro a la biblioteca" : clean.type === "team" ? "creó un trabajo en equipo" : "compartió una idea";
           const payload = { title: `${f.name} · ${clean.by} ${what}`, body: clip(clean.title || clean.text, 140), url: "#/grupo", tag: `g-${clean.id}` };
           const job = pushTo(store, f.members.filter((m) => m !== as), url.origin, payload, clip(body.device, 40));
           if (context?.waitUntil) context.waitUntil(job); else await job;
