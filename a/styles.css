@@ -3614,3 +3614,58 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
   .toasts { padding-left: var(--dside); bottom: 34px; }
   .sheet { max-width: 680px; }
 }
+
+/* ---------- Planeación con plantilla (7.59) ---------- */
+.tp-h { margin: 0 0 6px; font-size: 11.5px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.tp-imp { border: 1.5px dashed var(--line); border-radius: 14px; padding: 12px; background: color-mix(in srgb, var(--pen-soft) 45%, transparent); }
+.tp-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.tp-row .grow { flex: 1; }
+.tp-msg { margin: 8px 0 0; min-height: 1em; color: var(--ink-2); }
+.tp-msg.ok { color: var(--ok); } .tp-msg.bad { color: var(--red); }
+.tp-box { border-top: 1px solid var(--line); padding-top: 12px; }
+.tp-list { display: grid; gap: 8px; }
+.tp-t { display: flex; gap: 10px; align-items: flex-start; background: var(--sheet-2); border-radius: 12px; padding: 10px 12px; }
+.tp-t.nodue { box-shadow: inset 3px 0 0 var(--amber); }
+.tp-t details { flex: 1; min-width: 0; }
+.tp-t summary { cursor: pointer; list-style: none; display: grid; gap: 2px; }
+.tp-t summary::-webkit-details-marker { display: none; }
+.tp-tt { font-weight: 600; overflow-wrap: anywhere; }
+.tp-sel { width: 20px; height: 20px; margin-top: 3px; accent-color: var(--pen); flex: none; }
+.tp-form { display: grid; gap: 8px; margin-top: 10px; }
+.tp-send { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: var(--sheet); }
+.tp-fl { display: grid; gap: 6px; }
+.tp-f { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: var(--sheet-2); }
+.tp-f input { width: 20px; height: 20px; accent-color: var(--pen); }
+.tp-info { margin: 12px 0; }
+.tp-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+.tp-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; background: var(--pen-soft); color: var(--ink); font-size: 12.5px; font-weight: 600; }
+.tp-pill.sm { padding: 1px 8px; font-size: 11.5px; }
+.tp-crit { margin: 4px 0 0; padding-left: 20px; line-height: 1.5; }
+
+/* ---------- Espacio del docente (7.60) ---------- */
+.dn-seg { display: flex; gap: 8px; flex-wrap: wrap; }
+.dn-seg .chip.on { background: var(--pen); color: var(--pen-ink); border-color: var(--pen); }
+
+/* ---------- Mi aula (7.60) ---------- */
+.au-ag { margin: 0 0 14px; display: grid; gap: 8px; }
+.au-note { background: var(--sheet-2); border-radius: 12px; padding: 10px 12px; border-left: 4px solid var(--line); }
+.au-note.plan { border-left-color: var(--amber); } .au-note.risk { border-left-color: var(--red); } .au-note.ent, .au-note.cap, .au-note.al { border-left-color: var(--hl); } .au-note.sep { border-left-color: var(--pen); }
+.au-note p { margin: 0 0 8px; line-height: 1.45; } .au-note .btn { padding: 6px 12px; }
+.au-list { display: grid; gap: 10px; margin: 0 0 14px; }
+.au-g { display: grid; gap: 2px; padding: 12px 14px; border-radius: 14px; background: var(--sheet); box-shadow: var(--shadow); text-decoration: none; color: var(--ink); }
+.au-g b { font-size: 18px; font-family: var(--serif); }
+.au-rows { display: grid; gap: 8px; margin-bottom: 8px; }
+.au-r { display: flex; align-items: center; gap: 8px; background: var(--sheet-2); border-radius: 12px; padding: 8px 12px; }
+.au-r .grow { flex: 1; }
+.au-al { margin: 10px 0 0; padding-left: 22px; } .au-al li { padding: 4px 0; } .au-al li span { display: inline-block; width: calc(100% - 44px); vertical-align: middle; }
+.au-sum { display: flex; gap: 10px; } .au-sum span { flex: 1; background: var(--sheet-2); border-radius: 12px; padding: 8px; text-align: center; }
+.au-sum b { display: block; font-size: 22px; font-family: var(--serif); } .au-sum small { color: var(--ink-3); }
+.au-scroll { overflow-x: auto; border-radius: 12px; border: 1px solid var(--line); }
+.au-t { border-collapse: collapse; width: max-content; min-width: 100%; font-size: 14px; }
+.au-t th, .au-t td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
+.au-t thead th { background: var(--sheet-2); font-size: 12px; } .au-t thead button { background: none; border: 0; font-weight: 650; cursor: pointer; } .au-t thead small { display: block; color: var(--ink-3); font-weight: 400; }
+.au-t tbody th { text-align: left; position: sticky; left: 0; background: var(--sheet); font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+.au-t td { cursor: pointer; } .au-t td.ok { background: color-mix(in srgb, var(--ok-soft) 70%, transparent); } .au-t td.lo { background: var(--red-soft); } .au-t td.no { background: var(--red-soft); color: var(--red); } .au-t td.pe { color: var(--ink-3); }
+.au-cap { display: grid; gap: 8px; } .au-cr { display: grid; grid-template-columns: 1fr 84px auto; gap: 8px; align-items: center; } .au-cr span { overflow-wrap: anywhere; }
+.au-no { display: flex; align-items: center; gap: 4px; font-size: 13px; } .au-no input { width: 18px; height: 18px; }
+.au-ck { list-style: none; margin: 6px 0 0; padding: 0; } .au-ck li.ok { color: var(--ok); } .au-ck li.no { color: var(--red); }

@@ -35,7 +35,7 @@ function plParse(cmd) {
   for (const [k, re] of Object.entries(kw)) if (re.test(s)) { enf = k; s = s.replace(new RegExp('\\b(?:' + re.source + ')\\w*', 'i'), ''); break; }
   return { field, dur, enf, tema: s.replace(/\s+/g, ' ').replace(/^[,;:\s]+|[,;:\s]+$/g, '') };
 }
-const plText = (p) => { const x = p.plan || {}; return [p.title, [x.grupo, x.fecha && longDate(x.fecha), x.dur && `${x.dur} min`, (PL_ENF[x.enf] || {}).n].filter(Boolean).join(' · '), '', 'OBJETIVO\n' + (x.obj || ''), '', 'DESARROLLO\n' + (x.des || ''), '', 'MATERIALES\n' + (x.mat || ''), '', 'CIERRE\n' + (x.cie || ''), '', 'TAREA\n' + (x.tar || '')].join('\n').trim(); };
+let plText = (p) => { const x = p.plan || {}; return [p.title, [x.grupo, x.fecha && longDate(x.fecha), x.dur && `${x.dur} min`, (PL_ENF[x.enf] || {}).n].filter(Boolean).join(' · '), '', 'OBJETIVO\n' + (x.obj || ''), '', 'DESARROLLO\n' + (x.des || ''), '', 'MATERIALES\n' + (x.mat || ''), '', 'CIERRE\n' + (x.cie || ''), '', 'TAREA\n' + (x.tar || '')].join('\n').trim(); };
 const plBlocks = [['obj', 'Objetivo'], ['des', 'Desarrollo'], ['mat', 'Materiales'], ['cie', 'Cierre'], ['tar', 'Tarea']];
 function plCard(p) {
   const x = p.plan || {}; const meta = [x.grupo, x.fecha && longDate(x.fecha), x.dur && `${x.dur} min`, (PL_ENF[x.enf] || {}).n].filter(Boolean).map(esc).join(' · ');
