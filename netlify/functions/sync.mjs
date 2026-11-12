@@ -214,6 +214,18 @@ export default async (req, context) => {
         users.sort((a, b) => (b.online - a.online) || ((b.seen || b.at) - (a.seen || a.at)));
         return json({ ok: true, users, forests, now: nowT });
       }
+      if (kindQ === "suggestions") {
+        const p = String(url.searchParams.get("p") || "");
+        if (admin) {
+          const ks = (await store.list({ prefix: `${W}sug/` })).blobs.map((b) => b.key).sort().reverse().slice(0, 200);
+          const list = (await Promise.all(ks.map((k) => store.get(k, { type: "json" })))).filter(Boolean);
+          return json({ ok: true, admin: true, list });
+        }
+        if (!USER_RE.test(p) || !allowed(p)) return json({ error: "Inicia sesión primero" }, 401);
+        const ks = (await store.list({ prefix: `${W}sugu/${p}/` })).blobs.map((b) => b.key).sort().reverse().slice(0, 30);
+        const list = (await Promise.all(ks.map((k) => store.get(k, { type: "json" })))).filter(Boolean).map((v) => ({ id: v.id, cat: v.cat, text: v.text, at: v.at, done: !!v.done }));
+        return json({ ok: true, admin: false, list });
+      }
       if (kindQ === "avisos") {
         if (!admin) return json({ error: "Solo administración" }, 403);
         return json({ ok: true, ...(await runAvisos(store, url.origin, +url.searchParams.get("at") || Date.now())) });
@@ -513,6 +525,35 @@ export default async (req, context) => {
         await bump(store, [to]);
         if (context?.waitUntil) context.waitUntil(pushTo(store, [to], url.origin, { title: "Mensaje de " + (auth[adminId]?.name || "administración"), body: clip(text, 140), url: "#/hoy", tag: "am" }, ""));
         return json({ ok: true, at });
+      }
+      case "suggest": {
+        if (!allowed(as)) return json({ error: "Inicia sesión primero" }, 401);
+        const text = clip(body.text, 1500).trim();
+        const cat = ["idea", "juego", "mejora", "error", "otro"].includes(body.cat) ? body.cat : "idea";
+        if (text.length < 5 || !/^[a-z0-9]{6,30}$/i.test(body.id || "")) return json({ error: "Escribe tu sugerencia (mínimo 5 letras)" }, 400);
+        const mine = (await store.list({ prefix: `${W}sugu/${as}/` })).blobs.map((b) => b.key);
+        if (mine.some((k) => k.endsWith("-" + body.id))) return json({ ok: true, dup: true });
+        const day = Date.now() - 86400000;
+        if (mine.filter((k) => +k.split("/").pop().split("-")[0] > day).length >= 5) return json({ error: "Ya enviaste 5 sugerencias hoy. Mañana puedes mandar más." }, 429);
+        const at = Date.now();
+        const rec = { id: body.id, by: as, name: auth[as].name, cat, text, at, done: false };
+        await store.setJSON(`${W}sug/${at}-${body.id}`, rec);
+        await store.setJSON(`${W}sugu/${as}/${at}-${body.id}`, rec);
+        if (context?.waitUntil) context.waitUntil(pushTo(store, ADMINS, url.origin, { title: "Sugerencia de " + auth[as].name, body: clip(text, 140), url: "#/sugerencias", tag: "sug" }, ""));
+        return json({ ok: true, at });
+      }
+      case "sugadmin": {
+        if (!admin) return json({ error: "Solo la cuenta de administración" }, 403);
+        const id = String(body.id || "");
+        if (!/^[a-z0-9]{6,30}$/i.test(id)) return json({ error: "inválido" }, 400);
+        const ks = (await store.list({ prefix: `${W}sug/` })).blobs.map((b) => b.key).filter((k) => k.endsWith("-" + id));
+        for (const k of ks) {
+          const v = await store.get(k, { type: "json" }); if (!v) continue;
+          const uk = `${W}sugu/${v.by}/${k.split("/").pop()}`;
+          if (body.action === "delete") { await store.delete(k); await store.delete(uk); }
+          else { v.done = !v.done; await store.setJSON(k, v); await store.setJSON(uk, v); }
+        }
+        return json({ ok: true });
       }
       case "ping": {
         const who = String(body.who || "");

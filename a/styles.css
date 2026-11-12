@@ -3448,3 +3448,30 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
 .mn-hint[hidden] { display: none; }
 @keyframes mnPulse { 0%,100% { opacity: .85; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.04); } }
 .mn-stage .gl-over { min-width: min(300px, 86vw); text-align: center; }
+
+/* Sugerencias */
+.sg-page{max-width:640px;margin:0 auto}
+.sg-list{list-style:none;margin:12px 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.sg-item{border:1px solid var(--line,#e4e0d6);background:var(--surface,#fff);border-radius:14px;padding:12px 14px}
+.sg-done{opacity:.6}
+.sg-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.sg-text{margin:8px 0 6px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.45}
+.sg-acts{display:flex;gap:14px;margin-top:4px}
+.sg-reply{margin:6px 0}
+.sg-ok{padding:10px 12px;border-radius:12px;background:rgba(47,138,91,.12);margin:0 0 14px}
+
+/* Tienda del monito */
+.mt-page{max-width:720px;margin:0 auto}
+.mt-wallet{display:inline-flex;align-items:baseline;gap:6px;padding:6px 14px;border-radius:999px;border:1px solid var(--line,#e4e0d6);background:var(--surface,#fff);font-size:15px}
+.mt-wallet b{font-size:20px}
+.mt-hero{display:flex;justify-content:center;margin:10px 0}
+.mt-hero canvas{width:min(70vw,260px);height:auto;aspect-ratio:1;border-radius:20px;background:linear-gradient(#cfe9bf,#f0f7dc)}
+.mt-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (min-width:560px){.mt-grid{grid-template-columns:repeat(3,1fr)}}
+.mt-card{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px;border:1px solid var(--line,#e4e0d6);border-radius:16px;background:var(--surface,#fff);text-align:center}
+.mt-card b{font-size:14px}
+.mt-card .btn{width:100%;margin-top:4px;padding:8px 10px;font-size:13.5px}
+.mt-card .btn[aria-disabled=true]{opacity:.55}
+.mt-on{border-color:var(--accent,#2f8a5b);box-shadow:0 0 0 1px var(--accent,#2f8a5b) inset}
+.mt-view{border:0;background:rgba(0,0,0,.04);border-radius:12px;padding:0;cursor:pointer;width:100%}
+.mt-cv{width:100%;height:auto;aspect-ratio:1;display:block}
