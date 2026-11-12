@@ -20,7 +20,7 @@ const MD_NEST_TXT = { tree: 'en la rama de un árbol', ground: 'en el suelo, ent
 function mdSizeTxt(z) { return z < 0.6 ? 'diminuto' : z < 1 ? 'pequeño' : z < 1.6 ? 'mediano' : z < 2.6 ? 'grande' : z < 4 ? 'muy grande' : 'gigante'; }
 function mdEncyclopedia(a) {
   const S = a.S, k = a.sp, tax = mdTaxon(a), pred = mdPredatorsOf(k).map((p) => MD_SP[p].n), prey = (S.prey || []).filter((p) => MD_SP[p]).map((p) => MD_SP[p].n);
-  const worlds = MD_WORLDS.filter((w) => w.sp.some((e) => e[0] === k)).map((w) => w.name);
+  const worlds = MD_WORLDS.filter((w) => !w.custom && w.sp.some((e) => e[0] === k)).map((w) => w.name);
   const call = typeof mdCallOf === 'function' ? mdCallOf(a) : null, kmh = Math.round((S.v[1] || S.v[0]) / 4), kmhW = Math.round(S.v[0] / 4);
   const fam = MDS.an.filter((o) => o.sp === k && !o.dead && o !== a).map((o) => `${o.name} (${o.age < 1 ? 'cría' : o.male ? 'macho' : 'hembra'})`);
   const mom = MDS.an.find((o) => o.id === a.mom && !o.dead);

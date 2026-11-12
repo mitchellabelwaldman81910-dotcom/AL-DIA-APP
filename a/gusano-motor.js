@@ -10,22 +10,34 @@ function gwParse(s) {
   const nA = apples.length; const keys = [], cracks = [], kIdx = new Array(w * h).fill(-1), cIdx = new Array(w * h).fill(-1); let kmask = 0;
   for (let i = 0; i < g.length; i++) { if (g[i] === 'K') { kIdx[i] = nA + keys.length; kmask |= 1 << kIdx[i]; keys.push(i); } }
   for (let i = 0; i < g.length; i++) { if (g[i] === 'C') { cIdx[i] = nA + keys.length + cracks.length; cracks.push(i); } }
-  return { w, h, th, opt, g, aIdx, apples, nA, keys, cracks, kIdx, cIdx, kmask, worm: worm.split(',').map(Number) };
+  /* 7.57: portales (P, siempre en pareja), interruptor (T) con compuertas azules (G) y rojas (H), y flechas de un solo sentido */
+  const portals = []; for (let i = 0; i < g.length; i++) if (g[i] === 'P') portals.push(i);
+  const pMap = {}; if (portals.length === 2) { pMap[portals[0]] = portals[1]; pMap[portals[1]] = portals[0]; }
+  const hasT = g.indexOf('T') >= 0, tBit = nA + keys.length + cracks.length;
+  return { w, h, th, opt, g, aIdx, apples, nA, keys, cracks, kIdx, cIdx, kmask, pMap, hasT, tBit, worm: worm.split(',').map(Number) };
 }
 /* ¿la celda es sólida ahora? (muro, puerta cerrada o tierra frágil sin romper) */
-function gwSolid(L, mask, i) { const c = L.g[i]; return c === '#' || (c === 'D' && !(mask & L.kmask)) || (c === 'C' && !((mask >> L.cIdx[i]) & 1)); }
+function gwSolid(L, mask, i) { const c = L.g[i]; if (c === '.') return false; return c === '#' || (c === 'D' && !(mask & L.kmask)) || (c === 'C' && !((mask >> L.cIdx[i]) & 1)) || (c === 'G' && !((mask >> L.tBit) & 1)) || (c === 'H' && ((mask >> L.tBit) & 1) === 1); }
+const GW_ARROW = { '^': 0, '>': 1, v: 2, '<': 3 };
 function gwStep(L, st, d) {
   const w = L.w, h = L.h, hd = st.worm[0], hx = hd % w, hy = (hd / w) | 0, nx = hx + GW_DX[d], ny = hy + GW_DY[d];
   if (nx < 0 || ny < 0 || nx >= w || ny >= h) return null;
   const ni = ny * w + nx, c = L.g[ni]; if (gwSolid(L, st.mask, ni)) return null;
+  if (GW_ARROW[c] !== undefined && GW_ARROW[c] !== d) return null; /* flecha: solo se entra en su sentido */
   const ai = L.aIdx[ni], eat = ai >= 0 && !((st.mask >> ai) & 1), len = st.worm.length;
   for (let i = 0; i < len; i++) if (st.worm[i] === ni && !(i === len - 1 && !eat)) return null;
   let worm, mask = st.mask;
   const ki = L.kIdx[ni], key = ki >= 0 && !((mask >> ki) & 1); if (key) mask |= 1 << ki;
   if (eat) { worm = [ni].concat(st.worm); mask |= 1 << ai; } else { worm = [ni].concat(st.worm.slice(0, len - 1)); }
-  const frames = [worm];
-  if (c === 'S') return { state: { worm, mask }, status: 'dead', frames, eat, key };
-  if (c === 'E') return { state: { worm, mask }, status: 'win', frames, eat, key };
+  const frames = [worm], kinds = ['m'];
+  if (L.hasT && c === 'T') mask ^= 1 << L.tBit; /* pisar el interruptor cambia las compuertas */
+  if (c === 'P' && L.pMap[ni] !== undefined) { /* el portal lleva a todo el gusano al otro portal, con la misma forma */
+    const dl = L.pMap[ni] - ni, dx2 = (L.pMap[ni] % w) - (ni % w), sh = worm.map((x) => x + dl); let okp = true;
+    for (let i = 0; i < worm.length && okp; i++) { const ox = worm[i] % w, nx2 = ox + dx2; if (nx2 < 0 || nx2 >= w || sh[i] < 0 || sh[i] >= w * h) { okp = false; break; } const cc = L.g[sh[i]]; if (gwSolid(L, mask, sh[i]) || cc === 'S' || (L.aIdx[sh[i]] >= 0 && !((mask >> L.aIdx[sh[i]]) & 1)) || (sh[i] !== L.pMap[ni] && cc === 'P')) okp = false; }
+    if (!okp) return null; worm = sh; frames.push(worm); kinds.push('t');
+  }
+  if (c === 'S') return { state: { worm, mask }, status: 'dead', frames, kinds, eat, key };
+  if (c === 'E') return { state: { worm, mask }, status: 'win', frames, kinds, eat, key };
   for (let guard = 0; guard < h + 2; guard++) {
     let sup = false; const brk = [];
     for (let i = 0; i < worm.length && !sup; i++) {
@@ -37,12 +49,12 @@ function gwStep(L, st, d) {
     }
     if (sup) break;
     for (const bi of brk) mask |= 1 << bi; /* la tierra frágil se rompe y el gusano sigue cayendo */
-    worm = worm.map((x) => x + w); frames.push(worm);
-    if (worm.some((x) => x >= w * h)) return { state: { worm, mask }, status: 'dead', frames, eat };
-    if (worm.some((x) => L.g[x] === 'S')) return { state: { worm, mask }, status: 'dead', frames, eat };
-    if (L.g[worm[0]] === 'E') return { state: { worm, mask }, status: 'win', frames, eat };
+    worm = worm.map((x) => x + w); frames.push(worm); kinds.push('f');
+    if (worm.some((x) => x >= w * h)) return { state: { worm, mask }, status: 'dead', frames, kinds, eat };
+    if (worm.some((x) => L.g[x] === 'S')) return { state: { worm, mask }, status: 'dead', frames, kinds, eat };
+    if (L.g[worm[0]] === 'E') return { state: { worm, mask }, status: 'win', frames, kinds, eat };
   }
-  return { state: { worm, mask }, status: 'ok', frames, eat, key };
+  return { state: { worm, mask }, status: 'ok', frames, kinds, eat, key };
 }
 function gwStart(L) {
   /* el gusano empieza ya asentado */

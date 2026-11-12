@@ -15,7 +15,7 @@ const MD_FR_EATERS = {
   cereza: ['ardilla', 'zorro', 'oso', 'mapache', 'conejo', 'raton', 'mono', 'panda']
 };
 const MD_BERRY = new Set(['bosque', 'otono', 'pradera', 'granja', 'rio', 'alpes', 'lagoalpino', 'tundra', 'taiga', 'magico', 'sakura', 'prairie']);
-function mdFrKind(f) { if (f.kind === 'bush') return MDS.def && MD_BERRY.has(MDS.def.id) ? 'mora' : null; if (f.kind === 'palm') return MDS.def && MDS.def.clim && MDS.def.clim.sd ? 'datil' : 'coco'; return MD_FR_KIND[f.kind] || null; }
+function mdFrKind(f) { if (MDS.def && MDS.def.nofruit) return null; if (f.kind === 'bush') return MDS.def && MD_BERRY.has(MDS.def.id) ? 'mora' : null; if (f.kind === 'palm') return MDS.def && MDS.def.clim && MDS.def.clim.sd ? 'datil' : 'coco'; return MD_FR_KIND[f.kind] || null; }
 const mdBez = (x0, y0, cx, cy, x1, y1, u) => { const v = 1 - u; return { x: v * v * x0 + 2 * v * u * cx + u * u * x1, y: v * v * y0 + 2 * v * u * cy + u * u * y1 }; };
 /* posiciones fijas de cada fruta sobre su planta (coordenadas locales de la planta) */
 function mdFrSlots(f) {

@@ -33,6 +33,16 @@ const GW_ENVS = [
   { n: 'Cañón rojo', sky: ['#F2B08A', '#FAE0C8'], wall: ['#D0704A', '#9A4A2A', '#74341A'], fr: ['#7BC043', '#4C8A24'], p: ['dust', '#F0C0A0'], deco: 'peaks', dc: ['#E39A78', '#D3825C'] },
   { n: 'Bosque de bambú', sky: ['#C4E8C0', '#F0F8E0'], wall: ['#6AB86A', '#8A9A4A', '#5E6C2E'], fr: ['#F2A23A', '#C0701A'], p: ['leaf', '#8CC868'], deco: 'trees', dc: ['#8CCB8A', '#74BA78'] },
   { n: 'Amanecer en la cima', sky: ['#FFC9A0', '#FFF0D6'], wall: ['#F0A878', '#8A6A62', '#664A44'], fr: ['#FFD84A', '#E0A81F'], p: ['cloud', '#FFFFFF'], deco: 'peaks', dc: ['#F4B48C', '#E89E74'] },
+  { n: 'Portales I', sky: ['#BFE6FF','#E6F7FF'], wall: ['#9A8AE8', '#5A4AA8', '#3E3278'], fr: ['#FF7AB6', '#C2449A'], p: ['sparkle', '#FFFFFF'], deco: 'crystals', dc: ['#C8B0F8', '#B096EE'] },
+  { n: 'Portales II', sky: ['#A8D8FF','#D8EEFF'], wall: ['#9A8AE8', '#5A4AA8', '#3E3278'], fr: ['#FF7AB6', '#C2449A'], p: ['sparkle', '#FFFFFF'], deco: 'crystals', dc: ['#C8B0F8', '#B096EE'] },
+  { n: 'Portales e interruptores', sky: ['#D9C6FF','#F4EEFF'], wall: ['#9A8AE8', '#5A4AA8', '#3E3278'], fr: ['#FF7AB6', '#C2449A'], p: ['sparkle', '#FFFFFF'], deco: 'crystals', dc: ['#C8B0F8', '#B096EE'] },
+  { n: 'Interruptores I', sky: ['#C9E4FF','#FFE0E0'], wall: ['#9A8AE8', '#5A4AA8', '#3E3278'], fr: ['#FF7AB6', '#C2449A'], p: ['sparkle', '#FFFFFF'], deco: 'crystals', dc: ['#C8B0F8', '#B096EE'] },
+  { n: 'Interruptores II', sky: ['#B9D8F8','#FFD6D6'], wall: ['#9A8AE8', '#5A4AA8', '#3E3278'], fr: ['#FF7AB6', '#C2449A'], p: ['sparkle', '#FFFFFF'], deco: 'crystals', dc: ['#C8B0F8', '#B096EE'] },
+  { n: 'Flechas I', sky: ['#FFE2A8','#FFF6DC'], wall: ['#9A8AE8', '#5A4AA8', '#3E3278'], fr: ['#FF7AB6', '#C2449A'], p: ['sparkle', '#FFFFFF'], deco: 'crystals', dc: ['#C8B0F8', '#B096EE'] },
+  { n: 'Flechas II', sky: ['#FFD0A0','#FFF0D0'], wall: ['#9A8AE8', '#5A4AA8', '#3E3278'], fr: ['#FF7AB6', '#C2449A'], p: ['sparkle', '#FFFFFF'], deco: 'crystals', dc: ['#C8B0F8', '#B096EE'] },
+  { n: 'Mezcla I', sky: ['#E0C8FF','#FFE6F2'], wall: ['#9A8AE8', '#5A4AA8', '#3E3278'], fr: ['#FF7AB6', '#C2449A'], p: ['sparkle', '#FFFFFF'], deco: 'crystals', dc: ['#C8B0F8', '#B096EE'] },
+  { n: 'Mezcla II', sky: ['#C8B0F0','#FFD8EC'], wall: ['#9A8AE8', '#5A4AA8', '#3E3278'], fr: ['#FF7AB6', '#C2449A'], p: ['sparkle', '#FFFFFF'], deco: 'crystals', dc: ['#C8B0F8', '#B096EE'] },
+  { n: 'Mezcla III', sky: ['#A890E0','#FFC8E4'], wall: ['#9A8AE8', '#5A4AA8', '#3E3278'], fr: ['#FF7AB6', '#C2449A'], p: ['sparkle', '#FFFFFF'], deco: 'crystals', dc: ['#C8B0F8', '#B096EE'] },
 ];
 const GW_SKINS = [
   ['liso', 'Gusano de color', 0, 'Elige el color que quieras, gratis.', { free: 1, pat: '' }],
@@ -225,10 +235,10 @@ function gwPlay(level) {
   const hud = () => { const tot = R.L.apples.length; let left = 0; for (let i = 0; i < tot; i++) if (!((R.st.mask >> i) & 1)) left++; $('#gwAp').textContent = `${tot - left}/${tot}`; $('#gwMv').textContent = R.hist.length; };
   const pillOpt = () => { const o = $('#gwOpt'); if (o) o.textContent = `mín. ${R.L.opt}`; };
   const load = (lv) => {
-    R.level = lv; R.maxL = Math.max(R.maxL, lv); R.L = gwParse(GW_LV[lv - 1]); R.st = gwStart(R.L); R.hist = []; R.anim = null; R.busy = false; R.q = []; R.hints = 0; R.fails = 0; R.hintDir = -1; R.dead = false; R.won = false; R.dir = { x: 1, y: 0 }; R.seed = lv * 3.7; R.eaten = 0; skipBtn();
+    R.level = lv; R.maxL = Math.max(R.maxL, lv); R.L = gwParse(GW_LV[lv - 1]); R.L.portals0 = R.L.g.indexOf('P'); R.st = gwStart(R.L); R.hist = []; R.anim = null; R.busy = false; R.q = []; R.hints = 0; R.fails = 0; R.hintDir = -1; R.dead = false; R.won = false; R.dir = { x: 1, y: 0 }; R.seed = lv * 3.7; R.eaten = 0; skipBtn();
     $('#gwLv').textContent = `Nivel ${lv}`; $('#gwEnv').textContent = E().n; $('#gwOver').classList.remove('show'); $('#gwOver').hidden = true; fit(); initParts(); hud(); pillOpt(); R.fx = []; R.mood = 'idle'; R.moodUntil = 0;
-    const NEW = [['K', 'key', 'Nuevo: la llave abre las puertas de madera. Recógela primero.'], ['C', 'crack', 'Nuevo: la tierra agrietada se rompe cuando te apoyas solo en ella.']]; let intro = null;
-    for (const [ch, id, msg] of NEW) if (R.L.g.includes(ch) && !(D.seen || '').includes(id)) { intro = msg; D.seen = (D.seen || '') + id + ','; jpSave(); break; }
+    const NEW = [['K', 'key', 'Nuevo: la llave abre las puertas de madera. Recógela primero.'], ['C', 'crack', 'Nuevo: la tierra agrietada se rompe cuando te apoyas solo en ella.'], ['P', 'portal', 'Nuevo: los portales mueven a todo el gusano al otro portal. Necesita espacio libre para llegar.'], ['T', 'switch', 'Nuevo: al pisar el interruptor, las compuertas azules se abren y las rojas se cierran (y al revés).'], ['>', 'arrow', 'Nuevo: las flechas solo se cruzan en el sentido que señalan.']]; let intro = null;
+    for (const [ch, id, msg] of NEW) if ((ch === '>' ? /[\^>v<]/.test(R.L.g) : R.L.g.includes(ch)) && !(D.seen || '').includes(id)) { intro = msg; D.seen = (D.seen || '') + id + ','; jpSave(); break; }
     if (intro) toast(intro, 4200); else toast(lv % 10 === 1 && lv > 1 ? `Nuevo lugar: ${E().n}` : (lv === 1 ? 'Come las manzanas y llega al portal' : `Nivel ${lv} · ${E().n}`), 2000);
   };
   const posOf = (idx) => [R.ox + (idx % R.L.w) * R.cs + R.cs / 2, R.oy + Math.floor(idx / R.L.w) * R.cs + R.cs / 2];
@@ -248,6 +258,10 @@ function gwPlay(level) {
   const drawKey = (x, y) => { const cs = R.cs, b = Math.sin(R.t * 2.2) * cs * 0.04; g.save(); g.translate(x, y + b); g.shadowColor = 'rgba(255,214,90,.8)'; g.shadowBlur = cs * 0.3; g.strokeStyle = '#B98A14'; g.fillStyle = '#F2C94C'; g.lineWidth = cs * 0.07; g.beginPath(); g.arc(-cs * 0.16, 0, cs * 0.15, 0, 7); g.stroke(); g.shadowBlur = 0; g.beginPath(); g.moveTo(-cs * 0.01, 0); g.lineTo(cs * 0.3, 0); g.moveTo(cs * 0.2, 0); g.lineTo(cs * 0.2, cs * 0.14); g.moveTo(cs * 0.3, 0); g.lineTo(cs * 0.3, cs * 0.11); g.stroke(); g.restore(); };
   const drawCrack = (x, y) => { const e = E(), cs = R.cs; g.fillStyle = e.wall[1]; g.fillRect(x, y, cs + 0.6, cs + 0.6); g.fillStyle = 'rgba(255,255,255,.26)'; g.fillRect(x, y, cs + 0.6, cs + 0.6); g.fillStyle = e.wall[0]; g.fillRect(x, y, cs + 0.6, cs * 0.2); g.strokeStyle = 'rgba(40,28,20,.7)'; g.lineWidth = Math.max(1.5, cs * 0.05); g.lineJoin = 'round'; g.beginPath(); g.moveTo(x + cs * 0.3, y + cs * 0.06); g.lineTo(x + cs * 0.42, y + cs * 0.38); g.lineTo(x + cs * 0.28, y + cs * 0.58); g.lineTo(x + cs * 0.46, y + cs * 0.94); g.moveTo(x + cs * 0.42, y + cs * 0.38); g.lineTo(x + cs * 0.7, y + cs * 0.52); g.lineTo(x + cs * 0.82, y + cs * 0.9); g.stroke(); g.setLineDash([cs * 0.1, cs * 0.08]); g.strokeStyle = 'rgba(40,28,20,.35)'; g.lineWidth = 1.5; g.strokeRect(x + 1, y + 1, cs - 2, cs - 2); g.setLineDash([]); };
   const drawSpike = (x, y) => { const cs = R.cs; g.fillStyle = '#8A93A6'; g.strokeStyle = '#4A5160'; g.lineWidth = 1.5; for (let k = 0; k < 3; k++) { g.beginPath(); g.moveTo(x + k * cs / 3 + 1, y + cs); g.lineTo(x + (k + 0.5) * cs / 3, y + cs * 0.4); g.lineTo(x + (k + 1) * cs / 3 - 1, y + cs); g.closePath(); g.fill(); g.stroke(); } };
+  const drawPortal = (x, y, k) => { const cs = R.cs, t = R.t, col = k ? ['255,140,60', '255,214,120'] : ['60,170,255', '150,230,255']; g.save(); g.translate(x, y); const gl = g.createRadialGradient(0, 0, 2, 0, 0, cs * 0.62); gl.addColorStop(0, `rgba(${col[1]},.9)`); gl.addColorStop(1, `rgba(${col[0]},0)`); g.fillStyle = gl; g.beginPath(); g.arc(0, 0, cs * 0.62, 0, 7); g.fill(); for (let q = 0; q < 3; q++) { g.strokeStyle = `rgba(${col[q === 1 ? 1 : 0]},${0.95 - q * 0.2})`; g.lineWidth = cs * 0.06; g.beginPath(); g.ellipse(0, 0, cs * (0.4 - q * 0.1), cs * (0.4 - q * 0.1) * (0.55 + 0.25 * Math.sin(t * 2 + q)), t * (1.6 - q * 0.5), 0.3, 5.6); g.stroke(); } g.restore(); };
+  const drawSwitch = (x, y) => { const cs = R.cs, on = (R.st.mask >> R.L.tBit) & 1; g.fillStyle = '#5E6A7A'; g.fillRect(x + cs * 0.12, y + cs * 0.78, cs * 0.76, cs * 0.18); g.fillStyle = on ? '#E0443A' : '#3B8FE8'; g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1.5; g.beginPath(); g.roundRect(x + cs * 0.2, y + cs * (on ? 0.6 : 0.5), cs * 0.6, cs * (on ? 0.2 : 0.3), cs * 0.1); g.fill(); g.stroke(); g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(x + cs * 0.28, y + cs * (on ? 0.63 : 0.54), cs * 0.2, cs * 0.05); };
+  const drawGate = (x, y, red) => { const cs = R.cs, on = (R.st.mask >> R.L.tBit) & 1, solid = red ? on : !on, c1 = red ? '224,68,58' : '59,143,232'; if (solid) { g.fillStyle = `rgba(${c1},.92)`; g.fillRect(x, y, cs + 0.6, cs + 0.6); g.fillStyle = 'rgba(255,255,255,.28)'; for (let k = 0; k < 3; k++) g.fillRect(x + cs * (0.1 + k * 0.3), y + cs * 0.06, cs * 0.14, cs * 0.88); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = Math.max(1.5, cs * 0.04); g.strokeRect(x + 1, y + 1, cs - 2, cs - 2); } else { g.setLineDash([cs * 0.12, cs * 0.1]); g.strokeStyle = `rgba(${c1},.6)`; g.lineWidth = 1.8; g.strokeRect(x + 2, y + 2, cs - 4, cs - 4); g.setLineDash([]); } };
+  const drawArrow = (x, y, d) => { const cs = R.cs, b = Math.sin(R.t * 3) * cs * 0.05; g.save(); g.translate(x + cs / 2, y + cs / 2); g.rotate(d * Math.PI / 2); g.translate(0, -b); g.fillStyle = 'rgba(255,255,255,.88)'; g.strokeStyle = 'rgba(40,30,70,.55)'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, -cs * 0.34); g.lineTo(cs * 0.3, cs * 0.02); g.lineTo(cs * 0.11, cs * 0.02); g.lineTo(cs * 0.11, cs * 0.32); g.lineTo(-cs * 0.11, cs * 0.32); g.lineTo(-cs * 0.11, cs * 0.02); g.lineTo(-cs * 0.3, cs * 0.02); g.closePath(); g.fill(); g.stroke(); g.restore(); };
   const frame = (now) => {
     R.t = now / 1000; const e = E(), W = R.W, H = R.H; g.setTransform(R.dpr, 0, 0, R.dpr, 0, 0); g.clearRect(0, 0, W, H);
     const bx = R.ox - 6, by = R.oy - 6, bw = R.L.w * R.cs + 12, bh = R.L.h * R.cs + 12;
@@ -281,11 +295,16 @@ function gwPlay(level) {
       else if (c === 'K') { if (!((R.st.mask >> R.L.kIdx[i]) & 1)) drawKey(x + R.cs / 2, y + R.cs / 2); }
       else if (c === 'C') { if (!((R.st.mask >> R.L.cIdx[i]) & 1)) drawCrack(x, y); }
       else if (c === 'E') drawExit(x + R.cs / 2, y + R.cs / 2);
+      else if (c === 'P') drawPortal(x + R.cs / 2, y + R.cs / 2, R.L.portals0 === i ? 0 : 1);
+      else if (c === 'T') drawSwitch(x, y);
+      else if (c === 'G') drawGate(x, y, false);
+      else if (c === 'H') drawGate(x, y, true);
+      else if (GW_ARROW[c] !== undefined) drawArrow(x, y, GW_ARROW[c]);
       else if (c === 'A') { const ai = R.L.aIdx[i]; if (!((R.st.mask >> ai) & 1) || (R.anim && R.anim.eatIdx === i && R.anim.t < 0.5)) gwFruit(g, e, x + R.cs / 2, y + R.cs / 2, R.cs, R.t, ai % 5 === 4 && R.level > 80); }
     }
     /* gusano */
     let pts; const idxPts = (wm) => wm.map(posOf);
-    if (R.anim) { const a = R.anim; pts = lerpPts(a.from, a.to, a.t < 1 ? 1 - Math.pow(1 - a.t, 2) : 1); } else pts = idxPts(R.st.worm);
+    if (R.anim) { const a = R.anim; if (a.tp) { pts = a.t < 0.5 ? a.from : a.to; g.globalAlpha = Math.min(1, Math.abs(a.t - 0.5) * 2.4 + 0.08); } else pts = lerpPts(a.from, a.to, a.t < 1 ? 1 - Math.pow(1 - a.t, 2) : 1); } else pts = idxPts(R.st.worm);
     if (R.dead && !R.anim) g.globalAlpha = 0.9;
     const nowp = performance.now(); let mood = 'idle', look = R.dir;
     if (R.won) mood = 'win'; else if (R.dead) mood = 'dead'; else if (R.falling) mood = 'fall'; else if (R.moodUntil > nowp) mood = R.mood;
@@ -301,12 +320,12 @@ function gwPlay(level) {
     g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; g.beginPath(); g.roundRect(bx, by, bw, bh, 16); g.stroke();
   };
   /* ---- animación y movimiento ---- */
-  const runFrames = (from, frames, done) => {
+  const runFrames = (from, frames, done, kinds) => {
     /* frames: lista de gusanos (índices); el primero llega con el movimiento, los demás son caídas */
     let k = 0; let prev = from; R.busy = true;
     const nextFrame = () => {
       if (k >= frames.length) { const wasFall = R.falling; R.falling = false; R.anim = null; R.busy = false; if (wasFall) { const hp = posOf(prev[0]); burst(hp[0], hp[1] + R.cs * 0.4, ['#E8DCC0', '#D4C6A4'], 8, 0.7); R.shake = 5; JG_TONE(180, 0.08, 'sine', 0.04); } done && done(); return; }
-      R.falling = k > 0; const toPts = frames[k].map(posOf), fromPts = prev.map(posOf); R.anim = { from: fromPts, to: toPts, t: 0, eatIdx: k === 0 ? R.eatIdx : -1 }; const dur = k === 0 ? 120 : 95; const t0 = performance.now();
+      const kd = (kinds && kinds[k]) || (k > 0 ? 'f' : 'm'); R.falling = kd === 'f'; const toPts = frames[k].map(posOf), fromPts = prev.map(posOf); R.anim = { from: fromPts, to: toPts, t: 0, eatIdx: k === 0 ? R.eatIdx : -1, tp: kd === 't' }; const dur = kd === 't' ? 260 : k === 0 ? 120 : 95; const t0 = performance.now();
       const step = (now) => { if (GW.run !== R) return; const tt = Math.min(1, (now - t0) / dur); R.anim.t = tt; if (tt < 1) requestAnimationFrame(step); else { prev = frames[k]; k++; nextFrame(); } };
       requestAnimationFrame(step);
     };
@@ -321,8 +340,10 @@ function gwPlay(level) {
     { const nb = r.state.mask & ~before.mask; for (const ci of R.L.cracks) if ((nb >> R.L.cIdx[ci]) & 1) { const cp = posOf(ci); burst(cp[0], cp[1], ['#D4C6A4', '#8A7A5C', '#FFFFFF'], 14, 1.0); JG_TONE(150, 0.14, 'sawtooth', 0.03, 90); } }
     JG_TONE(r.eat ? 520 + R.eaten * 40 : 260, r.eat ? 0.12 : 0.05, r.eat ? 'triangle' : 'sine', r.eat ? 0.055 : 0.02, r.eat ? 780 + R.eaten * 40 : 0);
     if (r.frames.length > 1) setTimeout(() => JG_TONE(330, 0.18, 'sine', 0.03, 140), 150);
+    if (R.L.hasT && ((r.state.mask ^ before.mask) >> R.L.tBit) & 1) { const hp = posOf(r.frames[0][0]); burst(hp[0], hp[1], ['#3B8FE8', '#E0443A', '#FFFFFF'], 14, 1.0); JG_TONE(620, 0.1, 'square', 0.03, 420); }
+    if ((r.kinds || []).includes('t')) { const a0 = posOf(r.frames[0][0]), a1 = posOf(r.frames[1][0]); burst(a0[0], a0[1], ['#6FC8FF', '#FFFFFF'], 12, 1.0); setTimeout(() => { if (GW.run === R) burst(a1[0], a1[1], ['#FFB060', '#FFFFFF'], 12, 1.0); }, 200); JG_TONE(900, 0.2, 'sine', 0.04, 300); }
     hud(); const fin = () => { hud(); if (r.status === 'win') win(); else if (r.status === 'dead') { R.q = []; die(); } else if (R.q.length) tryMove(R.q.shift()); else deadCheck(); };
-    runFrames(from, r.frames, fin);
+    runFrames(from, r.frames, fin, r.kinds);
   };
   const bump = (d) => { const c = $('#gwBoard'); c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); };
   const die = () => { R.dead = true; R.shake = 10; { const hp = posOf(R.st.worm[0]); burst(hp[0], hp[1], ['#FFD84A', '#FF8A3A', '#FFFFFF'], 16, 1.2); } JG_TONE(200, 0.35, 'sawtooth', 0.04, 90); JG_VIB([20, 40, 20]); toast('¡Ay! Deshaz el último paso', 1600); setTimeout(() => { if (GW.run === R && R.dead && !R.won) undo(); }, 1100); };
