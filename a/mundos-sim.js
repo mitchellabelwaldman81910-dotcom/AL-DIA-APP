@@ -116,7 +116,7 @@ function mdCanHunt(h, p) {
 function mdDanger(a) { let best = null, bd = 1e9; for (const d of MDS.dang) { const dx = a.x - d.x; const dist = Math.abs(dx); if (dist < d.r && dist < bd) { if (a.layer === 'water' && !d.sky) continue; if (d.kind === 'flood') continue; bd = dist; best = d; } } return best; }
 
 /* ---------- decidir ---------- */
-function mdSay(a, txt) { return;  if (!a.say || a.say.t <= 0) a.say = { txt, t: 2.4 }; }
+function mdSay(a, txt) {  if (!a.say || a.say.t <= 0) a.say = { txt, t: 2.4 }; }
 const MD_VOICE = { conejo: 'Ñam ñam', ardilla: 'Chii chii', venado: 'Brrr', oveja: '¡Beee!', vaca: '¡Muuu!', cerdo: '¡Oink!', gallina: '¡Pío pío!', pajaro: '¡Pío!', loro: '¡Hola, hola!', lobo: '¡Auuu!', perro: '¡Guau!', leon: '¡Grrr!', mono: '¡Uh uh ah!', rana: '¡Croac!', pato: '¡Cuac!', caballo: 'Iiiih', cabra: '¡Mee!', gato: 'Miau', elefante: 'Pruuum', buho: 'Uu uu', aguila: '¡Kiii!', pinguino: '¡Kuak!', delfin: 'Ii ii ii', ballena: 'Uuuuu', foca: '¡Auk auk!', tortuga: 'Hmm…', perezoso: 'Zzz… hola…', zorro: '¡Yip!', oso: 'Grrrmm', jirafa: 'Mmm', cebra: '¡Iji!' };
 const MD_SAYS = { q: ['Mmm…', '¿Y la comida?', '¡Hola!', 'Qué rico día', 'Cerca de ti', 'Ay, qué sueño'], b: ['¡Pío!', '¡Tuiit!', 'Cuiii', '¡Hola, amigos!'], f: ['Blub', 'Blub blub', '¡Burbujas!'], x: ['Mmm…', '¡Hola!', 'Hola…'] };
 function mdVoice(a) { return MD_VOICE[a.sp] || mdPick(MD_SAYS[a.S.t] || MD_SAYS.q); }
@@ -126,7 +126,8 @@ function mdShelterFor(a) { let best = null, bd = 1e9; for (const f of MDS.fl) { 
 function mdNearestTree(x, maxD, fruitOnly) { let best = null, bd = maxD || 1e9; for (const f of MDS.trees) { if (f.burn > 0 || f.burnt) continue; if (fruitOnly && !f.fruit) continue; const d = Math.abs(f.x - x); if (d < bd) { bd = d; best = f; } } return best; }
 function mdHerdCenter(a, r) { let sx = 0, n = 0; for (const o of mdNear(a.x, r)) if (o.sp === a.sp && o !== a && !o.dead && o.layer === a.layer) { sx += o.x; n++; } return n ? { x: sx / n, n } : null; }
 function mdHighGround(x) { let best = x, bd = 1e9; for (let d = 0; d < 2600; d += 40) for (const s of [-1, 1]) { const xx = x + s * d; if (xx < 30 || xx > MDS.WW - 30) continue; if (mdGY(xx) < MDS.S - 60 - 0 && d < bd) { return xx; } } return best; }
-const mdSpd = (a, run) => { const v = a.S.v; if (a.layer === 'air') return v[0] * (a.flying ? (run ? 1.5 : 0.9) : (run ? 0.8 : 0.3)); if (a.layer === 'water' || a.layer === 'floor') return v[0] * (run ? 2.6 : 1); return run ? (v[1] || v[0] * 2) : v[0]; };
+const mdSpd = (a, run) => (a.hurt > MDS.t ? 0.55 : 1) * mdSpd0(a, run);
+const mdSpd0 = (a, run) => { const v = a.S.v; if (a.layer === 'air') return v[0] * (a.flying ? (run ? 1.5 : 0.9) : (run ? 0.8 : 0.3)); if (a.layer === 'water' || a.layer === 'floor') return v[0] * (run ? 2.6 : 1); return run ? (v[1] || v[0] * 2) : v[0]; };
 
 function mdFlee(a, fromX, t) { const away = a.x >= fromX ? 1 : -1; a.tx = mdCl(a.x + away * (350 + mdR() * 350), 30, MDS.WW - 30); a.dir = away; a.running = true; mdSetState(a, 'flee', t || 3.5); a.flyAway = true; if (a.layer === 'water') { a.ty = mdCl(a.y + (mdR() - 0.5) * 120, MDS.surf() + 16, mdGY(a.x) - 12); } if (a.layer === 'air') { a.flying = true; a.ty = mdCl(a.y - 80 - mdR() * 80, 60, MDS.S - 120); } }
 
@@ -196,7 +197,7 @@ function mdThink(a, dt) {
   if (a.layer === 'floor') { a.tx = mdCl(a.x + (mdR() - 0.5) * 240, 30, MDS.WW - 30); a.running = false; mdSetState(a, 'wander', 6); return; }
   if (a.layer === 'air') {
     if (a.flying && a.S.t === 'b') {
-      if (mdR() < 0.4 && !wantSleep) { const tr = mdNearestTree(a.x + (mdR() - 0.5) * 1400, 900); if (tr) { a.perchT = tr; a.tx = tr.x + (mdR() - 0.5) * tr.h * 0.3; a.ty = tr.y - tr.h * (0.62 + mdR() * 0.3); a.landing = true; mdSetState(a, 'fly', 8); return; } }
+      if (mdR() < 0.4 && !wantSleep) { const tr = mdNearestTree(a.x + (mdR() - 0.5) * 1400, 900); if (tr) { a.perchT = tr; { const pp = mdPerchPick(tr, a), q = mdPerchXY(tr, pp); a.tx = q.x; a.ty = q.y - 3; } a.landing = true; mdSetState(a, 'fly', 8); return; } }
       if (mdR() < 0.25 && S.h === 'M') { const wx = MDS.waterXs.length ? mdPick(MDS.waterXs) : null; if (wx) { a.tx = wx; a.ty = MDS.surf() - 3; a.landing = true; a.onWater = true; mdSetState(a, 'fly', 8); return; } }
       if (mdR() < 0.2) { a.tx = mdCl(a.x + (mdR() - 0.5) * 300, 30, MDS.WW - 30); a.ty = mdGY(a.tx) - 2; a.landing = true; mdSetState(a, 'fly', 8); return; }
       a.tx = mdCl((far ? hc.x : a.x) + (mdR() - 0.5) * 1200, 30, MDS.WW - 30); a.ty = mdCl(a.y + (mdR() - 0.5) * 140, 70, MDS.S - 150); a.landing = false; a.dir = a.tx >= a.x ? 1 : -1; mdSetState(a, 'fly', 5 + mdR() * 5); return;
@@ -244,7 +245,7 @@ function mdMove(a, dt) {
     let gy = mdGY(a.x), sf = MDS.surf(); let ty;
     if (a.raft) { const r = MDS.rafts.find((q) => q.id === a.raft); if (r) { a.x += (r.x + r.slot(a) - a.x) * Math.min(1, dt * 3); ty = r.y - 4; a.dir = 1; } else { a.raft = null; } }
     if (ty == null) { ty = gy; if (gy > sf + 6 && !MDS.sea) ty = sf + 7; else if (MDS.sea) ty = gy; if (L === 'land' && gy <= sf + 6 && !MDS.sea) ty += a.lane; }
-    if (a.arb && (st === 'canopy' || st === 'swing' || st === 'climb') && a.tree) { const tr = a.tree; const top = tr.y - tr.h * (0.5 + 0.2 * Math.sin(a.id)); if (st === 'climb') { if (Math.abs(a.x - tr.x) < 14) { a.up = Math.min(1, a.up + dt * 0.9); if (a.down) { a.up = 0; a.down = false; a.state = 'idle'; a.timer = 1; } if (a.up >= 1) { mdSetState(a, 'canopy', 6 + mdR() * 8); } } } else if (st === 'canopy') { a.up = Math.min(1, a.up + dt * 2); } else if (st === 'swing') { if (Math.abs(a.x - tr.x) < 12) { mdSetState(a, 'canopy', 6 + mdR() * 6); } a.up = 1; }
+    if (a.arb && (st === 'canopy' || st === 'swing' || st === 'climb') && a.tree) { const tr = a.tree; const top = tr.y - tr.h * (0.5 + 0.2 * Math.sin(a.id)); if (st === 'climb') { } else if (st === 'canopy') { a.up = Math.min(1, a.up + dt * 2); } else if (st === 'swing') { if (Math.abs(a.x - tr.x) < 12) { mdSetState(a, 'canopy', 6 + mdR() * 6); } a.up = 1; }
       ty = mdLerp(gy, top - (st === 'swing' ? 12 * Math.sin(Math.PI * Mat(Math.abs(a.x - tr.x), 300)) : 0), a.up); }
     else if (a.up > 0) { a.up = Math.max(0, a.up - dt * 1.2); ty = mdLerp(ty, ty - 0, 1); const tr = a.tree; if (tr) ty = mdLerp(gy, tr.y - tr.h * 0.5, a.up); }
     if (L === 'air' && !a.flying) { if (a.perchY != null) ty = a.perchY; }
@@ -311,13 +312,14 @@ function mdActor(a, dt) {
 function mdReproduce(a, dt) {
   if (a.dead || a.age < 1 || a.inNest) return; const S = a.S, W = MDS.def;
   if (a.cd > 0) a.cd -= dt;
-  const pop = mdCount(a.sp), cap = Math.max(8, Math.round((MDS.init[a.sp] || 4) * 2.0));
+  if (!(a.preg > 0) && typeof mdYoungOf === 'function' && mdYoungOf(a.sp) > 0) return;
+  const pop = mdCount(a.sp), cap = 3;
   if (a.preg > 0) { a.preg -= dt; if (a.preg <= 0) { a.preg = 0; mdBirth(a); } return; }
   if (S.t === 'b') {
     if (a.nest) { return; }
     if (a.cd > 0 || a.male || pop >= cap || MDS.an.length > MDS.cap * 0.85 || a.hunger > 0.65 || MDS.E.shelter || MDS.E.night > 0.6 || MDS.sea) return;
     const mate = mdNear(a.x, 1200).find((o) => o.sp === a.sp && o.male && o.age >= 1 && !o.dead); if (!mate && MDS.def.mode === 'land' && mdR() < 0.7) return;
-    /* sitio */ let site = null; if (S.nest === 'tree') { const tr = mdNearestTree(a.x, 1400); if (tr) site = { x: tr.x + (mdR() - 0.5) * tr.h * 0.18, y: tr.y - tr.h * (0.6 + mdR() * 0.2), tree: tr }; } else { let nx = a.x + (mdR() - 0.5) * 120; if (mdDepth(nx) > -15) return; const sh = mdShelterFor(a); if (S.nest === 'cliff') { let bx = nx; for (let d = 0; d < 1600; d += 50) { const q = a.x + (mdR() < 0.5 ? -d : d); if (q > 40 && q < MDS.WW - 40 && mdGY(q) < MDS.S - 90) { bx = q; break; } } nx = bx; } site = { x: nx, y: mdGY(nx) }; }
+    /* sitio */ let site = null; if (S.nest === 'tree') { const tr = mdNearestTree(a.x, 1400); if (tr) { const pp = mdPerchPick(tr, null), q = mdPerchXY(tr, pp); site = { x: q.x, y: q.y - 2, tree: tr }; } } else { let nx = a.x + (mdR() - 0.5) * 120; if (mdDepth(nx) > -15) return; const sh = mdShelterFor(a); if (S.nest === 'cliff') { let bx = nx; for (let d = 0; d < 1600; d += 50) { const q = a.x + (mdR() < 0.5 ? -d : d); if (q > 40 && q < MDS.WW - 40 && mdGY(q) < MDS.S - 90) { bx = q; break; } } nx = bx; } site = { x: nx, y: mdGY(nx) }; }
     if (!site) return; const nest = { id: ++MDS.uid, sp: a.sp, owner: a.id, x: site.x, y: site.y, tree: site.tree || null, stage: 'build', t: 8, eggs: 0, chicks: 0, egg: S.look.c, chickCol: S.look.b, born: MDS.t }; MDS.nests.push(nest); a.nest = nest.id; a.cd = 150 + mdR() * 60; a.tx = site.x; a.tgt = 0; if (S.nest === 'tree') { a.flying = a.layer === 'air'; a.ty = site.y - 6; a.landing = a.layer === 'air'; a.perchT = site.tree; } mdSetState(a, 'nestbuild', 9); return;
   }
   if (a.male || a.cd > 0 || pop >= cap || MDS.an.length > MDS.cap * 0.85 || a.hunger > 0.62 || MDS.E.shelter) return;
@@ -326,7 +328,7 @@ function mdReproduce(a, dt) {
   a.preg = S.t === 'f' ? 16 + mdR() * 10 : 32 + mdR() * 18; a.cd = 70 + mdR() * 50; mdPuff(a.x, a.y - 22, 3, '#ff8fa3', 'heart'); mate.cd = Math.max(mate.cd, 20);
 }
 function mdBirth(a) {
-  const S = a.S, n = mdRI(S.lit[0], S.lit[1]), pop = mdCount(a.sp), cap = Math.max(8, Math.round((MDS.init[a.sp] || 4) * 2.0)); const k = Math.min(n, Math.max(1, cap - pop));
+  const S = a.S, n = mdRI(S.lit[0], S.lit[1]), pop = mdCount(a.sp), cap = 3; const k = 1;
   for (let i = 0; i < k && MDS.an.length < MDS.cap * 1.05; i++) { const b = mdNew(a.sp, a.x + (mdR() - 0.5) * 30, { age: 0.02, mom: a.id, hunger: 0.1, cd: 90 + mdR() * 60 }); if (b) { b.y = a.y; b.dir = a.dir; b.state = 'follow'; MDS.stat.born++; } }
   a.kids += k; if (S.t === 'f') { /* alevines */ } mdPuff(a.x, a.y - 14, 6, '#ffd6e4', 'heart'); mdLog(`${a.name}, ${S.n.toLowerCase()}, tuvo ${k} ${k === 1 ? S.bn : S.bn.endsWith('o') || S.bn.endsWith('a') || S.bn.endsWith('e') || S.bn.endsWith('í') ? S.bn + 's' : S.bn + 's'}.`);
 }
@@ -334,7 +336,7 @@ function mdNests(dt) {
   for (const n of MDS.nests.slice()) {
     n.t -= dt; const own = MDS.an.find((o) => o.id === n.owner && !o.dead);
     if (n.tree && (n.tree.burn > 0 || n.tree.burnt)) { mdDestroyNest(n, 'fuego'); continue; }
-    if (n.stage === 'build') { if (own && Math.abs(own.x - n.x) < 40 && !own.flying) { n.t -= dt * 0.5; } if (!own) { mdDestroyNest(n); continue; } if (n.t <= 0) { n.stage = 'eggs'; n.eggs = mdRI(Math.max(1, own.S.lit[0] - 1), Math.min(4, own.S.lit[1])); n.t = 36; mdSetState(own, 'brood', 36); own.tx = n.x; own.landing = true; if (own.layer === 'air') { own.flying = true; own.ty = n.y - 6; own.perchT = n.tree; } } }
+    if (n.stage === 'build') { if (own && Math.abs(own.x - n.x) < 40 && !own.flying) { n.t -= dt * 0.5; } if (!own) { mdDestroyNest(n); continue; } if (n.t <= 0) { n.stage = 'eggs'; n.eggs = 1; n.t = 36; mdSetState(own, 'brood', 36); own.tx = n.x; own.landing = true; if (own.layer === 'air') { own.flying = true; own.ty = n.y - 6; own.perchT = n.tree; } } }
     else if (n.stage === 'eggs') { if (!own) { n.t -= dt * 2; } else if (own.state !== 'brood' && own.state !== 'flee' && own.state !== 'shelter') { if (Math.abs(own.x - n.x) < 60) mdSetState(own, 'brood', 5); else if (!MDS.E.shelter) { own.tx = n.x; mdSetState(own, 'nestbuild', 4); if (own.layer === 'air') { own.flying = true; own.ty = n.y - 6; own.landing = true; } } } if (n.t <= 0) { n.stage = 'chicks'; n.t = 70; const kk = n.eggs; n.eggs = 0; const S = MD_SP[n.sp]; for (let i = 0; i < kk; i++) { const b = (MDS.an.length > MDS.cap * 1.05 ? null : mdNew(n.sp, n.x, { age: 0.02, inNest: n.id, mom: n.owner, hunger: 0.2, cd: 90 + mdR() * 60 })); if (b) { b.y = n.y - 6; b.flying = false; b.state = 'nest'; MDS.stat.born++; MDS.stat.hatched++; n.chicks++; } } mdLog(`¡Nacieron ${kk} ${kk === 1 ? S.bn : S.bn + 's'} en un nido de ${S.n.toLowerCase()}!`); if (own) { own.kids += kk; mdSetState(own, 'feed', 20); mdPuff(n.x, n.y - 12, 6, '#fff3a8', 'heart'); } }
     } else if (n.stage === 'chicks') { n.hungry = Math.sin(MDS.t * 3 + n.id) > 0.3; const live = MDS.an.filter((o) => o.inNest === n.id && !o.dead); n.chicks = live.length; for (const c of live) { if (c.age >= 0.45) { c.inNest = 0; c.state = 'follow'; c.flying = false; } } if (own && !own.dead && mdR() < dt * 0.1) { mdPuff(n.x, n.y - 14, 2, '#8ac85a'); own.hunger = Math.max(0, own.hunger - 0.05); } if (n.t <= 0 || (!live.length && n.t < 55)) { MDS.nests.splice(MDS.nests.indexOf(n), 1); if (own) { own.nest = 0; if (own.state === 'feed' || own.state === 'brood') mdSetState(own, 'idle', 1); } } }
   }
@@ -399,8 +401,8 @@ function mdParts(dt) {
 function mdBalance(dt) {
   /* unicornio: solo aparece con arcoíris */
   if (!MDS.sea && MD_SP.unicornio) { const uni = MDS.an.filter((a) => a.sp === 'unicornio' && !a.dead); if (MDS.E.rainbow > 0.5 && !uni.length && (MDS.uniT || 0) <= MDS.t) { MDS.uniT = MDS.t + 30; const x = mdCl(MDV.camX + mdVW() * (0.2 + mdR() * 0.6), 60, MDS.WW - 60); const u1 = mdNew('unicornio', x); if (u1) { u1.rb = true; u1.hunger = 0; u1.male = mdR() < 0.5; mdPuff(x, u1.y - 20, 14, '#ffe6ff', 'heart'); mdLog('¡Apareció un unicornio con el arcoíris!'); } } if (MDS.E.rainbow < 0.15) for (const u of uni) { if (!u.leaving) { u.leaving = true; mdLog('El unicornio se fue con el arcoíris.'); } u.dead = true; mdPuff(u.x, u.y - 20, 10, '#ffe6ff', 'spark'); } }
-  MDS.balT = (MDS.balT || 0) - dt; if (MDS.balT > 0) return; MDS.balT = 12;
-  for (const key in MDS.init) { if (MD_SP[key].rb) continue; const n = mdCount(key), init = MDS.init[key]; if (n < Math.max(2, Math.floor(init * 0.4)) && MDS.an.length < MDS.cap) { const x = mdSpawnX(key); if (x == null) continue; const a = mdNew(key, MDS.sea || mdLayer(key) !== 'land' ? x : (mdR() < 0.5 ? 60 : MDS.WW - 60)); if (a) { a.hunger = 0.3; if (mdR() < 0.5) mdLog(`Llega ${a.S.n.toLowerCase()} de tierras lejanas.`); } } }
+  MDS.balT = (MDS.balT || 0) - dt; if (MDS.balT > 0) return; MDS.balT = 3;
+  if (typeof mdFamily === 'function') mdFamily();
 }
 
 /* ---------- actualización principal ---------- */
