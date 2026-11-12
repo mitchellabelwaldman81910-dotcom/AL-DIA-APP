@@ -27,7 +27,7 @@ function pvWelcome() {
   if (typeof openSheet !== 'function') return;
   const m = window.innerHeight > window.innerWidth ? 'v' : 'h';
   const poster = m === 'v' ? 'media/poster-vertical.jpg' : 'media/poster-horizontal.jpg';
-  openSheet(`${sheetHead('¿Qué es Cinnavia?')}<div class="sheet-body"><div class="pv-box ${m === 'v' ? 'pv-v' : 'pv-h'}"><video id="pvWel" src="${pvFile(m)}" poster="${poster}" controls autoplay playsinline preload="auto"></video></div>
+  openSheet(`${sheetHead('¿Qué es Cinnavia?')}<div class="sheet-body"><div class="pv-box ${m === 'v' ? 'pv-v' : 'pv-h'}"><video id="pvWel" src="${pvFile(m)}" poster="${poster}" controls autoplay playsinline preload="none"></video></div>
     <p class="tiny" style="margin:10px 0 0;opacity:.75">Lo puedes volver a ver cuando quieras en <b>Más › ¿Qué es Cinnavia?</b></p></div>
     <div class="sheet-foot"><span class="grow"></span><button type="button" class="btn primary" data-act="sheet-close">Entrar a la app</button></div>`, () => { const v = document.getElementById('pvWel'); if (v) { try { v.pause(); } catch (e) {} } });
   const v = document.getElementById('pvWel');
