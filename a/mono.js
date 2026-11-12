@@ -5,7 +5,7 @@
 'use strict';
 
 const MN = { run: null, firstAt: 0, lastEnd: 0 };
-const MN_COLS = 7, MN_BLEN = 28, MN_COIN_CAP = 15, MN_IDLE_WARN = 7, MN_IDLE_KILL = 11, MN_PER = MN_COLS + 12, MN_X0 = -6, MN_NUDGE_MIN = 20;
+const MN_COLS = 7, MN_BLEN = 28, MN_COIN_CAP = 15, MN_IDLE_WARN = 9, MN_IDLE_KILL = 14, MN_PER = MN_COLS + 12, MN_X0 = -6, MN_NUDGE_MIN = 20;
 const mnBestKey = () => `aldia:mono:best:${REG.me || '_'}`;
 const mnBest = () => jgNum(mnBestKey());
 const mnClamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -51,8 +51,8 @@ JG_CFG.mono = { tabs: [['dia', 'Hoy'], ['semana', 'Semana'], ['record', 'Récord
 const mnItemX = (lane, it, t) => { let p = (it.x0 + lane.dir * lane.v * t - MN_X0) % MN_PER; if (p < 0) p += MN_PER; return p + MN_X0; };
 function mnMakeLane(kind, lvl, dir, b) {
   const road = kind === 'road';
-  const v = road ? (1.4 + Math.random() * 1.6) * (1 + 0.45 * lvl) : (0.9 + Math.random() * 1.0) * (1 + 0.35 * lvl);
-  const avg = road ? 5.8 - 2.2 * lvl + (Math.random() * 0.8 - 0.4) : 5.2 + Math.random() * 0.8;
+  const v = road ? (1.15 + Math.random() * 1.25) * (1 + 0.3 * lvl) : (0.8 + Math.random() * 0.85) * (1 + 0.25 * lvl);
+  const avg = road ? 6.6 - 1.8 * lvl + (Math.random() * 0.8 - 0.4) : 5.0 + Math.random() * 0.7;
   const minGap = road ? 2.1 : 1.25;
   let n = Math.max(road ? 2 : 3, Math.round(MN_PER / avg)), lens;
   for (;;) {
