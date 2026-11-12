@@ -290,7 +290,7 @@ export default async (req, context) => {
       if (kindQ === "gamerank") {
         const now = Date.now(); const as = url.searchParams.get("as") || "";
         const read = async (prefix, key = "score") => { const { blobs } = await store.list({ prefix }); const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean); return all.sort((x, y) => (y[key] || 0) - (x[key] || 0) || (x.at || 0) - (y.at || 0)).slice(0, 20); };
-        const P = ({ galope: "gg", peloton: "gp", mente: "gv", enlaza: "gn", gusano: "gw" })[url.searchParams.get("game") || ""] || "gs";
+        const P = ({ galope: "gg", peloton: "gp", mente: "gv", enlaza: "gn", gusano: "gw", mono: "gk" })[url.searchParams.get("game") || ""] || "gs";
         const out = { ok: true, dia: await read(`${W}${P}/d/${dayOf(now)}/`), semana: await read(`${W}${P}/w/${weekOf(now)}/`), record: await read(`${W}${P}/a/`), manzanas: await read(`${W}${P}/t/`, "apples") };
         if (USER_RE.test(as)) { const a1 = await store.get(`${W}${P}/a/${as}`, { type: "json" }); const t1 = await store.get(`${W}${P}/t/${as}`, { type: "json" }); out.me = { best: a1?.score || 0, total: t1?.apples || 0, games: t1?.games || 0 }; }
         return json(out);
@@ -845,18 +845,19 @@ export default async (req, context) => {
           const day = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean).sort((x, y) => y.score - x.score);
           return json({ ok: true, best, newBest: newBest && score > 0, rankDay: day.findIndex((x) => x.id === as) + 1 });
         }
-        if (body.game === "galope") {
+        if (body.game === "galope" || body.game === "mono") {
+          const GP = body.game === "mono" ? "gk" : "gg";
           // Galope: su propio ranking. Puntos = distancia; no hay manzanas, así que "partidas" cuenta las partidas.
           const score = Math.max(0, Math.floor(+body.score || 0)); const dur = Math.max(1, Math.floor(+body.dur || 0));
           if (score < 1 || score > dur * 35 + 40 || dur > 36000) return json({ error: "Partida inválida" }, 400);
           const now = Date.now(); const who = { id: as, name: auth[as].name, color: auth[as].color, av: auth[as].av || 0 };
           const put = async (key) => { const prev = await store.get(key, { type: "json" }); if (!prev || score > (prev.score || 0)) { await store.setJSON(key, { ...who, score, apples: 0, at: now }); return true; } return false; };
-          await put(`${W}gg/d/${dayOf(now)}/${as}`); await put(`${W}gg/w/${weekOf(now)}/${as}`); const newBest = await put(`${W}gg/a/${as}`);
-          const t0 = (await store.get(`${W}gg/t/${as}`, { type: "json" })) || { games: 0 };
+          await put(`${W}${GP}/d/${dayOf(now)}/${as}`); await put(`${W}${GP}/w/${weekOf(now)}/${as}`); const newBest = await put(`${W}${GP}/a/${as}`);
+          const t0 = (await store.get(`${W}${GP}/t/${as}`, { type: "json" })) || { games: 0 };
           const games = (t0.games || 0) + 1;
-          await store.setJSON(`${W}gg/t/${as}`, { ...who, games, apples: games, score: games, at: now });
-          const best = (await store.get(`${W}gg/a/${as}`, { type: "json" }))?.score || score;
-          const { blobs } = await store.list({ prefix: `${W}gg/d/${dayOf(now)}/` });
+          await store.setJSON(`${W}${GP}/t/${as}`, { ...who, games, apples: games, score: games, at: now });
+          const best = (await store.get(`${W}${GP}/a/${as}`, { type: "json" }))?.score || score;
+          const { blobs } = await store.list({ prefix: `${W}${GP}/d/${dayOf(now)}/` });
           const day = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean).sort((x, y) => y.score - x.score);
           return json({ ok: true, best, newBest: newBest && score > 0, rankDay: day.findIndex((x) => x.id === as) + 1 });
         }

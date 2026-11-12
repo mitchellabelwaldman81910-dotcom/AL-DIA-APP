@@ -3442,3 +3442,9 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
 .pv-v{aspect-ratio:9/16;max-height:72vh;width:auto;max-width:100%}
 .pv-v video{object-fit:contain}
 .pv-h{aspect-ratio:16/9;width:100%}
+/* Monito Saltarín (7.51) */
+.mn-stage { background: #72c24f; cursor: pointer; }
+.mn-hint { position: absolute; left: 50%; bottom: calc(14% + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 2; padding: 10px 18px; border-radius: 99px; background: rgba(10,18,32,.62); color: #fff; font: 700 14px/1.2 var(--sans); letter-spacing: .01em; white-space: nowrap; pointer-events: none; animation: mnPulse 1.6s ease-in-out infinite; }
+.mn-hint[hidden] { display: none; }
+@keyframes mnPulse { 0%,100% { opacity: .85; transform: translateX(-50%) scale(1); } 50% { opacity: 1; transform: translateX(-50%) scale(1.04); } }
+.mn-stage .gl-over { min-width: min(300px, 86vw); text-align: center; }
