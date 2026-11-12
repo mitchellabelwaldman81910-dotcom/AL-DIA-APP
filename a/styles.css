@@ -3558,3 +3558,59 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
 /* 7.58 — video «¿Qué es Cinnavia?» dentro del cuadro de bienvenida */
 #sheet .pv-v{max-height:56vh;margin-left:auto;margin-right:auto}
 #sheet .pv-box{margin-top:6px}
+
+/* =========================================================
+   7.58 — Escritorio (pantallas de 1100 px o más)
+   Todo vive dentro de esta media query: el celular y la tablet no cambian.
+   ========================================================= */
+@media (min-width: 1100px) {
+  :root { --dside: 248px; --dpad: clamp(32px, 4.4vw, 76px); --dmax: 1120px; }
+  html { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--ink-3) 55%, transparent) transparent; }
+  main:focus-visible { outline: none; }
+
+  /* Barra lateral con nombre, íconos y etiquetas legibles */
+  body .shell .nav { width: var(--dside); padding: 24px 14px 20px; gap: 4px; align-items: stretch; box-shadow: 10px 0 44px -36px rgba(22, 58, 43, .55); }
+  body .shell .nav::before { content: "Cinnavia"; display: block; height: 42px; line-height: 42px; margin: 0 0 20px 8px; padding-left: 52px;
+    font: italic 700 27px/42px var(--serif); color: var(--ink); background: url("../icons/icon-192.png") 0 50% / 40px 40px no-repeat; }
+  body .shell .nav a { flex-direction: row; justify-content: flex-start; gap: 14px; height: 46px; padding: 0 16px; border-radius: 13px;
+    font-size: 15px; font-weight: 600; transition: background .18s ease, color .18s ease; }
+  body .shell .nav a .i { width: 22px; height: 22px; }
+  body .shell .nav a span { font-size: 15px; letter-spacing: 0; }
+  body .shell .nav a:hover { background: color-mix(in srgb, var(--pen) 9%, transparent); color: var(--ink); }
+  body .shell .nav a[aria-current="page"] { background: var(--pen-soft); color: var(--pen); filter: none; }
+  body .shell .nav a[aria-current="page"]::before { display: none; }
+
+  /* Contenido más ancho y centrado en el espacio libre */
+  main { max-width: none; margin: 0 0 0 var(--dside); padding: 8px var(--dpad) 96px; }
+  main > * { max-width: var(--dmax); margin-left: auto; margin-right: auto; }
+  main > .hoy-hero { max-width: none; margin-left: calc(-1 * var(--dpad)); margin-right: calc(-1 * var(--dpad)); height: 320px; }
+
+  .gb-entry { height: 134px; }
+  .gb-entry-art { flex: 0 0 286px; min-height: 0; }
+  .gb-entry-txt { padding: 14px 22px; }
+  .gb-entry-txt b { font-size: 17px; }
+  .gb-entry-txt span { font-size: 14.5px; }
+
+  /* Calendario: casillas bajas en vez de cuadradas, para que el mes entre en pantalla */
+  .cal .day { aspect-ratio: auto; height: 88px; align-items: flex-start; padding: 8px 10px; }
+
+  /* Avisos de solo texto: en pantalla ancha ya no se reparten en columnas sueltas */
+  .banner:not(:has(> p, > .i, > .btn, > .icon-btn)) { display: block; }
+  /* Portadas de juegos: columna cómoda, no a todo lo ancho */
+  .mt-home { max-width: 780px; }
+
+  .page-title { font-size: 42px; margin-top: 22px; }
+  .page-sub { font-size: 17px; margin-bottom: 24px; }
+
+  /* Listas largas (Más, ajustes…) en dos columnas de tarjetas */
+  .rows:has(> li:nth-child(4)) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; background: transparent; border: 0; border-radius: 0; overflow: visible; }
+  .rows:has(> li:nth-child(4)) > li { background: var(--sheet); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease; }
+  .rows:has(> li:nth-child(4)) > li + li { border-top: 1px solid var(--line); }
+  .rows:has(> li:nth-child(4)) > li:hover { transform: translateY(-2px); box-shadow: 0 18px 34px -24px rgba(22, 58, 43, .5); }
+
+  /* Botones flotantes y avisos ajustados a la barra lateral */
+  .fab { right: 40px; bottom: 34px; }
+  .focus-pill { left: calc(var(--dside) + 28px); bottom: 34px; }
+  .toasts { padding-left: var(--dside); bottom: 34px; }
+  .sheet { max-width: 680px; }
+}
