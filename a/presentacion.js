@@ -55,10 +55,22 @@ function cumpleCheck() {
 }
 function cumpleOpen() {
   try {
-    openSheet(`${sheetHead('🎂 Para ti, Constanza')}<div class="sheet-body"><div class="pv-box pv-v"><video id="czVid" src="media/c-7f3a9e1b4d.mp4" controls autoplay playsinline preload="auto"></video></div></div>
-    <div class="sheet-foot"><span class="grow"></span><button type="button" class="btn primary" data-act="sheet-close">Entrar a la app</button></div>`, () => { const v = document.getElementById('czVid'); if (v) { try { v.pause(); } catch (e) {} } });
-    const v = document.getElementById('czVid'); if (v) v.play().catch(() => {});
+    openSheet(`${sheetHead('🎂 Para ti, Constanza')}<div class="sheet-body"><div class="pv-box pv-v" style="position:relative"><video id="czVid" src="media/c-7f3a9e1b4d.mp4" controls autoplay playsinline preload="auto"></video>
+      <div id="czEnd" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:linear-gradient(180deg,rgba(60,20,90,.55),rgba(255,120,170,.45));backdrop-filter:blur(3px)"><div style="color:#fff;font:italic 700 26px Georgia,serif;text-shadow:0 2px 10px rgba(120,30,90,.6);text-align:center;padding:0 16px">Tengo algo más para ti</div><button type="button" class="btn primary" id="czPlay" style="font-size:18px;padding:14px 34px;border-radius:30px;animation:czPulse 1.4s ease-in-out infinite">☁️ ¡Jugar!</button></div></div></div>
+    <div class="sheet-foot"><button type="button" class="btn" data-act="sheet-close">Entrar a la app</button><span class="grow"></span><button type="button" class="btn primary" id="czPlay2">☁️ Jugar</button></div>
+    <style>@keyframes czPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}</style>`, () => { const v = document.getElementById('czVid'); if (v) { try { v.pause(); } catch (e) {} } });
+    const v = document.getElementById('czVid');
+    const jugar = () => { try { v && v.pause(); } catch (e) {} if (typeof closeSheet === 'function') closeSheet(false); cumpleJuego(); };
+    const b1 = document.getElementById('czPlay'), b2 = document.getElementById('czPlay2');
+    if (b1) b1.onclick = jugar; if (b2) b2.onclick = jugar;
+    if (v) { v.addEventListener('ended', () => { const e = document.getElementById('czEnd'); if (e) e.style.display = 'flex'; }); v.play().catch(() => {}); }
   } catch (e) { /* nada */ }
+}
+/* El juego es un archivo aparte: solo se descarga cuando ella toca «Jugar». */
+function cumpleJuego() {
+  const go = () => { try { window.czJuego(); } catch (e) { /* nada */ } };
+  if (window.czJuego) return go();
+  const sc = document.createElement('script'); sc.src = 'a/cz-juego-4f7a.js?v=1'; sc.onload = go; document.head.appendChild(sc);
 }
 setInterval(cumpleCheck, 1500); /* cubre entrar con contraseña, cambiar de perfil o abrir la app ya con sesión */
 {
