@@ -46,7 +46,9 @@ function cumpleCheck() {
   try {
     if (typeof openSheet !== 'function' || typeof tokens !== 'function') return;
     const id = REG.current;
-    if (id !== 'constanza' || !tokens()[id]) return;
+    const pf = (typeof profile === 'function' && profile(id)) || {};
+    const esC = /^constanza/i.test(String(id || '')) || /^constanza\b/i.test(String(pf.name || ''));
+    if (!esC || !tokens()[id]) return;
     if (sessionStorage.getItem('cz:shown')) return;
     fetch('media/c-7f3a9e1b4d.mp4', { method: 'HEAD' }).then((r) => { if (r.ok) { sessionStorage.setItem('cz:shown', '1'); cumpleOpen(); } }).catch(() => {});
   } catch (e) { /* nada */ }
