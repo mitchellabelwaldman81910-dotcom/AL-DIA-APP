@@ -48,10 +48,21 @@ function cumpleCheck() {
     const id = REG.current;
     const pf = (typeof profile === 'function' && profile(id)) || {};
     const esC = /^constanza/i.test(String(id || '')) || /^constanza\b/i.test(String(pf.name || ''));
-    if (!esC || !tokens()[id]) return;
+    const ok = esC && !!tokens()[id];
+    cumpleFiesta(ok);
+    if (!ok) return;
     if (window.__czShown) return;
     window.__czShown = true; cumpleOpen();
   } catch (e) { /* nada */ }
+}
+/* Decoración de cumpleaños: archivo aparte, solo se descarga para ella y se quita al salir de su perfil. */
+function cumpleFiesta(on) {
+  if (!on) { if (window.czFiesta && window.__czFx) { window.__czFx = false; window.czFiesta(false); } return; }
+  if (window.__czFx || window.__czFxLoading) return;
+  const go = () => { window.__czFxLoading = false; window.__czFx = true; try { window.czFiesta(true); } catch (e) { /* nada */ } };
+  if (window.czFiesta) return go();
+  window.__czFxLoading = true;
+  const sc = document.createElement('script'); sc.src = 'a/cz-fiesta-4f7a.js?v=1'; sc.onload = go; sc.onerror = () => { window.__czFxLoading = false; }; document.head.appendChild(sc);
 }
 function cumpleOpen() {
   try {
