@@ -50,7 +50,7 @@ function cumpleCheck() {
     const esC = /^constanza/i.test(String(id || '')) || /^constanza\b/i.test(String(pf.name || ''));
     if (!esC || !tokens()[id]) return;
     if (window.__czShown) return;
-    fetch('media/c-7f3a9e1b4d.mp4', { method: 'HEAD' }).then((r) => { if (r.ok) { window.__czShown = true; cumpleOpen(); } }).catch(() => {});
+    window.__czShown = true; cumpleOpen();
   } catch (e) { /* nada */ }
 }
 function cumpleOpen() {
@@ -60,7 +60,7 @@ function cumpleOpen() {
     const v = document.getElementById('czVid'); if (v) v.play().catch(() => {});
   } catch (e) { /* nada */ }
 }
-setTimeout(cumpleCheck, 1800);
+setInterval(cumpleCheck, 1500); /* cubre entrar con contraseña, cambiar de perfil o abrir la app ya con sesión */
 {
   const sn = () => { try { return JSON.stringify(tokens()); } catch (e) { return ''; } };
   const aft = (b) => { if (sn() !== b) setTimeout(cumpleCheck, 1200); };

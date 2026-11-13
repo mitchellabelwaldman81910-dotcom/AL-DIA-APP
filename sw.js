@@ -1,6 +1,6 @@
 /* Cinnavia — service worker: funciona sin internet y manda avisos. */
-const VERSION = 'aldia-v7.60.2';
-const V = '?v=7.60.2';
+const VERSION = 'aldia-v7.60.3';
+const V = '?v=7.60.3';
 const SHELL = [
   './',
   './index.html',
@@ -125,6 +125,7 @@ self.addEventListener('fetch', (e) => {
   }
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return; // la nube nunca se guarda en caché
+  if (url.pathname.startsWith('/media/') || req.headers.has('range')) return; // los videos los maneja el navegador directo (rangos)
 
   // Páginas: primero la red (para tener la versión más nueva), si no hay red, la copia guardada.
   if (req.mode === 'navigate') {
