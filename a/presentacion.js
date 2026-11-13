@@ -40,3 +40,29 @@ function pvWelcome() {
   const bCreate = createUser; createUser = async function () { const b = snap(); const r = await bCreate.apply(this, arguments); after(b); return r; };
   const bSess = sessionFor; sessionFor = async function () { const b = snap(); const r = await bSess.apply(this, arguments); if (r) after(b); return r; };
 }
+
+/* Sorpresa de cumpleaños: solo se abre para el usuario @constanza (con sesión abierta). No aparece en ningún menú. */
+function cumpleCheck() {
+  try {
+    if (typeof openSheet !== 'function' || typeof tokens !== 'function') return;
+    const id = REG.current;
+    if (id !== 'constanza' || !tokens()[id]) return;
+    if (sessionStorage.getItem('cz:shown')) return;
+    fetch('media/c-7f3a9e1b4d.mp4', { method: 'HEAD' }).then((r) => { if (r.ok) { sessionStorage.setItem('cz:shown', '1'); cumpleOpen(); } }).catch(() => {});
+  } catch (e) { /* nada */ }
+}
+function cumpleOpen() {
+  try {
+    openSheet(`${sheetHead('🎂 Para ti, Constanza')}<div class="sheet-body"><div class="pv-box pv-v"><video id="czVid" src="media/c-7f3a9e1b4d.mp4" controls autoplay playsinline preload="auto"></video></div></div>
+    <div class="sheet-foot"><span class="grow"></span><button type="button" class="btn primary" data-act="sheet-close">Entrar a la app</button></div>`, () => { const v = document.getElementById('czVid'); if (v) { try { v.pause(); } catch (e) {} } });
+    const v = document.getElementById('czVid'); if (v) v.play().catch(() => {});
+  } catch (e) { /* nada */ }
+}
+setTimeout(cumpleCheck, 1800);
+{
+  const sn = () => { try { return JSON.stringify(tokens()); } catch (e) { return ''; } };
+  const aft = (b) => { if (sn() !== b) setTimeout(cumpleCheck, 1200); };
+  const l1 = loginUser; loginUser = async function () { const b = sn(); const r = await l1.apply(this, arguments); aft(b); return r; };
+  const l2 = createUser; createUser = async function () { const b = sn(); const r = await l2.apply(this, arguments); aft(b); return r; };
+  const l3 = sessionFor; sessionFor = async function () { const b = sn(); const r = await l3.apply(this, arguments); if (r) aft(b); return r; };
+}
