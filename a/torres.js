@@ -132,6 +132,64 @@ const tdTowerOpen = (k) => TD_TW[k].un === 0 || (tdData().st[TD_TW[k].un - 1] ||
 const tdToday = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const tdDaily = () => { let h = 5; for (const ch of tdToday()) h = (h * 31 + ch.charCodeAt(0)) >>> 0; const open = TD_MAPS.map((_, i) => i).filter((i) => tdUnlocked(i)); return { mi: open[h % open.length], mod: TD_MODS[(h >>> 4) % TD_MODS.length] }; };
 
+/* ---------- v3: más plagas, giros por mapa, temas de oleada y bendiciones ---------- */
+Object.assign(TD_EN, {
+  avispa: { n: 'Avispa', hp: 14, sp: 2.5, rew: 3, r: 0.24, c: '#f2b01e', fly: 1, d: 'Voladora diminuta y muy veloz: viene en enjambres.' },
+  ladron: { n: 'Mapache ladrón', hp: 62, sp: 1.5, rew: 9, r: 0.32, c: '#7a7a86', steal: 1, d: 'No quita vidas: si llega al árbol se roba semillas. ¡Detenlo!' },
+  ciempies: { n: 'Ciempiés', hp: 150, sp: 0.8, rew: 12, r: 0.34, c: '#c2602a', split: 3, armor: 0.15, d: 'Al morir se parte en tres gusanitos.' },
+});
+const TD_TWISTS = {
+  lodo: { e: '🟤', n: 'Lodo', d: 'Algunas casillas del camino están llenas de lodo y frenan a las plagas.' },
+  fertil: { e: '✨', n: 'Suelo fértil', d: 'Las torres sobre casillas brillantes pegan 30 % más y alcanzan más lejos.' },
+  portal: { e: '🌀', n: 'Portal', d: 'Las plagas se teletransportan hacia adelante por un portal.' },
+  lluvia: { e: '🌠', n: 'Lluvia de estrellas', d: 'Caen estrellas del cielo que lastiman a las plagas.' },
+  meteoros: { e: '☄️', n: 'Meteoritos', d: 'Caen meteoritos sobre tus torres y las aturden. ¡Tienen aviso!' },
+  cofres: { e: '🎁', n: 'Cofres', d: 'Aparecen cofres con semillas: tócalos antes de que desaparezcan.' },
+  solo: { e: '🔒', n: 'Cuatro torres', d: 'Solo puedes construir 4 tipos de torre en este mapa.' },
+  raices: { e: '🌱', n: 'Raíces jóvenes', d: 'No puedes mejorar torres hasta la oleada 6.' },
+  espacio: { e: '📦', n: 'Espacio escaso', d: 'Máximo 9 torres a la vez: elige bien.' },
+  emboscada: { e: '🗡️', n: 'Emboscadas', d: 'Cada 3 oleadas, un grupo aparece a mitad del camino.' },
+  resbalon: { e: '🧊', n: 'Hielo resbaloso', d: 'Hay un tramo donde las plagas corren 70 % más rápido.' },
+  bendito: { e: '🌳', n: 'Árbol bendito', d: 'Recuperas 1 vida cada 3 oleadas superadas.' },
+};
+const TD_TW_KEYS = Object.keys(TD_TWISTS);
+(() => { // reparte los giros: ningún mapa repite la combinación de otro
+  const used = new Set();
+  TD_MAPS.forEach((M, i) => {
+    if (i === 0) { M.tw = []; return; }
+    if (i <= TD_TW_KEYS.length) { M.tw = [TD_TW_KEYS[(i - 1 + (i > 4 ? 0 : 0)) % TD_TW_KEYS.length]]; used.add(M.tw[0]); return; }
+    for (let s = 0; s < 200; s++) { const a = (i * 5 + s * 3) % TD_TW_KEYS.length, b = (i * 7 + 3 + s * 5) % TD_TW_KEYS.length; if (a === b) continue; const id = [a, b].sort().join('-'); if (used.has(id)) continue; used.add(id); M.tw = [TD_TW_KEYS[a], TD_TW_KEYS[b]]; break; }
+    if (!M.tw) M.tw = [TD_TW_KEYS[i % 12]];
+  });
+})();
+const TD_THEMES = [
+  { id: 'mixta', n: 'Plaga mixta', k: null, nm: 1, hm: 1, gm: 1 },
+  { id: 'enjambre', n: 'Enjambre veloz', k: ['hormiga', 'avispa', 'escarabajo'], nm: 1.7, hm: 0.6, gm: 0.5 },
+  { id: 'blindada', n: 'Columna blindada', k: ['caracol', 'escudo', 'rino'], nm: 0.7, hm: 1.2, gm: 1.2 },
+  { id: 'aerea', n: 'Ataque aéreo', k: ['polilla', 'cuervo', 'avispa', 'fantasma'], nm: 1, hm: 0.9, gm: 0.8 },
+  { id: 'subte', n: 'Plaga subterránea', k: ['topo', 'gusano', 'ciempies'], nm: 0.9, hm: 1, gm: 1 },
+  { id: 'elite', n: 'Tropa de élite', k: ['rino', 'sanadora', 'escudo', 'ladron'], nm: 0.55, hm: 1.4, gm: 1.3 },
+  { id: 'carrera', n: 'Carrera loca', k: ['cuervo', 'hormiga', 'avispa', 'ladron'], nm: 0.8, hm: 0.8, gm: 0.45 },
+  { id: 'fantasmas', n: 'Noche de fantasmas', k: ['fantasma', 'polilla', 'sanadora'], nm: 0.9, hm: 1, gm: 0.9 },
+  { id: 'ladrones', n: 'Banda de ladrones', k: ['ladron', 'hormiga', 'escudo'], nm: 0.8, hm: 1, gm: 0.8 },
+];
+const TD_PERKS = [
+  { id: 'dmg', e: '⚔️', n: 'Filo afilado', d: '+12 % de daño de todas las torres', f: (p) => { p.dmg += 0.12; } },
+  { id: 'rate', e: '⚡', n: 'Prisa de bosque', d: 'Las torres disparan 10 % más rápido', f: (p) => { p.rate += 0.1; } },
+  { id: 'rng', e: '🔭', n: 'Ojo de águila', d: '+10 % de alcance en todas las torres', f: (p) => { p.rng += 0.1; } },
+  { id: 'sem', e: '🌰', n: 'Cosecha', d: '+120 semillas ahora mismo', f: (p, s) => { s.seeds += 120; } },
+  { id: 'int', e: '💰', n: 'Intereses', d: 'Cada oleada ganas 6 % de tus semillas (máx. 40)', f: (p) => { p.int += 0.06; } },
+  { id: 'vid', e: '❤️', n: 'Corazón de roble', d: '+4 vidas', f: (p, s, l) => { s.lives = Math.min(l + 10, s.lives + 4); } },
+  { id: 'bot', e: '🎒', n: 'Saqueo', d: '+25 % de semillas por cada plaga', f: (p) => { p.bot += 0.25; } },
+  { id: 'pod', e: '🍃', n: 'Savia fresca', d: 'Tus poderes se recargan ya y 25 % más rápido', f: (p, s) => { s.cd.a = 0; s.cd.r = 0; p.pw += 0.25; } },
+  { id: 'cri', e: '🎯', n: 'Puntería', d: '+10 % de golpes críticos', f: (p) => { p.cri += 0.1; } },
+  { id: 'bar', e: '🏷️', n: 'Oferta', d: 'Torres y mejoras 10 % más baratas', f: (p) => { p.bar += 0.1; } },
+  { id: 'esp', e: '🌵', n: 'Espinas', d: 'Las plagas pierden vida solas con el tiempo', f: (p) => { p.esp += 0.012; } },
+  { id: 'esc', e: '❄️', n: 'Escarcha', d: 'Todas las plagas van 8 % más lentas', f: (p) => { p.esc += 0.08; } },
+  { id: 'bel', e: '🌰', n: 'Bellotas pesadas', d: 'La lluvia de bellotas hace 60 % más de daño', f: (p) => { p.bel += 0.6; } },
+  { id: 'ven', e: '♻️', n: 'Reciclaje total', d: 'Al vender recuperas el 100 %', f: (p) => { p.ven = 1; } },
+];
+
 /* ---------- dibujos (se guardan en caché como imágenes) ---------- */
 function tdDrawTower(g, k, lvl, x, y, T, t = 0, aim = 0, spec = 0) {
   const s = T / 40; g.save(); g.translate(x, y); g.scale(s, s);
@@ -222,6 +280,9 @@ function tdDrawEnemy(g, e, x, y, T, t) {
   else if (k === 'dragon') { g.translate(0, -8); g.fillStyle = '#a83a1a'; g.beginPath(); g.moveTo(-4, -2); g.quadraticCurveTo(-10, -18 * f2 - 4, 6, -3); g.fill(); g.fillStyle = E.c; g.beginPath(); g.ellipse(0, 0, 12, 6, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(-10, 0); g.lineTo(-20, -4); g.lineTo(-18, 3); g.fill(); g.beginPath(); g.ellipse(12, -3, 6, 4, -0.3, 0, 7); g.fill(); g.fillStyle = '#ffd23c'; g.beginPath(); g.arc(14, -4, 1.4, 0, 7); g.fill(); g.fillStyle = '#ffb703'; g.beginPath(); g.moveTo(17, -2); g.lineTo(22 + f2 * 3, 0); g.lineTo(17, 1); g.fill(); g.fillStyle = '#ffe066'; for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(-6 + i * 5, -5); g.lineTo(-4 + i * 5, -9); g.lineTo(-2 + i * 5, -5); g.fill(); } }
   else if (k === 'reina') { g.translate(0, -10); g.fillStyle = E.c; g.beginPath(); g.ellipse(-4, -6, 11, 6 + f2 * 4, -0.6, 0, 7); g.ellipse(-4, 6, 11, 6 + f2 * 4, 0.6, 0, 7); g.fill(); g.fillStyle = '#f0c8ff'; g.beginPath(); g.arc(-6, -6, 3, 0, 7); g.arc(-6, 6, 3, 0, 7); g.fill(); g.fillStyle = '#5a2a7a'; g.beginPath(); g.ellipse(2, 0, 9, 3.5, 0, 0, 7); g.fill(); g.fillStyle = '#ffd23c'; g.beginPath(); g.moveTo(6, -4); g.lineTo(7, -9); g.lineTo(9, -5); g.lineTo(11, -9); g.lineTo(12, -4); g.fill(); }
   else if (k === 'tormenta') { g.translate(0, -12); g.fillStyle = E.c; g.beginPath(); g.arc(-7, 0, 7, 0, 7); g.arc(0, -4, 8, 0, 7); g.arc(8, 0, 7, 0, 7); g.arc(0, 3, 7, 0, 7); g.fill(); g.fillStyle = '#ffe066'; g.beginPath(); g.arc(-3, -2, 1.8, 0, 7); g.arc(4, -2, 1.8, 0, 7); g.fill(); g.strokeStyle = '#ffe066'; g.lineWidth = 1.5; if (f2 > 0.6) { g.beginPath(); g.moveTo(0, 8); g.lineTo(-3, 13); g.lineTo(1, 13); g.lineTo(-2, 19); g.stroke(); } }
+  else if (k === 'avispa') { g.translate(0, -9); g.fillStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.ellipse(-1, -5, 5, 2.5 + f2 * 2, -0.4, 0, 7); g.fill(); g.fillStyle = E.c; g.beginPath(); g.ellipse(0, 0, 6, 3.6, 0, 0, 7); g.fill(); g.fillStyle = '#2a1a05'; g.fillRect(-2, -3.5, 1.6, 7); g.fillRect(1.5, -3.2, 1.6, 6.4); g.beginPath(); g.moveTo(-6, 0); g.lineTo(-10, 1); g.lineTo(-6, 1.6); g.fill(); g.beginPath(); g.arc(5.5, -0.5, 2.2, 0, 7); g.fill(); g.fillStyle = '#ff3a3a'; g.beginPath(); g.arc(6.4, -1, 0.8, 0, 7); g.fill(); }
+  else if (k === 'ladron') { g.fillStyle = 'rgba(0,0,0,.0)'; g.fillStyle = '#4a4a54'; g.beginPath(); g.ellipse(-8, 1, 6, 2.6, 0.2 + wob * 0.05, 0, 7); g.fill(); g.fillStyle = '#c8c8d2'; for (let i = 0; i < 3; i++) g.fillRect(-12 + i * 3.4, -1 + i * 0.2, 1.6, 4); g.fillStyle = E.c; g.beginPath(); g.ellipse(0, 0, 9, 6.5, 0, 0, 7); g.fill(); g.beginPath(); g.arc(8, -2, 5, 0, 7); g.fill(); g.fillStyle = '#2a2a30'; g.fillRect(5, -4.5, 7, 3.2); g.fillStyle = '#fff'; g.beginPath(); g.arc(8.5, -3, 0.9, 0, 7); g.fill(); g.fillStyle = '#2a2a30'; g.beginPath(); g.moveTo(5, -6); g.lineTo(6, -9.5); g.lineTo(8.5, -6.5); g.fill(); g.fillStyle = '#d8a02c'; g.beginPath(); g.arc(-1, 3, 3.2, 0, 7); g.fill(); g.fillStyle = '#ffe066'; g.fillRect(-1.5, 1.6, 1.2, 2.8); g.strokeStyle = '#2a2a30'; g.lineWidth = 1.4; for (const k2 of [-3, 2]) { g.beginPath(); g.moveTo(k2, 5); g.lineTo(k2 + wob, 9); g.stroke(); } }
+  else if (k === 'ciempies') { g.strokeStyle = '#5a2a10'; g.lineWidth = 1.2; for (let i = 0; i < 6; i++) { const X = -12 + i * 4.6, Y = Math.sin(t * 7 + i + (e.id || 0)) * 1.6; g.beginPath(); g.moveTo(X, Y + 2); g.lineTo(X + wob * 0.4, Y + 8); g.moveTo(X, Y - 2); g.lineTo(X - wob * 0.4, Y - 8); g.stroke(); } for (let i = 0; i < 6; i++) { const X = -12 + i * 4.6, Y = Math.sin(t * 7 + i + (e.id || 0)) * 1.6; g.fillStyle = i % 2 ? '#a84a1a' : E.c; g.beginPath(); g.arc(X, Y, 4.2, 0, 7); g.fill(); } g.fillStyle = '#e8c070'; g.beginPath(); g.arc(13, 0, 4.6, 0, 7); g.fill(); g.fillStyle = '#1a1a1a'; g.beginPath(); g.arc(14.5, -1.6, 1, 0, 7); g.fill(); g.strokeStyle = '#6a2a0a'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(16, -3); g.lineTo(21, -7); g.moveTo(16, 1); g.lineTo(21, 4); g.stroke(); }
   g.restore();
 }
 /* caché de imágenes: torres y enemigos ya dibujados (mucho más rápido en celulares) */
@@ -251,7 +312,7 @@ function viewTorres() {
   if (TD.tab === 'mapas') {
     const dl = tdDaily(), done = d.day.done === tdToday();
     body = `<div class="td-daily${done ? ' done' : ''}"><div><b>📅 Reto del día · ${TD_MAPS[dl.mi].n}</b><span>${dl.mod.n}: ${dl.mod.d}.</span><small>${done ? '¡Listo por hoy! Vuelve mañana.' : 'Gánalo para obtener una estrella dorada ⭐ para tus raíces.'}</small></div>${done ? '<span class="td-ok">✓</span>' : `<button type="button" class="btn primary" data-act="td-play" data-m="${dl.mi}" data-daily="1">Jugar</button>`}</div>`
-      + TD_WORLDS.map((W, wi) => { const ms = TD_MAPS.map((M, mi) => ({ M, mi })).filter((x) => x.M.w === wi); const got = ms.reduce((a, x) => a + (d.st[x.mi] || 0), 0); return `<h2 class="sec">${W.n} <span class="td-wst">★ ${got}/${ms.length * 3}</span></h2><div class="td-maps">${ms.map(({ M, mi }) => { const open = tdUnlocked(mi), s = d.st[mi] || 0; return `<button type="button" class="td-map${open ? '' : ' lock'}" data-act="td-play" data-m="${mi}" ${open ? '' : 'disabled'}><canvas width="90" height="130" data-tdmap="${mi}"></canvas><b>${mi + 1}. ${M.n}</b><span class="td-st">${[0, 1, 2].map((i) => `<i class="${i < s ? 'on' : ''}">★</i>`).join('')}</span><small>${open ? `${tdWaves(mi)} oleadas${M.paths.length > 1 ? ` · ${M.paths.length} entradas` : ''}` : '🔒 Supera el anterior'}</small></button>`; }).join('')}</div>`; }).join('')
+      + TD_WORLDS.map((W, wi) => { const ms = TD_MAPS.map((M, mi) => ({ M, mi })).filter((x) => x.M.w === wi); const got = ms.reduce((a, x) => a + (d.st[x.mi] || 0), 0); return `<h2 class="sec">${W.n} <span class="td-wst">★ ${got}/${ms.length * 3}</span></h2><div class="td-maps">${ms.map(({ M, mi }) => { const open = tdUnlocked(mi), s = d.st[mi] || 0; return `<button type="button" class="td-map${open ? '' : ' lock'}" data-act="td-play" data-m="${mi}" ${open ? '' : 'disabled'}><canvas width="90" height="130" data-tdmap="${mi}"></canvas><b>${mi + 1}. ${M.n}</b><span class="td-st">${[0, 1, 2].map((i) => `<i class="${i < s ? 'on' : ''}">★</i>`).join('')}</span><small>${open ? `${tdWaves(mi)} oleadas${M.paths.length > 1 ? ` · ${M.paths.length} entradas` : ''}` : '🔒 Supera el anterior'}</small>${open && M.tw && M.tw.length ? `<small class="td-tw2">${M.tw.map((k) => TD_TWISTS[k].e + ' ' + TD_TWISTS[k].n).join(' · ')}</small>` : ''}</button>`; }).join('')}</div>`; }).join('')
       + `<h2 class="sec">Modo infinito</h2><div class="td-inf"><div><b>♾️ Oleadas sin fin</b><span class="small muted">${(d.st[TD_MAPS.length - 1] || 0) > 0 ? `Cada vez más difícil y con todos los jefes. Tu mejor: <b>${d.inf || 0}</b> oleadas.` : 'Se abre al superar el último mapa.'}</span></div><button type="button" class="btn primary" data-act="td-play" data-m="inf" ${(d.st[TD_MAPS.length - 1] || 0) > 0 ? '' : 'disabled'}>Jugar</button></div><div id="jgRank-torres">${jgRankHTML('torres')}</div>`;
     setTimeout(tdPaintMaps, 0);
   } else if (TD.tab === 'raices') {
@@ -262,6 +323,9 @@ function viewTorres() {
   } else {
     body = `<h2 class="sec">Torres</h2><ul class="td-guide">${Object.entries(TD_TW).map(([k, w]) => `<li><canvas width="80" height="80" data-tdtw="${k}"></canvas><div><b>${w.n}${tdTowerOpen(k) ? '' : ' 🔒'}</b><span class="small muted">${w.d}${tdTowerOpen(k) ? '' : ` Se abre al superar el mapa ${w.un}.`}</span><span class="small">🌰 ${w.cost[0]} · Especialidades: ${w.spec.map((s) => `<b>${s[0]}</b> (${s[1].toLowerCase()})`).join(' o ')}</span></div></li>`).join('')}</ul>
       <h2 class="sec">Plagas y jefes</h2><ul class="td-guide">${Object.entries(TD_EN).filter(([k]) => k !== 'gusito').map(([k, e]) => `<li><canvas width="80" height="80" data-tden="${k}"></canvas><div><b>${e.n}</b><span class="small muted">${e.d}</span></div></li>`).join('')}</ul>
+      <h2 class="sec">Giros de los mapas</h2><ul class="td-guide">${TD_TW_KEYS.map((k) => `<li><span class="td-em">${TD_TWISTS[k].e}</span><div><b>${TD_TWISTS[k].n}</b><span class="small muted">${TD_TWISTS[k].d}</span></div></li>`).join('')}</ul>
+      <h2 class="sec">Tipos de oleada</h2><ul class="td-guide">${TD_THEMES.map((t) => `<li><span class="td-em">🌊</span><div><b>${t.n}</b><span class="small muted">${t.k ? t.k.map((x) => TD_EN[x].n).join(', ') : 'De todo un poco.'}</span></div></li>`).join('')}</ul>
+      <h2 class="sec">Bendiciones</h2><p class="small muted">Cada 5 oleadas eliges 1 de 3 bendiciones al azar que duran toda la partida.</p><ul class="td-guide">${TD_PERKS.map((p) => `<li><span class="td-em">${p.e}</span><div><b>${p.n}</b><span class="small muted">${p.d}</span></div></li>`).join('')}</ul>
       <p class="small muted">Poderes: 🌰 <b>Lluvia de bellotas</b> (daño en área) y 🌿 <b>Raíces</b> (detiene a los enemigos). Toca el poder y luego el lugar del mapa. Al nivel 4, cada torre puede tomar una de dos <b>especialidades</b>.</p>`;
     setTimeout(tdPaintGuide, 0);
   }
@@ -325,10 +389,12 @@ function tdStart(mi, daily) {
   const wrap = document.createElement('div'); wrap.className = 'gl-stage td-stage';
   wrap.innerHTML = `<canvas aria-label="Defensa del Bosque"></canvas>
     <div class="td-top"><button class="gm-x" id="tdX" aria-label="Salir">${icon('x')}</button><span class="td-pill" id="tdLp">❤️ <b id="tdL">20</b></span><span class="td-pill" id="tdSp2">🌰 <b id="tdS">0</b></span><span class="td-pill td-w">🌊 <b id="tdW">0</b>${INF ? '' : `/${WAVES}`}</span><button class="td-btn" id="tdSp" aria-label="Velocidad">1×</button><button class="td-btn" id="tdPa" aria-label="Pausa">❚❚</button></div>
+    <div class="td-perks" id="tdPk"></div>
     <div class="td-panel" id="tdPanel" hidden></div>
     <div class="td-bot"><button class="td-pow" id="tdP1" aria-label="Lluvia de bellotas">🌰<i></i></button><button class="td-pow" id="tdP2" aria-label="Raíces">🌿<i></i></button><span class="td-hint" id="tdHint"></span><button class="btn primary td-next" id="tdNext">▶ Empezar</button></div>
     <div class="gl-over" id="tdPause" hidden><b>Pausa</b><div class="btn-row" style="justify-content:center;flex-wrap:wrap"><button class="btn primary" id="tdGo">${icon('play')}Seguir</button><button class="btn" id="tdMus">Música: ${TDS.music ? 'sí' : 'no'}</button><button class="btn" id="tdRe">Reiniciar</button><button class="btn" id="tdOut">Salir</button></div></div>
-    <div class="gl-over td-end" id="tdEnd" hidden></div>`;
+    <div class="gl-over td-end" id="tdEnd" hidden></div>
+    <div class="gl-over td-perk" id="tdPerk" hidden></div>`;
   document.body.appendChild(wrap); document.body.classList.add('gm-on');
   const $w = (s) => wrap.querySelector(s);
   const c = wrap.querySelector('canvas'), g = c.getContext('2d');
@@ -345,6 +411,17 @@ function tdStart(mi, daily) {
   let sd = MI * 977 + 31; const rnd = () => { sd = (sd + 0x6D2B79F5) | 0; let t = Math.imul(sd ^ (sd >>> 15), 1 | sd); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const decos = []; for (let y = 0; y < TD_ROWS; y++) for (let x = 0; x < TD_COLS; x++) { if (pathCells.has(key(x, y)) || blocked.has(key(x, y))) continue; if (rnd() < 0.07) { decos.push({ x, y, k: rnd() }); blocked.add(key(x, y)); } }
 
+  /* --- giros del mapa --- */
+  const TW = new Set(M.tw || []); const pathArr = [...pathCells].filter((k) => k !== key(tree[0], tree[1]));
+  const pickN = (arr, n) => { const a = arr.slice(), o = []; while (a.length && o.length < n) o.push(a.splice((rnd() * a.length) | 0, 1)[0]); return o; };
+  const mud = new Set(TW.has('lodo') ? pickN(pathArr.filter((k) => Math.floor(k / 100) > 1 || (k % 100) > 1), 6) : []);
+  const near = (x, y) => { for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if (pathCells.has(key(x + dx, y + dy))) return true; return false; };
+  const fert = new Set(); if (TW.has('fertil')) { const c = []; for (let y = 0; y < TD_ROWS; y++) for (let x = 0; x < TD_COLS; x++) if (!blocked.has(key(x, y)) && !pathCells.has(key(x, y)) && near(x, y)) c.push(key(x, y)); pickN(c, 7).forEach((k) => fert.add(k)); }
+  const PORT = TW.has('portal') ? (() => { const a = 0.26 + rnd() * 0.1; return { a, b: a + 0.2 }; })() : null;
+  const ZON = TW.has('resbalon') ? (() => { const a = 0.4 + rnd() * 0.12; return { a, b: a + 0.2 }; })() : null;
+  const SOLO = TW.has('solo') ? (() => { const open = Object.keys(TD_TW).filter((k) => k !== 'ardilla' && tdTowerOpen(k)); return new Set(['ardilla', ...pickN(open, 3)]); })() : null;
+  const NOUP = TW.has('raices'), MAXT = TW.has('espacio') ? 9 : 0;
+  const twDesc = () => (M.tw || []).map((k) => `${TD_TWISTS[k].e} ${TD_TWISTS[k].n}: ${TD_TWISTS[k].d}`).join('  ');
   const size = () => {
     V.dpr = Math.min(2, devicePixelRatio || 1); V.w = innerWidth; V.h = innerHeight; c.width = Math.round(V.w * V.dpr); c.height = Math.round(V.h * V.dpr); c.style.width = V.w + 'px'; c.style.height = V.h + 'px';
     const cs = getComputedStyle(probe); const st0 = parseFloat(cs.paddingTop) || 0, sb = parseFloat(cs.paddingBottom) || 0;
@@ -362,6 +439,9 @@ function tdStart(mi, daily) {
     for (let i = 0; i < 160; i++) { const x = V.ox + r2() * TD_COLS * T, y = V.oy + r2() * TD_ROWS * T; q.fillStyle = W.deco === 'pino' || W.deco === 'nube' ? 'rgba(255,255,255,.7)' : 'rgba(0,0,0,.07)'; q.fillRect(x, y, 2, 2); if (W.deco === 'flor' && r2() < 0.25) { q.fillStyle = ['#fff', '#ffd23c', '#ff8fab'][i % 3]; q.beginPath(); q.arc(x, y, 1.6, 0, 7); q.fill(); } }
     for (const p of PATHS) { q.strokeStyle = 'rgba(0,0,0,.15)'; q.lineWidth = T * 0.92; q.lineJoin = 'round'; q.lineCap = 'round'; q.beginPath(); p.P.forEach(([x, y], i) => { const X = V.ox + x * T, Y = V.oy + y * T + 2; if (i) q.lineTo(X, Y); else q.moveTo(X, Y); }); q.stroke(); }
     for (const p of PATHS) { q.lineJoin = 'round'; q.lineCap = 'round'; q.beginPath(); p.P.forEach(([x, y], i) => { const X = V.ox + x * T, Y = V.oy + y * T; if (i) q.lineTo(X, Y); else q.moveTo(X, Y); }); q.strokeStyle = W.p[1]; q.lineWidth = T * 0.86; q.stroke(); q.strokeStyle = W.p[0]; q.lineWidth = T * 0.7; q.stroke(); q.setLineDash([2, T * 0.45]); q.strokeStyle = 'rgba(0,0,0,.12)'; q.lineWidth = 3; q.stroke(); q.setLineDash([]); }
+    mud.forEach((k) => { const X = V.ox + ((k % 100) + 0.5) * T, Y = V.oy + (Math.floor(k / 100) + 0.5) * T; q.fillStyle = 'rgba(80,50,25,.75)'; q.beginPath(); q.ellipse(X, Y, T * 0.4, T * 0.3, 0, 0, 7); q.fill(); q.fillStyle = 'rgba(140,100,60,.6)'; q.beginPath(); q.ellipse(X - T * 0.08, Y - T * 0.06, T * 0.2, T * 0.1, 0, 0, 7); q.fill(); });
+    if (ZON) for (const p of PATHS) { q.strokeStyle = 'rgba(190,235,255,.7)'; q.lineWidth = T * 0.5; q.lineCap = 'butt'; q.beginPath(); let first = true; for (let d = ZON.a * p.L; d <= ZON.b * p.L; d += 0.1) { const o = posAt(PATHS.indexOf(p), d); const X = V.ox + o.x * T, Y = V.oy + o.y * T; if (first) { q.moveTo(X, Y); first = false; } else q.lineTo(X, Y); } q.stroke(); q.strokeStyle = 'rgba(255,255,255,.8)'; q.lineWidth = 2; q.setLineDash([4, 6]); q.stroke(); q.setLineDash([]); }
+    fert.forEach((k) => { const X = V.ox + ((k % 100) + 0.5) * T, Y = V.oy + (Math.floor(k / 100) + 0.5) * T; const gr = q.createRadialGradient(X, Y, 2, X, Y, T * 0.55); gr.addColorStop(0, 'rgba(255,250,150,.85)'); gr.addColorStop(1, 'rgba(255,250,150,0)'); q.fillStyle = gr; q.fillRect(X - T * 0.55, Y - T * 0.55, T * 1.1, T * 1.1); q.fillStyle = '#fff6a8'; for (const [a, b] of [[-0.2, -0.15], [0.18, 0.1], [0, 0.25]]) { q.beginPath(); q.arc(X + a * T, Y + b * T, 1.6, 0, 7); q.fill(); } });
     for (const d of decos) {
       const X = V.ox + (d.x + 0.5) * T, Y = V.oy + (d.y + 0.5) * T;
       if (W.deco === 'flor') { if (d.k < 0.5) { q.fillStyle = '#8a8f98'; q.beginPath(); q.ellipse(X, Y + T * 0.1, T * 0.32, T * 0.24, 0, 0, 7); q.fill(); q.fillStyle = '#a8adb6'; q.beginPath(); q.ellipse(X - T * 0.08, Y, T * 0.2, T * 0.12, 0, 0, 7); q.fill(); } else { q.fillStyle = '#2f8a40'; q.beginPath(); q.arc(X, Y - T * 0.08, T * 0.36, 0, 7); q.fill(); q.fillStyle = '#4aaa5a'; q.beginPath(); q.arc(X - T * 0.1, Y - T * 0.16, T * 0.18, 0, 7); q.fill(); } }
@@ -377,17 +457,17 @@ function tdStart(mi, daily) {
 
   /* --- estado --- */
   const LMAX = 20 + tdMeta('vidas') * 2;
-  const st = { lives: LMAX, seeds: Math.round((140 + tdMeta('semillas') * 25) * (mk === 'pobre' ? 0.55 : 1)), wave: 0, phase: 'build', countdown: 0, queue: [], spawnT: 0, en: [], tw: [], pr: [], parts: [], floats: [], rings: [], bolts: [], fly: [], wx: [], t: 0, speed: 1, sel: null, build: null, aim: null, cd: { a: 0, r: 0 }, treeHit: 0, hurt: 0, eid: 0, killed: 0, t0: Date.now(), over: false, last: performance.now(), id: 0, spawned: 0, banner: null, shake: 0 };
-  const dmgMul = () => 1 + tdMeta('dano') * 0.06;
+  const st = { lives: LMAX, seeds: Math.round((140 + tdMeta('semillas') * 25) * (mk === 'pobre' ? 0.55 : 1)), wave: 0, phase: 'build', countdown: 0, queue: [], spawnT: 0, en: [], tw: [], pr: [], parts: [], floats: [], rings: [], bolts: [], fly: [], wx: [], t: 0, speed: 1, sel: null, build: null, aim: null, cd: { a: 0, r: 0 }, treeHit: 0, hurt: 0, eid: 0, killed: 0, t0: Date.now(), over: false, last: performance.now(), id: 0, spawned: 0, banner: null, shake: 0, pk: { dmg: 0, rate: 0, rng: 0, int: 0, bot: 0, pw: 0, cri: 0, bar: 0, esp: 0, esc: 0, bel: 0, ven: 0 }, picked: [], chests: [], ev: [], ct: 6, et: 7, mt: 9, choosing: false };
+  const dmgMul = () => 1 + tdMeta('dano') * 0.06 + st.pk.dmg;
   const rngMul = mk === 'niebla' ? 0.85 : 1;
-  const costOf = (k, l) => Math.round(TD_TW[k].cost[l] * (1 - tdMeta('barato') * 0.05));
+  const costOf = (k, l) => Math.round(TD_TW[k].cost[l] * (1 - tdMeta('barato') * 0.05 - st.pk.bar));
   const specCost = (k) => Math.round(costOf(k, 3) * 1.3);
   const spentOf = (t) => { let s = 0; for (let l = 0; l <= t.lvl; l++) s += costOf(t.k, l); if (t.spec) s += specCost(t.k); return s; };
-  const sellOf = (t) => Math.round(spentOf(t) * (tdMeta('venta') ? 0.85 : 0.7));
-  const cdA = () => 25 * (1 - tdMeta('poder') * 0.12), cdR = () => 35 * (1 - tdMeta('poder') * 0.12);
+  const sellOf = (t) => Math.round(spentOf(t) * (st.pk.ven ? 1 : tdMeta('venta') ? 0.85 : 0.7));
+  const pwF = () => 1 - Math.min(0.7, tdMeta('poder') * 0.12 + st.pk.pw); const cdA = () => 25 * pwF(), cdR = () => 35 * pwF();
   const towerAt = (x, y) => st.tw.find((t) => t.x === x && t.y === y);
-  const RNG = (t) => TD_TW[t.k].rng[t.lvl] * rngMul * (t.k === 'ardilla' && t.spec === 2 ? 1.5 : 1);
-  const recalcBuff = () => { for (const t of st.tw) { t.bm = 1; for (const a of st.tw) { if (a.k !== 'arbol' || a === t) continue; if (Math.hypot(a.x - t.x, a.y - t.y) <= TD_TW.arbol.rng[a.lvl] + 0.01) t.bm += TD_TW.arbol.buff[a.lvl] + (a.spec === 1 ? 0.6 : 0); } } };
+  const RNG = (t) => TD_TW[t.k].rng[t.lvl] * rngMul * (1 + st.pk.rng) * (fert.has(key(t.x, t.y)) ? 1.1 : 1) * (t.k === 'ardilla' && t.spec === 2 ? 1.5 : 1);
+  const recalcBuff = () => { for (const t of st.tw) { t.bm = 1; for (const a of st.tw) { if (a.k !== 'arbol' || a === t) continue; if (Math.hypot(a.x - t.x, a.y - t.y) <= TD_TW.arbol.rng[a.lvl] + 0.01) t.bm += TD_TW.arbol.buff[a.lvl] + (a.spec === 1 ? 0.6 : 0); } if (fert.has(key(t.x, t.y))) t.bm += 0.3; } };
   const float = (text, x, y, col, big) => { if (st.floats.length < 40) st.floats.push({ text, x, y, t: 0, col: col || '#fff', big }); };
   const puff = (x, y, col, n, sp = 2) => { const cap = low() ? 70 : 180; for (let i = 0; i < n && st.parts.length < cap; i++) { const a = Math.random() * 6.28, v = sp * (0.3 + Math.random()); st.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, l: 0.4 + Math.random() * 0.4, c: col, r: 1.5 + Math.random() * 2.5 }); } };
   const ring = (x, y, r1, col, T2 = 0.4) => { if (st.rings.length < 20) st.rings.push({ x, y, r1, col, t: 0, T: T2 }); };
@@ -397,58 +477,75 @@ function tdStart(mi, daily) {
 
   /* --- oleadas --- */
   const BOSSES = ['taladora', 'sapo', 'golem', 'dragon', 'reina', 'tormenta'];
-  function makeWave(w) {
-    const lvl = INF ? 15 + w * 0.5 : MI;
-    const pool = [['escarabajo', 5]];
+  const lvlAt = (w) => (INF ? 15 + w * 0.5 : MI);
+  function poolAt(w) {
+    const lvl = lvlAt(w); const pool = [['escarabajo', 5]];
     if (w >= 3 || lvl >= 1) pool.push(['hormiga', 3]);
     if (w >= 5 || lvl >= 2) pool.push(['caracol', 2]);
     if (w >= 6 || lvl >= 3) pool.push(['polilla', 2.5]);
     if (lvl >= 4 && w >= 4) pool.push(['topo', 2]);
+    if (lvl >= 5 && w >= 3) pool.push(['avispa', 2]);
     if (lvl >= 6 && w >= 5) pool.push(['escudo', 2.2]);
     if (lvl >= 7 && w >= 6) pool.push(['sanadora', 1.2]);
+    if (lvl >= 8 && w >= 4) pool.push(['ladron', 1.6]);
     if (lvl >= 9 && w >= 5) pool.push(['gusano', 2]);
+    if (lvl >= 11 && w >= 5) pool.push(['ciempies', 1.6]);
     if (lvl >= 12 && w >= 4) pool.push(['cuervo', 2]);
     if (lvl >= 15 && w >= 6) pool.push(['rino', 1.6]);
     if (lvl >= 18 && w >= 7) pool.push(['fantasma', 1.6]);
-    const tot = pool.reduce((a, p) => a + p[1], 0); const pick = () => { let r = Math.random() * tot; for (const [k, wt] of pool) { r -= wt; if (r <= 0) return k; } return 'escarabajo'; };
-    let n = Math.round(6 + w * 1.25 + Math.min(lvl, 20) * 0.45); if (mk === 'enjambre') n *= 2;
-    const gap = Math.max(0.3, 0.95 - w * 0.02) * (mk === 'enjambre' ? 0.55 : 1);
-    const q = []; let t = 0; const swarm = w > 3 && Math.random() < 0.25 ? pick() : null;
+    return pool;
+  }
+  const viable = (th, w) => !th.k || th.k.filter((k) => poolAt(w).some((p) => p[0] === k)).length >= 2;
+  const themeCache = {};
+  function themeFor(w) {
+    if (w <= 2) return TD_THEMES[0]; if (themeCache[w]) return themeCache[w];
+    let prev = TD_THEMES.indexOf(themeFor(w - 1)); let h = (((INF ? 99 : MI) + 3) * 2654435761 + w * 40503 + 17) >>> 0; h ^= h >>> 13; h = Math.imul(h, 1274126177) >>> 0; h = (h ^ (h >>> 15)) >>> 0;
+    let id = h % TD_THEMES.length; for (let n = 0; n < TD_THEMES.length && (id === prev || !viable(TD_THEMES[id], w)); n++) id = (id + 1) % TD_THEMES.length;
+    return (themeCache[w] = TD_THEMES[id]);
+  }
+  function makeWave(w) {
+    const lvl = lvlAt(w); const th = themeFor(w); let pool = poolAt(w);
+    if (th.k) pool = pool.filter((p) => th.k.includes(p[0]));
+    const tot = pool.reduce((a, p) => a + p[1], 0); const pick = () => { let r = Math.random() * tot; for (const [k, wt] of pool) { r -= wt; if (r <= 0) return k; } return pool[0][0]; };
+    let n = Math.max(5, Math.round((6 + w * 1.25 + Math.min(lvl, 20) * 0.45) * th.nm)); if (mk === 'enjambre') n *= 2;
+    const gap = Math.max(0.28, 0.95 - w * 0.02) * th.gm * (mk === 'enjambre' ? 0.55 : 1);
+    const q = []; let t = 0; const swarm = w > 3 && !th.k && Math.random() < 0.25 ? pick() : null;
     for (let i = 0; i < n; i++) { q.push({ k: swarm && i % 2 ? swarm : pick(), t }); t += gap * (0.6 + Math.random() * 0.8); }
+    const amb = TW.has('emboscada') && w % 3 === 0; if (amb) { for (let i = 0; i < 4 + Math.floor(w / 6); i++) q.push({ k: pick(), t: 3 + i * 0.8, mid: true }); q.sort((a, b) => a.t - b.t); }
     const every = mk === 'jefes' ? 5 : 10;
     const boss = (!INF && ((w % every === 0 && w >= every) || w === WAVES)) || (INF && w >= 10 && w % 5 === 0);
     if (boss) q.push({ k: INF ? BOSSES[(w / 5) % BOSSES.length] : TD_WORLDS[M.w].boss, t: t + 1.5 });
-    const hpMul = (1 + 0.13 * w + 0.009 * w * w) * (1 + Math.min(lvl, 40) * 0.09) * (mk === 'enjambre' ? 0.55 : 1);
-    return { q, hpMul };
+    const hpMul = (1 + 0.13 * w + 0.009 * w * w) * (1 + Math.min(lvl, 40) * 0.09) * th.hm * (mk === 'enjambre' ? 0.55 : 1);
+    return { q, hpMul, th, amb };
   }
   let WV = null;
   function startWave() {
     if (st.phase !== 'build' || st.over) return;
     if (st.wave > 0 && st.countdown > 0) { const b = Math.ceil(st.countdown); st.seeds += b; float(`+${b} 🌰 por adelantarte`, TD_COLS / 2, 1.5, '#ffe066'); }
     st.wave++; WV = makeWave(st.wave); st.queue = WV.q.slice(); st.spawnT = 0; st.phase = 'wave'; st.spawned = 0;
-    const bossK = WV.q.find((x) => TD_EN[x.k].boss); st.banner = { text: `Oleada ${st.wave}`, sub: bossK ? `⚠️ ¡Viene ${TD_EN[bossK.k].n}!` : st.wave === WAVES ? '¡Última oleada!' : '', t: 0, boss: !!bossK };
+    const bossK = WV.q.find((x) => TD_EN[x.k].boss); st.banner = { text: `Oleada ${st.wave}`, sub: bossK ? `⚠️ ¡Viene ${TD_EN[bossK.k].n}!` : st.wave === WAVES ? '¡Última oleada!' : WV.th.n + (WV.amb ? ' · ¡Emboscada!' : ''), t: 0, boss: !!bossK };
     TDS.wave(); if (bossK) setTimeout(() => { if (wrap.isConnected) TDS.boss(); }, 900);
     hud();
   }
-  function spawn(k) {
-    const E = TD_EN[k]; const pi = st.spawned++ % PATHS.length; const hp = Math.round(E.hp * (WV ? WV.hpMul : 1));
-    st.en.push({ id: ++st.eid, k, hp, max: hp, pi, d: 0, slowT: 0, slowK: 0, dotT: 0, dotD: 0, rootT: 0, frz: 0, under: false, burT: 2 + Math.random() * 2, healT: 2, powT: 3 + Math.random() * 2, chT: 3 + Math.random() * 2, chg: 0, sh: E.shield ? hp * E.shield : 0, x: 0, y: 0, dir: 1, dead: false, hit: 0, rev: false });
+  function spawn(k, mid) {
+    const E = TD_EN[k]; const pi = st.spawned++ % PATHS.length; const hp = Math.round(E.hp * (WV ? WV.hpMul : 1)); const d0 = mid ? PATHS[pi].L * 0.55 : 0;
+    st.en.push({ id: ++st.eid, k, hp, max: hp, pi, d: d0, pj: !!(PORT && d0 / PATHS[pi].L > PORT.a), slowT: 0, slowK: 0, dotT: 0, dotD: 0, rootT: 0, frz: 0, under: false, burT: 2 + Math.random() * 2, healT: 2, powT: 3 + Math.random() * 2, chT: 3 + Math.random() * 2, chg: 0, sh: E.shield ? hp * E.shield : 0, x: 0, y: 0, dir: 1, dead: false, hit: 0, rev: false });
   }
   const armorOf = (E) => Math.max(E.armor || 0, mk === 'blindados' && !E.boss ? 0.2 : 0);
   function damage(e, amt, pierce, t) {
     if (e.dead || e.under) return; const E = TD_EN[e.k];
-    const cc = tdMeta('critico') * 0.05 + (t && t.k === 'ardilla' && t.spec === 2 ? 0.25 : 0);
+    const cc = tdMeta('critico') * 0.05 + st.pk.cri + (t && t.k === 'ardilla' && t.spec === 2 ? 0.25 : 0);
     if (cc && Math.random() < cc) { amt *= t && t.spec === 2 && t.k === 'ardilla' ? 3 : 2; if (!low()) float('¡Crítico!', e.x, e.y - 0.5, '#ffd23c'); TDS.crit(); }
     const ar = armorOf(E); if (ar && !pierce) amt *= 1 - ar;
     if (e.sh > 0) { const a = Math.min(e.sh, amt); e.sh -= a; amt -= a; if (e.sh <= 0) { ring(e.x, e.y, 0.6, '#9fd0ff', 0.3); puff(e.x, e.y, '#bfe3ff', 8, 2); } }
     e.hp -= amt; e.hit = 0.1; if (e.hp <= 0) kill(e);
   }
   function kill(e) {
-    if (e.dead) return; e.dead = true; const E = TD_EN[e.k]; const rew = Math.round(E.rew * (1 + tdMeta('botin') * 0.1) * (mk === 'pobre' ? 1.4 : 1)); st.seeds += rew; st.killed++;
+    if (e.dead) return; e.dead = true; const E = TD_EN[e.k]; const rew = Math.round(E.rew * (1 + tdMeta('botin') * 0.1 + st.pk.bot) * (mk === 'pobre' ? 1.4 : 1)); st.seeds += rew; st.killed++;
     puff(e.x, e.y, E.c, E.boss ? 50 : 9, E.boss ? 4.5 : 2.2); ring(e.x, e.y, E.boss ? 2.5 : 0.7, E.boss ? '#ffd23c' : 'rgba(255,255,255,.8)', E.boss ? 0.7 : 0.3); TDS.pop(E.boss);
     if (E.boss) { float(`¡${E.n} vencido! +${rew} 🌰`, e.x, e.y - 0.6, '#ffe066', true); st.shake = 0.8; st.flash = 0.5; vib([40, 40, 80]); }
     if (st.fly.length < 14) { const p = { x: V.ox + e.x * V.T, y: V.oy + e.y * V.T }; st.fly.push({ ...p, sx: p.x, sy: p.y, t: 0 }); }
-    if (E.split) for (const o of [-0.25, 0.25]) { const hp = Math.round(TD_EN.gusito.hp * (WV ? WV.hpMul : 1)); st.en.push({ id: ++st.eid, k: 'gusito', hp, max: hp, pi: e.pi, d: Math.max(0, e.d + o), slowT: 0, slowK: 0, dotT: 0, dotD: 0, rootT: 0, frz: 0, under: false, burT: 9, healT: 9, powT: 9, chT: 9, chg: 0, sh: 0, x: e.x, y: e.y, dir: e.dir, dead: false, hit: 0 }); }
+    if (E.split) for (const o of (E.split === 3 ? [-0.35, 0, 0.35] : [-0.25, 0.25])) { const hp = Math.round(TD_EN.gusito.hp * (WV ? WV.hpMul : 1)); st.en.push({ id: ++st.eid, k: 'gusito', hp, max: hp, pi: e.pi, d: Math.max(0, e.d + o), slowT: 0, slowK: 0, dotT: 0, dotD: 0, rootT: 0, frz: 0, under: false, burT: 9, healT: 9, powT: 9, chT: 9, chg: 0, sh: 0, x: e.x, y: e.y, dir: e.dir, dead: false, hit: 0 }); }
     TDS.coin();
   }
 
@@ -477,7 +574,7 @@ function tdStart(mi, daily) {
     t.cd -= dt; if (t.cd > 0) return;
     if (t.k === 'pino') {
       const hit = st.en.filter((e) => !e.dead && !e.under && dist(t, e) <= rng); if (!hit.length) return;
-      t.cd = K.rate[L]; t.kick = 0.15; TDS.shot('pino'); ring(t.x + 0.5, t.y + 0.5, rng, 'rgba(180,230,255,.9)', 0.45);
+      t.cd = K.rate[L] * (1 - Math.min(0.5, st.pk.rate)); t.kick = 0.15; TDS.shot('pino'); ring(t.x + 0.5, t.y + 0.5, rng, 'rgba(180,230,255,.9)', 0.45);
       for (const e of hit) { e.frz = Math.max(e.frz, t.spec === 1 ? 2.5 : K.frz[L]); damage(e, K.dmg[L] * mul, false, t); }
       if (!low()) puff(t.x + 0.5, t.y + 0.5, '#e8f8ff', 10, rng * 2);
       return;
@@ -485,7 +582,7 @@ function tdStart(mi, daily) {
     const nT = t.k === 'ardilla' && t.spec === 1 ? 3 : t.k === 'tortuga' && t.spec === 2 ? 3 : 1;
     const ts = targets(t, rng, K.air, nT); if (!ts.length) return;
     const e = ts[0];
-    t.cd = K.rate[L] * (t.k === 'tortuga' && t.spec === 1 ? 1.3 : 1); t.kick = 0.12; TDS.shot(t.k);
+    t.cd = K.rate[L] * (1 - Math.min(0.5, st.pk.rate)) * (t.k === 'tortuga' && t.spec === 1 ? 1.3 : 1); t.kick = 0.12; TDS.shot(t.k);
     const sx = t.x + 0.5, sy = t.y + 0.25;
     if (t.k === 'ardilla') for (const o of ts) st.pr.push({ k: 'flecha', x: sx, y: sy, e: o, dmg: K.dmg[L] * mul, sp: 13, t });
     else if (t.k === 'tortuga') for (const o of ts) st.pr.push({ k: 'bala', x0: sx, y0: sy, x1: o.x, y1: o.y, t: 0, T: 0.55, dmg: K.dmg[L] * mul * (t.spec === 1 ? 1.3 : 1), area: K.area[L] * (t.spec === 1 ? 1.8 : 1), tw: t });
@@ -516,6 +613,35 @@ function tdStart(mi, daily) {
     st.aim = null; hint(''); paintPow();
   }
 
+  /* --- eventos de los giros --- */
+  function freeCell() { for (let i = 0; i < 40; i++) { const x = (rnd() * TD_COLS) | 0, y = (rnd() * TD_ROWS) | 0; if (!blocked.has(key(x, y)) && !pathCells.has(key(x, y)) && !towerAt(x, y) && !st.chests.some((c) => c.x === x && c.y === y)) return [x, y]; } return null; }
+  function twistTick(dt) {
+    if (!TW.size) return;
+    const wave = st.phase === 'wave';
+    if (TW.has('lluvia') && wave) { st.et -= dt; if (st.et <= 0) { st.et = 6 + Math.random() * 3; const c = st.en.filter((e) => !e.dead && !e.under); if (c.length) { const e = c[(Math.random() * c.length) | 0]; st.ev.push({ k: 'star', x: e.x, y: e.y, t: 0, T: 0.9 }); } } }
+    if (TW.has('meteoros') && wave) { st.mt -= dt; if (st.mt <= 0) { st.mt = 11 + Math.random() * 4; const ts = st.tw.filter((t) => t.k !== 'trampa'); if (ts.length) { const t = ts[(Math.random() * ts.length) | 0]; st.ev.push({ k: 'met', x: t.x + 0.5, y: t.y + 0.5, t: 0, T: 1.8 }); TDS.bpow(); } } }
+    if (TW.has('cofres')) { st.ct -= dt; if (st.ct <= 0 && st.chests.length < 2) { st.ct = 8 + Math.random() * 4; const c = freeCell(); if (c) st.chests.push({ x: c[0], y: c[1], life: 7, v: 22 + st.wave * 4 }); } }
+    for (const c of st.chests) c.life -= dt; st.chests = st.chests.filter((c) => c.life > 0);
+    for (const v of st.ev) {
+      v.t += dt; if (v.t < v.T) continue; v.done = true;
+      if (v.k === 'star') { ring(v.x, v.y, 1.4, 'rgba(255,230,120,.95)', 0.5); puff(v.x, v.y, '#ffe066', low() ? 8 : 18, 3.5); TDS.crit(); for (const e of st.en) if (!e.dead && Math.hypot(e.x - v.x, e.y - v.y) <= 1.4) damage(e, 50 + st.wave * 7, true); }
+      else { ring(v.x, v.y, 1.2, 'rgba(255,110,40,.95)', 0.5); puff(v.x, v.y, '#ff7a1f', low() ? 10 : 24, 4); st.shake = 0.5; vib(50); TDS.boom(); for (const t of st.tw) if (Math.hypot(t.x + 0.5 - v.x, t.y + 0.5 - v.y) <= 1.1) { t.stun = 2.5; t.stunK = 'fuego'; } for (const e of st.en) if (!e.dead && Math.hypot(e.x - v.x, e.y - v.y) <= 1.2) damage(e, 60 + st.wave * 6, true); }
+    }
+    st.ev = st.ev.filter((v) => !v.done);
+  }
+  /* --- bendiciones --- */
+  function paintChips() {
+    const el = $w('#tdPk'); const tw = (M.tw || []).map((k) => `<button type="button" class="td-chip tw" data-d="${esc(TD_TWISTS[k].e + ' ' + TD_TWISTS[k].n + ': ' + TD_TWISTS[k].d)}">${TD_TWISTS[k].e}</button>`);
+    const pk = st.picked.map((id) => { const p = TD_PERKS.find((x) => x.id === id); return `<button type="button" class="td-chip" data-d="${esc(p.e + ' ' + p.n + ': ' + p.d)}">${p.e}</button>`; });
+    el.innerHTML = tw.concat(pk).join('');
+  }
+  function offerPerk() {
+    if (st.over) return; st.choosing = true; closePanel();
+    const pool = TD_PERKS.slice(); const three = []; while (three.length < 3 && pool.length) three.push(pool.splice((Math.random() * pool.length) | 0, 1)[0]);
+    const el = $w('#tdPerk'); el.innerHTML = `<b>✨ Elige una bendición</b><span class="small">Dura hasta el final de la partida</span><div class="td-perk-row">${three.map((p) => `<button type="button" class="td-pcard" data-p="${p.id}"><i>${p.e}</i><b>${p.n}</b><span>${p.d}</span></button>`).join('')}</div>`;
+    el.hidden = false; el.classList.add('show'); TDS.spec();
+    el.onclick = (ev) => { const b = ev.target.closest('[data-p]'); if (!b) return; const p = TD_PERKS.find((x) => x.id === b.dataset.p); p.f(st.pk, st, LMAX); st.picked.push(p.id); el.hidden = true; el.classList.remove('show'); st.choosing = false; st.last = performance.now(); TDS.up(); float(`${p.e} ${p.n}`, TD_COLS / 2, 3, '#ffe066', true); paintChips(); hud(); };
+  }
   /* --- paso de simulación --- */
   function step(dt) {
     st.t += dt; if (st.treeHit > 0) st.treeHit -= dt; if (st.hurt > 0) st.hurt -= dt; if (st.flash > 0) st.flash -= dt;
@@ -523,21 +649,27 @@ function tdStart(mi, daily) {
     if (st.banner) { st.banner.t += dt; if (st.banner.t > 2.4) st.banner = null; }
     if (st.over) return;
     if (st.phase === 'build' && st.wave > 0) { st.countdown -= dt; if (st.countdown <= 0) startWave(); }
-    if (st.phase === 'wave') { st.spawnT += dt; while (st.queue.length && st.queue[0].t <= st.spawnT) spawn(st.queue.shift().k); }
+    if (st.phase === 'wave') { st.spawnT += dt; while (st.queue.length && st.queue[0].t <= st.spawnT) { const o = st.queue.shift(); spawn(o.k, o.mid); } }
     const spMod = mk === 'rapidos' ? 1.3 : 1;
     for (const e of st.en) {
       if (e.dead) continue; const E = TD_EN[e.k];
       if (e.hit > 0) e.hit -= dt;
       if (e.dotT > 0) { e.dotT -= dt; damage(e, e.dotD * dt, true); if (e.dead) continue; } else e.dotD = 0;
+      if (st.pk.esp) { damage(e, e.max * st.pk.esp * dt * (E.boss ? 0.25 : 1), true); if (e.dead) continue; }
       if (e.slowT > 0) e.slowT -= dt; else e.slowK = 0;
       if (E.burrow) { e.burT -= dt; if (e.burT <= 0) { e.under = !e.under; e.burT = e.under ? 1.1 : 2.2 + Math.random() * 1.5; if (!low()) puff(e.x, e.y, '#8a6a4a', 5, 1.5); } }
       if (E.heal) { e.healT -= dt; if (e.healT <= 0) { e.healT = 2.2; for (const o of st.en) if (!o.dead && o !== e && Math.hypot(o.x - e.x, o.y - e.y) < 1.3) o.hp = Math.min(o.max, o.hp + o.max * 0.12); ring(e.x, e.y, 1.3, 'rgba(160,255,160,.8)', 0.4); } }
       if (E.charge) { if (e.chg > 0) { e.chg -= dt; if (!low() && Math.random() < dt * 20) puff(e.x, e.y + 0.2, '#c8b89a', 1, 1); } else { e.chT -= dt; if (e.chT <= 0) { e.chg = 0.8; e.chT = 3 + Math.random() * 2.5; } } }
       if (E.boss) bossPower(e, dt);
-      let sp = E.sp * spMod * (1 - e.slowK) * (e.chg > 0 ? 3 : 1);
+      let sp = E.sp * spMod * (1 - e.slowK) * (e.chg > 0 ? 3 : 1) * (1 - st.pk.esc);
+      if (mud.size && mud.has(key(Math.floor(e.x), Math.floor(e.y)))) sp *= 0.55;
+      if (ZON && !E.fly) { const f = e.d / PATHS[e.pi].L; if (f > ZON.a && f < ZON.b) sp *= 1.7; }
       if (e.rootT > 0) { e.rootT -= dt; sp = 0; }
       if (e.frz > 0) { e.frz -= dt; sp = 0; }
-      e.d += sp * dt; const p = posAt(e.pi, e.d); if (p.dx) e.dir = p.dx; e.x = p.x; e.y = p.y;
+      e.d += sp * dt;
+      if (PORT && !e.pj && e.d >= PORT.a * PATHS[e.pi].L) { e.pj = true; const o = posAt(e.pi, e.d); ring(o.x, o.y, 0.9, 'rgba(190,120,255,.95)', 0.4); puff(o.x, o.y, '#c8a0ff', 8, 2); e.d = PORT.b * PATHS[e.pi].L; const n2 = posAt(e.pi, e.d); ring(n2.x, n2.y, 0.9, 'rgba(120,200,255,.95)', 0.4); }
+      const p = posAt(e.pi, e.d); if (p.dx) e.dir = p.dx; e.x = p.x; e.y = p.y;
+      if (e.d >= PATHS[e.pi].L && E.steal) { e.dead = true; const n = Math.min(Math.floor(st.seeds), 40 + st.wave * 3); st.seeds -= n; st.hurt = 0.3; TDS.no(); float(`−${n} 🌰 robadas`, tree[0] + 0.5, tree[1], '#ffb347', true); continue; }
       if (e.d >= PATHS[e.pi].L) { e.dead = true; const n = E.lives || 1; st.lives -= n; st.treeHit = 0.5; st.hurt = 0.6; TDS.hurt(); float(`−${n} ❤️`, tree[0] + 0.5, tree[1], '#ff6b6b', true); vib(E.boss ? [80, 40, 80] : 60); if (st.lives <= 0) { st.lives = 0; end(false); return; } }
     }
     st.en = st.en.filter((e) => !e.dead);
@@ -552,7 +684,7 @@ function tdStart(mi, daily) {
         q.x += dx / dd * q.sp * dt; q.y += dy / dd * q.sp * dt; q.ang = Math.atan2(dy, dx);
       } else if (q.k === 'bala') { q.t += dt; if (q.t >= q.T) { q.done = true; TDS.boom(); puff(q.x1, q.y1, '#a89a8a', low() ? 5 : 10, 2.5); ring(q.x1, q.y1, q.area, 'rgba(255,230,180,.85)', 0.3); for (const e of st.en) if (!e.dead && !TD_EN[e.k].fly && Math.hypot(e.x - q.x1, e.y - q.y1) <= q.area) damage(e, q.dmg, false, q.tw); } }
       else if (q.k === 'nube') { q.t += dt; if (q.t > 0.8) q.done = true; }
-      else if (q.k === 'bellotas') { q.t += dt; if (q.t >= 0.6 && !q.hit) { q.hit = true; st.shake = 0.5; vib(40); puff(q.x, q.y, '#8a5a2c', low() ? 14 : 30, 4); ring(q.x, q.y, 1.9, 'rgba(255,200,90,.95)', 0.5); const dmg = (60 + st.wave * 14) * dmgMul(); for (const e of st.en) if (!e.dead && Math.hypot(e.x - q.x, e.y - q.y) <= 1.7) damage(e, dmg, true); } if (q.t > 1) q.done = true; }
+      else if (q.k === 'bellotas') { q.t += dt; if (q.t >= 0.6 && !q.hit) { q.hit = true; st.shake = 0.5; vib(40); puff(q.x, q.y, '#8a5a2c', low() ? 14 : 30, 4); ring(q.x, q.y, 1.9, 'rgba(255,200,90,.95)', 0.5); const dmg = (60 + st.wave * 14) * dmgMul() * (1 + st.pk.bel); for (const e of st.en) if (!e.dead && Math.hypot(e.x - q.x, e.y - q.y) <= 1.7) damage(e, dmg, true); } if (q.t > 1) q.done = true; }
       else if (q.k === 'raiz') { q.t += dt; if (q.t > 3) q.done = true; }
     }
     st.pr = st.pr.filter((q) => !q.done);
@@ -564,9 +696,13 @@ function tdStart(mi, daily) {
     if (st.phase === 'wave' && !st.queue.length && !st.en.length) {
       const bonus = 15 + st.wave * 2 + st.tw.filter((t) => t.k === 'arbol').reduce((a, t) => a + Math.round(TD_TW.arbol.seeds[t.lvl] * (t.spec === 2 ? 2.5 : 1)), 0);
       st.seeds += bonus; float(`Oleada superada · +${bonus} 🌰`, TD_COLS / 2, 2, '#ffe066', true); TDS.up();
+      if (st.pk.int) { const ig = Math.min(40, Math.floor(st.seeds * st.pk.int)); if (ig > 0) { st.seeds += ig; float(`+${ig} 🌰 intereses`, TD_COLS / 2, 2.8, '#b8f08a'); } }
+      if (TW.has('bendito') && st.wave % 3 === 0 && st.lives < LMAX) { st.lives++; float('+1 ❤️ bendición', tree[0] + 0.5, tree[1] - 0.5, '#ff9ab0', true); ring(tree[0] + 0.5, tree[1] + 0.5, 1.6, 'rgba(255,200,220,.95)', 0.6); }
       if (st.wave >= WAVES) { end(true); return; }
       st.phase = 'build'; st.countdown = 12; hud();
+      if (st.wave % 5 === 0) offerPerk();
     }
+    twistTick(dt);
   }
   const stepFx = (dt) => {
     for (const f of st.fly) f.t += dt * 1.6; st.fly = st.fly.filter((f) => f.t < 1);
@@ -610,7 +746,7 @@ function tdStart(mi, daily) {
     // trampas (debajo de los enemigos)
     for (const t of st.tw) if (t.k === 'trampa') drawTowerSpr(t, SX(t.x + 0.5), SY(t.y + 0.5), 1);
     // el Gran Árbol
-    { const X = SX(tree[0] + 0.5), Y = SY(tree[1] + 0.5); const sh = st.treeHit > 0 ? Math.sin(st.t * 60) * 3 : 0; g.save(); g.translate(X + sh, Y); g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(0, T * 0.42, T * 0.6, T * 0.15, 0, 0, 7); g.fill(); g.fillStyle = '#7a5232'; g.fillRect(-T * 0.12, -T * 0.1, T * 0.24, T * 0.52); const sw = Math.sin(st.t * 1.2) * T * 0.03; const hp = st.lives / LMAX; g.fillStyle = st.treeHit > 0 ? '#c84a3a' : hp > 0.5 ? '#2f8a40' : hp > 0.25 ? '#8a9a30' : '#a8702a'; for (const [a, b, r] of [[0, -0.42, 0.42], [-0.3, -0.2, 0.3], [0.3, -0.2, 0.3]]) { g.beginPath(); g.arc(a * T + sw, b * T, r * T, 0, 7); g.fill(); } g.fillStyle = 'rgba(255,255,255,.25)'; g.beginPath(); g.arc(-T * 0.12 + sw, -T * 0.55, T * 0.12, 0, 7); g.fill(); if (hp > 0.5) { g.fillStyle = '#e8324a'; for (const [a, b] of [[-0.2, -0.5], [0.15, -0.3], [0.3, -0.15]]) { g.beginPath(); g.arc(a * T + sw, b * T, T * 0.05, 0, 7); g.fill(); } } g.restore(); }
+    { const X = SX(tree[0] + 0.5), Y = SY(tree[1] + 0.5); const sh = st.treeHit > 0 ? Math.sin(st.t * 60) * 3 : 0; g.save(); g.translate(X + sh, Y); if (TW.has('bendito')) { g.fillStyle = 'rgba(255,240,150,.2)'; g.beginPath(); g.arc(0, -T * 0.2, T * 0.9 + Math.sin(st.t * 2) * 3, 0, 7); g.fill(); } g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(0, T * 0.42, T * 0.6, T * 0.15, 0, 0, 7); g.fill(); g.fillStyle = '#7a5232'; g.fillRect(-T * 0.12, -T * 0.1, T * 0.24, T * 0.52); const sw = Math.sin(st.t * 1.2) * T * 0.03; const hp = st.lives / LMAX; g.fillStyle = st.treeHit > 0 ? '#c84a3a' : hp > 0.5 ? '#2f8a40' : hp > 0.25 ? '#8a9a30' : '#a8702a'; for (const [a, b, r] of [[0, -0.42, 0.42], [-0.3, -0.2, 0.3], [0.3, -0.2, 0.3]]) { g.beginPath(); g.arc(a * T + sw, b * T, r * T, 0, 7); g.fill(); } g.fillStyle = 'rgba(255,255,255,.25)'; g.beginPath(); g.arc(-T * 0.12 + sw, -T * 0.55, T * 0.12, 0, 7); g.fill(); if (hp > 0.5) { g.fillStyle = '#e8324a'; for (const [a, b] of [[-0.2, -0.5], [0.15, -0.3], [0.3, -0.15]]) { g.beginPath(); g.arc(a * T + sw, b * T, T * 0.05, 0, 7); g.fill(); } } g.restore(); }
     // torres
     for (const t of st.tw) {
       if (t.k === 'trampa') { if (t === st.sel) { g.strokeStyle = '#ffd23c'; g.lineWidth = 2; g.strokeRect(SX(t.x) + 1, SY(t.y) + 1, T - 2, T - 2); } continue; }
@@ -621,6 +757,10 @@ function tdStart(mi, daily) {
     }
     // rayos de luciérnaga
     for (const t of st.tw) if (t.k === 'rayo' && t.target && !t.target.dead && !(t.stun > 0)) { const mx = t.spec === 2 ? 6 : 3; const k = (t.ramp || 0) / mx; const col = t.spec === 2 ? '255,220,90' : '120,240,255'; const beam = (e, w) => { g.strokeStyle = `rgba(${col},${0.5 + 0.4 * k})`; g.lineWidth = w; g.beginPath(); g.moveTo(SX(t.x + 0.5), SY(t.y + 0.15)); g.lineTo(SX(e.x), SY(e.y)); g.stroke(); g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 1; g.stroke(); }; beam(t.target, 2 + k * 5); if (t.extra) for (const o of t.extra) if (!o.dead) beam(o, 1.5 + k * 2); }
+    // portales
+    if (PORT) PATHS.forEach((p, pi) => { [[PORT.a, '190,120,255'], [PORT.b, '120,200,255']].forEach(([f, col], j) => { const o = posAt(pi, f * p.L); const X = SX(o.x), Y = SY(o.y); g.save(); g.translate(X, Y); g.fillStyle = `rgba(${col},.25)`; g.beginPath(); g.arc(0, 0, T * 0.42, 0, 7); g.fill(); g.strokeStyle = `rgba(${col},.95)`; g.lineWidth = 3; for (let i = 0; i < 3; i++) { const a = st.t * (j ? -3 : 3) + i * 2.09; g.beginPath(); g.arc(0, 0, T * (0.2 + i * 0.07), a, a + 1.6); g.stroke(); } g.restore(); }); });
+    // cofres
+    for (const c of st.chests) { const X = SX(c.x + 0.5), Y = SY(c.y + 0.5) + Math.sin(st.t * 4 + c.x) * 2; const k = c.life / 7; g.fillStyle = 'rgba(255,240,150,.35)'; g.beginPath(); g.arc(X, Y, T * 0.5 + Math.sin(st.t * 6) * 2, 0, 7); g.fill(); g.fillStyle = '#a8702a'; g.fillRect(X - T * 0.26, Y - T * 0.12, T * 0.52, T * 0.32); g.fillStyle = '#c98a3a'; g.beginPath(); g.ellipse(X, Y - T * 0.12, T * 0.26, T * 0.14, 0, Math.PI, 0); g.fill(); g.fillStyle = '#ffd23c'; g.fillRect(X - T * 0.04, Y - T * 0.12, T * 0.08, T * 0.14); g.strokeStyle = k < 0.35 ? '#ff6b6b' : '#fff'; g.lineWidth = 2.5; g.beginPath(); g.arc(X, Y, T * 0.4, -Math.PI / 2, -Math.PI / 2 + k * 6.283); g.stroke(); }
     // enemigos
     const en = st.en.slice().sort((a, b) => a.y - b.y);
     for (const e of en) {
@@ -648,6 +788,8 @@ function tdStart(mi, daily) {
       else if (q.k === 'nube') { const a = 1 - q.t / 0.8; g.fillStyle = `rgba(${q.c},${0.35 * a})`; g.beginPath(); g.arc(SX(q.x), SY(q.y), q.r * T * (0.6 + q.t * 0.5), 0, 7); g.fill(); }
       else if (q.k === 'bellotas') { if (q.t < 0.6) { for (let i = 0; i < 6; i++) { const a = i * 1.05; const r = 1.3 * (1 - q.t / 0.6); g.fillStyle = '#8a5a2c'; g.beginPath(); g.ellipse(SX(q.x + Math.cos(a) * 0.9), SY(q.y + Math.sin(a) * 0.9 - r * 3), 5, 6, 0, 0, 7); g.fill(); } g.strokeStyle = 'rgba(255,80,40,.6)'; g.lineWidth = 2; g.beginPath(); g.arc(SX(q.x), SY(q.y), 1.7 * T, 0, 7); g.stroke(); } else { g.fillStyle = `rgba(255,200,80,${0.5 * (1 - (q.t - 0.6) / 0.4)})`; g.beginPath(); g.arc(SX(q.x), SY(q.y), 1.7 * T, 0, 7); g.fill(); } }
     }
+    // estrellas y meteoritos
+    for (const v of st.ev) { const k = v.t / v.T; const X = SX(v.x), Y = SY(v.y); if (v.k === 'star') { g.fillStyle = '#ffe066'; g.strokeStyle = 'rgba(255,240,150,.5)'; g.lineWidth = 3; g.beginPath(); g.moveTo(X - 30 * (1 - k), Y - (1 - k) * T * 5 - 30 * (1 - k)); g.lineTo(X, Y - (1 - k) * T * 5); g.stroke(); g.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? 4 : 9, a = i * Math.PI / 5 - Math.PI / 2; g.lineTo(X + Math.cos(a) * r, Y - (1 - k) * T * 5 + Math.sin(a) * r); } g.fill(); g.strokeStyle = 'rgba(255,230,120,.5)'; g.lineWidth = 2; g.beginPath(); g.arc(X, Y, 1.4 * T, 0, 7); g.stroke(); } else { g.strokeStyle = `rgba(255,70,40,${0.5 + 0.4 * Math.sin(st.t * 18)})`; g.lineWidth = 3; g.setLineDash([6, 5]); g.beginPath(); g.arc(X, Y, 1.1 * T, 0, 7); g.stroke(); g.setLineDash([]); g.fillStyle = 'rgba(255,70,40,.15)'; g.beginPath(); g.arc(X, Y, 1.1 * T * k, 0, 7); g.fill(); const yy = Y - (1 - k) * T * 6; g.fillStyle = '#6a4a3a'; g.beginPath(); g.arc(X + (1 - k) * 20, yy, T * 0.2, 0, 7); g.fill(); g.fillStyle = '#ff9a3c'; g.beginPath(); g.arc(X + (1 - k) * 20 - 3, yy - 3, T * 0.1, 0, 7); g.fill(); } }
     // relámpagos
     for (const b of st.bolts) { g.globalAlpha = 1 - b.t / 0.22; g.strokeStyle = b.c; g.lineWidth = b.w || 2.5; g.lineJoin = 'round'; g.beginPath(); b.pts.forEach(([x, y], i) => { if (!i) { g.moveTo(SX(x), SY(y)); return; } const [px, py] = b.pts[i - 1]; for (let s = 1; s <= 3; s++) { const k = s / 3; const jx = s < 3 ? (Math.random() - 0.5) * T * 0.3 : 0, jy = s < 3 ? (Math.random() - 0.5) * T * 0.3 : 0; g.lineTo(SX(px + (x - px) * k) + jx, SY(py + (y - py) * k) + jy); } }); g.stroke(); g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 1; g.stroke(); } g.globalAlpha = 1;
     for (const r of st.rings) { const k = r.t / r.T; g.globalAlpha = 1 - k; g.strokeStyle = r.col; g.lineWidth = 3 * (1 - k) + 1; g.beginPath(); g.arc(SX(r.x), SY(r.y), r.r1 * T * (0.3 + 0.7 * k), 0, 7); g.stroke(); } g.globalAlpha = 1;
@@ -682,7 +824,7 @@ function tdStart(mi, daily) {
   function openBuild(x, y, onPath) {
     st.sel = null; st.build = { x, y };
     const ks = Object.keys(TD_TW).filter((k) => (onPath ? !!TD_TW[k].path : !TD_TW[k].path));
-    panel.innerHTML = `<div class="td-ph"><b>${onPath ? 'Trampa en el camino' : 'Construir aquí'}</b><button class="td-close" data-a="close" aria-label="Cerrar">✕</button></div><div class="td-tws">${ks.map((k) => { const K = TD_TW[k]; const open = tdTowerOpen(k); return `<button type="button" class="td-tw" data-a="build" data-k="${k}" ${open ? '' : 'disabled'}><canvas width="64" height="64" data-k="${k}"></canvas><b>${open ? K.n.split(' ')[0] : '🔒'}</b><span>${open ? `🌰 ${costOf(k, 0)}` : `Mapa ${K.un + 1}`}</span></button>`; }).join('')}</div>`;
+    panel.innerHTML = `<div class="td-ph"><b>${onPath ? 'Trampa en el camino' : 'Construir aquí'}</b><button class="td-close" data-a="close" aria-label="Cerrar">✕</button></div><div class="td-tws">${ks.map((k) => { const K = TD_TW[k]; const open = tdTowerOpen(k) && (!SOLO || SOLO.has(k)); return `<button type="button" class="td-tw" data-a="build" data-k="${k}" ${open ? '' : 'disabled'}><canvas width="64" height="64" data-k="${k}"></canvas><b>${tdTowerOpen(k) ? K.n.split(' ')[0] : '🔒'}</b><span>${!tdTowerOpen(k) ? `Mapa ${K.un + 1}` : open ? `🌰 ${costOf(k, 0)}` : 'No aquí'}</span></button>`; }).join('')}</div>`;
     panel.hidden = false; paintMini(); refreshPanel();
   }
   function info(t) {
@@ -704,14 +846,14 @@ function tdStart(mi, daily) {
     panel.hidden = false; paintMini(); refreshPanel();
   }
   function refreshPanel() {
-    if (st.build) panel.querySelectorAll('button[data-a="build"]').forEach((b) => { if (!tdTowerOpen(b.dataset.k)) return; b.disabled = st.seeds < costOf(b.dataset.k, 0); });
-    if (st.sel) { const t = st.sel, b = panel.querySelector('[data-a="up"]'); if (b) { const cst = costOf(t.k, t.lvl + 1); b.textContent = `Mejorar · 🌰 ${cst}`; b.disabled = st.seeds < cst; } panel.querySelectorAll('[data-a="spec"]').forEach((s) => { s.disabled = st.seeds < specCost(t.k); }); }
+    if (st.build) panel.querySelectorAll('button[data-a="build"]').forEach((b) => { if (!tdTowerOpen(b.dataset.k) || (SOLO && !SOLO.has(b.dataset.k))) return; b.disabled = st.seeds < costOf(b.dataset.k, 0); });
+    if (st.sel) { const t = st.sel, b = panel.querySelector('[data-a="up"]'); const lock = NOUP && st.wave < 6; if (b) { const cst = costOf(t.k, t.lvl + 1); b.textContent = lock ? '🌱 Desde la oleada 6' : `Mejorar · 🌰 ${cst}`; b.disabled = lock || st.seeds < cst; } panel.querySelectorAll('[data-a="spec"]').forEach((s) => { s.disabled = lock || st.seeds < specCost(t.k); }); }
   }
   const closePanel = () => { panel.hidden = true; st.sel = null; st.build = null; };
   panel.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-a]'); if (!b || b.disabled) return; TDS.init(); const a = b.dataset.a;
     if (a === 'close') { closePanel(); return; }
-    if (a === 'build' && st.build) { const k = b.dataset.k, cst = costOf(k, 0); if (st.seeds < cst) { TDS.no(); return; } st.seeds -= cst; const t = { k, lvl: 0, x: st.build.x, y: st.build.y, cd: 0, aim: -Math.PI / 2, mode: 'primero', bm: 1, spec: 0, born: 0.35, stun: 0 }; st.tw.push(t); recalcBuff(); TDS.build(); puff(t.x + 0.5, t.y + 0.5, '#fff', 10, 2); ring(t.x + 0.5, t.y + 0.5, 0.8, 'rgba(255,255,255,.9)', 0.35); closePanel(); hud(); return; }
+    if (a === 'build' && st.build) { const k = b.dataset.k, cst = costOf(k, 0); if (st.seeds < cst) { TDS.no(); return; } if (MAXT && k !== 'trampa' && st.tw.filter((x) => x.k !== 'trampa').length >= MAXT) { TDS.no(); hint(`📦 Espacio escaso: máximo ${MAXT} torres. Vende una para cambiar.`, 2600); return; } st.seeds -= cst; const t = { k, lvl: 0, x: st.build.x, y: st.build.y, cd: 0, aim: -Math.PI / 2, mode: 'primero', bm: 1, spec: 0, born: 0.35, stun: 0 }; st.tw.push(t); recalcBuff(); TDS.build(); puff(t.x + 0.5, t.y + 0.5, '#fff', 10, 2); ring(t.x + 0.5, t.y + 0.5, 0.8, 'rgba(255,255,255,.9)', 0.35); closePanel(); hud(); return; }
     const t = st.sel; if (!t) return;
     if (a === 'up') { if (t.lvl >= 3) return; const cst = costOf(t.k, t.lvl + 1); if (st.seeds < cst) { TDS.no(); return; } st.seeds -= cst; t.lvl++; t.born = 0.35; recalcBuff(); TDS.up(); puff(t.x + 0.5, t.y + 0.5, '#ffd23c', 14, 2.5); ring(t.x + 0.5, t.y + 0.5, 1, 'rgba(255,210,60,.95)', 0.45); openTower(t); hud(); }
     else if (a === 'spec') { if (t.spec || t.lvl < 3) return; const cst = specCost(t.k); if (st.seeds < cst) { TDS.no(); return; } st.seeds -= cst; t.spec = +b.dataset.s; t.born = 0.35; t.ramp = 0; recalcBuff(); TDS.spec(); puff(t.x + 0.5, t.y + 0.5, '#ff8fcf', 24, 3); ring(t.x + 0.5, t.y + 0.5, 1.4, 'rgba(255,143,207,.95)', 0.6); float(`✨ ${TD_TW[t.k].spec[t.spec - 1][0]}`, t.x + 0.5, t.y, '#ffb0e0', true); openTower(t); hud(); }
@@ -727,6 +869,7 @@ function tdStart(mi, daily) {
     const fx = (e.clientX - V.ox) / V.T, fy = (e.clientY - V.oy) / V.T;
     if (st.aim) { if (fx >= -0.5 && fx <= TD_COLS + 0.5 && fy >= -0.5 && fy <= TD_ROWS + 0.5) cast(st.aim, fx, fy); return; }
     const x = Math.floor(fx), y = Math.floor(fy);
+    const ch = st.chests.find((c) => c.x === x && c.y === y); if (ch) { st.chests = st.chests.filter((c) => c !== ch); st.seeds += ch.v; float(`+${ch.v} 🌰`, ch.x + 0.5, ch.y, '#ffe066', true); puff(ch.x + 0.5, ch.y + 0.5, '#ffd23c', 16, 3); ring(ch.x + 0.5, ch.y + 0.5, 0.9, 'rgba(255,230,120,.95)', 0.4); TDS.up(); hud(); return; }
     if (x < 0 || y < 0 || x >= TD_COLS || y >= TD_ROWS) { closePanel(); return; }
     const t = towerAt(x, y); if (t) { openTower(t); TDS.tone(700, 0.05, 'sine', 0.03); return; }
     if (blocked.has(key(x, y))) { closePanel(); hint('Ahí no se puede construir: elige pasto libre', 1600); return; }
@@ -780,14 +923,16 @@ function tdStart(mi, daily) {
   let hudT = 0;
   const loop = (now) => {
     st.id = requestAnimationFrame(loop);
-    if (paused) { st.last = now; return; }
+    if (paused || st.choosing) { st.last = now; if (st.choosing) draw(); return; }
     const raw = Math.min(0.05, Math.max(0, (now - st.last) / 1000)); st.last = now;
     for (let i = 0; i < st.speed; i++) step(raw);
     stepFx(raw); draw(); TDS.tickMusic(!st.over, M.w);
     hudT += raw; if (hudT > 0.2) { hudT = 0; hud(); }
   };
-  st.id = requestAnimationFrame(loop); hud();
-  hint(INF ? '♾️ Modo infinito: aguanta todas las oleadas que puedas' : MOD ? `📅 Reto: ${MOD.n} · ${MOD.d}` : `${M.n}: pon tus torres y toca Empezar`, 3800);
+  st.id = requestAnimationFrame(loop); hud(); paintChips();
+  if (TW.size) st.banner = { text: M.n, sub: (M.tw || []).map((k) => TD_TWISTS[k].e + ' ' + TD_TWISTS[k].n).join('  '), t: 0 };
+  $w('#tdPk').addEventListener('click', (e) => { const b = e.target.closest('[data-d]'); if (b) hint(b.dataset.d, 4500); });
+  hint(INF ? '♾️ Modo infinito: aguanta todas las oleadas que puedas' : MOD ? `📅 Reto: ${MOD.n} · ${MOD.d}` : TW.size ? twDesc() : `${M.n}: pon tus torres y toca Empezar`, 5200);
   const exit = (go) => {
     cancelAnimationFrame(st.id); removeEventListener('resize', size); removeEventListener('keydown', onKey); document.removeEventListener('visibilitychange', onVis);
     wrap.remove(); document.body.classList.remove('gm-on'); TD.run = null; TDC.m.clear();
