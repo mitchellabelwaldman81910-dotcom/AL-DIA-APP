@@ -380,6 +380,7 @@ function viewNavidad() {
       <div class="nv-row"><span>Luces</span><div class="seg" role="group">${[['steady', 'Fijas'], ['blink', 'Parpadeo'], ['wave', 'Ola']].map(([v, l]) => `<button type="button" data-act="nv-opt" data-o="lmode" data-v="${v}" aria-pressed="${n.lmode === v}">${l}</button>`).join('')}</div></div></div>`;
     body += NV_CATS.map(([k, l, list]) => { const mine = list.filter((it) => navHas(k, it[0])); return `<h2 class="sec">${l}</h2><div class="nv-grid ${k === 'bg' ? 'g-tall' : ''}">${mine.map((it) => nvItemCard(k, it, true)).join('') || ''}</div>${mine.length < list.length ? `<p class="tiny faint" style="margin:4px 0 0">Hay ${list.length - mine.length} más en la <a href="#/navidad" data-act="nv-go-shop" data-v="${k}">tienda</a>.</p>` : ''}`; }).join('');
   }
+  if (NV.tab === 'arbol' && typeof jgRankHTML === 'function') body += `<div id="jgRank-navidad">${jgRankHTML('navidad')}</div>`;
   return `${head}<section class="nv-card">${nvStage(cfg, n)}</section>${seg}${body}`;
 }
 
@@ -394,7 +395,7 @@ Object.assign(VIDA_ACTS, {
   'nv-up': () => {
     const n = navData(); if (n.lv >= NAV_MAX) return; const cost = navCost(n.lv + 1);
     if (coins() < cost) { toast(`Te faltan ${cost - coins()} monedas.`); return; }
-    commit(() => { navData().lv++; }); nvFx(); try { confetti(innerWidth / 2, innerHeight / 3, n.lv + 1 === NAV_MAX ? 90 : 34); } catch { /* */ }
+    commit(() => { navData().lv++; }); nvFx(); try { jgPost({ game: 'navidad', score: n.lv + 1, apples: 0, dur: 60 }).then(() => { if (typeof JGR !== 'undefined') { JGR.navidad = null; jgRankPaint('navidad'); } }).catch(() => {}); } catch { /* */ } try { confetti(innerWidth / 2, innerHeight / 3, n.lv + 1 === NAV_MAX ? 90 : 34); } catch { /* */ }
     toast(n.lv + 1 === NAV_MAX ? '¡Nivel 40! Tu árbol llegó a su máximo esplendor.' : `Tu árbol subió al nivel ${n.lv + 1}.`);
   },
   'nv-buy': (el) => {
@@ -413,3 +414,5 @@ function nvSet(k, id, forceOn) {
 }
 
 EXTRA_VIEWS.navidad = viewNavidad; EXTRA_NAV.navidad = 'mas'; GROUP_VIEWS.navidad = viewNavidad; GROUP_NAV.navidad = 'mas';
+
+if (typeof JG_CFG !== 'undefined') JG_CFG.navidad = { title: 'Ranking · árboles más grandes', tabs: [['dia', 'Hoy'], ['semana', 'Semana'], ['record', 'Récord']], val: (x) => `nivel ${x.score}`, mine: (m) => `Tu árbol: <b>nivel ${m.best || 0}</b>`, none: 'Aún nadie ha subido de nivel su árbol en este periodo.' };

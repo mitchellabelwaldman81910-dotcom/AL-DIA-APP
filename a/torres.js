@@ -264,7 +264,7 @@ Object.assign(TD_EN, {
   cometa: { n: 'Cometa errante', hp: 5200, sp: 0.5, rew: 500, r: 0.5, c: '#7ad0ff', fly: 1, armor: 0.3, boss: 1, lives: 10, pow: 'cura', d: 'Jefe del Cosmos: cura a todas las plagas.' },
 });
 const TD_BOSSES = TD_WORLDS.map((w) => w.boss);
-const tdDiff = (lvl) => (1 + Math.min(lvl, 40) * 0.09) * (1 + Math.max(0, lvl - 40) * 0.0065);
+const tdDiff = (lvl) => 1 + Math.min(lvl, 60) * 0.032 + Math.max(0, lvl - 60) * 0.011;
 /* tienda (se paga con hojas doradas 🍂 que ganas al superar niveles) */
 const TD_UPC = [25, 50, 90, 140, 200];
 const TD_POWERS = {
@@ -634,7 +634,7 @@ function tdStart(mi, daily) {
 
   /* --- estado --- */
   const LMAX = 20 + tdMeta('vidas') * 2 + D.lf * 2;
-  const st = { lives: LMAX, seeds: Math.round((140 + tdMeta('semillas') * 25 + D.sb * 40 + (INF ? 0 : Math.min(MI, 200) * 0.6)) * (mk === 'pobre' ? 0.55 : 1)), wave: 0, phase: 'build', countdown: 0, queue: [], spawnT: 0, en: [], tw: [], pr: [], parts: [], floats: [], rings: [], bolts: [], fly: [], wx: [], t: 0, speed: 1, sel: null, build: null, aim: null, cd: { a: 0, r: 0, trueno: 0, helada: 0, cosecha: 0 }, rush: 0, treeHit: 0, hurt: 0, eid: 0, killed: 0, t0: Date.now(), over: false, last: performance.now(), id: 0, spawned: 0, banner: null, shake: 0, pk: { dmg: 0, rate: 0, rng: 0, int: 0, bot: 0, pw: 0, cri: 0, bar: 0, esp: 0, esc: 0, bel: 0, ven: 0 }, picked: [], chests: [], ev: [], ct: 6, et: 7, mt: 9, choosing: false };
+  const st = { lives: LMAX, seeds: Math.round((140 + tdMeta('semillas') * 25 + D.sb * 40 + (INF ? 0 : Math.min(MI, 150) * 1.2)) * (mk === 'pobre' ? 0.55 : 1)), wave: 0, phase: 'build', countdown: 0, queue: [], spawnT: 0, en: [], tw: [], pr: [], parts: [], floats: [], rings: [], bolts: [], fly: [], wx: [], t: 0, speed: 1, sel: null, build: null, aim: null, cd: { a: 0, r: 0, trueno: 0, helada: 0, cosecha: 0 }, rush: 0, treeHit: 0, hurt: 0, eid: 0, killed: 0, t0: Date.now(), over: false, last: performance.now(), id: 0, spawned: 0, banner: null, shake: 0, pk: { dmg: 0, rate: 0, rng: 0, int: 0, bot: 0, pw: 0, cri: 0, bar: 0, esp: 0, esc: 0, bel: 0, ven: 0 }, picked: [], chests: [], ev: [], ct: 6, et: 7, mt: 9, choosing: false };
   const dmgMul = () => 1 + tdMeta('dano') * 0.06 + st.pk.dmg;
   const rngMul = mk === 'niebla' ? 0.85 : 1;
   const costOf = (k, l) => Math.round(TD_TW[k].cost[l] * (1 - tdMeta('barato') * 0.05 - st.pk.bar));
@@ -719,7 +719,7 @@ function tdStart(mi, daily) {
     e.hp -= amt; e.hit = 0.1; if (e.hp <= 0) kill(e);
   }
   function kill(e) {
-    if (e.dead) return; e.dead = true; const E = TD_EN[e.k]; const rew = Math.round(E.rew * (1 + (INF ? 0.3 : MI * 0.0025)) * (1 + tdMeta('botin') * 0.1 + st.pk.bot) * (mk === 'pobre' ? 1.4 : 1)); st.seeds += rew; st.killed++;
+    if (e.dead) return; e.dead = true; const E = TD_EN[e.k]; const rew = Math.round(E.rew * (1 + (INF ? 0.3 : MI * 0.004)) * (1 + tdMeta('botin') * 0.1 + st.pk.bot) * (mk === 'pobre' ? 1.4 : 1)); st.seeds += rew; st.killed++;
     puff(e.x, e.y, E.c, E.boss ? 50 : 9, E.boss ? 4.5 : 2.2); ring(e.x, e.y, E.boss ? 2.5 : 0.7, E.boss ? '#ffd23c' : 'rgba(255,255,255,.8)', E.boss ? 0.7 : 0.3); TDS.pop(E.boss);
     if (E.boss) { D.bossK[e.k] = 1; float(`¡${E.n} vencido! +${rew} 🌰`, e.x, e.y - 0.6, '#ffe066', true); st.shake = 0.8; st.flash = 0.5; vib([40, 40, 80]); }
     if (st.fly.length < 14) { const p = { x: V.ox + e.x * V.T, y: V.oy + e.y * V.T }; st.fly.push({ ...p, sx: p.x, sy: p.y, t: 0 }); }
