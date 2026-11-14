@@ -362,6 +362,7 @@ function gwPlay(level) {
     $('#gwNext').style.display = R.level >= GW_N() ? 'none' : ''; jgAnnounce(`Nivel ${R.level} superado con ${stars} estrellas`);
     setTimeout(() => { if (GW.run !== R) return; const o = $('#gwOver'); o.hidden = false; void o.offsetWidth; o.classList.add('show'); }, 1200);
     if (R.cleared % 5 === 0) post();
+    if (typeof gwAfterWin === 'function') { try { gwAfterWin(R, stars, mv, opt, prevS); } catch (err) { console.error(err); } }
   };
   const post = () => { if (R.cleared < 1 || R.posted === R.cleared) return; R.posted = R.cleared; jgPost({ game: 'gusano', score: R.score, level: Math.min(GW_N(), R.maxL), cleared: R.cleared, dur: Math.max(1, Math.round((Date.now() - R.t0) / 1000)) }).then((rec) => { const l = $('#gwRank'); if (rec && l && wrap.isConnected && rec.rankDay) l.textContent = `Hoy vas en el lugar #${rec.rankDay}`; }); };
   /* ---- ayudas: pista, aviso de camino sin salida y saltar nivel ---- */

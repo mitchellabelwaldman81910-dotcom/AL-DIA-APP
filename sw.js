@@ -1,6 +1,6 @@
 /* Cinnavia — service worker: funciona sin internet y manda avisos. */
-const VERSION = 'aldia-v7.61.0';
-const V = '?v=7.61.0';
+const VERSION = 'aldia-v7.62.0';
+const V = '?v=7.62.0';
 const SHELL = [
   './',
   './index.html',
@@ -47,7 +47,9 @@ const SHELL = [
   './a/juegos3.js' + V,
   './a/gusano-motor.js' + V,
   './a/gusano-niveles.js' + V,
+  './a/gusano-niveles2.js' + V,
   './a/gusano.js' + V,
+  './a/gusano-plus.js' + V,
   './a/guardian.js' + V,
   './a/dictado.js' + V,
   './a/pintura.js' + V,
@@ -61,6 +63,7 @@ const SHELL = [
   './a/plantilla.js' + V,
   './a/docente.js' + V,
   './a/aula.js' + V,
+  './a/aula-plus.js' + V,
   './a/libros.js' + V,
   './a/granbosque-arte.js' + V,
   './a/granbosque.js' + V,
@@ -85,7 +88,7 @@ const SHELL = [
   './a/mono.js' + V,
   './a/mono-tienda.js' + V,
   './a/cielo.js' + V,
-  './a/tycoon.js' + V,
+  './a/mina.js' + V,
   './a/sugerencias.js' + V,
   './a/naturaleza.js' + V,
   './icons/cinnavia.svg',
