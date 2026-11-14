@@ -39,7 +39,7 @@ function jgRankHTML(game) {
   const body = list ? (list.length ? pod + rest : `<p class="small muted" style="text-align:center;margin-top:14px">${C.none}</p>`)
     : S.fail ? '<p class="small muted" style="text-align:center;margin-top:14px">No se pudo cargar el ranking. Aparecerá cuando tengas conexión.</p>'
       : (typeof loaderHTML === 'function' ? loaderHTML('Cargando ranking…') : '');
-  return `<h2 class="sec">Ranking</h2><div class="seg full" role="group">${C.tabs.map(([k, l]) => `<button type="button" data-act="jg-tab" data-g="${game}" data-v="${k}" aria-pressed="${S.tab === k}">${l}</button>`).join('')}</div>${body}${mine}`;
+  return `<h2 class="sec">${C.title || 'Ranking'}</h2><div class="seg full" role="group">${C.tabs.map(([k, l]) => `<button type="button" data-act="jg-tab" data-g="${game}" data-v="${k}" aria-pressed="${S.tab === k}">${l}</button>`).join('')}</div>${body}${mine}`;
 }
 function jgRankPaint(game) { const b = document.getElementById(`jgRank-${game}`); if (b) b.innerHTML = jgRankHTML(game); }
 async function jgLoadRank(game) {

@@ -8,16 +8,29 @@
 
 const TD = { run: null, tab: 'mapas' };
 const TD_COLS = 9, TD_ROWS = 13;
-const tdData = () => { const d = jpData('torres'); d.st ||= {}; d.meta ||= {}; d.best ||= {}; d.inf ??= 0; d.day ||= {}; d.dayStars ??= 0; d.kills ??= 0; return d; };
+const tdData = () => {
+  const d = jpData('torres'); d.st ||= {}; d.meta ||= {}; d.best ||= {}; d.inf ??= 0; d.day ||= {}; d.dayStars ??= 0; d.kills ??= 0;
+  d.gold ??= 0; d.up ||= {}; d.pw ||= {}; d.skin ||= 'roble'; d.skins ||= { roble: 1 }; d.sb ??= 0; d.lf ??= 0; d.ach ||= {}; d.bossK ||= {}; d.wins ??= 0; d.days ??= 0;
+  if (!d.v4) { // de 30 mapas (5 por mundo) a 300 niveles (25 por mundo): se conservan tus estrellas
+    const old = d.st; const nst = {}; for (const k of Object.keys(old)) { const i = +k; if (i >= 0 && i < 30) nst[Math.floor(i / 5) * 25 + (i % 5)] = old[k]; } d.st = nst; d.v4 = 1;
+  }
+  return d;
+};
 
 /* ---------- mundos y mapas ---------- */
 const TD_WORLDS = [
-  { n: 'Pradera', g: ['#9bd56a', '#8fcb5f'], p: ['#e2c58f', '#cfae74'], deco: 'flor', bg: '#7fb94e', fx: 'hoja', boss: 'taladora' },
-  { n: 'Pantano', g: ['#7fb38a', '#74a880'], p: ['#9c8a6a', '#86765a'], deco: 'junco', bg: '#5f8f6a', fx: 'luciernaga', boss: 'sapo' },
-  { n: 'Nevado', g: ['#eef6fb', '#e2edf5'], p: ['#b9c9d6', '#a3b5c4'], deco: 'pino', bg: '#cfe1ee', fx: 'nieve', boss: 'golem' },
-  { n: 'Volcán', g: ['#6b4a3e', '#62443a'], p: ['#3a2a26', '#2e211d'], deco: 'lava', bg: '#4a3028', fx: 'brasa', boss: 'dragon' },
-  { n: 'Jardín encantado', g: ['#c9b6f0', '#bca8e8'], p: ['#f4d8ec', '#e8c2dc'], deco: 'cristal', bg: '#9f88d0', fx: 'petalo', boss: 'reina' },
-  { n: 'Reino de las nubes', g: ['#f4f8ff', '#e8f0fe'], p: ['#ffe08a', '#f2c95a'], deco: 'nube', bg: '#bcd6f8', fx: 'brillo', boss: 'tormenta' },
+  { n: 'Pradera', e: '🌼', g: ['#9bd56a', '#8fcb5f'], p: ['#e2c58f', '#cfae74'], deco: 'flor', bg: '#7fb94e', fx: 'hoja', boss: 'taladora' },
+  { n: 'Pantano', e: '🐸', g: ['#7fb38a', '#74a880'], p: ['#9c8a6a', '#86765a'], deco: 'junco', bg: '#5f8f6a', fx: 'luciernaga', boss: 'sapo' },
+  { n: 'Nevado', e: '❄️', g: ['#eef6fb', '#e2edf5'], p: ['#b9c9d6', '#a3b5c4'], deco: 'pino', bg: '#cfe1ee', fx: 'nieve', boss: 'golem' },
+  { n: 'Volcán', e: '🌋', g: ['#6b4a3e', '#62443a'], p: ['#3a2a26', '#2e211d'], deco: 'lava', bg: '#4a3028', fx: 'brasa', boss: 'dragon' },
+  { n: 'Jardín encantado', e: '🌸', g: ['#c9b6f0', '#bca8e8'], p: ['#f4d8ec', '#e8c2dc'], deco: 'cristal', bg: '#9f88d0', fx: 'petalo', boss: 'reina' },
+  { n: 'Reino de las nubes', e: '☁️', g: ['#f4f8ff', '#e8f0fe'], p: ['#ffe08a', '#f2c95a'], deco: 'nube', bg: '#bcd6f8', fx: 'brillo', boss: 'tormenta' },
+  { n: 'Desierto dorado', e: '🌵', g: ['#f0d9a0', '#e8cf92'], p: ['#c99a5a', '#b5864a'], deco: 'cactus', bg: '#e2c27f', fx: 'arena', boss: 'escorpion' },
+  { n: 'Costa de coral', e: '🐚', g: ['#f4e4b8', '#eedca8'], p: ['#7fc8e8', '#5fb4dc'], deco: 'concha', bg: '#8fd0ec', fx: 'burbuja', boss: 'cangrejo' },
+  { n: 'Selva profunda', e: '🌴', g: ['#4f9a4a', '#478f42'], p: ['#8a6a3a', '#7a5c30'], deco: 'liana', bg: '#2f6a34', fx: 'lluvia', boss: 'serpiente' },
+  { n: 'Bosque de otoño', e: '🍁', g: ['#e0a85a', '#d89c4c'], p: ['#a8744a', '#946440'], deco: 'calabaza', bg: '#c0783a', fx: 'hojao', boss: 'espantapajaros' },
+  { n: 'Noche de hongos', e: '🍄', g: ['#2e3550', '#293048'], p: ['#5a5070', '#4c4462'], deco: 'hongoluz', bg: '#1a2038', fx: 'luciernaga', boss: 'murcielago' },
+  { n: 'Cosmos', e: '🪐', g: ['#2a1f4a', '#251b42'], p: ['#8a7ad8', '#7a6ac8'], deco: 'astro', bg: '#140e2e', fx: 'estrella', boss: 'cometa' },
 ];
 const TD_HAND = [
   { n: 'Claro del bosque', w: 0, paths: [[[4, -1], [4, 3], [1, 3], [1, 7], [7, 7], [7, 10], [4, 10], [4, 12]]] },
@@ -32,10 +45,6 @@ const TD_HAND = [
   { n: 'Ríos de lava', w: 3, paths: [[[-1, 6], [2, 6], [2, 2], [6, 2], [6, 10], [3, 10], [3, 12]]] },
   { n: 'Tres puertas', w: 3, paths: [[[-1, 3], [2, 3], [2, 8], [4, 8], [4, 11]], [[4, -1], [4, 8]], [[9, 3], [6, 3], [6, 8], [4, 8]]] },
   { n: 'Corazón del volcán', w: 3, paths: [[[-1, 1], [7, 1], [7, 4], [1, 4], [1, 7], [7, 7], [7, 10], [2, 10], [2, 12]], [[9, 5], [8, 5], [8, 7], [7, 7]]] },
-];
-const TD_GEN_NAMES = [
-  ['Colina de tréboles', 'Valle de amapolas'], ['Ciénaga brumosa', 'Puente de lianas'], ['Lago congelado', 'Paso de la ventisca'], ['Grietas ardientes', 'Cráter dormido'],
-  ['Arco de cristal', 'Fuente de hadas', 'Laberinto de rosas', 'Bosque de lunas', 'Trono de las flores'], ['Escalera de nubes', 'Islas flotantes', 'Puente del arcoíris', 'Torres del viento', 'Palacio del cielo'],
 ];
 function tdGenPath(seed, two) {
   let s = seed; const r = () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
@@ -60,15 +69,68 @@ function tdGenPath(seed, two) {
   }
   return TD_HAND[0].paths;
 }
+const TD_PER_WORLD = 25;
+const TD_NAMES = [
+  [['Colina', 'Valle', 'Sendero', 'Prado', 'Loma', 'Campo', 'Arroyo', 'Huerto'], ['de tréboles', 'de amapolas', 'del conejo', 'de girasoles', 'soleado', 'del viento', 'de las abejas', 'de margaritas', 'escondido']],
+  [['Ciénaga', 'Puente', 'Charco', 'Laguna', 'Isla', 'Muelle', 'Remanso', 'Delta'], ['brumosa', 'de lianas', 'de nenúfares', 'del sapo', 'de juncos', 'verde', 'de las ranas', 'olvidado', 'de musgo']],
+  [['Lago', 'Paso', 'Glaciar', 'Cumbre', 'Cueva', 'Bosque', 'Valle', 'Ladera'], ['congelado', 'de la ventisca', 'de cristal', 'blanco', 'del yeti', 'de escarcha', 'del pingüino', 'polar', 'helado']],
+  [['Grietas', 'Cráter', 'Río', 'Cumbre', 'Fragua', 'Camino', 'Cueva', 'Paso'], ['ardientes', 'dormido', 'de magma', 'de ceniza', 'del fuego', 'de obsidiana', 'humeante', 'de brasas', 'rojo']],
+  [['Arco', 'Fuente', 'Laberinto', 'Bosque', 'Trono', 'Jardín', 'Torre', 'Puente'], ['de cristal', 'de hadas', 'de rosas', 'de lunas', 'de las flores', 'secreto', 'de mariposas', 'de lavanda', 'mágico']],
+  [['Escalera', 'Islas', 'Puente', 'Torres', 'Palacio', 'Camino', 'Plaza', 'Jardín'], ['de nubes', 'flotantes', 'del arcoíris', 'del viento', 'del cielo', 'de algodón', 'del sol', 'de plumas', 'celestial']],
+  [['Dunas', 'Oasis', 'Cañón', 'Ruinas', 'Templo', 'Paso', 'Valle', 'Mesa'], ['doradas', 'escondido', 'del sol', 'del escorpión', 'de arena', 'del camello', 'antiguas', 'de cactus', 'del espejismo']],
+  [['Playa', 'Arrecife', 'Bahía', 'Faro', 'Cueva', 'Muelle', 'Laguna', 'Isla'], ['de coral', 'de conchas', 'turquesa', 'del cangrejo', 'de perlas', 'de la marea', 'pirata', 'de estrellas de mar', 'azul']],
+  [['Templo', 'Río', 'Cascada', 'Puente', 'Claro', 'Ruinas', 'Sendero', 'Corazón'], ['de la selva', 'del jaguar', 'escondida', 'de lianas', 'del tucán', 'de helechos', 'perdidas', 'verde', 'salvaje']],
+  [['Huerto', 'Granero', 'Sendero', 'Bosque', 'Molino', 'Valle', 'Colina', 'Campo'], ['de calabazas', 'dorado', 'de hojas', 'rojizo', 'del espantapájaros', 'de castañas', 'de la cosecha', 'de manzanas', 'otoñal']],
+  [['Claro', 'Gruta', 'Sendero', 'Círculo', 'Bosque', 'Lago', 'Torre', 'Pantano'], ['de hongos', 'de luciérnagas', 'de la luna', 'de búhos', 'brillante', 'de sombras', 'nocturno', 'del murciélago', 'encantado']],
+  [['Órbita', 'Nebulosa', 'Anillos', 'Luna', 'Estación', 'Cinturón', 'Galaxia', 'Cometa'], ['de Saturno', 'violeta', 'de cristal', 'roja', 'estelar', 'de asteroides', 'espiral', 'perdido', 'del infinito']],
+];
+const tdRng = (seed) => { let s = seed | 0; return () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+/* caminos de distintas formas: zigzag, serpentina, espiral; volteados y en espejo */
+function tdGenShape(seed, style, two) {
+  const r = tdRng(seed), ri = (a, b) => a + Math.floor(r() * (b - a + 1));
+  if (style === 0) return tdGenPath(seed, two);
+  if (style === 1) { // serpentina horizontal
+    for (let t = 0; t < 30; t++) {
+      let y = ri(0, 2), left = r() < 0.5; const pts = [[left ? -1 : 9, y]]; let x;
+      while (y < 10) { x = left ? ri(6, 8) : ri(0, 2); pts.push([x, y]); y += ri(2, 3); if (y > 12) y = 12; pts.push([x, y]); left = !left; }
+      x = left ? ri(5, 7) : ri(1, 3); if (y <= 12) pts.push([x, y]);
+      const P = pts.filter((q, j, a) => !j || q[0] !== a[j - 1][0] || q[1] !== a[j - 1][1]); if (P.length >= 6) return two ? [P, ...tdGenPath(seed + 7, false).slice(0, 0)] : [P];
+    }
+    return tdGenPath(seed, two);
+  }
+  // espiral hacia adentro
+  const x0 = ri(0, 1), y0 = ri(0, 1), x1 = 8 - ri(0, 1), y1 = 12 - ri(0, 1), gap = 2;
+  const pts = [[-1, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0 + gap], [x1 - gap, y0 + gap], [x1 - gap, y1 - gap], [x0 + gap, y1 - gap], [x0 + gap, y0 + gap * 2 + ri(0, 1)]];
+  if (ri(0, 1)) pts.push([x1 - gap * 2, pts[pts.length - 1][1]]);
+  return [pts];
+}
+function tdXform(paths, mirror, flip) {
+  return paths.map((p) => p.map(([x, y]) => [mirror ? 8 - x : x, flip ? 12 - y : y]));
+}
 const TD_MAPS = (() => {
-  const out = [];
+  const out = []; const usedG = new Set(TD_HAND.map((m) => m.n));
   TD_WORLDS.forEach((W, wi) => {
-    TD_HAND.filter((m) => m.w === wi).forEach((m) => out.push(m));
-    TD_GEN_NAMES[wi].forEach((n, k) => { const idx = out.length; out.push({ n, w: wi, paths: tdGenPath(idx * 7919 + wi * 131 + k * 17, (k + wi) % 2 === 1 || wi >= 4) }); });
+    const hand = TD_HAND.filter((m) => m.w === wi).map((m) => ({ ...m })); const NM = TD_NAMES[wi]; const used = usedG;
+    const r = tdRng(wi * 9973 + 17);
+    for (let k = 0; k < TD_PER_WORLD; k++) {
+      let M;
+      if (k < hand.length) M = hand[k];
+      else {
+        let n; for (let t = 0; t < 99; t++) { n = `${NM[0][(r() * NM[0].length) | 0]} ${NM[1][(r() * NM[1].length) | 0]}`; if (!used.has(n)) break; } used.add(n);
+        const idx = wi * TD_PER_WORLD + k; const style = (k + wi) % 3 === 2 ? 2 : (k * 7 + wi) % 3 === 1 ? 1 : 0;
+        const two = style === 0 && (wi >= 4 ? k % 2 === 0 : k % 3 === 1);
+        M = { n, w: wi, paths: tdXform(tdGenShape(idx * 7919 + wi * 131 + k * 17, style, two), (idx * 3) % 2 === 1, style !== 0 && k % 4 === 3) };
+      }
+      const idx = out.length;
+      M.kind = k === TD_PER_WORLD - 1 ? 'final' : k % 8 === 6 ? 'jefes' : k % 7 === 3 ? 'sprint' : k % 9 === 5 ? 'asedio' : 'normal';
+      M.waves = M.kind === 'sprint' ? 8 : M.kind === 'jefes' ? 12 : M.kind === 'asedio' ? 30 : Math.min(26, 12 + Math.floor(Math.min(idx, 120) * 0.1)) + (M.kind === 'final' ? 4 : 0);
+      out.push(M);
+    }
   });
   return out;
 })();
-const tdWaves = (mi) => Math.min(30, 12 + Math.floor(mi * 0.7));
+const TD_KINDS = { normal: { e: '', n: 'Normal' }, sprint: { e: '⚡', n: 'Relámpago', d: 'Pocas oleadas, pero las plagas van más rápido.' }, jefes: { e: '👑', n: 'Desfile de jefes', d: 'Un jefe cada 4 oleadas, de cualquier mundo.' }, asedio: { e: '🏰', n: 'Asedio', d: '30 oleadas: aguanta hasta el final.' }, final: { e: '🐉', n: 'Gran final', d: 'Último nivel del mundo: dos jefes juntos.' } };
+const tdWaves = (mi) => TD_MAPS[mi].waves;
 
 /* ---------- enemigos ---------- */
 const TD_EN = {
@@ -153,14 +215,16 @@ const TD_TWISTS = {
   bendito: { e: '🌳', n: 'Árbol bendito', d: 'Recuperas 1 vida cada 3 oleadas superadas.' },
 };
 const TD_TW_KEYS = Object.keys(TD_TWISTS);
-(() => { // reparte los giros: ningún mapa repite la combinación de otro
-  const used = new Set();
-  TD_MAPS.forEach((M, i) => {
-    if (i === 0) { M.tw = []; return; }
-    if (i <= TD_TW_KEYS.length) { M.tw = [TD_TW_KEYS[(i - 1 + (i > 4 ? 0 : 0)) % TD_TW_KEYS.length]]; used.add(M.tw[0]); return; }
-    for (let s = 0; s < 200; s++) { const a = (i * 5 + s * 3) % TD_TW_KEYS.length, b = (i * 7 + 3 + s * 5) % TD_TW_KEYS.length; if (a === b) continue; const id = [a, b].sort().join('-'); if (used.has(id)) continue; used.add(id); M.tw = [TD_TW_KEYS[a], TD_TW_KEYS[b]]; break; }
-    if (!M.tw) M.tw = [TD_TW_KEYS[i % 12]];
-  });
+(() => { // reparte los giros: ningún nivel repite la combinación de otro
+  const K = TD_TW_KEYS, n = K.length; const sets = [];
+  for (let a = 0; a < n; a++) sets.push([K[a]]);
+  const pairs = [], trip = [];
+  for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) pairs.push([K[a], K[b]]);
+  for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) for (let c = b + 1; c < n; c++) trip.push([K[a], K[b], K[c]]);
+  const r = tdRng(4242); const shuf = (A) => { for (let i = A.length - 1; i > 0; i--) { const j = (r() * (i + 1)) | 0; [A[i], A[j]] = [A[j], A[i]]; } return A; };
+  const order = [[], ...sets, ...shuf(pairs), ...shuf(trip)];
+  TD_MAPS.forEach((M, i) => { M.tw = order[i] || ['lodo', 'portal', 'cofres', 'lluvia']; });
+  TD_MAPS[TD_MAPS.length - 1].tw = ['portal', 'meteoros', 'cofres', 'bendito'];
 })();
 const TD_THEMES = [
   { id: 'mixta', n: 'Plaga mixta', k: null, nm: 1, hm: 1, gm: 1 },
@@ -189,6 +253,59 @@ const TD_PERKS = [
   { id: 'bel', e: '🌰', n: 'Bellotas pesadas', d: 'La lluvia de bellotas hace 60 % más de daño', f: (p) => { p.bel += 0.6; } },
   { id: 'ven', e: '♻️', n: 'Reciclaje total', d: 'Al vender recuperas el 100 %', f: (p) => { p.ven = 1; } },
 ];
+
+/* ---------- v4: 6 mundos nuevos con sus jefes, tienda y logros ---------- */
+Object.assign(TD_EN, {
+  escorpion: { n: 'Escorpión rey', hp: 3000, sp: 0.45, rew: 330, r: 0.5, c: '#c8902a', armor: 0.25, boss: 1, lives: 8, pow: 'veneno', d: 'Jefe del Desierto: su aguijón paraliza dos torres.' },
+  cangrejo: { n: 'Cangrejo titán', hp: 3600, sp: 0.35, rew: 360, r: 0.5, c: '#e0503a', armor: 0.4, boss: 1, lives: 8, pow: 'escudo', d: 'Jefe de la Costa: se encierra en su caparazón y no recibe daño.' },
+  serpiente: { n: 'Serpiente esmeralda', hp: 3800, sp: 0.55, rew: 390, r: 0.5, c: '#2aa05a', boss: 1, lives: 9, pow: 'acelera', d: 'Jefe de la Selva: hace que todas las plagas corran.' },
+  espantapajaros: { n: 'Espantapájaros', hp: 4200, sp: 0.4, rew: 420, r: 0.5, c: '#c8a050', armor: 0.2, boss: 1, lives: 9, pow: 'invoca', d: 'Jefe del Otoño: llama a sus cuervos.' },
+  murcielago: { n: 'Murciélago sombra', hp: 4400, sp: 0.55, rew: 450, r: 0.5, c: '#5a4a7a', fly: 1, boss: 1, lives: 10, pow: 'apaga', d: 'Jefe de la Noche: un grito apaga las torres cercanas.' },
+  cometa: { n: 'Cometa errante', hp: 5200, sp: 0.5, rew: 500, r: 0.5, c: '#7ad0ff', fly: 1, armor: 0.3, boss: 1, lives: 10, pow: 'cura', d: 'Jefe del Cosmos: cura a todas las plagas.' },
+});
+const TD_BOSSES = TD_WORLDS.map((w) => w.boss);
+const tdDiff = (lvl) => (1 + Math.min(lvl, 40) * 0.09) * (1 + Math.max(0, lvl - 40) * 0.0065);
+/* tienda (se paga con hojas doradas 🍂 que ganas al superar niveles) */
+const TD_UPC = [25, 50, 90, 140, 200];
+const TD_POWERS = {
+  trueno: { e: '⚡', n: 'Trueno', d: 'Rayos caen sobre 12 plagas al azar.', cost: 120, cd: 40 },
+  helada: { e: '🧊', n: 'Gran helada', d: 'Congela a todas las plagas 3 segundos.', cost: 160, cd: 55 },
+  cosecha: { e: '🌾', n: 'Cosecha', d: 'Recibes semillas al instante.', cost: 100, cd: 50 },
+};
+const TD_SKINS = {
+  roble: { n: 'Roble', cost: 0, c: ['#2f8a40', '#4aaa5a', '#7a5232'], f: '#e8324a' },
+  cerezo: { n: 'Cerezo', cost: 80, c: ['#f2a8c8', '#ffc8dc', '#6a4232'], f: '#ffffff' },
+  otono: { n: 'Arce de otoño', cost: 120, c: ['#d8642a', '#f09a3a', '#6a4232'], f: '#ffd23c' },
+  nieve: { n: 'Pino nevado', cost: 120, c: ['#2f6a5a', '#e8f4ff', '#5a4232'], f: '#bfe3ff' },
+  dorado: { n: 'Árbol dorado', cost: 220, c: ['#e8b830', '#ffe066', '#8a6a2a'], f: '#fff6c8' },
+  cristal: { n: 'Árbol de cristal', cost: 260, c: ['#7ad0ff', '#c8f0ff', '#5a6a9a'], f: '#ff9ad8' },
+  arcoiris: { n: 'Árbol arcoíris', cost: 380, c: ['#ff6b6b', '#ffd23c', '#7a5232'], f: '#7ad0ff', rb: 1 },
+};
+const TD_BOOST = { sb: { n: 'Bolsa de semillas', d: '+40 semillas al empezar cada nivel', cost: [60, 120, 200] }, lf: { n: 'Corteza extra', d: '+2 vidas en cada nivel', cost: [80, 150, 250] } };
+const tdLvlsWon = () => Object.values(tdData().st).filter((v) => v > 0).length;
+const TD_ACH = [
+  { id: 'w1', n: 'Primer brote', d: 'Supera tu primer nivel', g: 10, t: (d) => tdLvlsWon() >= 1 },
+  { id: 'w10', n: 'Guardabosques', d: 'Supera 10 niveles', g: 25, t: () => tdLvlsWon() >= 10 },
+  { id: 'w25', n: 'Mundo salvado', d: 'Supera 25 niveles', g: 40, t: () => tdLvlsWon() >= 25 },
+  { id: 'w50', n: 'Medio centenar', d: 'Supera 50 niveles', g: 60, t: () => tdLvlsWon() >= 50 },
+  { id: 'w100', n: 'Leyenda del bosque', d: 'Supera 100 niveles', g: 120, t: () => tdLvlsWon() >= 100 },
+  { id: 'w200', n: 'Guardián eterno', d: 'Supera 200 niveles', g: 200, t: () => tdLvlsWon() >= 200 },
+  { id: 'w300', n: 'Los 300', d: 'Supera los 300 niveles', g: 500, t: () => tdLvlsWon() >= 300 },
+  { id: 's3x10', n: 'Perfeccionista', d: '3 estrellas en 10 niveles', g: 30, t: (d) => Object.values(d.st).filter((v) => v >= 3).length >= 10 },
+  { id: 's3x50', n: 'Estrella brillante', d: '3 estrellas en 50 niveles', g: 90, t: (d) => Object.values(d.st).filter((v) => v >= 3).length >= 50 },
+  { id: 'k1k', n: 'Fumigador', d: 'Vence 1,000 plagas', g: 20, t: (d) => d.kills >= 1000 },
+  { id: 'k10k', n: 'Exterminador', d: 'Vence 10,000 plagas', g: 60, t: (d) => d.kills >= 10000 },
+  { id: 'k50k', n: 'Plaga cero', d: 'Vence 50,000 plagas', g: 150, t: (d) => d.kills >= 50000 },
+  { id: 'b6', n: 'Cazajefes', d: 'Vence a 6 jefes distintos', g: 60, t: (d) => Object.keys(d.bossK).length >= 6 },
+  { id: 'b12', n: 'Rey de reyes', d: 'Vence a los 12 jefes', g: 150, t: (d) => Object.keys(d.bossK).length >= 12 },
+  { id: 'i20', n: 'Resistencia', d: 'Aguanta 20 oleadas en el modo infinito', g: 40, t: (d) => d.inf >= 20 },
+  { id: 'i50', n: 'Inquebrantable', d: 'Aguanta 50 oleadas en el modo infinito', g: 120, t: (d) => d.inf >= 50 },
+  { id: 'd7', n: 'Constancia', d: 'Gana 7 retos del día', g: 70, t: (d) => d.dayStars >= 7 },
+  { id: 'up', n: 'Torre de élite', d: 'Mejora una torre al máximo en la tienda', g: 40, t: (d) => Object.values(d.up).some((v) => v >= 5) },
+  { id: 'sk', n: 'A la moda', d: 'Compra un aspecto para el Gran Árbol', g: 20, t: (d) => Object.keys(d.skins).length >= 2 },
+  { id: 'pw', n: 'Poder total', d: 'Ten los 3 poderes de la tienda', g: 80, t: (d) => Object.keys(TD_POWERS).every((k) => d.pw[k]) },
+];
+function tdCheckAch() { const d = tdData(); const got = []; for (const a of TD_ACH) if (!d.ach[a.id] && a.t(d)) { d.ach[a.id] = 1; d.gold += a.g; got.push(a); } return got; }
 
 /* ---------- dibujos (se guardan en caché como imágenes) ---------- */
 function tdDrawTower(g, k, lvl, x, y, T, t = 0, aim = 0, spec = 0) {
@@ -283,6 +400,12 @@ function tdDrawEnemy(g, e, x, y, T, t) {
   else if (k === 'avispa') { g.translate(0, -9); g.fillStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.ellipse(-1, -5, 5, 2.5 + f2 * 2, -0.4, 0, 7); g.fill(); g.fillStyle = E.c; g.beginPath(); g.ellipse(0, 0, 6, 3.6, 0, 0, 7); g.fill(); g.fillStyle = '#2a1a05'; g.fillRect(-2, -3.5, 1.6, 7); g.fillRect(1.5, -3.2, 1.6, 6.4); g.beginPath(); g.moveTo(-6, 0); g.lineTo(-10, 1); g.lineTo(-6, 1.6); g.fill(); g.beginPath(); g.arc(5.5, -0.5, 2.2, 0, 7); g.fill(); g.fillStyle = '#ff3a3a'; g.beginPath(); g.arc(6.4, -1, 0.8, 0, 7); g.fill(); }
   else if (k === 'ladron') { g.fillStyle = 'rgba(0,0,0,.0)'; g.fillStyle = '#4a4a54'; g.beginPath(); g.ellipse(-8, 1, 6, 2.6, 0.2 + wob * 0.05, 0, 7); g.fill(); g.fillStyle = '#c8c8d2'; for (let i = 0; i < 3; i++) g.fillRect(-12 + i * 3.4, -1 + i * 0.2, 1.6, 4); g.fillStyle = E.c; g.beginPath(); g.ellipse(0, 0, 9, 6.5, 0, 0, 7); g.fill(); g.beginPath(); g.arc(8, -2, 5, 0, 7); g.fill(); g.fillStyle = '#2a2a30'; g.fillRect(5, -4.5, 7, 3.2); g.fillStyle = '#fff'; g.beginPath(); g.arc(8.5, -3, 0.9, 0, 7); g.fill(); g.fillStyle = '#2a2a30'; g.beginPath(); g.moveTo(5, -6); g.lineTo(6, -9.5); g.lineTo(8.5, -6.5); g.fill(); g.fillStyle = '#d8a02c'; g.beginPath(); g.arc(-1, 3, 3.2, 0, 7); g.fill(); g.fillStyle = '#ffe066'; g.fillRect(-1.5, 1.6, 1.2, 2.8); g.strokeStyle = '#2a2a30'; g.lineWidth = 1.4; for (const k2 of [-3, 2]) { g.beginPath(); g.moveTo(k2, 5); g.lineTo(k2 + wob, 9); g.stroke(); } }
   else if (k === 'ciempies') { g.strokeStyle = '#5a2a10'; g.lineWidth = 1.2; for (let i = 0; i < 6; i++) { const X = -12 + i * 4.6, Y = Math.sin(t * 7 + i + (e.id || 0)) * 1.6; g.beginPath(); g.moveTo(X, Y + 2); g.lineTo(X + wob * 0.4, Y + 8); g.moveTo(X, Y - 2); g.lineTo(X - wob * 0.4, Y - 8); g.stroke(); } for (let i = 0; i < 6; i++) { const X = -12 + i * 4.6, Y = Math.sin(t * 7 + i + (e.id || 0)) * 1.6; g.fillStyle = i % 2 ? '#a84a1a' : E.c; g.beginPath(); g.arc(X, Y, 4.2, 0, 7); g.fill(); } g.fillStyle = '#e8c070'; g.beginPath(); g.arc(13, 0, 4.6, 0, 7); g.fill(); g.fillStyle = '#1a1a1a'; g.beginPath(); g.arc(14.5, -1.6, 1, 0, 7); g.fill(); g.strokeStyle = '#6a2a0a'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(16, -3); g.lineTo(21, -7); g.moveTo(16, 1); g.lineTo(21, 4); g.stroke(); }
+  else if (k === 'escorpion') { g.fillStyle = '#a8701a'; for (const sy of [-1, 1]) for (let i = 0; i < 3; i++) { g.beginPath(); g.ellipse(-4 + i * 5, sy * 8, 2, 5, sy * 0.6, 0, 7); g.fill(); } g.fillStyle = E.c; g.beginPath(); g.ellipse(0, 0, 11, 7, 0, 0, 7); g.fill(); for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(-12 - i * 3.4, -2 - i * 3 - (i > 2 ? 2 : 0), 3.4 - i * 0.4, 0, 7); g.fill(); } g.fillStyle = '#5a2a0a'; g.beginPath(); g.moveTo(-22, -14); g.lineTo(-17, -16); g.lineTo(-19, -10); g.fill(); g.fillStyle = E.c; g.beginPath(); g.ellipse(14, -5, 5, 3, -0.4, 0, 7); g.ellipse(14, 5, 5, 3, 0.4, 0, 7); g.fill(); g.fillStyle = '#1a1a1a'; g.beginPath(); g.arc(8, -2, 1.3, 0, 7); g.arc(8, 2, 1.3, 0, 7); g.fill(); }
+  else if (k === 'cangrejo') { g.strokeStyle = '#a8302a'; g.lineWidth = 2; for (const sy of [-1, 1]) for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(-6 + i * 5, sy * 6); g.lineTo(-9 + i * 5 + wob, sy * 12); g.stroke(); } g.fillStyle = E.c; g.beginPath(); g.ellipse(0, 0, 13, 9, 0, 0, 7); g.fill(); g.fillStyle = '#ff8a6a'; g.beginPath(); g.ellipse(-2, -2, 7, 4, 0, 0, 7); g.fill(); g.fillStyle = E.c; g.beginPath(); g.arc(15, -9, 5, 0, 7); g.arc(15, 9, 5, 0, 7); g.fill(); g.fillStyle = '#fff4e8'; g.beginPath(); g.moveTo(17, -9); g.lineTo(21, -11); g.lineTo(19, -7); g.fill(); g.beginPath(); g.moveTo(17, 9); g.lineTo(21, 11); g.lineTo(19, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(8, -3, 2.2, 0, 7); g.arc(8, 3, 2.2, 0, 7); g.fill(); g.fillStyle = '#1a1a1a'; g.beginPath(); g.arc(8.6, -3, 1, 0, 7); g.arc(8.6, 3, 1, 0, 7); g.fill(); }
+  else if (k === 'serpiente') { g.lineCap = 'round'; g.strokeStyle = '#1a6a3a'; g.lineWidth = 10; g.beginPath(); for (let i = 0; i <= 8; i++) { const X = -20 + i * 4, Y = Math.sin(t * 6 + i * 0.9) * 4; if (i) g.lineTo(X, Y); else g.moveTo(X, Y); } g.stroke(); g.strokeStyle = E.c; g.lineWidth = 7; g.stroke(); g.fillStyle = '#ffe066'; for (let i = 1; i < 8; i += 2) { g.beginPath(); g.arc(-20 + i * 4, Math.sin(t * 6 + i * 0.9) * 4, 1.4, 0, 7); g.fill(); } g.fillStyle = E.c; g.beginPath(); g.ellipse(15, Math.sin(t * 6 + 9 * 0.9) * 2, 7, 5.5, 0, 0, 7); g.fill(); g.fillStyle = '#ffe066'; g.beginPath(); g.arc(17, -2, 1.6, 0, 7); g.fill(); g.fillStyle = '#1a1a1a'; g.fillRect(16.6, -3, 0.8, 2); g.strokeStyle = '#e8324a'; g.lineWidth = 1; g.lineCap = 'butt'; g.beginPath(); g.moveTo(22, 0); g.lineTo(26, 0); g.moveTo(26, 0); g.lineTo(28, -2); g.moveTo(26, 0); g.lineTo(28, 2); g.stroke(); }
+  else if (k === 'espantapajaros') { g.translate(0, -6); g.fillStyle = '#7a5232'; g.fillRect(-1.5, -6, 3, 22); g.fillRect(-14, -2, 28, 3); g.fillStyle = '#5a7a3a'; g.beginPath(); g.moveTo(-9, -3); g.lineTo(9, -3); g.lineTo(11, 12); g.lineTo(-11, 12); g.fill(); g.fillStyle = '#c84a3a'; g.fillRect(-4, 2, 3, 3); g.fillRect(3, 6, 3, 3); g.fillStyle = '#f0c870'; for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(sx * 14, -2); g.lineTo(sx * 18, -5 + wob); g.lineTo(sx * 18, 1); g.fill(); } g.fillStyle = '#f0d8a0'; g.beginPath(); g.arc(0, -11, 7, 0, 7); g.fill(); g.fillStyle = '#1a1a1a'; g.fillRect(-4, -13, 2.4, 2.4); g.fillRect(1.6, -13, 2.4, 2.4); g.strokeStyle = '#1a1a1a'; g.lineWidth = 1; g.beginPath(); g.moveTo(-3, -8); g.lineTo(3, -8); g.stroke(); g.fillStyle = '#6a4a2a'; g.beginPath(); g.ellipse(0, -17, 12, 2.5, 0, 0, 7); g.fill(); g.fillRect(-6, -24, 12, 7); }
+  else if (k === 'murcielago') { g.translate(0, -12); g.fillStyle = '#3a2a5a'; for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(0, -2); g.quadraticCurveTo(sx * 10, -14 * f2 - 4, sx * 22, -4); g.lineTo(sx * 17, 2); g.lineTo(sx * 13, -1); g.lineTo(sx * 9, 4); g.closePath(); g.fill(); } g.fillStyle = E.c; g.beginPath(); g.ellipse(0, 0, 7, 8, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(-5, -6); g.lineTo(-4, -12); g.lineTo(-1, -7); g.moveTo(5, -6); g.lineTo(4, -12); g.lineTo(1, -7); g.fill(); g.fillStyle = '#ff4a6a'; g.beginPath(); g.arc(-2.6, -2, 1.6, 0, 7); g.arc(2.6, -2, 1.6, 0, 7); g.fill(); g.fillStyle = '#fff'; g.fillRect(-2, 2, 1.2, 2); g.fillRect(1, 2, 1.2, 2); }
+  else if (k === 'cometa') { g.translate(0, -12); const gr = g.createLinearGradient(-30, 0, 4, 0); gr.addColorStop(0, 'rgba(122,208,255,0)'); gr.addColorStop(1, 'rgba(200,240,255,.9)'); g.fillStyle = gr; g.beginPath(); g.moveTo(2, -9); g.quadraticCurveTo(-18, -8 + wob, -32, -2); g.quadraticCurveTo(-18, 6, 2, 9); g.fill(); g.fillStyle = '#e8f8ff'; g.beginPath(); g.arc(4, 0, 10, 0, 7); g.fill(); g.fillStyle = E.c; g.beginPath(); g.arc(5, 0, 8, 0, 7); g.fill(); g.fillStyle = '#5ab0e8'; g.beginPath(); g.arc(8, -3, 2.2, 0, 7); g.arc(2, 4, 1.6, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(3, -2, 1.8, 0, 7); g.arc(8, 2, 1.4, 0, 7); g.fill(); }
   g.restore();
 }
 /* caché de imágenes: torres y enemigos ya dibujados (mucho más rápido en celulares) */
@@ -306,15 +429,42 @@ function tdHero() {
 }
 function viewTorres() {
   const d = tdData(); const tot = tdStarsTot(), free = tot - tdMetaSpent();
-  const tabs = [['mapas', 'Mapas'], ['raices', 'Raíces'], ['guia', 'Guía']];
+  const tabs = [['mapas', 'Niveles'], ['tienda', 'Tienda'], ['logros', 'Logros'], ['raices', 'Raíces'], ['guia', 'Guía']];
   const seg = `<div class="mz-tabs" role="group">${tabs.map(([k, l]) => `<button type="button" data-act="td-tab" data-v="${k}" aria-pressed="${TD.tab === k}">${l}</button>`).join('')}</div>`;
   let body = '';
   if (TD.tab === 'mapas') {
-    const dl = tdDaily(), done = d.day.done === tdToday();
-    body = `<div class="td-daily${done ? ' done' : ''}"><div><b>📅 Reto del día · ${TD_MAPS[dl.mi].n}</b><span>${dl.mod.n}: ${dl.mod.d}.</span><small>${done ? '¡Listo por hoy! Vuelve mañana.' : 'Gánalo para obtener una estrella dorada ⭐ para tus raíces.'}</small></div>${done ? '<span class="td-ok">✓</span>' : `<button type="button" class="btn primary" data-act="td-play" data-m="${dl.mi}" data-daily="1">Jugar</button>`}</div>`
-      + TD_WORLDS.map((W, wi) => { const ms = TD_MAPS.map((M, mi) => ({ M, mi })).filter((x) => x.M.w === wi); const got = ms.reduce((a, x) => a + (d.st[x.mi] || 0), 0); return `<h2 class="sec">${W.n} <span class="td-wst">★ ${got}/${ms.length * 3}</span></h2><div class="td-maps">${ms.map(({ M, mi }) => { const open = tdUnlocked(mi), s = d.st[mi] || 0; return `<button type="button" class="td-map${open ? '' : ' lock'}" data-act="td-play" data-m="${mi}" ${open ? '' : 'disabled'}><canvas width="90" height="130" data-tdmap="${mi}"></canvas><b>${mi + 1}. ${M.n}</b><span class="td-st">${[0, 1, 2].map((i) => `<i class="${i < s ? 'on' : ''}">★</i>`).join('')}</span><small>${open ? `${tdWaves(mi)} oleadas${M.paths.length > 1 ? ` · ${M.paths.length} entradas` : ''}` : '🔒 Supera el anterior'}</small>${open && M.tw && M.tw.length ? `<small class="td-tw2">${M.tw.map((k) => TD_TWISTS[k].e + ' ' + TD_TWISTS[k].n).join(' · ')}</small>` : ''}</button>`; }).join('')}</div>`; }).join('')
-      + `<h2 class="sec">Modo infinito</h2><div class="td-inf"><div><b>♾️ Oleadas sin fin</b><span class="small muted">${(d.st[TD_MAPS.length - 1] || 0) > 0 ? `Cada vez más difícil y con todos los jefes. Tu mejor: <b>${d.inf || 0}</b> oleadas.` : 'Se abre al superar el último mapa.'}</span></div><button type="button" class="btn primary" data-act="td-play" data-m="inf" ${(d.st[TD_MAPS.length - 1] || 0) > 0 ? '' : 'disabled'}>Jugar</button></div><div id="jgRank-torres">${jgRankHTML('torres')}</div>`;
-    setTimeout(tdPaintMaps, 0);
+    const dl = tdDaily(), done = d.day.done === tdToday(); const won = tdLvlsWon();
+    let nextL = 0; while (nextL < TD_MAPS.length - 1 && (d.st[nextL] || 0) > 0) nextL++;
+    if (TD.world == null) TD.world = TD_MAPS[nextL].w;
+    const wOpen = (wi) => tdUnlocked(wi * TD_PER_WORLD);
+    const worlds = `<div class="td-worlds" role="tablist">${TD_WORLDS.map((W, wi) => { const got = TD_MAPS.slice(wi * TD_PER_WORLD, (wi + 1) * TD_PER_WORLD).filter((_, k) => (d.st[wi * TD_PER_WORLD + k] || 0) > 0).length; return `<button type="button" class="td-wcard${TD.world === wi ? ' on' : ''}${wOpen(wi) ? '' : ' lock'}" data-act="td-world" data-w="${wi}" style="--g1:${W.g[0]};--g2:${W.bg};--p:${W.p[0]}" aria-pressed="${TD.world === wi}"><i>${wOpen(wi) ? W.e : '🔒'}</i><b>${W.n}</b><span>${got}/${TD_PER_WORLD}</span><em style="--k:${got / TD_PER_WORLD}"></em></button>`; }).join('')}</div>`;
+    const W = TD_WORLDS[TD.world]; const base = TD.world * TD_PER_WORLD;
+    // camino serpenteante de 25 niveles (5 por fila)
+    const nodes = []; for (let k = 0; k < TD_PER_WORLD; k++) { const row = Math.floor(k / 5), col = row % 2 ? 4 - (k % 5) : k % 5; nodes.push({ k, mi: base + k, x: 10 + col * 20, y: 10 + row * 20 }); }
+    const pathD = nodes.map((n, i) => `${i ? 'L' : 'M'}${n.x} ${n.y}`).join(' ');
+    const nodeHTML = nodes.map((n) => { const M = TD_MAPS[n.mi], s = d.st[n.mi] || 0, open = tdUnlocked(n.mi), cur = n.mi === nextL; return `<button type="button" class="td-node${s ? ' won' : ''}${open ? '' : ' lock'}${cur ? ' cur' : ''} k-${M.kind}" style="left:${n.x}%;top:${n.y}%" data-act="td-lvl" data-m="${n.mi}" ${open ? '' : 'aria-disabled="true"'} aria-label="Nivel ${n.mi + 1}: ${esc(M.n)}"><b>${open ? n.mi + 1 : '🔒'}</b>${M.kind !== 'normal' ? `<i class="td-nk">${TD_KINDS[M.kind].e}</i>` : ''}${s ? `<span class="td-ns">${'★'.repeat(s)}${'☆'.repeat(3 - s)}</span>` : ''}</button>`; }).join('');
+    body = `<div class="td-sum"><div><b>${won}</b><span>de 300 niveles</span></div><div><b>🍂 ${d.gold}</b><span>hojas doradas</span></div><div><b>⭐ ${tot}</b><span>estrellas</span></div></div>
+      <button type="button" class="td-continue" data-act="td-lvl" data-m="${nextL}" style="--g1:${TD_WORLDS[TD_MAPS[nextL].w].g[0]};--g2:${TD_WORLDS[TD_MAPS[nextL].w].bg}"><span>${won ? 'Continuar' : 'Empezar'}</span><b>Nivel ${nextL + 1} · ${esc(TD_MAPS[nextL].n)}</b><i>▶</i></button>
+      <div class="td-daily${done ? ' done' : ''}"><div><b>📅 Reto del día · nivel ${dl.mi + 1}</b><span>${dl.mod.n}: ${dl.mod.d}.</span><small>${done ? '¡Listo por hoy! Vuelve mañana.' : 'Gánalo: estrella dorada ⭐ y +15 🍂'}</small></div>${done ? '<span class="td-ok">✓</span>' : `<button type="button" class="btn primary" data-act="td-play" data-m="${dl.mi}" data-daily="1">Jugar</button>`}</div>
+      ${worlds}
+      <div class="td-wmap" style="--g1:${W.g[0]};--g2:${W.g[1]};--bg:${W.bg};--p:${W.p[0]};--p2:${W.p[1]}"><div class="td-wmap-h"><b>${W.e} ${W.n}</b><span>Jefe: ${TD_EN[W.boss].n}</span></div><div class="td-wmap-in"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${pathD}"/></svg>${nodeHTML}</div></div>
+      <h2 class="sec">Modo infinito</h2><div class="td-inf"><div><b>♾️ Oleadas sin fin</b><span class="small muted">${won >= 30 ? `El mundo cambia cada día y vienen todos los jefes. Tu mejor: <b>${d.inf || 0}</b> oleadas.` : `Se abre al superar 30 niveles (llevas ${won}).`}</span></div><button type="button" class="btn primary" data-act="td-play" data-m="inf" ${won >= 30 ? '' : 'disabled'}>Jugar</button></div>
+      <div class="td-ranks"><div id="jgRank-torresn">${jgRankHTML('torresn')}</div><div id="jgRank-torres">${jgRankHTML('torres')}</div></div>`;
+  } else if (TD.tab === 'tienda') {
+    const upRow = Object.entries(TD_TW).map(([k, w]) => { const l = d.up[k] || 0, max = l >= 5, c = TD_UPC[l]; const open = tdTowerOpen(k); return `<li class="td-shop-it"><canvas width="80" height="80" data-tdtw="${k}"></canvas><div><b>${w.n}</b><span class="td-pips">${[0, 1, 2, 3, 4].map((i) => `<i class="${i < l ? 'on' : ''}"></i>`).join('')}</span><small>+${l * 7} % daño · +${l * 2} % alcance</small></div>${max ? '<span class="mz-ok">Máximo</span>' : `<button type="button" class="btn${d.gold >= c && open ? ' primary' : ''}" data-act="td-buy" data-t="up" data-k="${k}" ${d.gold >= c && open ? '' : 'disabled'}>${open ? `🍂 ${c}` : '🔒'}</button>`}</li>`; }).join('');
+    const pwRow = Object.entries(TD_POWERS).map(([k, p]) => `<li class="td-shop-it"><span class="td-em">${p.e}</span><div><b>${p.n}</b><small>${p.d} Se recarga en ${p.cd} s.</small></div>${d.pw[k] ? '<span class="mz-ok">Tuyo</span>' : `<button type="button" class="btn${d.gold >= p.cost ? ' primary' : ''}" data-act="td-buy" data-t="pw" data-k="${k}" ${d.gold >= p.cost ? '' : 'disabled'}>🍂 ${p.cost}</button>`}</li>`).join('');
+    const skRow = Object.entries(TD_SKINS).map(([k, sk]) => { const own = d.skins[k], on = d.skin === k; return `<button type="button" class="td-skin${on ? ' on' : ''}" data-act="td-buy" data-t="skin" data-k="${k}" ${!own && d.gold < sk.cost ? 'disabled' : ''}><svg viewBox="0 0 60 60" aria-hidden="true"><rect x="26" y="34" width="8" height="20" rx="2" fill="${sk.c[2]}"/><circle cx="30" cy="24" r="16" fill="${sk.rb ? 'url(#tdRb)' : sk.c[0]}"/><circle cx="19" cy="31" r="10" fill="${sk.rb ? '#ffd23c' : sk.c[1]}"/><circle cx="41" cy="31" r="10" fill="${sk.rb ? '#4dabf7' : sk.c[1]}"/><circle cx="24" cy="20" r="2.6" fill="${sk.f}"/><circle cx="36" cy="28" r="2.6" fill="${sk.f}"/><defs><linearGradient id="tdRb"><stop offset="0" stop-color="#ff6b6b"/><stop offset=".5" stop-color="#69db7c"/><stop offset="1" stop-color="#9775fa"/></linearGradient></defs></svg><b>${sk.n}</b><span>${on ? 'Puesto' : own ? 'Poner' : `🍂 ${sk.cost}`}</span></button>`; }).join('');
+    const bRow = Object.entries(TD_BOOST).map(([k, b]) => { const l = d[k] || 0, max = l >= 3; return `<li class="td-shop-it"><span class="td-em">${k === 'sb' ? '🎒' : '🛡️'}</span><div><b>${b.n} · ${l}/3</b><small>${b.d}</small></div>${max ? '<span class="mz-ok">Máximo</span>' : `<button type="button" class="btn${d.gold >= b.cost[l] ? ' primary' : ''}" data-act="td-buy" data-t="boost" data-k="${k}" ${d.gold >= b.cost[l] ? '' : 'disabled'}>🍂 ${b.cost[l]}</button>`}</li>`; }).join('');
+    body = `<div class="td-wallet"><span>🍂</span><div><b>${d.gold}</b><small>hojas doradas · las ganas al superar niveles, retos y logros</small></div></div>
+      <h2 class="sec">Mejoras de torres</h2><ul class="td-shop">${upRow}</ul>
+      <h2 class="sec">Poderes nuevos</h2><ul class="td-shop">${pwRow}</ul>
+      <h2 class="sec">Aspecto del Gran Árbol</h2><div class="td-skins">${skRow}</div>
+      <h2 class="sec">Ayudas para cada nivel</h2><ul class="td-shop">${bRow}</ul>`;
+    setTimeout(tdPaintGuide, 0);
+  } else if (TD.tab === 'logros') {
+    const n = TD_ACH.filter((a) => d.ach[a.id]).length;
+    body = `<p class="page-sub" style="margin-top:12px">Logros: <b>${n}</b> de ${TD_ACH.length}. Cada uno te regala hojas doradas.</p><ul class="td-achs">${TD_ACH.map((a) => `<li class="${d.ach[a.id] ? 'on' : ''}"><span>${d.ach[a.id] ? '🏆' : '🔒'}</span><div><b>${a.n}</b><small>${a.d}</small></div><em>+${a.g} 🍂</em></li>`).join('')}</ul>
+      <p class="small muted" style="text-align:center">Plagas vencidas: <b>${(d.kills || 0).toLocaleString('es-MX')}</b> · Jefes distintos: <b>${Object.keys(d.bossK).length}</b>/12 · Victorias: <b>${d.wins || 0}</b></p>`;
   } else if (TD.tab === 'raices') {
     body = `<p class="page-sub" style="margin-top:12px">Cada estrella que ganas hace crecer las raíces de tu bosque: mejoras que duran para siempre.</p>
       <p class="small" style="text-align:center">Estrellas: <b>${tot}</b>${d.dayStars ? ` (${d.dayStars} doradas)` : ''} · disponibles: <b>⭐ ${free}</b></p>
@@ -331,7 +481,16 @@ function viewTorres() {
   }
   return `<section class="gm-home"><div class="gm-hero">${tdHero()}</div><h1 class="page-title gm-title">Defensa del Bosque</h1>
     <p class="page-sub">Las plagas quieren llegar al Gran Árbol. <b>Toca el pasto</b> para poner torres, <b>toca el camino</b> para poner trampas y <b>toca una torre</b> para mejorarla. Usa tus poderes en los momentos difíciles.</p>
-    <div class="mz-head"><span>⭐ <b>${tot}</b></span><span>Mapas <b>${Object.keys(d.st).filter((k) => d.st[k] > 0).length}</b>/${TD_MAPS.length}</span><span>Plagas vencidas <b>${(d.kills || 0).toLocaleString('es-MX')}</b></span></div>${seg}${body}</section>`;
+    <div class="mz-head"><span>🍂 <b>${d.gold}</b></span><span>Niveles <b>${tdLvlsWon()}</b>/${TD_MAPS.length}</span><span>Plagas vencidas <b>${(d.kills || 0).toLocaleString('es-MX')}</b></span></div>${seg}${body}</section>`;
+}
+function tdLevelSheet(mi) {
+  const d = tdData(), M = TD_MAPS[mi], W = TD_WORLDS[M.w], s = d.st[mi] || 0;
+  openSheet(`${sheetHead(`Nivel ${mi + 1}`)}<div class="sheet-body td-lsheet">
+    <div class="td-lhead"><canvas width="90" height="130" data-tdmap="${mi}"></canvas><div><b class="td-lname">${esc(M.n)}</b><span>${W.e} ${W.n}</span><span class="td-st">${[0, 1, 2].map((i) => `<i class="${i < s ? 'on' : ''}">★</i>`).join('')}</span><span>🌊 ${M.waves} oleadas${M.paths.length > 1 ? ` · ${M.paths.length} entradas` : ''}</span></div></div>
+    ${M.kind !== 'normal' ? `<div class="td-lrule kind"><i>${TD_KINDS[M.kind].e}</i><div><b>${TD_KINDS[M.kind].n}</b><span>${TD_KINDS[M.kind].d}</span></div></div>` : ''}
+    ${(M.tw || []).map((k) => `<div class="td-lrule"><i>${TD_TWISTS[k].e}</i><div><b>${TD_TWISTS[k].n}</b><span>${TD_TWISTS[k].d}</span></div></div>`).join('') || '<p class="small muted">Nivel clásico, sin reglas especiales.</p>'}
+    <button type="button" class="btn primary block" data-act="td-play" data-m="${mi}" style="margin-top:12px">${icon('play', 'sm')}${s ? 'Jugar otra vez' : 'Jugar'}</button></div>`);
+  setTimeout(tdPaintMaps, 20);
 }
 function tdPaintMaps() {
   document.querySelectorAll('canvas[data-tdmap]').forEach((cv) => { const mi = +cv.dataset.tdmap; const M = TD_MAPS[mi], W = TD_WORLDS[M.w]; const g = cv.getContext('2d'); const T = 10; g.fillStyle = W.g[0]; g.fillRect(0, 0, 90, 130); g.strokeStyle = W.p[1]; g.lineWidth = 7; g.lineJoin = 'round'; g.lineCap = 'round'; for (const p of M.paths) { g.beginPath(); p.forEach(([x, y], i) => { const X = (x + 0.5) * T, Y = (y + 0.5) * T; if (i) g.lineTo(X, Y); else g.moveTo(X, Y); }); g.stroke(); } const e = M.paths[0][M.paths[0].length - 1]; g.fillStyle = '#2f8a40'; g.beginPath(); g.arc((e[0] + 0.5) * T, (e[1] + 0.5) * T, 7, 0, 7); g.fill(); });
@@ -340,10 +499,21 @@ function tdPaintGuide() {
   document.querySelectorAll('canvas[data-tdtw]').forEach((cv) => { const g = cv.getContext('2d'); g.clearRect(0, 0, 80, 80); tdDrawTower(g, cv.dataset.tdtw, 3, 40, 40, 60, 1); });
   document.querySelectorAll('canvas[data-tden]').forEach((cv) => { const g = cv.getContext('2d'); g.clearRect(0, 0, 80, 80); const b = TD_EN[cv.dataset.tden].boss; tdDrawEnemy(g, { k: cv.dataset.tden, id: 1, dir: 1 }, 40, b ? 50 : 46, b ? 34 : 56, 1); });
 }
-JG_CFG.torres = { tabs: [['dia', 'Hoy'], ['semana', 'Semana'], ['record', 'Récord'], ['manzanas', 'Partidas']], val: (x, t) => (t === 'manzanas' ? plural(x.apples, 'partida', 'partidas') : `${x.score} oleadas`), mine: (m) => `Tu mejor: <b>${m.best || 0} oleadas</b> · partidas: <b>${m.games || 0}</b>`, none: 'Aún nadie juega el modo infinito en este periodo.' };
+JG_CFG.torresn = { title: 'Ranking · niveles superados', tabs: [['dia', 'Hoy'], ['semana', 'Semana'], ['record', 'Total']], val: (x) => `${x.score} niveles`, mine: (m) => `Tu progreso: <b>${m.best || 0} niveles</b>`, none: 'Aún nadie ha superado niveles en este periodo.' };
+JG_CFG.torres = { title: 'Ranking · modo infinito', tabs: [['dia', 'Hoy'], ['semana', 'Semana'], ['record', 'Récord'], ['manzanas', 'Partidas']], val: (x, t) => (t === 'manzanas' ? plural(x.apples, 'partida', 'partidas') : `${x.score} oleadas`), mine: (m) => `Tu mejor: <b>${m.best || 0} oleadas</b> · partidas: <b>${m.games || 0}</b>`, none: 'Aún nadie juega el modo infinito en este periodo.' };
 Object.assign(VIDA_ACTS, {
   'td-tab': (el) => { TD.tab = el.dataset.v; render(); },
-  'td-play': (el) => tdStart(el.dataset.m === 'inf' ? 'inf' : +el.dataset.m, !!el.dataset.daily),
+  'td-world': (el) => { const w = +el.dataset.w; if (!tdUnlocked(w * TD_PER_WORLD)) { toast(`Supera el último nivel de ${TD_WORLDS[w - 1].n} para abrir este mundo.`); return; } TD.world = w; render(); },
+  'td-lvl': (el) => { const mi = +el.dataset.m; if (!tdUnlocked(mi)) { toast('Supera el nivel anterior para abrir este.'); return; } tdLevelSheet(mi); },
+  'td-buy': (el) => {
+    const d = tdData(), t = el.dataset.t, k = el.dataset.k; let cost = 0;
+    if (t === 'up') { const l = d.up[k] || 0; if (l >= 5) return; cost = TD_UPC[l]; if (d.gold < cost) return; d.gold -= cost; d.up[k] = l + 1; }
+    else if (t === 'pw') { if (d.pw[k]) return; cost = TD_POWERS[k].cost; if (d.gold < cost) return; d.gold -= cost; d.pw[k] = 1; }
+    else if (t === 'skin') { if (d.skins[k]) { d.skin = k; jpSave(); TDS.init(); TDS.tone(880, 0.08, 'triangle', 0.04); render(); return; } cost = TD_SKINS[k].cost; if (d.gold < cost) return; d.gold -= cost; d.skins[k] = 1; d.skin = k; }
+    else if (t === 'boost') { const l = d[k] || 0; if (l >= 3) return; cost = TD_BOOST[k].cost[l]; if (d.gold < cost) return; d.gold -= cost; d[k] = l + 1; }
+    const ach = tdCheckAch(); jpSave(); TDS.init(); TDS.spec(); toast(ach.length ? `¡Comprado! Logro: ${ach.map((a) => a.n).join(', ')}` : '¡Comprado!'); render();
+  },
+  'td-play': (el) => { if (typeof closeSheet === 'function' && document.querySelector('.sheet.open, dialog[open]')) closeSheet(false); tdStart(el.dataset.m === 'inf' ? 'inf' : +el.dataset.m, !!el.dataset.daily); },
   'td-meta': (el) => { const m = TD_META.find((x) => x.id === el.dataset.id); const l = tdMeta(m.id); if (l >= m.max) return; if (tdStarsTot() - tdMetaSpent() < tdMetaCost(l)) return; tdData().meta[m.id] = l + 1; jpSave(); TDS.init(); TDS.up(); render(); },
   'td-meta-reset': () => { tdData().meta = {}; jpSave(); render(); },
 });
@@ -375,7 +545,7 @@ const TDS = {
   lose() { [7, 4, 0, -5].forEach((s, i) => this.tone(330 * Math.pow(2, s / 12), 0.5, 'triangle', 0.05, 0, i * 0.2)); },
   tickMusic(on, wi) {
     const ac = this.ac; if (!ac || !on || !this.music) { if (ac) this.nb = Math.max(this.nb, ac.currentTime); return; }
-    const sc = [[262, 330, 392, 440], [220, 262, 330, 392], [294, 370, 440, 494], [196, 233, 294, 349], [247, 311, 370, 415], [330, 415, 494, 554]][wi % 6];
+    const sc = [[262, 330, 392, 440], [220, 262, 330, 392], [294, 370, 440, 494], [196, 233, 294, 349], [247, 311, 370, 415], [330, 415, 494, 554], [220, 277, 330, 415], [262, 311, 392, 466], [196, 247, 294, 370], [233, 294, 349, 440], [208, 247, 311, 370], [277, 349, 415, 523]][wi % 12];
     while (this.nb < ac.currentTime + 0.3) { const s = this.beat % 16, t = this.nb - ac.currentTime; if (s % 8 === 0) this.tone(sc[0] / 2, 1.5, 'sine', 0.02, 0, t); if (s % 2 === 0) this.tone(sc[[0, 2, 1, 3, 2, 1, 3, 0][(s / 2) | 0]] * 2, 0.25, 'triangle', 0.008, 0, t); this.nb += 0.22; this.beat++; }
   },
 };
@@ -383,7 +553,8 @@ const TDS = {
 /* ---------- la partida ---------- */
 function tdStart(mi, daily) {
   if (TD.run) return; TDS.init();
-  const D = tdData(); const INF = mi === 'inf'; const MI = INF ? TD_MAPS.length - 1 : mi; const M = TD_MAPS[MI], W = TD_WORLDS[M.w];
+  const D = tdData(); const INF = mi === 'inf'; const MI = INF ? (new Date().getDate() % TD_WORLDS.length) * TD_PER_WORLD + 10 : mi; const M = INF ? { ...TD_MAPS[MI], tw: [], kind: 'normal' } : TD_MAPS[MI], W = TD_WORLDS[M.w];
+  const PW = Object.keys(TD_POWERS).filter((k) => D.pw[k]); const SKIN = TD_SKINS[D.skin] || TD_SKINS.roble;
   const MOD = daily ? tdDaily().mod : null; const mk = MOD ? MOD.k : '';
   const WAVES = INF ? Infinity : tdWaves(MI);
   const wrap = document.createElement('div'); wrap.className = 'gl-stage td-stage';
@@ -391,7 +562,7 @@ function tdStart(mi, daily) {
     <div class="td-top"><button class="gm-x" id="tdX" aria-label="Salir">${icon('x')}</button><span class="td-pill" id="tdLp">❤️ <b id="tdL">20</b></span><span class="td-pill" id="tdSp2">🌰 <b id="tdS">0</b></span><span class="td-pill td-w">🌊 <b id="tdW">0</b>${INF ? '' : `/${WAVES}`}</span><button class="td-btn" id="tdSp" aria-label="Velocidad">1×</button><button class="td-btn" id="tdPa" aria-label="Pausa">❚❚</button></div>
     <div class="td-perks" id="tdPk"></div>
     <div class="td-panel" id="tdPanel" hidden></div>
-    <div class="td-bot"><button class="td-pow" id="tdP1" aria-label="Lluvia de bellotas">🌰<i></i></button><button class="td-pow" id="tdP2" aria-label="Raíces">🌿<i></i></button><span class="td-hint" id="tdHint"></span><button class="btn primary td-next" id="tdNext">▶ Empezar</button></div>
+    <div class="td-bot${PW.length ? ' many' : ''}"><button class="td-pow" id="tdP1" aria-label="Lluvia de bellotas">🌰<i></i></button><button class="td-pow" id="tdP2" aria-label="Raíces">🌿<i></i></button>${PW.map((k) => `<button class="td-pow td-pow-x" data-pw="${k}" aria-label="${TD_POWERS[k].n}">${TD_POWERS[k].e}<i></i></button>`).join('')}<span class="td-hint" id="tdHint"></span><button class="btn primary td-next" id="tdNext">▶ Empezar</button></div>
     <div class="gl-over" id="tdPause" hidden><b>Pausa</b><div class="btn-row" style="justify-content:center;flex-wrap:wrap"><button class="btn primary" id="tdGo">${icon('play')}Seguir</button><button class="btn" id="tdMus">Música: ${TDS.music ? 'sí' : 'no'}</button><button class="btn" id="tdRe">Reiniciar</button><button class="btn" id="tdOut">Salir</button></div></div>
     <div class="gl-over td-end" id="tdEnd" hidden></div>
     <div class="gl-over td-perk" id="tdPerk" hidden></div>`;
@@ -436,7 +607,7 @@ function tdStart(mi, daily) {
     const bgr = q.createLinearGradient(0, 0, 0, V.h); bgr.addColorStop(0, W.bg); bgr.addColorStop(1, W.g[1]); q.fillStyle = bgr; q.fillRect(0, 0, V.w, V.h);
     for (let y = 0; y < TD_ROWS; y++) for (let x = 0; x < TD_COLS; x++) { q.fillStyle = (x + y) % 2 ? W.g[0] : W.g[1]; q.fillRect(V.ox + x * T, V.oy + y * T, T, T); }
     let s2 = 7 + MI; const r2 = () => { s2 = (s2 * 16807) % 2147483647; return s2 / 2147483647; };
-    for (let i = 0; i < 160; i++) { const x = V.ox + r2() * TD_COLS * T, y = V.oy + r2() * TD_ROWS * T; q.fillStyle = W.deco === 'pino' || W.deco === 'nube' ? 'rgba(255,255,255,.7)' : 'rgba(0,0,0,.07)'; q.fillRect(x, y, 2, 2); if (W.deco === 'flor' && r2() < 0.25) { q.fillStyle = ['#fff', '#ffd23c', '#ff8fab'][i % 3]; q.beginPath(); q.arc(x, y, 1.6, 0, 7); q.fill(); } }
+    for (let i = 0; i < 160; i++) { const x = V.ox + r2() * TD_COLS * T, y = V.oy + r2() * TD_ROWS * T; q.fillStyle = W.deco === 'pino' || W.deco === 'nube' || W.deco === 'astro' || W.deco === 'hongoluz' ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.07)'; q.fillRect(x, y, 2, 2); if (W.deco === 'flor' && r2() < 0.25) { q.fillStyle = ['#fff', '#ffd23c', '#ff8fab'][i % 3]; q.beginPath(); q.arc(x, y, 1.6, 0, 7); q.fill(); } }
     for (const p of PATHS) { q.strokeStyle = 'rgba(0,0,0,.15)'; q.lineWidth = T * 0.92; q.lineJoin = 'round'; q.lineCap = 'round'; q.beginPath(); p.P.forEach(([x, y], i) => { const X = V.ox + x * T, Y = V.oy + y * T + 2; if (i) q.lineTo(X, Y); else q.moveTo(X, Y); }); q.stroke(); }
     for (const p of PATHS) { q.lineJoin = 'round'; q.lineCap = 'round'; q.beginPath(); p.P.forEach(([x, y], i) => { const X = V.ox + x * T, Y = V.oy + y * T; if (i) q.lineTo(X, Y); else q.moveTo(X, Y); }); q.strokeStyle = W.p[1]; q.lineWidth = T * 0.86; q.stroke(); q.strokeStyle = W.p[0]; q.lineWidth = T * 0.7; q.stroke(); q.setLineDash([2, T * 0.45]); q.strokeStyle = 'rgba(0,0,0,.12)'; q.lineWidth = 3; q.stroke(); q.setLineDash([]); }
     mud.forEach((k) => { const X = V.ox + ((k % 100) + 0.5) * T, Y = V.oy + (Math.floor(k / 100) + 0.5) * T; q.fillStyle = 'rgba(80,50,25,.75)'; q.beginPath(); q.ellipse(X, Y, T * 0.4, T * 0.3, 0, 0, 7); q.fill(); q.fillStyle = 'rgba(140,100,60,.6)'; q.beginPath(); q.ellipse(X - T * 0.08, Y - T * 0.06, T * 0.2, T * 0.1, 0, 0, 7); q.fill(); });
@@ -449,6 +620,12 @@ function tdStart(mi, daily) {
       else if (W.deco === 'pino') { q.fillStyle = '#2f6a4a'; q.beginPath(); q.moveTo(X, Y - T * 0.45); q.lineTo(X - T * 0.32, Y + T * 0.25); q.lineTo(X + T * 0.32, Y + T * 0.25); q.fill(); q.fillStyle = '#fff'; q.beginPath(); q.moveTo(X, Y - T * 0.45); q.lineTo(X - T * 0.14, Y - T * 0.12); q.lineTo(X + T * 0.14, Y - T * 0.12); q.fill(); }
       else if (W.deco === 'lava') { q.fillStyle = d.k < 0.5 ? '#ff7a1f' : '#3a2a26'; q.beginPath(); q.ellipse(X, Y, T * 0.38, T * 0.28, 0, 0, 7); q.fill(); if (d.k < 0.5) { q.fillStyle = '#ffd23c'; q.beginPath(); q.ellipse(X - T * 0.06, Y - T * 0.04, T * 0.14, T * 0.08, 0, 0, 7); q.fill(); } }
       else if (W.deco === 'cristal') { q.fillStyle = d.k < 0.5 ? '#ff9ad8' : '#9ad8ff'; for (let k = -1; k <= 1; k++) { q.beginPath(); q.moveTo(X + k * T * 0.18, Y + T * 0.25); q.lineTo(X + k * T * 0.18 - T * 0.08, Y - T * 0.05); q.lineTo(X + k * T * 0.18, Y - T * (0.35 - Math.abs(k) * 0.12)); q.lineTo(X + k * T * 0.18 + T * 0.08, Y - T * 0.05); q.fill(); } }
+      else if (W.deco === 'cactus') { if (d.k < 0.55) { q.fillStyle = '#4a9a4a'; q.beginPath(); q.roundRect(X - T * 0.09, Y - T * 0.38, T * 0.18, T * 0.66, T * 0.09); q.fill(); q.beginPath(); q.roundRect(X - T * 0.3, Y - T * 0.2, T * 0.14, T * 0.3, T * 0.07); q.roundRect(X + T * 0.16, Y - T * 0.3, T * 0.14, T * 0.28, T * 0.07); q.fill(); q.fillStyle = '#ff8fab'; q.beginPath(); q.arc(X, Y - T * 0.4, T * 0.06, 0, 7); q.fill(); } else { q.fillStyle = '#c9a070'; q.beginPath(); q.ellipse(X, Y + T * 0.1, T * 0.36, T * 0.22, 0, 0, 7); q.fill(); q.fillStyle = '#dcb886'; q.beginPath(); q.ellipse(X - T * 0.06, Y + T * 0.04, T * 0.18, T * 0.1, 0, 0, 7); q.fill(); } }
+      else if (W.deco === 'concha') { if (d.k < 0.5) { q.fillStyle = '#ffb8a8'; q.beginPath(); q.moveTo(X, Y + T * 0.25); q.arc(X, Y + T * 0.05, T * 0.3, Math.PI, 0); q.closePath(); q.fill(); q.strokeStyle = '#e88a78'; q.lineWidth = 1.5; for (let k = -2; k <= 2; k++) { q.beginPath(); q.moveTo(X, Y + T * 0.25); q.lineTo(X + k * T * 0.12, Y - T * 0.2); q.stroke(); } } else { q.fillStyle = '#ff9a5a'; q.beginPath(); for (let k = 0; k < 10; k++) { const r = k % 2 ? T * 0.13 : T * 0.32, a = k * Math.PI / 5 - Math.PI / 2; q.lineTo(X + Math.cos(a) * r, Y + Math.sin(a) * r); } q.fill(); } }
+      else if (W.deco === 'liana') { q.fillStyle = d.k < 0.5 ? '#2f7a3a' : '#3a8a44'; for (let k = 0; k < 5; k++) { const a = k * 1.256 + d.k * 3; q.beginPath(); q.ellipse(X + Math.cos(a) * T * 0.18, Y + Math.sin(a) * T * 0.18, T * 0.26, T * 0.1, a, 0, 7); q.fill(); } q.fillStyle = '#ff6b9a'; q.beginPath(); q.arc(X, Y, T * 0.07, 0, 7); q.fill(); }
+      else if (W.deco === 'calabaza') { if (d.k < 0.5) { q.fillStyle = '#e8762a'; for (const k of [-1, 0, 1]) { q.beginPath(); q.ellipse(X + k * T * 0.12, Y + T * 0.05, T * 0.16, T * 0.24, 0, 0, 7); q.fill(); } q.fillStyle = '#4a7a2a'; q.fillRect(X - T * 0.03, Y - T * 0.28, T * 0.06, T * 0.1); } else { q.fillStyle = '#c84a2a'; for (let k = 0; k < 4; k++) { q.beginPath(); q.ellipse(X + (k - 1.5) * T * 0.14, Y + (k % 2) * T * 0.1, T * 0.12, T * 0.06, k, 0, 7); q.fill(); } } }
+      else if (W.deco === 'hongoluz') { const gr = q.createRadialGradient(X, Y - T * 0.1, 1, X, Y - T * 0.1, T * 0.5); gr.addColorStop(0, d.k < 0.5 ? 'rgba(120,230,255,.55)' : 'rgba(255,140,230,.5)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); q.fillStyle = gr; q.fillRect(X - T * 0.5, Y - T * 0.6, T, T); q.fillStyle = '#e8e0d0'; q.fillRect(X - T * 0.05, Y - T * 0.08, T * 0.1, T * 0.3); q.fillStyle = d.k < 0.5 ? '#6ae0ff' : '#ff8ae0'; q.beginPath(); q.ellipse(X, Y - T * 0.1, T * 0.24, T * 0.14, 0, Math.PI, 0); q.fill(); }
+      else if (W.deco === 'astro') { if (d.k < 0.5) { q.fillStyle = '#c8a0ff'; q.beginPath(); q.arc(X, Y, T * 0.22, 0, 7); q.fill(); q.strokeStyle = '#ffe08a'; q.lineWidth = 2; q.beginPath(); q.ellipse(X, Y, T * 0.4, T * 0.1, -0.4, 0, 7); q.stroke(); } else { q.fillStyle = '#6a6a8a'; q.beginPath(); q.arc(X, Y, T * 0.26, 0, 7); q.fill(); q.fillStyle = '#4a4a6a'; q.beginPath(); q.arc(X - T * 0.08, Y - T * 0.05, T * 0.07, 0, 7); q.arc(X + T * 0.1, Y + T * 0.08, T * 0.05, 0, 7); q.fill(); } }
       else { q.fillStyle = '#ffffff'; q.beginPath(); q.arc(X - T * 0.15, Y, T * 0.22, 0, 7); q.arc(X + T * 0.12, Y - T * 0.06, T * 0.26, 0, 7); q.arc(X + T * 0.05, Y + T * 0.1, T * 0.2, 0, 7); q.fill(); }
     }
     for (const p of M.paths) { const [x, y] = p[0]; const X = V.ox + (Math.max(-0.2, Math.min(TD_COLS - 0.8, x)) + 0.5) * T, Y = V.oy + (Math.max(-0.2, Math.min(TD_ROWS - 0.8, y)) + 0.5) * T; q.fillStyle = 'rgba(200,40,40,.4)'; q.beginPath(); q.arc(X, Y, T * 0.42, 0, 7); q.fill(); q.fillStyle = '#fff'; q.font = `900 ${Math.round(T * 0.4)}px system-ui`; q.textAlign = 'center'; q.textBaseline = 'middle'; q.fillText('!', X, Y + 1); }
@@ -456,8 +633,8 @@ function tdStart(mi, daily) {
   }
 
   /* --- estado --- */
-  const LMAX = 20 + tdMeta('vidas') * 2;
-  const st = { lives: LMAX, seeds: Math.round((140 + tdMeta('semillas') * 25) * (mk === 'pobre' ? 0.55 : 1)), wave: 0, phase: 'build', countdown: 0, queue: [], spawnT: 0, en: [], tw: [], pr: [], parts: [], floats: [], rings: [], bolts: [], fly: [], wx: [], t: 0, speed: 1, sel: null, build: null, aim: null, cd: { a: 0, r: 0 }, treeHit: 0, hurt: 0, eid: 0, killed: 0, t0: Date.now(), over: false, last: performance.now(), id: 0, spawned: 0, banner: null, shake: 0, pk: { dmg: 0, rate: 0, rng: 0, int: 0, bot: 0, pw: 0, cri: 0, bar: 0, esp: 0, esc: 0, bel: 0, ven: 0 }, picked: [], chests: [], ev: [], ct: 6, et: 7, mt: 9, choosing: false };
+  const LMAX = 20 + tdMeta('vidas') * 2 + D.lf * 2;
+  const st = { lives: LMAX, seeds: Math.round((140 + tdMeta('semillas') * 25 + D.sb * 40 + (INF ? 0 : Math.min(MI, 200) * 0.6)) * (mk === 'pobre' ? 0.55 : 1)), wave: 0, phase: 'build', countdown: 0, queue: [], spawnT: 0, en: [], tw: [], pr: [], parts: [], floats: [], rings: [], bolts: [], fly: [], wx: [], t: 0, speed: 1, sel: null, build: null, aim: null, cd: { a: 0, r: 0, trueno: 0, helada: 0, cosecha: 0 }, rush: 0, treeHit: 0, hurt: 0, eid: 0, killed: 0, t0: Date.now(), over: false, last: performance.now(), id: 0, spawned: 0, banner: null, shake: 0, pk: { dmg: 0, rate: 0, rng: 0, int: 0, bot: 0, pw: 0, cri: 0, bar: 0, esp: 0, esc: 0, bel: 0, ven: 0 }, picked: [], chests: [], ev: [], ct: 6, et: 7, mt: 9, choosing: false };
   const dmgMul = () => 1 + tdMeta('dano') * 0.06 + st.pk.dmg;
   const rngMul = mk === 'niebla' ? 0.85 : 1;
   const costOf = (k, l) => Math.round(TD_TW[k].cost[l] * (1 - tdMeta('barato') * 0.05 - st.pk.bar));
@@ -466,17 +643,17 @@ function tdStart(mi, daily) {
   const sellOf = (t) => Math.round(spentOf(t) * (st.pk.ven ? 1 : tdMeta('venta') ? 0.85 : 0.7));
   const pwF = () => 1 - Math.min(0.7, tdMeta('poder') * 0.12 + st.pk.pw); const cdA = () => 25 * pwF(), cdR = () => 35 * pwF();
   const towerAt = (x, y) => st.tw.find((t) => t.x === x && t.y === y);
-  const RNG = (t) => TD_TW[t.k].rng[t.lvl] * rngMul * (1 + st.pk.rng) * (fert.has(key(t.x, t.y)) ? 1.1 : 1) * (t.k === 'ardilla' && t.spec === 2 ? 1.5 : 1);
+  const RNG = (t) => TD_TW[t.k].rng[t.lvl] * rngMul * (1 + (D.up[t.k] || 0) * 0.02) * (1 + st.pk.rng) * (fert.has(key(t.x, t.y)) ? 1.1 : 1) * (t.k === 'ardilla' && t.spec === 2 ? 1.5 : 1);
   const recalcBuff = () => { for (const t of st.tw) { t.bm = 1; for (const a of st.tw) { if (a.k !== 'arbol' || a === t) continue; if (Math.hypot(a.x - t.x, a.y - t.y) <= TD_TW.arbol.rng[a.lvl] + 0.01) t.bm += TD_TW.arbol.buff[a.lvl] + (a.spec === 1 ? 0.6 : 0); } if (fert.has(key(t.x, t.y))) t.bm += 0.3; } };
   const float = (text, x, y, col, big) => { if (st.floats.length < 40) st.floats.push({ text, x, y, t: 0, col: col || '#fff', big }); };
   const puff = (x, y, col, n, sp = 2) => { const cap = low() ? 70 : 180; for (let i = 0; i < n && st.parts.length < cap; i++) { const a = Math.random() * 6.28, v = sp * (0.3 + Math.random()); st.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, l: 0.4 + Math.random() * 0.4, c: col, r: 1.5 + Math.random() * 2.5 }); } };
   const ring = (x, y, r1, col, T2 = 0.4) => { if (st.rings.length < 20) st.rings.push({ x, y, r1, col, t: 0, T: T2 }); };
   const vib = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch { /* */ } };
   // clima del mundo
-  for (let i = 0; i < (low() ? 8 : 22); i++) st.wx.push({ x: Math.random() * TD_COLS, y: Math.random() * TD_ROWS, s: 0.5 + Math.random(), ph: Math.random() * 6 });
+  for (let i = 0; i < (low() ? 8 : W.fx === 'lluvia' ? 40 : 22); i++) st.wx.push({ x: Math.random() * TD_COLS, y: Math.random() * TD_ROWS, s: 0.5 + Math.random(), ph: Math.random() * 6 });
 
   /* --- oleadas --- */
-  const BOSSES = ['taladora', 'sapo', 'golem', 'dragon', 'reina', 'tormenta'];
+  const BOSSES = TD_BOSSES;
   const lvlAt = (w) => (INF ? 15 + w * 0.5 : MI);
   function poolAt(w) {
     const lvl = lvlAt(w); const pool = [['escarabajo', 5]];
@@ -513,9 +690,10 @@ function tdStart(mi, daily) {
     for (let i = 0; i < n; i++) { q.push({ k: swarm && i % 2 ? swarm : pick(), t }); t += gap * (0.6 + Math.random() * 0.8); }
     const amb = TW.has('emboscada') && w % 3 === 0; if (amb) { for (let i = 0; i < 4 + Math.floor(w / 6); i++) q.push({ k: pick(), t: 3 + i * 0.8, mid: true }); q.sort((a, b) => a.t - b.t); }
     const every = mk === 'jefes' ? 5 : 10;
-    const boss = (!INF && ((w % every === 0 && w >= every) || w === WAVES)) || (INF && w >= 10 && w % 5 === 0);
-    if (boss) q.push({ k: INF ? BOSSES[(w / 5) % BOSSES.length] : TD_WORLDS[M.w].boss, t: t + 1.5 });
-    const hpMul = (1 + 0.13 * w + 0.009 * w * w) * (1 + Math.min(lvl, 40) * 0.09) * th.hm * (mk === 'enjambre' ? 0.55 : 1);
+    if (M.kind === 'jefes') { if (w % 4 === 0) q.push({ k: BOSSES[(w / 4 + MI) % (M.w + 1)], t: t + 1.5 }); }
+    else if (M.kind === 'final' && w === WAVES) { q.push({ k: TD_WORLDS[M.w].boss, t: t + 1.5 }); q.push({ k: BOSSES[(M.w + BOSSES.length - 1) % BOSSES.length], t: t + 5 }); }
+    else { const boss = (!INF && ((w % every === 0 && w >= every) || w === WAVES)) || (INF && w >= 10 && w % 5 === 0); if (boss) q.push({ k: INF ? BOSSES[(w / 5) % BOSSES.length] : TD_WORLDS[M.w].boss, t: t + 1.5 }); }
+    const hpMul = (1 + 0.13 * w + 0.009 * w * w) * tdDiff(lvl) * th.hm * (mk === 'enjambre' ? 0.55 : 1);
     return { q, hpMul, th, amb };
   }
   let WV = null;
@@ -533,7 +711,7 @@ function tdStart(mi, daily) {
   }
   const armorOf = (E) => Math.max(E.armor || 0, mk === 'blindados' && !E.boss ? 0.2 : 0);
   function damage(e, amt, pierce, t) {
-    if (e.dead || e.under) return; const E = TD_EN[e.k];
+    if (e.dead || e.under) return; const E = TD_EN[e.k]; if (e.inv > 0) { if (Math.random() < 0.08 && !low()) float('🛡️', e.x, e.y - 0.6, '#ffe066'); return; }
     const cc = tdMeta('critico') * 0.05 + st.pk.cri + (t && t.k === 'ardilla' && t.spec === 2 ? 0.25 : 0);
     if (cc && Math.random() < cc) { amt *= t && t.spec === 2 && t.k === 'ardilla' ? 3 : 2; if (!low()) float('¡Crítico!', e.x, e.y - 0.5, '#ffd23c'); TDS.crit(); }
     const ar = armorOf(E); if (ar && !pierce) amt *= 1 - ar;
@@ -541,9 +719,9 @@ function tdStart(mi, daily) {
     e.hp -= amt; e.hit = 0.1; if (e.hp <= 0) kill(e);
   }
   function kill(e) {
-    if (e.dead) return; e.dead = true; const E = TD_EN[e.k]; const rew = Math.round(E.rew * (1 + tdMeta('botin') * 0.1 + st.pk.bot) * (mk === 'pobre' ? 1.4 : 1)); st.seeds += rew; st.killed++;
+    if (e.dead) return; e.dead = true; const E = TD_EN[e.k]; const rew = Math.round(E.rew * (1 + (INF ? 0.3 : MI * 0.0025)) * (1 + tdMeta('botin') * 0.1 + st.pk.bot) * (mk === 'pobre' ? 1.4 : 1)); st.seeds += rew; st.killed++;
     puff(e.x, e.y, E.c, E.boss ? 50 : 9, E.boss ? 4.5 : 2.2); ring(e.x, e.y, E.boss ? 2.5 : 0.7, E.boss ? '#ffd23c' : 'rgba(255,255,255,.8)', E.boss ? 0.7 : 0.3); TDS.pop(E.boss);
-    if (E.boss) { float(`¡${E.n} vencido! +${rew} 🌰`, e.x, e.y - 0.6, '#ffe066', true); st.shake = 0.8; st.flash = 0.5; vib([40, 40, 80]); }
+    if (E.boss) { D.bossK[e.k] = 1; float(`¡${E.n} vencido! +${rew} 🌰`, e.x, e.y - 0.6, '#ffe066', true); st.shake = 0.8; st.flash = 0.5; vib([40, 40, 80]); }
     if (st.fly.length < 14) { const p = { x: V.ox + e.x * V.T, y: V.oy + e.y * V.T }; st.fly.push({ ...p, sx: p.x, sy: p.y, t: 0 }); }
     if (E.split) for (const o of (E.split === 3 ? [-0.35, 0, 0.35] : [-0.25, 0.25])) { const hp = Math.round(TD_EN.gusito.hp * (WV ? WV.hpMul : 1)); st.en.push({ id: ++st.eid, k: 'gusito', hp, max: hp, pi: e.pi, d: Math.max(0, e.d + o), slowT: 0, slowK: 0, dotT: 0, dotD: 0, rootT: 0, frz: 0, under: false, burT: 9, healT: 9, powT: 9, chT: 9, chg: 0, sh: 0, x: e.x, y: e.y, dir: e.dir, dead: false, hit: 0 }); }
     TDS.coin();
@@ -560,7 +738,7 @@ function tdStart(mi, daily) {
   function towerTick(t, dt) {
     if (t.born > 0) t.born -= dt;
     if (t.stun > 0) { t.stun -= dt; return; }
-    const K = TD_TW[t.k], L = t.lvl, mul = dmgMul() * (t.bm || 1), rng = RNG(t);
+    const K = TD_TW[t.k], L = t.lvl, mul = dmgMul() * (t.bm || 1) * (1 + (D.up[t.k] || 0) * 0.07), rng = RNG(t);
     if (K.support) return;
     if (t.k === 'trampa') { const cx = t.x + 0.5, cy = t.y + 0.5; for (const e of st.en) { if (e.dead || e.under || TD_EN[e.k].fly) continue; if (Math.hypot(e.x - cx, e.y - cy) <= 0.6) { damage(e, K.dps[L] * (t.spec === 2 ? 2 : 1) * mul * dt, false, t); if (t.spec === 1) { e.slowT = 0.3; e.slowK = Math.max(e.slowK, 0.45); } if (Math.random() < dt * 6 && !low()) puff(e.x, e.y, '#7aa83a', 1, 1); } } return; }
     if (t.k === 'pino' && t.spec === 2) { for (const e of st.en) if (!e.dead && dist(t, e) <= rng) { e.slowT = 0.25; e.slowK = Math.max(e.slowK, 0.4); } }
@@ -598,11 +776,17 @@ function tdStart(mi, daily) {
 
   /* --- jefes --- */
   function bossPower(e, dt) {
-    const E = TD_EN[e.k]; if (!E.pow) return; e.powT -= dt; if (e.powT > 0) return;
+    const E = TD_EN[e.k]; if (!E.pow) return; if (e.inv > 0) e.inv -= dt; e.powT -= dt; if (e.powT > 0) return;
     if (E.pow === 'salto') { e.powT = 4; e.d += 1.6; ring(e.x, e.y, 1.6, 'rgba(120,200,80,.9)', 0.5); st.shake = 0.3; TDS.bpow(); }
     else if (E.pow === 'hielo') { e.powT = 5; let n = 0; for (const t of st.tw) if (Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y) <= 2) { t.stun = 2.2; t.stunK = 'hielo'; n++; } ring(e.x, e.y, 2, 'rgba(180,230,255,.95)', 0.6); TDS.bpow(); if (n) float('¡Congeló tus torres!', e.x, e.y - 0.8, '#bfe3ff'); }
     else if (E.pow === 'fuego') { e.powT = 4; let b = null, bd = 3; for (const t of st.tw) { const dd = Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y); if (dd < bd) { bd = dd; b = t; } } if (b) { b.stun = 3; b.stunK = 'fuego'; st.bolts.push({ pts: [[e.x, e.y], [b.x + 0.5, b.y + 0.5]], t: 0, c: '#ff7a1f', w: 5 }); puff(b.x + 0.5, b.y + 0.5, '#ff7a1f', 14, 2.5); TDS.bpow(); } }
     else if (E.pow === 'cria') { e.powT = 3; for (let i = 0; i < 2; i++) { spawn('polilla'); const n = st.en[st.en.length - 1]; n.pi = e.pi; n.d = Math.max(0, e.d - 0.3 * i); n.hp = n.max = Math.round(TD_EN.polilla.hp * (WV ? WV.hpMul : 1) * 0.6); } TDS.bpow(); }
+    else if (E.pow === 'veneno') { e.powT = 5; const ts = st.tw.filter((t) => t.k !== 'trampa').sort((a, b) => Math.hypot(a.x + 0.5 - e.x, a.y + 0.5 - e.y) - Math.hypot(b.x + 0.5 - e.x, b.y + 0.5 - e.y)).slice(0, 2); for (const t of ts) { t.stun = 2; t.stunK = 'veneno'; st.bolts.push({ pts: [[e.x, e.y], [t.x + 0.5, t.y + 0.5]], t: 0, c: '#8ad83a', w: 3 }); } if (ts.length) TDS.bpow(); }
+    else if (E.pow === 'escudo') { e.powT = 6; e.inv = 1.8; ring(e.x, e.y, 1, 'rgba(255,220,90,.95)', 0.4); TDS.bpow(); }
+    else if (E.pow === 'acelera') { e.powT = 7; st.rush = 3; ring(e.x, e.y, 2.5, 'rgba(120,230,140,.9)', 0.6); float('¡Corran!', e.x, e.y - 0.8, '#9dff9d'); TDS.bpow(); }
+    else if (E.pow === 'cura') { e.powT = 6; for (const o of st.en) if (!o.dead) { o.hp = Math.min(o.max, o.hp + o.max * 0.12); } ring(e.x, e.y, 3, 'rgba(150,255,170,.9)', 0.6); puff(e.x, e.y, '#9dff9d', 14, 3); TDS.bpow(); }
+    else if (E.pow === 'invoca') { e.powT = 5; for (let i = 0; i < 3; i++) { spawn('cuervo'); const n = st.en[st.en.length - 1]; n.pi = e.pi; n.d = Math.max(0, e.d - 0.3 * i); n.hp = n.max = Math.round(TD_EN.cuervo.hp * (WV ? WV.hpMul : 1) * 0.5); } TDS.bpow(); }
+    else if (E.pow === 'apaga') { e.powT = 5.5; let n = 0; for (const t of st.tw) if (Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y) <= 2.2) { t.stun = 1.6; t.stunK = 'rayo'; n++; } ring(e.x, e.y, 2.2, 'rgba(170,120,255,.95)', 0.5); st.flash = 0.2; if (n) TDS.bpow(); }
     else if (E.pow === 'rayo') { e.powT = 4.5; const near = st.tw.filter((t) => Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y) <= 3); if (near.length) { const b = near[(Math.random() * near.length) | 0]; b.stun = 2.5; b.stunK = 'rayo'; st.bolts.push({ pts: [[e.x, e.y - 0.5], [(e.x + b.x + 0.5) / 2 + 0.3, (e.y + b.y) / 2], [b.x + 0.5, b.y + 0.5]], t: 0, c: '#ffe066', w: 4 }); st.flash = 0.3; TDS.bpow(); } }
   }
 
@@ -645,12 +829,12 @@ function tdStart(mi, daily) {
   /* --- paso de simulación --- */
   function step(dt) {
     st.t += dt; if (st.treeHit > 0) st.treeHit -= dt; if (st.hurt > 0) st.hurt -= dt; if (st.flash > 0) st.flash -= dt;
-    st.cd.a = Math.max(0, st.cd.a - dt); st.cd.r = Math.max(0, st.cd.r - dt);
+    st.cd.a = Math.max(0, st.cd.a - dt); st.cd.r = Math.max(0, st.cd.r - dt); for (const k of PW) st.cd[k] = Math.max(0, st.cd[k] - dt);
     if (st.banner) { st.banner.t += dt; if (st.banner.t > 2.4) st.banner = null; }
     if (st.over) return;
     if (st.phase === 'build' && st.wave > 0) { st.countdown -= dt; if (st.countdown <= 0) startWave(); }
     if (st.phase === 'wave') { st.spawnT += dt; while (st.queue.length && st.queue[0].t <= st.spawnT) { const o = st.queue.shift(); spawn(o.k, o.mid); } }
-    const spMod = mk === 'rapidos' ? 1.3 : 1;
+    const spMod = (mk === 'rapidos' ? 1.3 : 1) * (M.kind === 'sprint' ? 1.25 : 1); if (st.rush > 0) st.rush -= dt;
     for (const e of st.en) {
       if (e.dead) continue; const E = TD_EN[e.k];
       if (e.hit > 0) e.hit -= dt;
@@ -661,7 +845,7 @@ function tdStart(mi, daily) {
       if (E.heal) { e.healT -= dt; if (e.healT <= 0) { e.healT = 2.2; for (const o of st.en) if (!o.dead && o !== e && Math.hypot(o.x - e.x, o.y - e.y) < 1.3) o.hp = Math.min(o.max, o.hp + o.max * 0.12); ring(e.x, e.y, 1.3, 'rgba(160,255,160,.8)', 0.4); } }
       if (E.charge) { if (e.chg > 0) { e.chg -= dt; if (!low() && Math.random() < dt * 20) puff(e.x, e.y + 0.2, '#c8b89a', 1, 1); } else { e.chT -= dt; if (e.chT <= 0) { e.chg = 0.8; e.chT = 3 + Math.random() * 2.5; } } }
       if (E.boss) bossPower(e, dt);
-      let sp = E.sp * spMod * (1 - e.slowK) * (e.chg > 0 ? 3 : 1) * (1 - st.pk.esc);
+      let sp = E.sp * spMod * (st.rush > 0 && !E.boss ? 1.6 : 1) * (1 - e.slowK) * (e.chg > 0 ? 3 : 1) * (1 - st.pk.esc);
       if (mud.size && mud.has(key(Math.floor(e.x), Math.floor(e.y)))) sp *= 0.55;
       if (ZON && !E.fly) { const f = e.d / PATHS[e.pi].L; if (f > ZON.a && f < ZON.b) sp *= 1.7; }
       if (e.rootT > 0) { e.rootT -= dt; sp = 0; }
@@ -706,7 +890,7 @@ function tdStart(mi, daily) {
   }
   const stepFx = (dt) => {
     for (const f of st.fly) f.t += dt * 1.6; st.fly = st.fly.filter((f) => f.t < 1);
-    for (const p of st.wx) { const fx = W.fx; if (fx === 'hoja' || fx === 'petalo') { p.y += dt * 0.5 * p.s; p.x += Math.sin(st.t + p.ph) * dt * 0.4; } else if (fx === 'nieve') { p.y += dt * 0.7 * p.s; p.x += Math.sin(st.t * 0.8 + p.ph) * dt * 0.25; } else if (fx === 'brasa') { p.y -= dt * 0.6 * p.s; p.x += Math.sin(st.t * 2 + p.ph) * dt * 0.3; } else { p.x += Math.cos(st.t * 0.5 + p.ph) * dt * 0.2; p.y += Math.sin(st.t * 0.7 + p.ph) * dt * 0.2; }
+    for (const p of st.wx) { const fx = W.fx; if (fx === 'arena') { p.x += dt * 1.2 * p.s; p.y += Math.sin(st.t * 2 + p.ph) * dt * 0.2; } else if (fx === 'burbuja') { p.y -= dt * 0.5 * p.s; p.x += Math.sin(st.t * 2 + p.ph) * dt * 0.3; } else if (fx === 'lluvia') { p.y += dt * 5 * p.s; p.x -= dt * 0.8; } else if (fx === 'hoja' || fx === 'petalo' || fx === 'hojao') { p.y += dt * 0.5 * p.s; p.x += Math.sin(st.t + p.ph) * dt * 0.4; } else if (fx === 'nieve') { p.y += dt * 0.7 * p.s; p.x += Math.sin(st.t * 0.8 + p.ph) * dt * 0.25; } else if (fx === 'brasa') { p.y -= dt * 0.6 * p.s; p.x += Math.sin(st.t * 2 + p.ph) * dt * 0.3; } else { p.x += Math.cos(st.t * 0.5 + p.ph) * dt * 0.2; p.y += Math.sin(st.t * 0.7 + p.ph) * dt * 0.2; }
       if (p.y > TD_ROWS + 0.5) { p.y = -0.5; p.x = Math.random() * TD_COLS; } if (p.y < -0.5) { p.y = TD_ROWS + 0.5; p.x = Math.random() * TD_COLS; } if (p.x < -0.5) p.x = TD_COLS + 0.4; if (p.x > TD_COLS + 0.5) p.x = -0.4; }
   };
 
@@ -728,6 +912,11 @@ function tdStart(mi, daily) {
     const fx = W.fx, T = V.T;
     for (const p of st.wx) {
       const X = SX(p.x), Y = SY(p.y);
+      if (fx === 'arena') { g.fillStyle = 'rgba(200,160,90,.55)'; g.fillRect(X, Y, 2 + p.s * 4, 1.5); continue; }
+      if (fx === 'burbuja') { g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 1.2; g.beginPath(); g.arc(X, Y, 2 + p.s * 2.5, 0, 7); g.stroke(); continue; }
+      if (fx === 'lluvia') { g.strokeStyle = 'rgba(200,230,255,.55)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(X, Y); g.lineTo(X - 3, Y + T * 0.3); g.stroke(); continue; }
+      if (fx === 'hojao') { g.fillStyle = p.s > 1 ? 'rgba(220,90,30,.85)' : 'rgba(240,170,40,.85)'; g.save(); g.translate(X, Y); g.rotate(st.t * p.s + p.ph); g.beginPath(); g.ellipse(0, 0, T * 0.1, T * 0.06, 0, 0, 7); g.fill(); g.restore(); continue; }
+      if (fx === 'estrella') { const a = 0.3 + 0.6 * Math.max(0, Math.sin(st.t * 2.5 + p.ph * 3)); g.fillStyle = `rgba(255,250,220,${a})`; g.beginPath(); for (let i = 0; i < 8; i++) { const r = i % 2 ? 1 : 3.2, an = i * Math.PI / 4; g.lineTo(X + Math.cos(an) * r, Y + Math.sin(an) * r); } g.fill(); continue; }
       if (fx === 'hoja') { g.fillStyle = 'rgba(120,170,60,.75)'; g.save(); g.translate(X, Y); g.rotate(st.t * p.s + p.ph); g.beginPath(); g.ellipse(0, 0, T * 0.1, T * 0.05, 0, 0, 7); g.fill(); g.restore(); }
       else if (fx === 'petalo') { g.fillStyle = 'rgba(255,170,210,.8)'; g.save(); g.translate(X, Y); g.rotate(st.t * p.s + p.ph); g.beginPath(); g.ellipse(0, 0, T * 0.08, T * 0.05, 0, 0, 7); g.fill(); g.restore(); }
       else if (fx === 'nieve') { g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.arc(X, Y, 1.5 + p.s * 1.3, 0, 7); g.fill(); }
@@ -746,13 +935,13 @@ function tdStart(mi, daily) {
     // trampas (debajo de los enemigos)
     for (const t of st.tw) if (t.k === 'trampa') drawTowerSpr(t, SX(t.x + 0.5), SY(t.y + 0.5), 1);
     // el Gran Árbol
-    { const X = SX(tree[0] + 0.5), Y = SY(tree[1] + 0.5); const sh = st.treeHit > 0 ? Math.sin(st.t * 60) * 3 : 0; g.save(); g.translate(X + sh, Y); if (TW.has('bendito')) { g.fillStyle = 'rgba(255,240,150,.2)'; g.beginPath(); g.arc(0, -T * 0.2, T * 0.9 + Math.sin(st.t * 2) * 3, 0, 7); g.fill(); } g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(0, T * 0.42, T * 0.6, T * 0.15, 0, 0, 7); g.fill(); g.fillStyle = '#7a5232'; g.fillRect(-T * 0.12, -T * 0.1, T * 0.24, T * 0.52); const sw = Math.sin(st.t * 1.2) * T * 0.03; const hp = st.lives / LMAX; g.fillStyle = st.treeHit > 0 ? '#c84a3a' : hp > 0.5 ? '#2f8a40' : hp > 0.25 ? '#8a9a30' : '#a8702a'; for (const [a, b, r] of [[0, -0.42, 0.42], [-0.3, -0.2, 0.3], [0.3, -0.2, 0.3]]) { g.beginPath(); g.arc(a * T + sw, b * T, r * T, 0, 7); g.fill(); } g.fillStyle = 'rgba(255,255,255,.25)'; g.beginPath(); g.arc(-T * 0.12 + sw, -T * 0.55, T * 0.12, 0, 7); g.fill(); if (hp > 0.5) { g.fillStyle = '#e8324a'; for (const [a, b] of [[-0.2, -0.5], [0.15, -0.3], [0.3, -0.15]]) { g.beginPath(); g.arc(a * T + sw, b * T, T * 0.05, 0, 7); g.fill(); } } g.restore(); }
+    { const X = SX(tree[0] + 0.5), Y = SY(tree[1] + 0.5); const sh = st.treeHit > 0 ? Math.sin(st.t * 60) * 3 : 0; g.save(); g.translate(X + sh, Y); if (TW.has('bendito')) { g.fillStyle = 'rgba(255,240,150,.2)'; g.beginPath(); g.arc(0, -T * 0.2, T * 0.9 + Math.sin(st.t * 2) * 3, 0, 7); g.fill(); } g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(0, T * 0.42, T * 0.6, T * 0.15, 0, 0, 7); g.fill(); g.fillStyle = SKIN.c[2]; g.fillRect(-T * 0.12, -T * 0.1, T * 0.24, T * 0.52); const sw = Math.sin(st.t * 1.2) * T * 0.03; const hp = st.lives / LMAX; const RB = ['#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#4dabf7', '#9775fa']; [[0, -0.42, 0.42], [-0.3, -0.2, 0.3], [0.3, -0.2, 0.3]].forEach(([a, b, r], i) => { g.fillStyle = st.treeHit > 0 ? '#c84a3a' : SKIN.rb ? RB[(i * 2 + Math.floor(st.t * 2)) % 6] : hp > 0.25 ? (i ? SKIN.c[1] : SKIN.c[0]) : '#a8702a'; g.beginPath(); g.arc(a * T + sw, b * T, r * T, 0, 7); g.fill(); }); g.fillStyle = 'rgba(255,255,255,.25)'; g.beginPath(); g.arc(-T * 0.12 + sw, -T * 0.55, T * 0.12, 0, 7); g.fill(); if (hp > 0.5) { g.fillStyle = SKIN.f; for (const [a, b] of [[-0.2, -0.5], [0.15, -0.3], [0.3, -0.15]]) { g.beginPath(); g.arc(a * T + sw, b * T, T * 0.05, 0, 7); g.fill(); } } g.restore(); }
     // torres
     for (const t of st.tw) {
       if (t.k === 'trampa') { if (t === st.sel) { g.strokeStyle = '#ffd23c'; g.lineWidth = 2; g.strokeRect(SX(t.x) + 1, SY(t.y) + 1, T - 2, T - 2); } continue; }
       const kick = t.kick > 0 ? -t.kick * 8 : 0; const sc = t.born > 0 ? 1 + Math.sin((0.35 - t.born) / 0.35 * Math.PI) * 0.25 : 1;
       drawTowerSpr(t, SX(t.x + 0.5), SY(t.y + 0.5) + kick, sc);
-      if (t.stun > 0) { const X = SX(t.x + 0.5), Y = SY(t.y + 0.5); if (t.stunK === 'hielo') { g.fillStyle = 'rgba(190,235,255,.55)'; g.beginPath(); g.roundRect(X - T * 0.42, Y - T * 0.5, T * 0.84, T * 0.9, 6); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); } else if (t.stunK === 'fuego') { for (let i = 0; i < 3; i++) { const fx = X + (i - 1) * T * 0.22, f = Math.sin(st.t * 15 + i) * 3; g.fillStyle = 'rgba(255,120,30,.85)'; g.beginPath(); g.ellipse(fx, Y - T * 0.15 + f, T * 0.1, T * 0.22, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,220,80,.9)'; g.beginPath(); g.ellipse(fx, Y - T * 0.08 + f, T * 0.05, T * 0.11, 0, 0, 7); g.fill(); } } else { g.strokeStyle = '#ffe066'; g.lineWidth = 2; g.beginPath(); for (let i = 0; i < 5; i++) { const a = st.t * 20 + i; g.lineTo(X + Math.cos(a) * T * 0.35, Y - T * 0.1 + Math.sin(a * 1.7) * T * 0.35); } g.stroke(); } }
+      if (t.stun > 0) { const X = SX(t.x + 0.5), Y = SY(t.y + 0.5); if (t.stunK === 'veneno') { g.fillStyle = 'rgba(140,220,60,.45)'; g.beginPath(); g.roundRect(X - T * 0.42, Y - T * 0.5, T * 0.84, T * 0.9, 6); g.fill(); for (let i = 0; i < 3; i++) { g.fillStyle = 'rgba(180,255,90,.8)'; g.beginPath(); g.arc(X + (i - 1) * T * 0.2, Y - T * 0.3 - ((st.t * 1.5 + i * 0.3) % 1) * T * 0.4, 3, 0, 7); g.fill(); } } else if (t.stunK === 'hielo') { g.fillStyle = 'rgba(190,235,255,.55)'; g.beginPath(); g.roundRect(X - T * 0.42, Y - T * 0.5, T * 0.84, T * 0.9, 6); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); } else if (t.stunK === 'fuego') { for (let i = 0; i < 3; i++) { const fx = X + (i - 1) * T * 0.22, f = Math.sin(st.t * 15 + i) * 3; g.fillStyle = 'rgba(255,120,30,.85)'; g.beginPath(); g.ellipse(fx, Y - T * 0.15 + f, T * 0.1, T * 0.22, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,220,80,.9)'; g.beginPath(); g.ellipse(fx, Y - T * 0.08 + f, T * 0.05, T * 0.11, 0, 0, 7); g.fill(); } } else { g.strokeStyle = '#ffe066'; g.lineWidth = 2; g.beginPath(); for (let i = 0; i < 5; i++) { const a = st.t * 20 + i; g.lineTo(X + Math.cos(a) * T * 0.35, Y - T * 0.1 + Math.sin(a * 1.7) * T * 0.35); } g.stroke(); } }
       if (t === st.sel) { g.strokeStyle = '#ffd23c'; g.lineWidth = 2; g.strokeRect(SX(t.x) + 1, SY(t.y) + 1, T - 2, T - 2); }
     }
     // rayos de luciérnaga
@@ -772,6 +961,7 @@ function tdStart(mi, daily) {
       g.globalAlpha = 1;
       const R = T * E.r * (E.boss ? 1.9 : 1.25);
       if (e.hit > 0) { g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.arc(X, Y, R, 0, 7); g.fill(); }
+      if (e.inv > 0) { g.strokeStyle = 'rgba(255,220,90,.95)'; g.fillStyle = 'rgba(255,220,90,.25)'; g.lineWidth = 3; g.beginPath(); g.arc(X, Y - T * 0.1, R + 8, 0, 7); g.fill(); g.stroke(); }
       if (e.sh > 0) { g.strokeStyle = 'rgba(150,210,255,.9)'; g.fillStyle = 'rgba(150,210,255,.2)'; g.lineWidth = 2; g.beginPath(); g.arc(X, Y - T * 0.05, R + 4, 0, 7); g.fill(); g.stroke(); }
       if (e.frz > 0) { g.fillStyle = 'rgba(190,235,255,.55)'; g.beginPath(); g.arc(X, Y, R + 2, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1; g.stroke(); }
       else if (e.slowK > 0) { g.fillStyle = 'rgba(160,220,120,.32)'; g.beginPath(); g.arc(X, Y, R * 0.9, 0, 7); g.fill(); }
@@ -803,7 +993,7 @@ function tdStart(mi, daily) {
     const boss = st.en.find((e) => TD_EN[e.k].boss);
     if (boss) { const w = Math.min(V.w - 120, 240), x = (V.w - w) / 2, y = V.oy >= 90 ? V.oy - 22 : V.oy + 2; g.globalAlpha = 0.85; g.fillStyle = 'rgba(0,0,0,.55)'; g.beginPath(); g.roundRect(x - 4, y - 2, w + 8, 20, 7); g.fill(); g.fillStyle = '#3a1a1a'; g.fillRect(x, y + 10, w, 5); g.fillStyle = '#ff5a5a'; g.fillRect(x, y + 10, w * Math.max(0, boss.hp / boss.max), 5); g.fillStyle = '#fff'; g.font = '800 9px system-ui'; g.textAlign = 'center'; g.fillText(TD_EN[boss.k].n, V.w / 2, y + 7.5); g.globalAlpha = 1; }
     // letrero de oleada
-    if (st.banner) { const b = st.banner, k = b.t; const a = k < 0.3 ? k / 0.3 : k > 1.9 ? Math.max(0, (2.4 - k) / 0.5) : 1; const sc = k < 0.3 ? 0.6 + 0.4 * (k / 0.3) + Math.sin(k / 0.3 * Math.PI) * 0.15 : 1; g.save(); g.globalAlpha = a; g.translate(V.w / 2, V.oy + TD_ROWS * V.T * 0.38); g.scale(sc, sc); g.textAlign = 'center'; g.font = `900 ${Math.round(Math.min(44, V.w / 9))}px system-ui`; g.lineWidth = 6; g.strokeStyle = b.boss ? '#5a0a0a' : 'rgba(0,0,0,.6)'; g.strokeText(b.text, 0, 0); g.fillStyle = b.boss ? '#ffb0a0' : '#fff'; g.fillText(b.text, 0, 0); if (b.sub) { g.font = '800 16px system-ui'; g.lineWidth = 4; g.strokeText(b.sub, 0, 28); g.fillStyle = b.boss ? '#ffe066' : '#d8ffd0'; g.fillText(b.sub, 0, 28); } g.restore(); }
+    if (st.banner) { const b = st.banner, k = b.t; const a = k < 0.3 ? k / 0.3 : k > 1.9 ? Math.max(0, (2.4 - k) / 0.5) : 1; const sc = k < 0.3 ? 0.6 + 0.4 * (k / 0.3) + Math.sin(k / 0.3 * Math.PI) * 0.15 : 1; g.save(); g.globalAlpha = a; g.translate(V.w / 2, V.oy + TD_ROWS * V.T * 0.38); g.scale(sc, sc); g.textAlign = 'center'; const fit = (txt, px, wgt) => { g.font = `${wgt} ${px}px system-ui`; const w = g.measureText(txt).width; if (w > V.w * 0.9) g.font = `${wgt} ${Math.max(10, Math.floor(px * V.w * 0.9 / w))}px system-ui`; }; fit(b.text, Math.round(Math.min(40, V.w / 10)), 900); g.lineWidth = 6; g.lineJoin = 'round'; g.strokeStyle = b.boss ? '#5a0a0a' : 'rgba(0,0,0,.6)'; g.strokeText(b.text, 0, 0); g.fillStyle = b.boss ? '#ffb0a0' : '#fff'; g.fillText(b.text, 0, 0); if (b.sub) { fit(b.sub, 16, 800); g.lineWidth = 4; g.strokeText(b.sub, 0, 28); g.fillStyle = b.boss ? '#ffe066' : '#d8ffd0'; g.fillText(b.sub, 0, 28); } g.restore(); }
     if (st.hurt > 0) { const a = st.hurt / 0.6 * 0.45; const gr = g.createRadialGradient(V.w / 2, V.h / 2, Math.min(V.w, V.h) * 0.35, V.w / 2, V.h / 2, Math.max(V.w, V.h) * 0.7); gr.addColorStop(0, 'rgba(255,0,0,0)'); gr.addColorStop(1, `rgba(220,20,20,${a})`); g.fillStyle = gr; g.fillRect(0, 0, V.w, V.h); }
     if (st.flash > 0) { g.fillStyle = `rgba(255,255,255,${st.flash * 0.6})`; g.fillRect(0, 0, V.w, V.h); }
     if (st.aim) { g.fillStyle = 'rgba(0,0,0,.15)'; g.fillRect(0, 0, V.w, V.h); }
@@ -818,7 +1008,7 @@ function tdStart(mi, daily) {
     const nb = $w('#tdNext'); if (st.phase === 'build') { nb.hidden = false; nb.textContent = st.wave === 0 ? '▶ Empezar' : `▶ Siguiente · ${Math.ceil(st.countdown)}s`; } else nb.hidden = true;
     paintPow(); if (st.sel || st.build) refreshPanel();
   }
-  function paintPow() { const a = $w('#tdP1'), r = $w('#tdP2'); a.classList.toggle('on', st.aim === 'a'); r.classList.toggle('on', st.aim === 'r'); a.querySelector('i').style.height = `${st.cd.a / cdA() * 100}%`; r.querySelector('i').style.height = `${st.cd.r / cdR() * 100}%`; a.disabled = st.cd.a > 0; r.disabled = st.cd.r > 0; }
+  function paintPow() { wrap.querySelectorAll('[data-pw]').forEach((b) => { const k = b.dataset.pw, T0 = TD_POWERS[k].cd * pwF(); b.querySelector('i').style.height = `${st.cd[k] / T0 * 100}%`; b.disabled = st.cd[k] > 0 || st.over; }); const a = $w('#tdP1'), r = $w('#tdP2'); a.classList.toggle('on', st.aim === 'a'); r.classList.toggle('on', st.aim === 'r'); a.querySelector('i').style.height = `${st.cd.a / cdA() * 100}%`; r.querySelector('i').style.height = `${st.cd.r / cdR() * 100}%`; a.disabled = st.cd.a > 0; r.disabled = st.cd.r > 0; }
   const panel = $w('#tdPanel');
   const paintMini = () => panel.querySelectorAll('canvas[data-k]').forEach((cv) => { const q = cv.getContext('2d'); tdDrawTower(q, cv.dataset.k, +(cv.dataset.l || 0), 32, 36, 46, 1, -0.6, +(cv.dataset.s || 0)); });
   function openBuild(x, y, onPath) {
@@ -878,6 +1068,13 @@ function tdStart(mi, daily) {
   });
   $w('#tdP1').addEventListener('click', () => { TDS.init(); if (st.cd.a > 0) return; st.aim = st.aim === 'a' ? null : 'a'; closePanel(); hint(st.aim ? '🌰 Toca el lugar donde caerán las bellotas' : ''); paintPow(); });
   $w('#tdP2').addEventListener('click', () => { TDS.init(); if (st.cd.r > 0) return; st.aim = st.aim === 'r' ? null : 'r'; closePanel(); hint(st.aim ? '🌿 Toca dónde crecerán las raíces' : ''); paintPow(); });
+  wrap.querySelectorAll('[data-pw]').forEach((b) => b.addEventListener('click', () => {
+    TDS.init(); const k = b.dataset.pw; if (st.cd[k] > 0 || st.over) return; st.cd[k] = TD_POWERS[k].cd * pwF(); vib(30);
+    if (k === 'trueno') { const c = st.en.filter((e) => !e.dead && !e.under).sort(() => Math.random() - 0.5).slice(0, 12); for (const e of c) { st.bolts.push({ pts: [[e.x + (Math.random() - 0.5), -0.5], [e.x + 0.3, e.y * 0.5], [e.x, e.y]], t: 0, c: '#ffe066', w: 3 }); damage(e, (90 + st.wave * 16) * dmgMul(), true); } st.flash = 0.35; st.shake = 0.4; TDS.bpow(); TDS.crit(); if (!c.length) float('No había plagas', TD_COLS / 2, 4, '#fff'); }
+    else if (k === 'helada') { for (const e of st.en) if (!e.dead) e.frz = Math.max(e.frz, TD_EN[e.k].boss ? 1.5 : 3); st.flash = 0.25; ring(TD_COLS / 2, TD_ROWS / 2, 7, 'rgba(190,235,255,.95)', 0.7); TDS.shot('pino'); }
+    else { const n = 80 + st.wave * 10; st.seeds += n; float(`+${n} 🌰 cosecha`, TD_COLS / 2, 3, '#ffe066', true); TDS.up(); }
+    paintPow(); hud();
+  }));
   $w('#tdNext').addEventListener('click', () => { TDS.init(); startWave(); });
   $w('#tdSp').addEventListener('click', () => { st.speed = st.speed === 1 ? 2 : st.speed === 2 ? 3 : 1; $w('#tdSp').textContent = `${st.speed}×`; });
   let paused = false;
@@ -893,25 +1090,28 @@ function tdStart(mi, daily) {
   addEventListener('keydown', onKey);
 
   /* --- final --- */
+  const achHTML = (a) => (a && a.length ? `<div class="td-achgot">${a.map((x) => `<span>🏆 <b>${x.n}</b> · +${x.g} 🍂</span>`).join('')}</div>` : '');
   function end(won) {
     if (st.over) return; st.over = true; closePanel(); st.aim = null;
     const el = $w('#tdEnd'); const secs = Math.max(1, Math.round((Date.now() - st.t0) / 1000));
     D.kills = (D.kills || 0) + st.killed;
     if (INF) {
-      const w = Math.max(0, st.wave - 1); const nb = w > (D.inf || 0); if (nb) D.inf = w; jpSave(); TDS.lose();
+      const w = Math.max(0, st.wave - 1); const nb = w > (D.inf || 0); if (nb) D.inf = w; const gg = Math.floor(w / 2); D.gold += gg; const ach = tdCheckAch(); jpSave(); TDS.lose(); st.gold = gg; st.ach = ach;
       if (w > 0) jgPost({ game: 'torres', score: w, apples: 0, dur: secs }).then((rec) => { const l = $w('#tdRank'); if (rec && l && wrap.isConnected && rec.rankDay) l.textContent = `Lugar #${rec.rankDay} de hoy`; });
-      el.innerHTML = `<b>${nb ? '¡Nuevo récord!' : 'El bosque resistió'}</b><span>Aguantaste <b>${w}</b> oleadas · ${st.killed} plagas</span><span class="small muted">Tu mejor: ${D.inf} oleadas</span><span class="small muted" id="tdRank"></span><div class="btn-row" style="justify-content:center"><button class="btn primary" data-e="re">Otra vez</button><button class="btn" data-e="out">Mapas</button></div>`;
+      el.innerHTML = `<b>${nb ? '¡Nuevo récord!' : 'El bosque resistió'}</b><span>Aguantaste <b>${w}</b> oleadas · ${st.killed} plagas</span><span class="small muted">Tu mejor: ${D.inf} oleadas</span>${st.gold ? `<span class="td-goldgain">+${st.gold} 🍂 hojas doradas</span>` : ''}${achHTML(st.ach)}<span class="small muted" id="tdRank"></span><div class="btn-row" style="justify-content:center"><button class="btn primary" data-e="re">Otra vez</button><button class="btn" data-e="out">Mapas</button></div>`;
     } else if (won) {
       const k = st.lives / LMAX; const stars = k >= 0.9 ? 3 : k >= 0.5 ? 2 : 1; const prev = D.st[MI] || 0;
-      if (stars > prev) { D.st[MI] = stars; jgCoins((stars - prev) * 2); }
-      let dayWin = false; if (daily && D.day.done !== tdToday()) { D.day.done = tdToday(); D.dayStars = (D.dayStars || 0) + 1; dayWin = true; jgCoins(3); }
+      const firstWin = !prev; if (stars > prev) { D.st[MI] = stars; jgCoins((stars - prev) * 2); }
+      const gold = firstWin ? 6 + stars * 3 + M.w * 2 + (M.kind === 'final' ? 25 : M.kind === 'jefes' ? 10 : 0) : 2 + stars + Math.max(0, stars - prev) * 3; D.gold += gold; D.wins = (D.wins || 0) + 1;
+      let dayWin = false; if (daily && D.day.done !== tdToday()) { D.day.done = tdToday(); D.dayStars = (D.dayStars || 0) + 1; dayWin = true; jgCoins(3); D.gold += 15; }
+      const ach = tdCheckAch(); if (firstWin) jgPost({ game: 'torresn', score: tdLvlsWon(), apples: 0, dur: secs }).catch(() => {});
       jpSave(); TDS.win();
       const next = MI + 1 < TD_MAPS.length && !daily; const newT = Object.values(TD_TW).filter((w) => w.un === MI + 1);
       const nw = TD_MAPS[MI + 1] && TD_MAPS[MI + 1].w !== M.w;
-      el.innerHTML = `<b>${dayWin ? '¡Reto del día superado!' : '¡Salvaste el bosque!'}</b><span class="td-bigst">${[0, 1, 2].map((i) => `<i class="${i < stars ? 'on' : ''}">★</i>`).join('')}</span><span>${M.n} · ${st.lives}/${LMAX} vidas · ${st.killed} plagas</span>${stars > prev ? `<span class="pm-gain">+${stars - prev} ⭐ para tus raíces · +${(stars - prev) * 2} monedas para tu árbol</span>` : ''}${dayWin ? '<span class="pm-gain">+1 ⭐ dorada · +3 monedas</span>' : ''}${!daily && prev === 0 && TD_MAPS[MI + 1] ? `<span class="small">🔓 Abriste: ${TD_MAPS[MI + 1].n}${nw ? ` · ¡mundo nuevo: ${TD_WORLDS[TD_MAPS[MI + 1].w].n}!` : ''}${newT.map((w) => ` · torre nueva: ${w.n}`).join('')}</span>` : ''}
-        <div class="btn-row" style="justify-content:center;flex-wrap:wrap">${next ? '<button class="btn primary" data-e="next">Siguiente mapa</button>' : ''}<button class="btn" data-e="re">Repetir</button><button class="btn" data-e="out">Mapas</button></div>`;
+      el.innerHTML = `<b>${dayWin ? '¡Reto del día superado!' : '¡Salvaste el bosque!'}</b><span class="td-bigst">${[0, 1, 2].map((i) => `<i class="${i < stars ? 'on' : ''}">★</i>`).join('')}</span><span>${M.n} · ${st.lives}/${LMAX} vidas · ${st.killed} plagas</span><span class="td-goldgain">+${gold + (dayWin ? 15 : 0)} 🍂 hojas doradas</span>${achHTML(ach)}${stars > prev ? `<span class="pm-gain">+${stars - prev} ⭐ para tus raíces · +${(stars - prev) * 2} monedas para tu árbol</span>` : ''}${dayWin ? '<span class="pm-gain">+1 ⭐ dorada · +3 monedas</span>' : ''}${!daily && prev === 0 && TD_MAPS[MI + 1] ? `<span class="small">🔓 Abriste: ${TD_MAPS[MI + 1].n}${nw ? ` · ¡mundo nuevo: ${TD_WORLDS[TD_MAPS[MI + 1].w].n}!` : ''}${newT.map((w) => ` · torre nueva: ${w.n}`).join('')}</span>` : ''}
+        <div class="btn-row" style="justify-content:center;flex-wrap:wrap">${next ? '<button class="btn primary" data-e="next">Siguiente nivel ›</button>' : ''}<button class="btn" data-e="re">Repetir</button><button class="btn" data-e="out">Niveles</button></div>`;
     } else {
-      jpSave(); TDS.lose();
+      D.gold += 1; tdCheckAch(); jpSave(); TDS.lose();
       const tips = ['Mejora tus torres antes de comprar más.', 'Pon hongos en las curvas: el veneno dura más.', 'Usa las raíces cuando llegue el jefe.', 'El búho ve a las polillas fantasma.', 'El pino congela a grupos enteros: ponlo junto a la tortuga.', 'En Raíces puedes comprar mejoras con tus estrellas.', 'A nivel 4 las torres eligen una Maestría: ¡son mucho más fuertes!'];
       el.innerHTML = `<b>Las plagas llegaron al Gran Árbol</b><span>Llegaste a la oleada ${st.wave} de ${WAVES}</span><span class="small muted">Consejo: ${tips[(Math.random() * tips.length) | 0]}</span><div class="btn-row" style="justify-content:center"><button class="btn primary" data-e="re">Intentar de nuevo</button><button class="btn" data-e="out">Mapas</button></div>`;
     }
@@ -930,7 +1130,7 @@ function tdStart(mi, daily) {
     hudT += raw; if (hudT > 0.2) { hudT = 0; hud(); }
   };
   st.id = requestAnimationFrame(loop); hud(); paintChips();
-  if (TW.size) st.banner = { text: M.n, sub: (M.tw || []).map((k) => TD_TWISTS[k].e + ' ' + TD_TWISTS[k].n).join('  '), t: 0 };
+  if (!INF) st.banner = { text: `Nivel ${MI + 1} · ${M.n}`, sub: [M.kind !== 'normal' ? TD_KINDS[M.kind].e + ' ' + TD_KINDS[M.kind].n : '', ...(M.tw || []).map((k) => TD_TWISTS[k].e + ' ' + TD_TWISTS[k].n)].filter(Boolean).join('  '), t: 0, boss: M.kind === 'final' };
   $w('#tdPk').addEventListener('click', (e) => { const b = e.target.closest('[data-d]'); if (b) hint(b.dataset.d, 4500); });
   hint(INF ? '♾️ Modo infinito: aguanta todas las oleadas que puedas' : MOD ? `📅 Reto: ${MOD.n} · ${MOD.d}` : TW.size ? twDesc() : `${M.n}: pon tus torres y toca Empezar`, 5200);
   const exit = (go) => {
