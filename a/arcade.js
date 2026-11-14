@@ -2,7 +2,7 @@
    el juego del día, tu avance en cada juego y acceso directo a tiendas y rankings. */
 'use strict';
 const ARC_GAMES = [
-  { r: 'torres', n: 'Defensa del Bosque', t: '1,000 niveles en 40 mundos, 31 torres y 40 jefes', e: '🏰', c: ['#3f9a4a', '#16502a'], tag: '1,000 niveles', st: () => { try { return `${tdLvlsWon()}/${TD_MAPS.length} niveles`; } catch { return ''; } } },
+  { r: 'torres', n: 'Defensa del Bosque', t: '1,000 niveles en 40 mundos, 101 torres y 40 jefes', e: '🏰', c: ['#3f9a4a', '#16502a'], tag: '1,000 niveles', st: () => { try { return `${tdLvlsWon()}/${TD_MAPS.length} niveles`; } catch { return ''; } } },
   { r: 'cielo', n: 'Salto al Cielo', t: 'Rebota de nube en nube hasta la galaxia', e: '☁️', c: ['#7ab8f5', '#3a5ab8'], tag: 'Infinito', st: () => { try { const b = scData().best; return b ? `Récord ${b} m` : ''; } catch { return ''; } } },
   { r: 'gusano', n: 'The Worn', t: 'Come, crece y abre puertas con llaves', e: '🐛', c: ['#8acb4a', '#2f6a1a'], tag: '600 niveles', st: () => { try { return `Nivel ${gwMax()}`; } catch { return ''; } } },
   { r: 'memoria', n: 'Mente Viva', t: 'Sigue la carta que se baraja', e: '🃏', c: ['#c88ae8', '#5a2a8a'], tag: '500 niveles', st: () => { try { return `Nivel ${mcLvl()}`; } catch { return ''; } } },

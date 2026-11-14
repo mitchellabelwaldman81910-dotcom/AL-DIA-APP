@@ -4314,3 +4314,7 @@ body.lb-open .pu-top, body.gm-on .pu-top { display: none; }
 .td-fx { display: block; margin-top: 4px; font-size: 12px; font-weight: 700; color: #6a4a00; line-height: 1.35; }
 :root[data-theme="dark"] .td-guide .td-fx { color: #f0c860; }
 .td-tws { max-height: 44vh; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 2px; }
+.td-cats { display: flex; gap: 5px; overflow-x: auto; padding: 0 0 8px; scrollbar-width: none; }
+.td-cats::-webkit-scrollbar { display: none; }
+.td-cat { flex: none; padding: 6px 10px; border-radius: 99px; border: 1.5px solid #e9ecef; background: #fff; font: 700 12px var(--sans, system-ui); color: #4a3a20; cursor: pointer; }
+.td-cat.on { background: #2f8a40; border-color: #2f8a40; color: #fff; }

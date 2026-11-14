@@ -1,5 +1,5 @@
 /* Cinnavia 8.0 — Defensa del Bosque.
-   Defensa de torres: las plagas quieren llegar al Gran Árbol. v5: 1,000 niveles en 40 mundos (25 por mundo), 31 torres, 63 plagas y 40 jefes, cada uno con
+   Defensa de torres: las plagas quieren llegar al Gran Árbol. v6: 1,000 niveles en 40 mundos (25 por mundo), 101 torres con 13 formas de atacar, 63 plagas y 40 jefes, cada uno con
    una combinación de reglas que no se repite (lodo, portales, cofres, meteoritos…), 5 tipos de nivel (normal, relámpago,
    desfile de jefes, asedio y gran final), 9 torres con 4 niveles y 2 especialidades, 15 plagas y 12 jefes con poderes,
    bendiciones cada 5 oleadas, reto del día, modo infinito, tienda con hojas doradas (mejoras de torres, poderes nuevos,
@@ -490,7 +490,112 @@ Object.assign(TD_TW, {
   fenix: { n: 'Fénix eterno', em: '🔥', beh: 'buho', d: 'Llamas en cadena que dejan a todos ardiendo.', cost: [200, 210, 360, 620], dmg: [34, 56, 92, 155], ch: [3, 4, 5, 6], rng: [3.0, 3.2, 3.5, 3.8], rate: [1.1, 1.05, 1.0, 0.9], air: 1, c: '#ff6a2a', un: 880, fx: { burn: 16 }, spec: [['Renacer', 'Salta entre 9 enemigos'], ['Sol de fuego', 'Daño ×1.8 y frena']] },
   arcoiris: { n: 'Arcoíris', em: '🌈', beh: 'rayo', d: 'Un rayo de todos los colores: ignora armaduras y castiga a los voladores.', cost: [220, 240, 400, 680], dps: [26, 44, 72, 120], rng: [2.6, 2.8, 3.0, 3.3], air: 1, c: '#ff7ab8', un: 940, fx: { pierce: 1, fly: 1.5 }, spec: [['Prisma total', 'El rayo se divide en 3'], ['Luz pura', 'Se carga hasta ×7']] },
 });
-const tdFxTxt = (X) => { if (!X) return ''; const L = [X.burn && '🔥 quema', X.slow && `🐌 frena ${Math.round(X.slow * 100)} %`, X.stun && '💫 a veces aturde', X.knock && '↩️ empuja hacia atrás', X.exe && `💀 remata bajo ${Math.round(X.exe * 100)} %`, X.boss && `👑 ×${X.boss} a jefes`, X.fly && `🦅 ×${X.fly} a voladores`, X.pierce && '🛡️ ignora armaduras', X.cash && `🧲 +${X.cash} 🌰 por plaga`].filter(Boolean); return L.length ? `<span class="td-fx">${L.join(' · ')}</span>` : ''; };
+/* ---------- v6 · 70 torres nuevas y 4 formas nuevas de atacar ----------
+   aura: daña sin parar a todo lo que está cerca · mina: siembra minas en el camino · linea: atraviesa a todos en línea
+   global: golpea en cualquier parte del mapa. Además el efecto «marca» (las plagas marcadas reciben +25 % de daño). */
+const TD_SPEC_D = {
+  ardilla: ['Dispara a 3 enemigos a la vez', '+50 % alcance y golpes críticos'], tortuga: ['Explosión enorme', 'Lanza 3 proyectiles'], hongo: ['Veneno al doble', 'Frena 70 %'],
+  abejas: ['+3 por disparo', 'Atraviesan armaduras y pegan más'], rayo: ['El rayo se divide en 3', 'Se carga hasta ×7'], buho: ['Salta entre 9 enemigos', 'Daño ×1.8 y frena'],
+  pino: ['Congela 2.5 s', 'Frena siempre 40 %'], trampa: ['También frena 45 %', 'Daño al doble'], arbol: ['+60 % de daño cerca', 'Muchas más semillas'],
+  aura: ['Además frena 30 %', 'Daño ×1.6'], linea: ['Ignora armaduras', 'Línea más ancha y daño ×1.5'], global: ['Golpea a 3 plagas', 'Daño ×1.8'], mina: ['Explosión enorme', 'El doble de minas'],
+};
+const TD_CAT = { ardilla: 'disparo', linea: 'disparo', global: 'disparo', tortuga: 'explosivo', mina: 'explosivo', hongo: 'control', pino: 'control', aura: 'control', abejas: 'magia', buho: 'magia', rayo: 'magia', arbol: 'apoyo', trampa: 'camino' };
+const TD_CATS = [['all', 'Todas'], ['disparo', '🎯 Disparo'], ['explosivo', '💥 Explosivas'], ['control', '❄️ Control'], ['magia', '✨ Mágicas'], ['apoyo', '🌳 Apoyo']];
+const tdCat = (k) => TD_CAT[TD_TW[k].beh || k] || 'disparo';
+const tdHexRgb = (h) => { const n = parseInt(String(h).slice(1), 16); return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`; };
+[
+  ['manzano', '🍎', 'Manzano tirador', 'ardilla', 'Lanza manzanas rapidísimo. Barato y confiable.', '#d8443a', { c: 55, p: 7, r: 2.3, rt: 0.5 }, null, ['Cosecha triple', 'Manzana dorada']],
+  ['sandia', '🍉', 'Sandía explosiva', 'tortuga', 'Explota en pedazos que frenan a las plagas.', '#3a9a4a', { c: 95, p: 26, r: 2.8, rt: 1.6, a: 1.0 }, { slow: 0.2 }, ['Sandía gigante', 'Lluvia de sandías']],
+  ['cebolla', '🧅', 'Cebolla llorona', 'hongo', 'Hace llorar a todas: veneno muy fuerte en área.', '#c89ad8', { c: 85, p: 9, r: 2.1, rt: 1.25, a: 1.0, slow: 0.25 }, null, ['Capa tras capa', 'Lágrimas espesas']],
+  ['mariquitas', '🐞', 'Nido de catarinas', 'abejas', 'Catarinas que persiguen y marcan a las plagas.', '#e8323a', { c: 90, p: 6, r: 3.1, rt: 1.5, nb: 2 }, { mark: 1 }, ['Plaga de catarinas', 'Catarina de acero']],
+  ['sol', '☀️', 'Sol ardiente', 'aura', 'Quema sin parar a todo lo que pasa cerca.', '#f0b020', { c: 110, p: 9, r: 1.6 }, { burn: 3 }, ['Sol de verano', 'Supernova']],
+  ['castana', '🌰', 'Castañero', 'ardilla', 'Castañas duras que a veces aturden.', '#8a5a2a', { c: 75, p: 13, r: 2.4, rt: 0.85 }, { stun: 0.1 }, ['Castañas en racimo', 'Castaña de hierro']],
+  ['unicornio', '🦄', 'Unicornio lancero', 'linea', 'Su cuerno lanza un rayo que atraviesa a todas las plagas en fila.', '#e88ae8', { c: 120, p: 20, r: 3.2, rt: 1.3 }, null, ['Cuerno de diamante', 'Arcoíris lancero']],
+  ['tambor', '🥁', 'Tambor de guerra', 'pino', 'Cada golpe empuja hacia atrás a todos los cercanos.', '#c8603a', { c: 100, p: 12, r: 1.7, rt: 1.5, f: 0.15 }, { knock: 0.3 }, ['Redoble helado', 'Ritmo eterno']],
+  ['satelite', '🛰️', 'Satélite', 'global', 'Desde el espacio golpea a la plaga más avanzada, esté donde esté.', '#7a8ab8', { c: 140, p: 34, r: 9, rt: 2.4 }, null, ['Constelación', 'Rayo orbital']],
+  ['abrojo', '🌾', 'Trigal espinoso', 'trampa', 'Va SOBRE el camino: espigas que pinchan a quien pase.', '#d8b84a', { c: 55, p: 12, r: 0.6 }, null, ['Espigas pegajosas', 'Espigas de acero']],
+  ['pina', '🍍', 'Piña granada', 'tortuga', 'Estalla y deja a las plagas ardiendo.', '#e8b830', { c: 105, p: 30, r: 2.9, rt: 1.7, a: 1.05 }, { burn: 5 }, ['Piña colosal', 'Piñas en racimo']],
+  ['hamster', '🐹', 'Hámster minero', 'mina', 'Esconde minas en el camino que explotan al pisarlas.', '#d8a870', { c: 100, p: 40, r: 2.4, rt: 2.2, a: 0.9 }, null, ['Gran mina', 'Túneles por todos lados']],
+  ['lupa', '🔍', 'Lupa solar', 'rayo', 'Concentra el sol en un punto: quema y se intensifica.', '#9ad0f0', { c: 115, p: 12, r: 2.4 }, { burn: 5 }, ['Lupa triple', 'Rayo de mediodía']],
+  ['serpe', '🐍', 'Serpiente eléctrica', 'buho', 'Descargas que saltan de plaga en plaga.', '#3ab86a', { c: 115, p: 15, r: 2.8, rt: 1.2, ch: 3 }, null, ['Gran descarga', 'Veneno eléctrico']],
+  ['ajo', '🧄', 'Ajo apestoso', 'hongo', 'Un olor tan fuerte que las plagas casi no avanzan.', '#e8e0c8', { c: 80, p: 4, r: 2.0, rt: 1.2, a: 1.1, slow: 0.45 }, null, ['Ajo podrido', 'Nube espesa']],
+  ['mono', '🐒', 'Mono malabarista', 'ardilla', 'Lanza plátanos a toda velocidad y marca a las plagas.', '#a8703a', { c: 95, p: 10, r: 2.5, rt: 0.6 }, { mark: 1 }, ['Malabares', 'Plátano certero']],
+  ['rosa', '🌹', 'Rosa espinosa', 'aura', 'Sus espinas lastiman a todas las plagas alrededor.', '#d83a5a', { c: 105, p: 13, r: 1.4 }, null, ['Espinas que atrapan', 'Rosa de sangre']],
+  ['globo', '🎈', 'Globo de agua', 'tortuga', 'Explota en el aire: moja y frena también a los voladores.', '#ff6a8a', { c: 100, p: 22, r: 3.0, rt: 1.5, a: 1.1, air: 1 }, { slow: 0.35 }, ['Globo gigante', 'Tres globos']],
+  ['mariposas', '🦋', 'Jardín de mariposas', 'abejas', 'Mariposas que vuelan hacia las plagas y las frenan.', '#5ab0f0', { c: 100, p: 7, r: 3.3, rt: 1.4, nb: 3 }, { slow: 0.2 }, ['Gran migración', 'Alas de cristal']],
+  ['halcon', '🦅', 'Halcón vigía', 'global', 'Vuela por todo el mapa y caza a la plaga más fuerte.', '#a8703a', { c: 150, p: 38, r: 9, rt: 2.2 }, { boss: 1.2 }, ['Bandada de halcones', 'Picada mortal']],
+  ['hielo', '❄️', 'Placa de hielo', 'trampa', 'Va SOBRE el camino: las plagas resbalan y van muy lento.', '#9ad8f0', { c: 70, p: 10, r: 0.6 }, { slow: 0.5 }, ['Hielo eterno', 'Hielo cortante']],
+  ['coco', '🥥', 'Palmera cocotera', 'ardilla', 'Cocos pesados que empujan a las plagas hacia atrás.', '#6a4a2a', { c: 110, p: 30, r: 2.4, rt: 1.4 }, { knock: 0.4 }, ['Lluvia de cocos', 'Coco de piedra']],
+  ['tormenta', '⛈️', 'Nube de tormenta', 'buho', 'Relámpagos en cadena que a veces aturden.', '#6a7a9a', { c: 130, p: 18, r: 3.0, rt: 1.25, ch: 3 }, { stun: 0.08 }, ['Tormenta eléctrica', 'Trueno sabio']],
+  ['cohete', '🚀', 'Cohete de hojas', 'tortuga', 'Cohetes de largo alcance con explosión grande. Alcanza voladores.', '#c8c8d8', { c: 150, p: 45, r: 3.6, rt: 2.3, a: 1.3, air: 1 }, null, ['Cohete atómico', 'Lanzacohetes']],
+  ['tesla', '🔋', 'Bobina de energía', 'buho', 'Electricidad que ignora cualquier armadura.', '#5ae8a0', { c: 135, p: 17, r: 2.7, rt: 1.15, ch: 4 }, { pierce: 1 }, ['Supercarga', 'Arco voltaico']],
+  ['espada', '🗡️', 'Espada del bosque', 'linea', 'Un tajo que corta a todas las plagas en línea y remata a las débiles.', '#c8d0d8', { c: 135, p: 24, r: 2.8, rt: 1.25 }, { exe: 0.12 }, ['Filo sagrado', 'Doble tajo']],
+  ['niebla', '🌫️', 'Niebla densa', 'hongo', 'Cubre un área enorme y frena muchísimo.', '#b8c0c8', { c: 95, p: 3, r: 2.4, rt: 1.0, a: 1.45, slow: 0.5 }, null, ['Niebla tóxica', 'Niebla de piedra']],
+  ['iglu', '🧊', 'Cubo de hielo', 'pino', 'Congela por mucho tiempo a todas las plagas cercanas.', '#bfe8ff', { c: 115, p: 6, r: 1.8, rt: 3.2, f: 1.4 }, null, ['Edad de hielo', 'Frío eterno']],
+  ['lechuza', '🦉', 'Lechuza nocturna', 'ardilla', 'Ve muy lejos y pega más a los jefes.', '#8a6a4a', { c: 125, p: 28, r: 3.4, rt: 1.3 }, { boss: 1.25 }, ['Ojos de la noche', 'Garra certera']],
+  ['petardo', '🧨', 'Petardo de semillas', 'mina', 'Petardos escondidos que estallan y queman.', '#e83a2a', { c: 115, p: 46, r: 2.4, rt: 2.4, a: 1.0 }, { burn: 6 }, ['Gran petardo', 'Fiesta de petardos']],
+  ['faro', '🗼', 'Faro del puerto', 'rayo', 'Un haz de luz de largo alcance que se carga sin parar.', '#f0e8a0', { c: 140, p: 14, r: 3.4 }, null, ['Haz triple', 'Luz eterna']],
+  ['miel', '🍯', 'Tarro de miel', 'arbol', 'Te da muchísimas semillas cada oleada y ayuda un poco a las torres cercanas.', '#e8a82a', { c: 120, b: 0.08, s: 18, r: 1.6 }, null, ['Miel real', 'Panal infinito']],
+  ['cangrejot', '🦀', 'Cangrejo pinza', 'ardilla', 'Pinzazos que rematan a las plagas débiles.', '#e0503a', { c: 120, p: 22, r: 2.2, rt: 0.95 }, { exe: 0.1 }, ['Tenazas múltiples', 'Pinza de acero']],
+  ['incienso', '🕯️', 'Vela embrujada', 'aura', 'Su llama marca a las plagas cercanas: reciben más daño de todo.', '#f0d070', { c: 120, p: 6, r: 1.8 }, { mark: 1 }, ['Llama fría', 'Fuego fatuo']],
+  ['chile', '🌶️', 'Chile picante', 'hongo', 'Nube que pica muchísimo: veneno muy fuerte.', '#e8302a', { c: 115, p: 14, r: 2.0, rt: 1.3, a: 0.95, slow: 0.2 }, { burn: 4 }, ['Chile fantasma', 'Salsa espesa']],
+  ['luna', '🌕', 'Luna llena', 'rayo', 'Rayo plateado terrible contra voladores.', '#e8e8f0', { c: 135, p: 15, r: 2.7 }, { fly: 1.5 }, ['Fases de luna', 'Eclipse']],
+  ['bandera', '🚩', 'Bandera del bosque', 'arbol', 'Las torres cercanas pegan muchísimo más fuerte.', '#e83a3a', { c: 150, b: 0.28, s: 4, r: 1.8 }, null, ['¡A la carga!', 'Botín de guerra']],
+  ['cuerno', '📯', 'Cuerno del bosque', 'pino', 'Un sonido tan fuerte que aturde a las plagas.', '#d8b060', { c: 120, p: 16, r: 1.8, rt: 1.8, f: 0.3 }, { stun: 0.2 }, ['Eco helado', 'Sinfonía']],
+  ['cardumen', '🐟', 'Cardumen', 'abejas', 'Peces voladores que empujan a las plagas.', '#5a9ad8', { c: 115, p: 9, r: 3.2, rt: 1.4, nb: 3 }, { knock: 0.15 }, ['Gran cardumen', 'Pez espada']],
+  ['zorrot', '🦊', 'Zorro saetero', 'ardilla', 'Cada plaga que vence te da 1 semilla extra.', '#e07a2a', { c: 115, p: 15, r: 2.6, rt: 0.75 }, { cash: 1 }, ['Zorro astuto', 'Flecha de fuego']],
+  ['tridente', '🔱', 'Tridente del mar', 'linea', 'Lanza un chorro de agua que atraviesa y frena.', '#3a8ac8', { c: 145, p: 22, r: 3.0, rt: 1.3 }, { slow: 0.3 }, ['Marea alta', 'Tsunami']],
+  ['telescopio', '🔭', 'Telescopio mágico', 'global', 'Encuentra a los jefes desde lejos y les pega fuerte.', '#6a5ad0', { c: 160, p: 40, r: 9, rt: 2.4 }, { boss: 1.5 }, ['Lente múltiple', 'Estrella fugaz']],
+  ['bomba', '💣', 'Bombita de semillas', 'tortuga', 'Explosiones que empujan a todas hacia atrás.', '#3a3a4a', { c: 130, p: 36, r: 2.8, rt: 1.8, a: 1.15 }, { knock: 0.35 }, ['Megabomba', 'Bombas de racimo']],
+  ['farol', '🏮', 'Farol de luciérnagas', 'abejas', 'Luciérnagas de fuego que persiguen y queman.', '#e84a3a', { c: 125, p: 8, r: 3.2, rt: 1.45, nb: 3 }, { burn: 3 }, ['Festival de luces', 'Luciérnaga dorada']],
+  ['campana', '🔔', 'Campana resonante', 'buho', 'Su eco salta entre plagas y a veces las aturde.', '#e8c040', { c: 140, p: 20, r: 3.0, rt: 1.2, ch: 4 }, { stun: 0.1 }, ['Campanario', 'Campana sabia']],
+  ['tela', '🕸️', 'Tela de araña', 'trampa', 'Va SOBRE el camino: las plagas quedan casi pegadas.', '#d8d8e0', { c: 85, p: 14, r: 0.6 }, { slow: 0.6 }, ['Red gigante', 'Hilo de acero']],
+  ['antena', '📡', 'Antena de radio', 'rayo', 'Una onda que confunde: a veces aturde y marca.', '#9aa8b8', { c: 145, p: 16, r: 2.8 }, { mark: 1, stun: 0.003 }, ['Señal triple', 'Onda total']],
+  ['geiser', '⛲', 'Géiser', 'pino', 'Brota agua hirviendo que quema a todos los cercanos.', '#5ab0e0', { c: 130, p: 18, r: 1.8, rt: 1.6, f: 0.2 }, { burn: 6 }, ['Géiser helado', 'Vapor eterno']],
+  ['estrella', '⭐', 'Estrella fugaz', 'ardilla', 'Disparos de estrella que ignoran armaduras.', '#ffd23c', { c: 135, p: 20, r: 2.7, rt: 0.8 }, { pierce: 1 }, ['Lluvia de estrellas', 'Estrella polar']],
+  ['termales', '♨️', 'Aguas termales', 'trampa', 'Va SOBRE el camino: agua hirviendo que quema.', '#e87a5a', { c: 100, p: 18, r: 0.6 }, { burn: 8 }, ['Lodo caliente', 'Vapor ardiente']],
+  ['ojo', '🧿', 'Ojo protector', 'aura', 'Las plagas cercanas se paralizan de miedo por ratos.', '#3a6ae8', { c: 140, p: 10, r: 1.7 }, { stun: 0.004 }, ['Mirada helada', 'Ojo furioso']],
+  ['catapulta', '🪨', 'Catapulta de rocas', 'tortuga', 'Rocas enormes, muy buenas contra jefes.', '#8a8a8a', { c: 150, p: 55, r: 3.2, rt: 2.4, a: 1.1 }, { boss: 1.3 }, ['Roca gigante', 'Tres rocas']],
+  ['cacahuate', '🥜', 'Cacahuate explosivo', 'mina', 'Muchas minas pequeñas por todo el camino.', '#c89a5a', { c: 120, p: 30, r: 2.8, rt: 1.4, a: 0.85 }, null, ['Cacahuate gigante', 'Bolsa entera']],
+  ['ojomagico', '👁️', 'Ojo mágico', 'rayo', 'Mirada que atraviesa armaduras y castiga a los jefes.', '#a86ae8', { c: 160, p: 18, r: 2.8 }, { pierce: 1, boss: 1.3 }, ['Tercer ojo', 'Mirada eterna']],
+  ['campamento', '🏕️', 'Campamento', 'arbol', 'Más fuerza a las torres cercanas y semillas cada oleada.', '#3a8a4a', { c: 155, b: 0.18, s: 12, r: 1.8 }, null, ['Fogata', 'Gran despensa']],
+  ['arpa', '🎻', 'Violín encantado', 'buho', 'Melodías que saltan entre plagas y las frenan.', '#a85a3a', { c: 150, p: 22, r: 3.1, rt: 1.15, ch: 4 }, { slow: 0.25 }, ['Orquesta', 'Nota perfecta']],
+  ['remolino', '🌀', 'Remolino', 'pino', 'Un torbellino que avienta a las plagas hacia atrás.', '#7ab8e8', { c: 145, p: 20, r: 1.9, rt: 1.7, f: 0.15 }, { knock: 0.5 }, ['Ciclón helado', 'Huracán']],
+  ['trompeta', '🎺', 'Trompeta sónica', 'linea', 'Una onda de sonido que atraviesa y aturde.', '#e8c040', { c: 160, p: 26, r: 3.0, rt: 1.3 }, { stun: 0.12 }, ['Fanfarria', 'Gran orquesta']],
+  ['nubeal', '🌨️', 'Aura de escarcha', 'aura', 'Un frío constante que frena a todas las plagas cercanas.', '#bfe3ff', { c: 135, p: 7, r: 1.9 }, { slow: 0.35 }, ['Ventisca', 'Frío cortante']],
+  ['murcielagot', '🦇', 'Murciélago sónico', 'ardilla', 'Chillidos que destrozan a los voladores.', '#5a4a7a', { c: 130, p: 18, r: 2.8, rt: 0.7 }, { fly: 1.8 }, ['Eco múltiple', 'Chillido agudo']],
+  ['rayoaz', '🌩️', 'Nube relámpago', 'global', 'Rayos que caen en cualquier parte del mapa y aturden.', '#ffe066', { c: 165, p: 36, r: 9, rt: 2.0 }, { stun: 0.15 }, ['Tormenta total', 'Rayo divino']],
+  ['muneco', '☃️', 'Muñeco de nieve', 'tortuga', 'Bolas de nieve en área que congelan un poco.', '#e8f4ff', { c: 140, p: 32, r: 3.0, rt: 1.7, a: 1.2 }, { slow: 0.4, stun: 0.06 }, ['Alud', 'Bolas gemelas']],
+  ['drones', '🛸', 'Platillo con drones', 'abejas', 'Drones que atraviesan armaduras.', '#9aa8c8', { c: 150, p: 11, r: 3.5, rt: 1.35, nb: 3 }, { pierce: 1 }, ['Flota', 'Láser de drones']],
+  ['varita', '🪄', 'Varita mágica', 'buho', 'Cada plaga que vence te regala semillas.', '#c88ae8', { c: 160, p: 22, r: 3.0, rt: 1.15, ch: 4 }, { cash: 1 }, ['Hechizo múltiple', 'Varita de oro']],
+  ['corona', '👑', 'Corona del rey', 'arbol', 'La mejor ayuda: las torres de alrededor pegan muchísimo más.', '#ffd23c', { c: 220, b: 0.35, s: 10, r: 2.0 }, null, ['Reino unido', 'Tesoro real']],
+  ['ninja', '🥷', 'Ninja del bosque', 'ardilla', 'Shurikens velocísimos que rematan a las débiles.', '#3a3a4a', { c: 165, p: 22, r: 2.7, rt: 0.55 }, { exe: 0.12 }, ['Lluvia de shurikens', 'Golpe secreto']],
+  ['dinamita', '🎆', 'Fuegos artificiales', 'mina', 'Minas de colores que estallan en grande y queman.', '#e84ab8', { c: 160, p: 70, r: 2.6, rt: 2.6, a: 1.2 }, { burn: 8 }, ['Gran final', 'Festival']],
+  ['espiral', '🧬', 'Espiral de vida', 'aura', 'Una energía que daña muchísimo a todo lo cercano.', '#5ae8c8', { c: 180, p: 22, r: 1.6 }, null, ['Vida eterna', 'Doble hélice']],
+  ['portal', '🌌', 'Portal estelar', 'linea', 'Abre una línea de estrellas que atraviesa todo, también voladores.', '#6a4ad8', { c: 190, p: 34, r: 3.4, rt: 1.4, air: 1 }, { fly: 1.3 }, ['Agujero blanco', 'Galaxia']],
+  ['rayoverde', '🌿', 'Hoja cortante', 'abejas', 'Hojas filosas que persiguen y rematan.', '#3aa84a', { c: 170, p: 13, r: 3.4, rt: 1.3, nb: 4 }, { exe: 0.08 }, ['Tormenta de hojas', 'Hoja de acero']],
+].forEach(([k, em, n, beh, d, c, B, fx, sp], i) => {
+  const pf = 1 + i * 0.013, cf = 1 + i * 0.006; const r2 = (v) => Math.round(v * 10) / 10;
+  const cost = [B.c, B.c * 1.1, B.c * 1.95, B.c * 3.5].map((v) => Math.round(v * cf / 5) * 5);
+  const dm = [1, 1.65, 2.75, 4.6].map((m) => Math.round((B.p || 0) * m * pf));
+  const rng = [B.r, B.r + 0.2, B.r + 0.45, B.r + 0.75].map(r2);
+  const rate = [1, 0.94, 0.87, 0.78].map((m) => r2(Math.max(0.2, (B.rt || 1) * m)));
+  const area = [1, 1.1, 1.22, 1.38].map((m) => r2((B.a || 1) * m));
+  const T = { n, em, beh, d, c, cost, rng, air: B.air ?? (beh === 'tortuga' || beh === 'trampa' || beh === 'mina' ? 0 : 1), un: 15 + i * 14, spec: [[sp[0], TD_SPEC_D[beh][0]], [sp[1], TD_SPEC_D[beh][1]]], rgb: tdHexRgb(c) };
+  if (fx) T.fx = fx;
+  if (beh === 'rayo' || beh === 'trampa' || beh === 'aura') T.dps = dm; else if (beh === 'hongo') { T.dot = dm; T.slow = [0, 0.05, 0.1, 0.2].map((x) => r2(Math.min(0.8, (B.slow || 0.3) + x))); } else if (beh !== 'arbol') T.dmg = dm;
+  if (beh === 'ardilla' || beh === 'tortuga' || beh === 'abejas' || beh === 'buho' || beh === 'pino' || beh === 'hongo' || beh === 'linea' || beh === 'global' || beh === 'mina') T.rate = rate;
+  if (beh === 'tortuga' || beh === 'hongo' || beh === 'mina') T.area = area;
+  if (beh === 'abejas') T.nb = [B.nb, B.nb + 1, B.nb + 1, B.nb + 2];
+  if (beh === 'buho') T.ch = [B.ch, B.ch + 1, B.ch + 2, B.ch + 3];
+  if (beh === 'pino') T.frz = [1, 1.2, 1.45, 1.8].map((m) => r2(B.f * m));
+  if (beh === 'arbol') { T.support = 1; T.buff = [1, 1.4, 1.9, 2.5].map((m) => r2(B.b * m * 100) / 100); T.seeds = [1, 1.6, 2.4, 3.6].map((m) => Math.round(B.s * m)); }
+  if (beh === 'trampa') { T.path = 1; T.rng = [0.6, 0.6, 0.6, 0.6]; }
+  if (beh === 'ardilla' || beh === 'tortuga' || beh === 'abejas') T.pc = c;
+  TD_TW[k] = T;
+});
+{ const a = TD_ACH.find((x) => x.id === 'tw'); if (a) a.d = `Desbloquea las ${Object.keys(TD_TW).length} torres`; }
+const tdFxTxt = (X) => { if (!X) return ''; const L = [X.burn && '🔥 quema', X.slow && `🐌 frena ${Math.round(X.slow * 100)} %`, X.stun && '💫 a veces aturde', X.knock && '↩️ empuja hacia atrás', X.exe && `💀 remata bajo ${Math.round(X.exe * 100)} %`, X.boss && `👑 ×${X.boss} a jefes`, X.fly && `🦅 ×${X.fly} a voladores`, X.pierce && '🛡️ ignora armaduras', X.cash && `🧲 +${X.cash} 🌰 por plaga`, X.mark && '🎯 marca: +25 % de daño de todo'].filter(Boolean); return L.length ? `<span class="td-fx">${L.join(' · ')}</span>` : ''; };
 
 /* más tipos de oleada, bendiciones, poderes, aspectos y logros */
 TD_THEMES.push(
@@ -998,11 +1103,12 @@ function tdStart(mi, daily) {
   const armorOf = (E) => Math.max(E.armor || 0, mk === 'blindados' && !E.boss ? 0.2 : 0);
   function damage(e, amt, pierce, t) {
     if (e.dead || e.under) return; const E = TD_EN[e.k]; if (e.inv > 0) { if (Math.random() < 0.08 && !low()) float('🛡️', e.x, e.y - 0.6, '#ffe066'); return; }
-    const X5 = t ? TD_TW[t.k].fx : null; if (X5) { if (X5.pierce) pierce = true; if (X5.boss && E.boss) amt *= X5.boss; if (X5.fly && E.fly) amt *= X5.fly; } if (t) e.lastT = t;
+    const X5 = t ? TD_TW[t.k].fx : null; if (X5) { if (X5.mark) e.markU = st.t + 3; if (X5.pierce) pierce = true; if (X5.boss && E.boss) amt *= X5.boss; if (X5.fly && E.fly) amt *= X5.fly; } if (t) e.lastT = t;
     const cc = tdMeta('critico') * 0.05 + st.pk.cri + (t && tb(t) === 'ardilla' && t.spec === 2 ? 0.25 : 0);
     if (cc && Math.random() < cc) { amt *= t && t.spec === 2 && tb(t) === 'ardilla' ? 3 : 2; if (!low()) float('¡Crítico!', e.x, e.y - 0.5, '#ffd23c'); TDS.crit(); }
     const ar = armorOf(E); if (ar && !pierce) amt *= 1 - ar;
     if (e.sh > 0) { const a = Math.min(e.sh, amt); e.sh -= a; amt -= a; if (e.sh <= 0) { ring(e.x, e.y, 0.6, '#9fd0ff', 0.3); puff(e.x, e.y, '#bfe3ff', 8, 2); } }
+    if (e.markU > st.t) amt *= 1.25;
     e.hp -= amt; e.hit = 0.1;
     if (X5 && e.hp > 0) { const lm = 1 + t.lvl * 0.5; if (X5.burn) { e.dotT = Math.max(e.dotT, 2); e.dotD = Math.max(e.dotD, X5.burn * lm * dmgMul()); } if (X5.slow) { e.slowT = Math.max(e.slowT, 1); e.slowK = Math.max(e.slowK, X5.slow); } if (X5.stun && !E.boss && Math.random() < X5.stun) e.frz = Math.max(e.frz, 0.7); if (X5.knock && !E.boss) e.d = Math.max(0, e.d - X5.knock); if (X5.exe && !E.boss && e.hp < e.max * X5.exe) { if (!low()) float('¡Remate!', e.x, e.y - 0.5, '#ff8a8a'); e.hp = 0; } }
     if (e.hp <= 0) kill(e);
@@ -1030,6 +1136,11 @@ function tdStart(mi, daily) {
     if (t.stun > 0) { t.stun -= dt; return; }
     const K = TD_TW[t.k], L = t.lvl, mul = dmgMul() * (t.bm || 1) * (1 + (D.up[t.k] || 0) * 0.07), rng = RNG(t);
     if (K.support) return;
+    const B6 = tb(t); const rate6 = () => (K.rate ? K.rate[L] : 1) * (1 - Math.min(0.5, st.pk.rate));
+    if (B6 === 'aura') { for (const e of st.en) { if (e.dead || e.under || (TD_EN[e.k].fly && !K.air) || dist(t, e) > rng || !canSee(t, e)) continue; damage(e, K.dps[L] * mul * dt * (t.spec === 2 ? 1.6 : 1), false, t); if (t.spec === 1) { e.slowT = 0.3; e.slowK = Math.max(e.slowK, 0.3); } } t.cd -= dt; if (t.cd <= 0) { t.cd = 1.4; ring(t.x + 0.5, t.y + 0.5, rng, `rgba(${K.rgb || '255,220,120'},.45)`, 0.6); } return; }
+    if (B6 === 'mina') { st.mines ||= []; t.cd -= dt; if (t.cd > 0) return; const cap = (3 + L) * (t.spec === 2 ? 2 : 1); if (st.mines.filter((m) => m.t === t).length >= cap) { t.cd = 0.5; return; } const cells = pathArr.filter((c) => Math.hypot((c % 100) + 0.5 - (t.x + 0.5), Math.floor(c / 100) + 0.5 - (t.y + 0.5)) <= rng && !st.mines.some((m) => m.c === c)); if (!cells.length) { t.cd = 1; return; } const c = cells[(Math.random() * cells.length) | 0]; st.mines.push({ c, x: (c % 100) + 0.5, y: Math.floor(c / 100) + 0.5, dmg: K.dmg[L] * mul, area: K.area[L] * (t.spec === 1 ? 1.7 : 1), t, em: K.em }); t.cd = rate6(); t.kick = 0.12; return; }
+    if (B6 === 'global') { t.cd -= dt; if (t.cd > 0) return; const pool = st.en.filter((e) => !e.dead && !e.under && (!TD_EN[e.k].fly || K.air) && !TD_EN[e.k].ghost); if (!pool.length) return; pool.sort((a, b) => (t.mode === 'fuerte' ? b.hp - a.hp : t.mode === 'ultimo' ? (PATHS[b.pi].L - b.d) - (PATHS[a.pi].L - a.d) : (PATHS[a.pi].L - a.d) - (PATHS[b.pi].L - b.d))); t.cd = rate6(); t.kick = 0.15; TDS.shot('buho'); for (const e of pool.slice(0, t.spec === 1 ? 3 : 1)) { damage(e, K.dmg[L] * mul * (t.spec === 2 ? 1.8 : 1), false, t); st.bolts.push({ pts: [[e.x + 0.4, -0.6], [e.x - 0.2, e.y * 0.5], [e.x, e.y]], t: 0, c: K.c, w: 3 }); puff(e.x, e.y, K.c, low() ? 3 : 7, 2); } return; }
+    if (B6 === 'linea') { t.cd -= dt; if (t.cd > 0) return; const e = targets(t, rng, K.air, 1)[0]; if (!e) return; t.cd = rate6(); t.kick = 0.12; TDS.shot('ardilla'); const sx = t.x + 0.5, sy = t.y + 0.5; const dl = Math.hypot(e.x - sx, e.y - sy) || 1; const ux = (e.x - sx) / dl, uy = (e.y - sy) / dl; const w = t.spec === 2 ? 0.6 : 0.35; for (const o of st.en) { if (o.dead || o.under || (TD_EN[o.k].fly && !K.air)) continue; const px = o.x - sx, py = o.y - sy; const al = px * ux + py * uy; if (al < 0 || al > rng + 0.3) continue; if (Math.abs(px * uy - py * ux) <= w) damage(o, K.dmg[L] * mul * (t.spec === 2 ? 1.5 : 1), t.spec === 1, t); } st.bolts.push({ pts: [[sx, sy], [sx + ux * rng, sy + uy * rng]], t: 0, c: K.c, w: t.spec === 2 ? 7 : 4 }); return; }
     if (tb(t) === 'trampa') { const cx = t.x + 0.5, cy = t.y + 0.5; for (const e of st.en) { if (e.dead || e.under || TD_EN[e.k].fly) continue; if (Math.hypot(e.x - cx, e.y - cy) <= 0.6) { damage(e, K.dps[L] * (t.spec === 2 ? 2 : 1) * mul * dt, false, t); if (t.spec === 1) { e.slowT = 0.3; e.slowK = Math.max(e.slowK, 0.45); } if (Math.random() < dt * 6 && !low()) puff(e.x, e.y, '#7aa83a', 1, 1); } } return; }
     if (tb(t) === 'pino' && t.spec === 2) { for (const e of st.en) if (!e.dead && dist(t, e) <= rng) { e.slowT = 0.25; e.slowK = Math.max(e.slowK, 0.4); } }
     if (tb(t) === 'rayo') {
@@ -1164,6 +1275,7 @@ function tdStart(mi, daily) {
     }
     st.en = st.en.filter((e) => !e.dead);
     for (const t of st.tw) { towerTick(t, dt); if (t.kick > 0) t.kick -= dt; }
+    if (st.mines && st.mines.length) { for (const m of st.mines) { if (m.done) continue; for (const e of st.en) { if (e.dead || e.under || TD_EN[e.k].fly) continue; if (Math.hypot(e.x - m.x, e.y - m.y) < 0.45) { m.done = true; TDS.boom(); puff(m.x, m.y, '#ffb347', low() ? 8 : 16, 3); ring(m.x, m.y, m.area, 'rgba(255,190,90,.9)', 0.35); for (const o of st.en) if (!o.dead && !TD_EN[o.k].fly && Math.hypot(o.x - m.x, o.y - m.y) <= m.area) damage(o, m.dmg, false, m.t); break; } } } st.mines = st.mines.filter((m) => !m.done && st.tw.includes(m.t)); }
     for (const q of st.pr) {
       if (q.k === 'flecha' || q.k === 'abeja') {
         if (q.e.dead || q.e.under) { if (q.k === 'abeja') { let b = null, bd = 3; for (const e of st.en) { if (e.dead || e.under) continue; const dd = Math.hypot(e.x - q.x, e.y - q.y); if (dd < bd) { bd = dd; b = e; } } if (b) q.e = b; else q.done = true; } else q.done = true; }
@@ -1278,6 +1390,8 @@ function tdStart(mi, daily) {
       if (e.chg > 0) { g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 2; for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(X - e.dir * (R + 4 + i * 5), Y - 6 + i * 6); g.lineTo(X - e.dir * (R + 12 + i * 5), Y - 6 + i * 6); g.stroke(); } }
       if (e.hp < e.max && !E.boss) { const w = T * 0.6, y = Y - T * 0.5; g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(X - w / 2, y, w, 4); g.fillStyle = e.hp / e.max > 0.5 ? '#51cf66' : e.hp / e.max > 0.25 ? '#fcc419' : '#ff6b6b'; g.fillRect(X - w / 2, y, w * Math.max(0, e.hp / e.max), 4); }
     }
+    // minas
+    for (const m of st.mines || []) { g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(SX(m.x), SY(m.y) + T * 0.16, T * 0.2, T * 0.07, 0, 0, 7); g.fill(); tdEm(g, m.em, Math.round(T * 0.38), SX(m.x), SY(m.y) + Math.sin(st.t * 4 + m.c) * 1.2); }
     // proyectiles
     for (const q of st.pr) {
       if (q.k === 'flecha' && q.pc) { g.fillStyle = q.pc; g.beginPath(); g.arc(SX(q.x), SY(q.y), T * 0.09, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.arc(SX(q.x) - 1, SY(q.y) - 1, T * 0.035, 0, 7); g.fill(); }
@@ -1322,12 +1436,13 @@ function tdStart(mi, daily) {
   const paintMini = () => panel.querySelectorAll('canvas[data-k]').forEach((cv) => { const q = cv.getContext('2d'); tdDrawTower(q, cv.dataset.k, +(cv.dataset.l || 0), 32, 36, 46, 1, -0.6, +(cv.dataset.s || 0)); });
   function openBuild(x, y, onPath) {
     st.sel = null; st.build = { x, y };
-    const ks0 = Object.keys(TD_TW).filter((k) => (onPath ? !!TD_TW[k].path : !TD_TW[k].path)); const ks = ks0.filter((k) => tdTowerOpen(k)).concat(ks0.filter((k) => !tdTowerOpen(k)).sort((a, b) => TD_TW[a].un - TD_TW[b].un).slice(0, 2));
-    panel.innerHTML = `<div class="td-ph"><b>${onPath ? 'Trampa en el camino' : 'Construir aquí'}</b><button class="td-close" data-a="close" aria-label="Cerrar">✕</button></div><div class="td-tws">${ks.map((k) => { const K = TD_TW[k]; const open = tdTowerOpen(k) && (!SOLO || SOLO.has(k)); return `<button type="button" class="td-tw" data-a="build" data-k="${k}" ${open ? '' : 'disabled'}><canvas width="64" height="64" data-k="${k}"></canvas><b>${tdTowerOpen(k) ? K.n.split(' ')[0] : '🔒'}</b><span>${!tdTowerOpen(k) ? `Mapa ${K.un + 1}` : open ? `🌰 ${costOf(k, 0)}` : 'No aquí'}</span></button>`; }).join('')}</div>`;
+    const ks0 = Object.keys(TD_TW).filter((k) => (onPath ? !!TD_TW[k].path : !TD_TW[k].path)); const ks1 = ks0.filter((k) => tdTowerOpen(k)).concat(ks0.filter((k) => !tdTowerOpen(k)).sort((a, b) => TD_TW[a].un - TD_TW[b].un).slice(0, 2)); const cat = onPath ? 'all' : (st.bcat || 'all'); const ks = cat === 'all' ? ks1 : ks1.filter((k) => tdCat(k) === cat); const cats = !onPath && ks1.length > 12 ? `<div class="td-cats">${TD_CATS.map(([c, l]) => `<button type="button" class="td-cat${cat === c ? ' on' : ''}" data-a="cat" data-c="${c}">${l}</button>`).join('')}</div>` : '';
+    panel.innerHTML = `<div class="td-ph"><b>${onPath ? 'Trampa en el camino' : 'Construir aquí'}</b><button class="td-close" data-a="close" aria-label="Cerrar">✕</button></div>${cats}<div class="td-tws">${ks.map((k) => { const K = TD_TW[k]; const open = tdTowerOpen(k) && (!SOLO || SOLO.has(k)); return `<button type="button" class="td-tw" data-a="build" data-k="${k}" ${open ? '' : 'disabled'}><canvas width="64" height="64" data-k="${k}"></canvas><b>${tdTowerOpen(k) ? K.n.split(' ')[0] : '🔒'}</b><span>${!tdTowerOpen(k) ? `Mapa ${K.un + 1}` : open ? `🌰 ${costOf(k, 0)}` : 'No aquí'}</span></button>`; }).join('')}</div>`;
     panel.hidden = false; paintMini(); refreshPanel();
   }
   function info(t) {
     const K = TD_TW[t.k], L = t.lvl, r = RNG(t).toFixed(1); const bm = t.bm > 1 ? ` · +${Math.round((t.bm - 1) * 100)} % por árbol` : '';
+    { const B6 = tb(t); if (B6 === 'aura') return `${Math.round(K.dps[L] * (t.spec === 2 ? 1.6 : 1))} daño/s a todas las plagas cerca · alcance ${r}${bm}`; if (B6 === 'mina') return `Minas de ${K.dmg[L]} de daño en área (hasta ${(3 + L) * (t.spec === 2 ? 2 : 1)} a la vez) · alcance ${r}${bm}`; if (B6 === 'global') return `${Math.round(K.dmg[L] * (t.spec === 2 ? 1.8 : 1))} de daño a ${t.spec === 1 ? '3 plagas' : 'una plaga'} en cualquier parte del mapa cada ${K.rate[L]} s${bm}`; if (B6 === 'linea') return `${Math.round(K.dmg[L] * (t.spec === 2 ? 1.5 : 1))} de daño a todas las plagas en línea · alcance ${r}${bm}`; }
     if (K.support) return `+${Math.round((K.buff[L] + (t.spec === 1 ? 0.6 : 0)) * 100)} % de daño a torres cercanas · +${Math.round(K.seeds[L] * (t.spec === 2 ? 2.5 : 1))} 🌰 por oleada`;
     if (tb(t) === 'rayo') return `${K.dps[L]} daño/s, sube hasta ×${t.spec === 2 ? 7 : 4} · alcance ${r}${bm}`;
     if (tb(t) === 'hongo') return `Veneno ${K.dot[L] * (t.spec === 1 ? 2 : 1)}/s · frena ${Math.round((t.spec === 2 ? 0.7 : K.slow[L]) * 100)} % · alcance ${r}${bm}`;
@@ -1341,7 +1456,7 @@ function tdStart(mi, daily) {
     const specs = t.lvl === 3 && !t.spec ? `<div class="td-specs"><b class="small">✨ Maestría · elige un camino (🌰 ${specCost(t.k)})</b><div class="td-spec-row">${K.spec.map(([n, d], i) => `<button type="button" class="td-spec" data-a="spec" data-s="${i + 1}"><canvas width="64" height="64" data-k="${t.k}" data-l="3" data-s="${i + 1}"></canvas><b>${n}</b><span>${d}</span></button>`).join('')}</div></div>` : '';
     const title = t.spec ? `${K.n} · ✨ ${K.spec[t.spec - 1][0]}` : `${K.n} · nivel ${t.lvl + 1}`;
     panel.innerHTML = `<div class="td-ph"><b>${title}</b><button class="td-close" data-a="close" aria-label="Cerrar">✕</button></div><p class="td-inf2">${info(t)}${tdFxTxt(K.fx)}</p>${specs}
-      <div class="td-acts">${t.lvl < 3 ? '<button type="button" class="btn primary" data-a="up"></button>' : ''}${K.support || tb(t) === 'trampa' || tb(t) === 'pino' ? '' : `<button type="button" class="btn" data-a="mode">🎯 ${({ primero: 'Al primero', fuerte: 'Al más fuerte', ultimo: 'Al último' })[t.mode]}</button>`}<button type="button" class="btn" data-a="sell">Vender · +${sellOf(t)} 🌰</button></div>`;
+      <div class="td-acts">${t.lvl < 3 ? '<button type="button" class="btn primary" data-a="up"></button>' : ''}${K.support || tb(t) === 'trampa' || tb(t) === 'pino' || tb(t) === 'aura' || tb(t) === 'mina' ? '' : `<button type="button" class="btn" data-a="mode">🎯 ${({ primero: 'Al primero', fuerte: 'Al más fuerte', ultimo: 'Al último' })[t.mode]}</button>`}<button type="button" class="btn" data-a="sell">Vender · +${sellOf(t)} 🌰</button></div>`;
     panel.hidden = false; paintMini(); refreshPanel();
   }
   function refreshPanel() {
@@ -1352,6 +1467,7 @@ function tdStart(mi, daily) {
   panel.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-a]'); if (!b || b.disabled) return; TDS.init(); const a = b.dataset.a;
     if (a === 'close') { closePanel(); return; }
+    if (a === 'cat' && st.build) { st.bcat = b.dataset.c; openBuild(st.build.x, st.build.y, false); return; }
     if (a === 'build' && st.build) { const k = b.dataset.k, cst = costOf(k, 0); if (st.seeds < cst) { TDS.no(); return; } if (MAXT && k !== 'trampa' && st.tw.filter((x) => tb(x) !== 'trampa').length >= MAXT) { TDS.no(); hint(`📦 Espacio escaso: máximo ${MAXT} torres. Vende una para cambiar.`, 2600); return; } st.seeds -= cst; const t = { k, lvl: 0, x: st.build.x, y: st.build.y, cd: 0, aim: -Math.PI / 2, mode: 'primero', bm: 1, spec: 0, born: 0.35, stun: 0 }; st.tw.push(t); recalcBuff(); TDS.build(); puff(t.x + 0.5, t.y + 0.5, '#fff', 10, 2); ring(t.x + 0.5, t.y + 0.5, 0.8, 'rgba(255,255,255,.9)', 0.35); closePanel(); hud(); return; }
     const t = st.sel; if (!t) return;
     if (a === 'up') { if (t.lvl >= 3) return; const cst = costOf(t.k, t.lvl + 1); if (st.seeds < cst) { TDS.no(); return; } st.seeds -= cst; t.lvl++; t.born = 0.35; recalcBuff(); TDS.up(); puff(t.x + 0.5, t.y + 0.5, '#ffd23c', 14, 2.5); ring(t.x + 0.5, t.y + 0.5, 1, 'rgba(255,210,60,.95)', 0.45); openTower(t); hud(); }
