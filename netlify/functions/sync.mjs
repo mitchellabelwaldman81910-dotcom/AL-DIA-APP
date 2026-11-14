@@ -890,7 +890,7 @@ export default async (req, context) => {
           const GP = body.game === "mono" ? "gk" : body.game === "cielo" ? "gc" : body.game === "mina" ? "gz" : body.game === "torres" ? "gf" : body.game === "torresn" ? "gfn" : body.game === "navidad" ? "gnv" : "gg";
           // Galope: su propio ranking. Puntos = distancia; no hay manzanas, así que "partidas" cuenta las partidas.
           const score = Math.max(0, Math.floor(+body.score || 0)); const dur = Math.max(1, Math.floor(+body.dur || 0));
-          if (score < 1 || score > (body.game === "mina" ? 60000 : body.game === "torresn" ? 400 : body.game === "navidad" ? 40 : dur * 35 + 40) || dur > 36000) return json({ error: "Partida inválida" }, 400);
+          if (score < 1 || score > (body.game === "mina" ? 60000 : body.game === "torresn" ? 1200 : body.game === "navidad" ? 40 : dur * 35 + 40) || dur > 36000) return json({ error: "Partida inválida" }, 400);
           const now = Date.now(); const who = { id: as, name: auth[as].name, color: auth[as].color, av: auth[as].av || 0 };
           const put = async (key) => { const prev = await store.get(key, { type: "json" }); if (!prev || score > (prev.score || 0)) { await store.setJSON(key, { ...who, score, apples: 0, at: now }); return true; } return false; };
           await put(`${W}${GP}/d/${dayOf(now)}/${as}`); await put(`${W}${GP}/w/${weekOf(now)}/${as}`); const newBest = await put(`${W}${GP}/a/${as}`);

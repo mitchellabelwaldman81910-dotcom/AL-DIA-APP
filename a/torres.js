@@ -623,7 +623,7 @@ Object.assign(TD_POWERS, {
   vida: { e: '💚', n: 'Savia curativa', d: 'Recuperas 3 vidas.', cost: 220, cd: 90 },
   oro: { e: '✨', n: 'Lluvia dorada', d: 'Durante 12 s cada plaga da el triple de semillas.', cost: 240, cd: 60 },
 });
-const tdPwEq = () => { const d = tdData(); const own = Object.keys(TD_POWERS).filter((k) => d.pw[k]); const eq = (d.pwEq || []).filter((k) => d.pw[k]); return (eq.length ? eq : own).slice(0, 3); };
+const tdPwEq = () => { const d = tdData(); const own = Object.keys(TD_POWERS).filter((k) => d.pw[k]); return (Array.isArray(d.pwEq) ? d.pwEq.filter((k) => d.pw[k]) : own).slice(0, 3); };
 Object.assign(TD_SKINS, {
   menta: { n: 'Menta fresca', cost: 150, c: ['#3ac8a0', '#8af0d0', '#5a4232'], f: '#ffffff' },
   lavanda: { n: 'Lavanda', cost: 180, c: ['#9a7ad8', '#c8b0f0', '#5a4232'], f: '#ffe066' },
@@ -892,9 +892,9 @@ Object.assign(VIDA_ACTS, {
   'td-lvl': (el) => { const mi = +el.dataset.m; if (!tdUnlocked(mi)) { toast('Supera el nivel anterior para abrir este.'); return; } tdLevelSheet(mi); },
   'td-buy': (el) => {
     const d = tdData(), t = el.dataset.t, k = el.dataset.k; let cost = 0;
-    if (t === 'pweq') { const eq = tdPwEq(); const i = eq.indexOf(k); if (i >= 0) eq.splice(i, 1); else { if (eq.length >= 3) eq.shift(); eq.push(k); } d.pwEq = eq.length ? eq : ['__']; jpSave(); TDS.init(); TDS.tone(880, 0.08, 'triangle', 0.04); render(); return; }
+    if (t === 'pweq') { const eq = tdPwEq(); const i = eq.indexOf(k); if (i >= 0) eq.splice(i, 1); else { if (eq.length >= 3) eq.shift(); eq.push(k); } d.pwEq = eq; jpSave(); TDS.init(); TDS.tone(880, 0.08, 'triangle', 0.04); render(); return; }
     if (t === 'up') { const l = d.up[k] || 0; if (l >= 5) return; cost = TD_UPC[l]; if (d.gold < cost) return; d.gold -= cost; d.up[k] = l + 1; }
-    else if (t === 'pw') { if (d.pw[k]) return; cost = TD_POWERS[k].cost; if (d.gold < cost) return; d.gold -= cost; d.pw[k] = 1; }
+    else if (t === 'pw') { if (d.pw[k]) return; cost = TD_POWERS[k].cost; if (d.gold < cost) return; d.gold -= cost; d.pw[k] = 1; if (Array.isArray(d.pwEq) && d.pwEq.length < 3) d.pwEq.push(k); }
     else if (t === 'skin') { if (d.skins[k]) { d.skin = k; jpSave(); TDS.init(); TDS.tone(880, 0.08, 'triangle', 0.04); render(); return; } cost = TD_SKINS[k].cost; if (d.gold < cost) return; d.gold -= cost; d.skins[k] = 1; d.skin = k; }
     else if (t === 'boost') { const l = d[k] || 0; if (l >= 3) return; cost = TD_BOOST[k].cost[l]; if (d.gold < cost) return; d.gold -= cost; d[k] = l + 1; }
     const ach = tdCheckAch(); jpSave(); TDS.init(); TDS.spec(); toast(ach.length ? `¡Comprado! Logro: ${ach.map((a) => a.n).join(', ')}` : '¡Comprado!'); render();
@@ -982,7 +982,7 @@ function tdStart(mi, daily) {
   const COACH = (MI === 0 && !INF && !(D.wins > 0)) ? (() => { for (let y = 2; y < TD_ROWS; y++) for (let x = 0; x < TD_COLS; x++) { if (blocked.has(key(x, y)) || pathCells.has(key(x, y))) continue; let n = 0; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if (pathCells.has(key(x + dx, y + dy))) n++; if (n >= 3) return [x, y]; } return null; })() : null;
   const twDesc = () => (M.tw || []).map((k) => `${TD_TWISTS[k].e} ${TD_TWISTS[k].n}: ${TD_TWISTS[k].d}`).join('  ');
   const size = () => {
-    V.dpr = Math.min(2, devicePixelRatio || 1); V.w = innerWidth; V.h = innerHeight; c.width = Math.round(V.w * V.dpr); c.height = Math.round(V.h * V.dpr); c.style.width = V.w + 'px'; c.style.height = V.h + 'px';
+    V.lowF = low(); V.lowN = 0; V.dpr = Math.min(V.lowF ? 1.5 : 2, devicePixelRatio || 1); V.w = innerWidth; V.h = innerHeight; c.width = Math.round(V.w * V.dpr); c.height = Math.round(V.h * V.dpr); c.style.width = V.w + 'px'; c.style.height = V.h + 'px';
     const cs = getComputedStyle(probe); const st0 = parseFloat(cs.paddingTop) || 0, sb = parseFloat(cs.paddingBottom) || 0;
     const top = st0 + 58, bot = sb + 74; const ah = V.h - top - bot;
     V.T = Math.floor(Math.max(24, Math.min(V.w / TD_COLS, ah / TD_ROWS, 76))); V.ox = Math.round((V.w - TD_COLS * V.T) / 2); V.oy = Math.round(top + (ah - TD_ROWS * V.T) / 2);
@@ -1552,6 +1552,7 @@ function tdStart(mi, daily) {
   let hudT = 0;
   const loop = (now) => {
     st.id = requestAnimationFrame(loop);
+    if (V.lowF !== low() && (++V.lowN) > 90) { V.lowN = 0; size(); }
     if (paused || st.choosing) { st.last = now; if (st.choosing) draw(); return; }
     const raw = Math.min(0.05, Math.max(0, (now - st.last) / 1000)); st.last = now;
     for (let i = 0; i < st.speed; i++) step(raw);

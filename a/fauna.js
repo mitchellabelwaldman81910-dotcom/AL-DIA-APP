@@ -128,7 +128,7 @@ function faStep(dt, t) {
 }
 function faFrame(now) {
   if (!FA.on) return; requestAnimationFrame(faFrame);
-  if (document.hidden || (typeof GAME !== 'undefined' && GAME.run) || (typeof GL !== 'undefined' && GL.run)) { FA.last = now; return; }
+  if (document.hidden || document.body.classList.contains('gm-on') || (typeof GAME !== 'undefined' && GAME.run) || (typeof GL !== 'undefined' && GL.run)) { FA.last = now; return; }
   if (now - FA.last < 33) return; const dt = Math.min(0.1, (now - FA.last) / 1000); FA.last = now;
   const g = FA.g, t = now / 1000; faStep(dt, t); faDraw(g, t);
 }

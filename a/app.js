@@ -568,9 +568,10 @@ function openSheet(html, onClose) {
   d.querySelector('.sheet-body')?.scrollTo(0, 0);
 }
 function closeSheet(runHandler = true) {
-  const d = sheet();
-  if (!runHandler) onSheetClose = null;
+  // el cierre se procesa en el acto: si enseguida se abre otra hoja, el aviso tardío de «close» ya no le borra sus datos
+  const d = sheet(); const fn = runHandler ? onSheetClose : null; onSheetClose = null;
   if (d.open) d.close();
+  if (fn) fn(); else draft = null;
 }
 function sheetHead(title) {
   return `<div class="handle" aria-hidden="true"></div><div class="sheet-head"><h2 id="sheetTitle">${esc(title)}</h2>
@@ -3173,7 +3174,7 @@ document.addEventListener('click', (e) => {
   const fn = ACTIONS[el.dataset.act] || VIDA_ACTS[el.dataset.act];
   if (fn) { e.preventDefault(); if (!['toggle-task', 'toggle-step', 'ambient'].includes(el.dataset.act)) Snd.tick(); fn(el, e); }
 });
-sheet().addEventListener('close', () => { const fn = onSheetClose; onSheetClose = null; if (fn) fn(); else draft = null; });
+sheet().addEventListener('close', () => { if (sheet().open) return; const fn = onSheetClose; onSheetClose = null; if (fn) fn(); else draft = null; });
 sheet().addEventListener('click', (e) => { if (e.target === sheet()) closeSheet(true); });
 
 document.addEventListener('input', (e) => {

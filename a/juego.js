@@ -122,6 +122,9 @@ function gmStart() {
   try { history.pushState({ gmGame: true }, ''); } catch { /* */ }
   const onPop = () => { if (GAME.run) { try { history.pushState({ gmGame: true }, ''); } catch { /* */ } } };
   addEventListener('popstate', onPop);
+  // si la app cambia de pantalla mientras juegas (atrás, un aviso, un enlace), el juego se cierra limpio como los demás
+  const onHash = () => { if (GAME.run && !/^#\/juego(\/|$)/.test(location.hash)) { removeEventListener('hashchange', onHash); end(true).finally(() => { wrap.remove(); document.body.classList.remove('gm-on'); }); } };
+  addEventListener('hashchange', onHash);
   wrap.addEventListener('touchstart', (e) => { if (!e.target.closest('button')) e.preventDefault(); }, { passive: false });
   wrap.querySelector('#gmX').addEventListener('click', () => end(true));
   const vib = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch { /* */ } };
@@ -247,7 +250,7 @@ function gmStart() {
   };
   GAME.raf = requestAnimationFrame(loop);
   async function end(quit) {
-    if (!GAME.run) return; cancelAnimationFrame(GAME.raf); removeEventListener('resize', size); removeEventListener('keydown', key); removeEventListener('popstate', onPop);
+    if (!GAME.run) return; cancelAnimationFrame(GAME.raf); removeEventListener('resize', size); removeEventListener('keydown', key); removeEventListener('popstate', onPop); removeEventListener('hashchange', onHash);
     const res = { score: st.score, apples: st.apples, golden: st.golden, dur: Math.round((performance.now() - st.t0) / 1000) };
     GAME.run = null;
     if (quit && !st.score) { wrap.remove(); document.body.classList.remove('gm-on'); return; }
