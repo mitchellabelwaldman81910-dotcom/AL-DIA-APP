@@ -4143,3 +4143,8 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
 .gm-pod.p1::after { content: "👑"; position: absolute; top: -34px; font-size: 20px; animation: arcFloat 2.6s ease-in-out infinite; }
 .gm-list li.me { font-weight: 800; background: color-mix(in srgb, var(--pen) 8%, transparent); border-radius: 8px; padding-left: 6px; padding-right: 6px; }
 .gm-podium { margin-top: 34px; }
+.td-gift { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 14px; margin: 0 0 10px; border: 2px dashed #f2b01e; border-radius: 20px; background: linear-gradient(135deg, #fffbe8, #fff0c0); color: #5a3a00; animation: tdWiggle 2.4s ease-in-out infinite; }
+.td-gift > span { font-size: 32px; } .td-gift div { flex: 1; display: grid; } .td-gift small { font-size: 12px; opacity: .8; }
+.td-gift i { font-style: normal; font-weight: 800; padding: 8px 14px; border-radius: 99px; background: #f2b01e; color: #fff; }
+@keyframes tdWiggle { 0%, 80%, 100% { transform: none; } 85% { transform: rotate(-1.2deg); } 90% { transform: rotate(1.2deg); } 95% { transform: rotate(-.6deg); } }
+:root[data-theme="dark"] .td-gift { background: linear-gradient(135deg, #3a3018, #2a2412); color: #ffe8a8; }

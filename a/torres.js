@@ -444,8 +444,8 @@ function viewTorres() {
     const nodes = []; for (let k = 0; k < TD_PER_WORLD; k++) { const row = Math.floor(k / 5), col = row % 2 ? 4 - (k % 5) : k % 5; nodes.push({ k, mi: base + k, x: 10 + col * 20, y: 10 + row * 20 }); }
     const pathD = nodes.map((n, i) => `${i ? 'L' : 'M'}${n.x} ${n.y}`).join(' ');
     const nodeHTML = nodes.map((n) => { const M = TD_MAPS[n.mi], s = d.st[n.mi] || 0, open = tdUnlocked(n.mi), cur = n.mi === nextL; return `<button type="button" class="td-node${s ? ' won' : ''}${open ? '' : ' lock'}${cur ? ' cur' : ''} k-${M.kind}" style="left:${n.x}%;top:${n.y}%" data-act="td-lvl" data-m="${n.mi}" ${open ? '' : 'aria-disabled="true"'} aria-label="Nivel ${n.mi + 1}: ${esc(M.n)}"><b>${open ? n.mi + 1 : '🔒'}</b>${M.kind !== 'normal' ? `<i class="td-nk">${TD_KINDS[M.kind].e}</i>` : ''}${s ? `<span class="td-ns">${'★'.repeat(s)}${'☆'.repeat(3 - s)}</span>` : ''}</button>`; }).join('');
-    body = `<div class="td-sum"><div><b>${won}</b><span>de 300 niveles</span></div><div><b>🍂 ${d.gold}</b><span>hojas doradas</span></div><div><b>⭐ ${tot}</b><span>estrellas</span></div></div>
-      <button type="button" class="td-continue" data-act="td-lvl" data-m="${nextL}" style="--g1:${TD_WORLDS[TD_MAPS[nextL].w].g[0]};--g2:${TD_WORLDS[TD_MAPS[nextL].w].bg}"><span>${won ? 'Continuar' : 'Empezar'}</span><b>Nivel ${nextL + 1} · ${esc(TD_MAPS[nextL].n)}</b><i>▶</i></button>
+    body = `<button type="button" class="td-continue" data-act="td-lvl" data-m="${nextL}" style="--g1:${TD_WORLDS[TD_MAPS[nextL].w].g[0]};--g2:${TD_WORLDS[TD_MAPS[nextL].w].bg}"><span>${won ? 'Continuar' : 'Empezar'}</span><b>Nivel ${nextL + 1} · ${esc(TD_MAPS[nextL].n)}</b><i>▶</i></button>
+      ${d.gift && d.gift.day === tdToday() ? '' : `<button type="button" class="td-gift" data-act="td-gift"><span>🎁</span><div><b>Regalo del día</b><small>Racha: ${(d.gift && d.gift.streak) || 0} ${((d.gift && d.gift.streak) || 0) === 1 ? 'día' : 'días'} · ¡tócalo para abrirlo!</small></div><i>Abrir</i></button>`}
       <div class="td-daily${done ? ' done' : ''}"><div><b>📅 Reto del día · nivel ${dl.mi + 1}</b><span>${dl.mod.n}: ${dl.mod.d}.</span><small>${done ? '¡Listo por hoy! Vuelve mañana.' : 'Gánalo: estrella dorada ⭐ y +15 🍂'}</small></div>${done ? '<span class="td-ok">✓</span>' : `<button type="button" class="btn primary" data-act="td-play" data-m="${dl.mi}" data-daily="1">Jugar</button>`}</div>
       ${worlds}
       <div class="td-wmap" style="--g1:${W.g[0]};--g2:${W.g[1]};--bg:${W.bg};--p:${W.p[0]};--p2:${W.p[1]}"><div class="td-wmap-h"><b>${W.e} ${W.n}</b><span>Jefe: ${TD_EN[W.boss].n}</span></div><div class="td-wmap-in"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${pathD}"/></svg>${nodeHTML}</div></div>
@@ -504,6 +504,14 @@ JG_CFG.torresn = { title: 'Ranking · niveles superados', tabs: [['dia', 'Hoy'],
 JG_CFG.torres = { title: 'Ranking · modo infinito', tabs: [['dia', 'Hoy'], ['semana', 'Semana'], ['record', 'Récord'], ['manzanas', 'Partidas']], val: (x, t) => (t === 'manzanas' ? plural(x.apples, 'partida', 'partidas') : `${x.score} oleadas`), mine: (m) => `Tu mejor: <b>${m.best || 0} oleadas</b> · partidas: <b>${m.games || 0}</b>`, none: 'Aún nadie juega el modo infinito en este periodo.' };
 Object.assign(VIDA_ACTS, {
   'td-tab': (el) => { TD.tab = el.dataset.v; render(); },
+  'td-gift': (el) => {
+    const d = tdData(); const t = tdToday(); if (d.gift && d.gift.day === t) return;
+    const y = new Date(Date.now() - 864e5); const yk = `${y.getFullYear()}-${y.getMonth() + 1}-${y.getDate()}`;
+    const streak = d.gift && d.gift.day === yk ? (d.gift.streak || 0) + 1 : 1; const g = Math.min(40, 8 + streak * 3);
+    d.gift = { day: t, streak }; d.gold += g; jpSave(); TDS.init(); TDS.win();
+    try { const r = el.getBoundingClientRect(); confetti(r.left + r.width / 2, r.top + r.height / 2, 40); } catch { /* */ }
+    toast(`🎁 +${g} hojas doradas · racha de ${streak} ${streak === 1 ? 'día' : 'días'}`); setTimeout(render, 500);
+  },
   'td-world': (el) => { const w = +el.dataset.w; if (!tdUnlocked(w * TD_PER_WORLD)) { toast(`Supera el último nivel de ${TD_WORLDS[w - 1].n} para abrir este mundo.`); return; } TD.world = w; render(); },
   'td-lvl': (el) => { const mi = +el.dataset.m; if (!tdUnlocked(mi)) { toast('Supera el nivel anterior para abrir este.'); return; } tdLevelSheet(mi); },
   'td-buy': (el) => {
