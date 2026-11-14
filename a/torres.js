@@ -1,8 +1,9 @@
-/* Cinnavia 7.64 — Defensa del Bosque 2.
-   Defensa de torres: las plagas quieren llegar al Gran Árbol. 30 mapas en 6 mundos (Pradera, Pantano, Nevado,
-   Volcán, Jardín encantado y Reino de las nubes), 9 torres con 4 niveles y 2 especialidades cada una (incluida una
-   trampa que va sobre el camino), 12 plagas, 6 jefes con poderes que congelan, queman o paralizan tus torres,
-   2 poderes, reto del día con reglas especiales, raíces (mejoras para siempre) y modo infinito con ranking.
+/* Cinnavia 8.0 — Defensa del Bosque.
+   Defensa de torres: las plagas quieren llegar al Gran Árbol. 300 niveles en 12 mundos (25 por mundo), cada uno con
+   una combinación de reglas que no se repite (lodo, portales, cofres, meteoritos…), 5 tipos de nivel (normal, relámpago,
+   desfile de jefes, asedio y gran final), 9 torres con 4 niveles y 2 especialidades, 15 plagas y 12 jefes con poderes,
+   bendiciones cada 5 oleadas, reto del día, modo infinito, tienda con hojas doradas (mejoras de torres, poderes nuevos,
+   aspectos del Gran Árbol y ayudas), 20 logros y dos rankings (niveles superados y modo infinito).
    Controles solo de tocar (la acción ocurre al soltar el dedo). Sprites en caché para que vaya fluido. */
 'use strict';
 
@@ -592,6 +593,7 @@ function tdStart(mi, daily) {
   const ZON = TW.has('resbalon') ? (() => { const a = 0.4 + rnd() * 0.12; return { a, b: a + 0.2 }; })() : null;
   const SOLO = TW.has('solo') ? (() => { const open = Object.keys(TD_TW).filter((k) => k !== 'ardilla' && tdTowerOpen(k)); return new Set(['ardilla', ...pickN(open, 3)]); })() : null;
   const NOUP = TW.has('raices'), MAXT = TW.has('espacio') ? 9 : 0;
+  const COACH = (MI === 0 && !INF && !(D.wins > 0)) ? (() => { for (let y = 2; y < TD_ROWS; y++) for (let x = 0; x < TD_COLS; x++) { if (blocked.has(key(x, y)) || pathCells.has(key(x, y))) continue; let n = 0; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if (pathCells.has(key(x + dx, y + dy))) n++; if (n >= 3) return [x, y]; } return null; })() : null;
   const twDesc = () => (M.tw || []).map((k) => `${TD_TWISTS[k].e} ${TD_TWISTS[k].n}: ${TD_TWISTS[k].d}`).join('  ');
   const size = () => {
     V.dpr = Math.min(2, devicePixelRatio || 1); V.w = innerWidth; V.h = innerHeight; c.width = Math.round(V.w * V.dpr); c.height = Math.round(V.h * V.dpr); c.style.width = V.w + 'px'; c.style.height = V.h + 'px';
@@ -932,6 +934,8 @@ function tdStart(mi, daily) {
     if (st.sel) { const t = st.sel; const r = RNG(t) * T; g.fillStyle = 'rgba(255,255,255,.13)'; g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 1.5; g.setLineDash([6, 5]); g.beginPath(); g.arc(SX(t.x + 0.5), SY(t.y + 0.5), r, 0, 7); g.fill(); g.stroke(); g.setLineDash([]); }
     for (const t of st.tw) if (t.k === 'pino' && t.spec === 2) { g.fillStyle = 'rgba(200,240,255,.12)'; g.beginPath(); g.arc(SX(t.x + 0.5), SY(t.y + 0.5), RNG(t) * T, 0, 7); g.fill(); }
     for (const q of st.pr) if (q.k === 'raiz') { const a = Math.min(1, (3 - q.t) * 2); g.strokeStyle = `rgba(90,60,30,${0.8 * a})`; g.lineWidth = 3; for (let i = 0; i < 8; i++) { const an = i * 0.785; g.beginPath(); g.moveTo(SX(q.x), SY(q.y)); g.quadraticCurveTo(SX(q.x + Math.cos(an) * 0.8), SY(q.y + Math.sin(an + 0.5) * 0.8), SX(q.x + Math.cos(an) * 1.5), SY(q.y + Math.sin(an) * 1.5)); g.stroke(); } }
+    // guía para quien juega por primera vez: un dedo señala dónde poner la primera torre
+    if (COACH && !st.tw.length) { const [cx, cy] = COACH; const X = SX(cx + 0.5), Y = SY(cy + 0.5), k = (Math.sin(st.t * 5) + 1) / 2; g.strokeStyle = `rgba(255,255,255,${0.5 + 0.5 * k})`; g.lineWidth = 3; g.beginPath(); g.arc(X, Y, T * (0.4 + 0.12 * k), 0, 7); g.stroke(); g.font = `${Math.round(T * 0.7)}px system-ui`; g.textAlign = 'center'; g.fillText('👆', X + T * 0.15, Y + T * (0.85 + 0.1 * k)); }
     // trampas (debajo de los enemigos)
     for (const t of st.tw) if (t.k === 'trampa') drawTowerSpr(t, SX(t.x + 0.5), SY(t.y + 0.5), 1);
     // el Gran Árbol
@@ -1144,6 +1148,6 @@ function tdStart(mi, daily) {
 EXTRA_VIEWS.torres = viewTorres; EXTRA_NAV.torres = 'juegos';
 {
   const baseJuegos = viewJuegos;
-  viewJuegos = function () { return baseJuegos().replace('<ul class="rows" style="margin-top:18px">', `<ul class="rows" style="margin-top:18px"><li><a href="#/torres"><span class="ico">${icon('play')}</span><span class="txt"><b>Defensa del Bosque <em class="sc-new">Nuevo</em></b><span>9 torres con maestrías, 6 mundos, 30 mapas, jefes y un reto cada día.</span></span>${icon('chev', 'chev')}</a></li>`); };
+  viewJuegos = function () { return baseJuegos().replace('<ul class="rows" style="margin-top:18px">', `<ul class="rows" style="margin-top:18px"><li><a href="#/torres"><span class="ico">${icon('play')}</span><span class="txt"><b>Defensa del Bosque <em class="sc-new">Nuevo</em></b><span>300 niveles en 12 mundos, 12 jefes, tienda, logros y un reto cada día.</span></span>${icon('chev', 'chev')}</a></li>`); };
   EXTRA_VIEWS.juegos = viewJuegos;
 }
