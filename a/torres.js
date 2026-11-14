@@ -1,5 +1,5 @@
 /* Cinnavia 8.0 — Defensa del Bosque.
-   Defensa de torres: las plagas quieren llegar al Gran Árbol. 300 niveles en 12 mundos (25 por mundo), cada uno con
+   Defensa de torres: las plagas quieren llegar al Gran Árbol. v5: 1,000 niveles en 40 mundos (25 por mundo), 31 torres, 63 plagas y 40 jefes, cada uno con
    una combinación de reglas que no se repite (lodo, portales, cofres, meteoritos…), 5 tipos de nivel (normal, relámpago,
    desfile de jefes, asedio y gran final), 9 torres con 4 niveles y 2 especialidades, 15 plagas y 12 jefes con poderes,
    bendiciones cada 5 oleadas, reto del día, modo infinito, tienda con hojas doradas (mejoras de torres, poderes nuevos,
@@ -85,6 +85,67 @@ const TD_NAMES = [
   [['Claro', 'Gruta', 'Sendero', 'Círculo', 'Bosque', 'Lago', 'Torre', 'Pantano'], ['de hongos', 'de luciérnagas', 'de la luna', 'de búhos', 'brillante', 'de sombras', 'nocturno', 'del murciélago', 'encantado']],
   [['Órbita', 'Nebulosa', 'Anillos', 'Luna', 'Estación', 'Cinturón', 'Galaxia', 'Cometa'], ['de Saturno', 'violeta', 'de cristal', 'roja', 'estelar', 'de asteroides', 'espiral', 'perdido', 'del infinito']],
 ];
+/* ---------- v5 · 28 mundos nuevos (1,000 niveles en total) ---------- */
+TD_WORLDS.push(
+  { n: 'Arrecife abisal', e: '🐙', g: ['#3a7a9a', '#33718f'], p: ['#c8b88a', '#b4a476'], deco: 'concha', bg: '#1f4e6e', fx: 'burbuja', boss: 'kraken' },
+  { n: 'Aurora boreal', e: '🌌', g: ['#d8eef0', '#cde5e8'], p: ['#8fb0c8', '#7a9cb4'], deco: 'pino', bg: '#3a5a8a', fx: 'nieve', boss: 'osopolar' },
+  { n: 'Cañón carmesí', e: '🏜️', g: ['#d88a5a', '#cc7e50'], p: ['#8a4a2a', '#7a3e22'], deco: 'cactus', bg: '#a8502a', fx: 'arena', boss: 'aguila' },
+  { n: 'Bosque de bambú', e: '🎋', g: ['#a8d88a', '#9ccf7e'], p: ['#d8c89a', '#c4b486'], deco: 'liana', bg: '#5a9a5a', fx: 'petalo', boss: 'mantis' },
+  { n: 'Ciudad hormiga', e: '🐜', g: ['#c8a87a', '#bc9c6e'], p: ['#8a6a4a', '#7a5c3e'], deco: 'cactus', bg: '#9a7a52', fx: 'arena', boss: 'reinahorm' },
+  { n: 'Glaciar de cristal', e: '🧊', g: ['#e2f4ff', '#d4ecfa'], p: ['#9ad0f0', '#82c0e4'], deco: 'cristal', bg: '#a8d4f0', fx: 'nieve', boss: 'morsa' },
+  { n: 'Isla volcánica', e: '🏝️', g: ['#8ac86a', '#7ebc5e'], p: ['#5a3a2e', '#4a2e24'], deco: 'lava', bg: '#3a8aa8', fx: 'brasa', boss: 'tortumagma' },
+  { n: 'Pantano tóxico', e: '🧪', g: ['#7a9a3a', '#6e8e32'], p: ['#5a4a3a', '#4c3e30'], deco: 'junco', bg: '#3e5a2a', fx: 'luciernaga', boss: 'hidra' },
+  { n: 'Montañas del trueno', e: '⛰️', g: ['#9aa0a8', '#8e949c'], p: ['#6a6058', '#5c524a'], deco: 'pino', bg: '#4a5060', fx: 'lluvia', boss: 'tronador' },
+  { n: 'Cueva de gemas', e: '💠', g: ['#4a3a5a', '#433452'], p: ['#8a7a6a', '#7a6a5c'], deco: 'cristal', bg: '#2a1f38', fx: 'brillo', boss: 'topazo' },
+  { n: 'Feria de sombras', e: '🎪', g: ['#5a3a6a', '#52345f'], p: ['#e8c86a', '#d4b45a'], deco: 'hongoluz', bg: '#2a1a3a', fx: 'estrella', boss: 'bufon' },
+  { n: 'Ruinas antiguas', e: '🗿', g: ['#7aa86a', '#6e9c5e'], p: ['#b8a888', '#a49474'], deco: 'liana', bg: '#4a7a4a', fx: 'lluvia', boss: 'quetzal' },
+  { n: 'Sabana dorada', e: '🦒', g: ['#e8c870', '#dcbc64'], p: ['#b8865a', '#a4764c'], deco: 'cactus', bg: '#d8a850', fx: 'arena', boss: 'leopardo' },
+  { n: 'Taiga lunar', e: '🌲', g: ['#3a6a5a', '#346052'], p: ['#8a9aa0', '#7a8a90'], deco: 'pino', bg: '#1e3a4a', fx: 'nieve', boss: 'lobolunar' },
+  { n: 'Manglar', e: '🦩', g: ['#5aa88a', '#509c7e'], p: ['#8a7a5a', '#7a6a4e'], deco: 'junco', bg: '#2f7a6a', fx: 'burbuja', boss: 'cocodrilo' },
+  { n: 'Pueblo de juguetes', e: '🧸', g: ['#f0d8e8', '#e8cce0'], p: ['#8ac8f0', '#74b8e4'], deco: 'nube', bg: '#f8b8d0', fx: 'brillo', boss: 'robot' },
+  { n: 'Cielo de globos', e: '🎈', g: ['#dff0ff', '#d2e8fc'], p: ['#ffb8c8', '#f4a4b8'], deco: 'nube', bg: '#9ac8f8', fx: 'brillo', boss: 'zepelin' },
+  { n: 'Océano helado', e: '🐋', g: ['#c8e4f0', '#bcdcea'], p: ['#5a9ac8', '#4a8abc'], deco: 'concha', bg: '#2a6a9a', fx: 'nieve', boss: 'ballena' },
+  { n: 'Desierto de sal', e: '🧂', g: ['#f4f0e8', '#ece6dc'], p: ['#c8b8a0', '#b8a890'], deco: 'cristal', bg: '#e0d4c0', fx: 'arena', boss: 'escarasol' },
+  { n: 'Bosque de relojes', e: '⏰', g: ['#b89a6a', '#ac8e5e'], p: ['#6a5a4a', '#5c4e40'], deco: 'calabaza', bg: '#7a5a3a', fx: 'hojao', boss: 'relojero' },
+  { n: 'Nebulosa estelar', e: '🌠', g: ['#3a2a5a', '#342552'], p: ['#e88ac8', '#d47ab8'], deco: 'astro', bg: '#1a1236', fx: 'estrella', boss: 'medusa' },
+  { n: 'Reino de dulces', e: '🍭', g: ['#ffd8ec', '#fccce4'], p: ['#c88a5a', '#b87a4c'], deco: 'cristal', bg: '#ffb0d8', fx: 'petalo', boss: 'osogomita' },
+  { n: 'Selva de neón', e: '💡', g: ['#1a3a3a', '#163434'], p: ['#3ae8c8', '#2ad4b4'], deco: 'hongoluz', bg: '#0a1e24', fx: 'luciernaga', boss: 'pavoneon' },
+  { n: 'Fosa ardiente', e: '🔥', g: ['#4a2a3a', '#422434'], p: ['#ff8a3a', '#ea7a2e'], deco: 'lava', bg: '#2a1220', fx: 'brasa', boss: 'tiburonlava' },
+  { n: 'Castillo de niebla', e: '🏰', g: ['#8a8aa0', '#7e7e94'], p: ['#5a5a6a', '#4e4e5e'], deco: 'hongoluz', bg: '#4a4a5e', fx: 'luciernaga', boss: 'espectro' },
+  { n: 'Valle de dinosaurios', e: '🦕', g: ['#8ab85a', '#7eac4e'], p: ['#a8885a', '#98784c'], deco: 'liana', bg: '#5a8a3a', fx: 'hoja', boss: 'rex' },
+  { n: 'Agujero negro', e: '🕳️', g: ['#1a1428', '#161222'], p: ['#6a5aa8', '#5a4a98'], deco: 'astro', bg: '#08060f', fx: 'estrella', boss: 'devorador' },
+  { n: 'Corazón del bosque', e: '🌳', g: ['#3a8a4a', '#347e42'], p: ['#7a5a3a', '#6c4e32'], deco: 'flor', bg: '#1f5a2a', fx: 'hoja', boss: 'arbolmaldito' },
+);
+TD_NAMES.push(
+  [['Gruta', 'Arrecife', 'Fosa', 'Jardín', 'Cueva', 'Bosque', 'Abismo', 'Banco'], ['de corales', 'del pulpo', 'de anémonas', 'profundo', 'de medusas', 'azul', 'de perlas', 'hundido', 'de algas']],
+  [['Lago', 'Valle', 'Bahía', 'Cielo', 'Campo', 'Cumbre', 'Fiordo', 'Paso'], ['de la aurora', 'verde', 'del reno', 'boreal', 'de luces', 'del norte', 'brillante', 'polar', 'eterno']],
+  [['Cañón', 'Mesa', 'Arco', 'Desfiladero', 'Barranco', 'Risco', 'Paso', 'Valle'], ['carmesí', 'del águila', 'de roca roja', 'del coyote', 'quemado', 'del atardecer', 'profundo', 'de cobre', 'del viento']],
+  [['Senda', 'Bosque', 'Templo', 'Puente', 'Jardín', 'Arroyo', 'Claro', 'Pagoda'], ['de bambú', 'del panda', 'de la grulla', 'de jade', 'tranquilo', 'del cerezo', 'del farol', 'de seda', 'zen']],
+  [['Túnel', 'Cámara', 'Galería', 'Hormiguero', 'Avenida', 'Plaza', 'Almacén', 'Torre'], ['real', 'de la reina', 'de las obreras', 'de azúcar', 'de hojas', 'subterránea', 'de tierra', 'infinita', 'roja']],
+  [['Grieta', 'Muro', 'Cueva', 'Puente', 'Palacio', 'Lago', 'Cumbre', 'Senda'], ['de cristal', 'congelada', 'de la morsa', 'azul', 'de hielo eterno', 'brillante', 'del iglú', 'de escarcha', 'de zafiro']],
+  [['Playa', 'Cráter', 'Laguna', 'Cueva', 'Bahía', 'Selva', 'Ladera', 'Muelle'], ['de lava', 'tropical', 'de ceniza', 'del loro', 'de basalto', 'humeante', 'de palmeras', 'del magma', 'escondida']],
+  [['Charca', 'Ciénaga', 'Lodo', 'Bosque', 'Raíz', 'Niebla', 'Puente', 'Caldero'], ['tóxica', 'burbujeante', 'de la hidra', 'verde', 'pegajosa', 'de hongos', 'oscura', 'de vapor', 'maldita']],
+  [['Pico', 'Paso', 'Cresta', 'Torre', 'Valle', 'Risco', 'Sendero', 'Cima'], ['del trueno', 'de rayos', 'tormentoso', 'del bisonte', 'gris', 'del eco', 'de granito', 'eléctrico', 'del relámpago']],
+  [['Mina', 'Veta', 'Gruta', 'Salón', 'Túnel', 'Pozo', 'Galería', 'Cámara'], ['de amatista', 'de rubíes', 'de esmeraldas', 'brillante', 'del tejón', 'de diamantes', 'oculta', 'de topacio', 'de ópalo']],
+  [['Carpa', 'Carrusel', 'Pasillo', 'Escenario', 'Laberinto', 'Rueda', 'Puesto', 'Túnel'], ['de sombras', 'del bufón', 'de espejos', 'embrujado', 'de máscaras', 'nocturno', 'de luces', 'del payaso', 'misterioso']],
+  [['Pirámide', 'Templo', 'Plaza', 'Escalinata', 'Patio', 'Altar', 'Calzada', 'Muro'], ['de piedra', 'del jaguar', 'perdido', 'del quetzal', 'antiguo', 'de jade', 'del sol', 'cubierto', 'sagrado']],
+  [['Llanura', 'Charca', 'Colina', 'Árbol', 'Pradera', 'Abrevadero', 'Sendero', 'Roca'], ['dorada', 'del león', 'de acacias', 'de la jirafa', 'del elefante', 'seca', 'salvaje', 'del atardecer', 'de la cebra']],
+  [['Bosque', 'Claro', 'Lago', 'Colina', 'Sendero', 'Cabaña', 'Río', 'Valle'], ['lunar', 'del lobo', 'de abetos', 'nevado', 'del alce', 'silencioso', 'de plata', 'del aullido', 'frío']],
+  [['Raíces', 'Canal', 'Isla', 'Laguna', 'Muelle', 'Estero', 'Delta', 'Pasaje'], ['del manglar', 'de flamencos', 'salobre', 'del caimán', 'de garzas', 'enredado', 'verde', 'de cangrejos', 'escondido']],
+  [['Casa', 'Tren', 'Torre', 'Plaza', 'Tienda', 'Castillo', 'Jardín', 'Calle'], ['de bloques', 'de cuerda', 'de peluches', 'de muñecas', 'de soldaditos', 'de trompos', 'de canicas', 'de colores', 'de cartón']],
+  [['Nube', 'Puerto', 'Isla', 'Ruta', 'Torre', 'Cielo', 'Faro', 'Puente'], ['de globos', 'flotante', 'del viento', 'pirata', 'de colores', 'de algodón', 'de arcoíris', 'alto', 'de cometas']],
+  [['Bahía', 'Témpano', 'Costa', 'Fiordo', 'Mar', 'Isla', 'Corriente', 'Cabo'], ['helado', 'de la ballena', 'del narval', 'de témpanos', 'gris', 'polar', 'de focas', 'del frío', 'de hielo']],
+  [['Salar', 'Llano', 'Laguna', 'Costra', 'Duna', 'Espejo', 'Cristal', 'Mina'], ['blanco', 'de sal', 'del flamenco', 'brillante', 'infinito', 'del sol', 'reluciente', 'seco', 'de espejos']],
+  [['Torre', 'Engranaje', 'Péndulo', 'Reloj', 'Taller', 'Campanario', 'Bosque', 'Sendero'], ['del tiempo', 'oxidado', 'de cuco', 'de arena', 'detenido', 'de bronce', 'eterno', 'de minutos', 'de manecillas']],
+  [['Nube', 'Estrella', 'Polvo', 'Faro', 'Puente', 'Anillo', 'Puerto', 'Jardín'], ['estelar', 'rosa', 'de cristal', 'de luz', 'de cometas', 'violeta', 'lejano', 'brillante', 'cósmico']],
+  [['Castillo', 'Río', 'Bosque', 'Puente', 'Valle', 'Fuente', 'Torre', 'Colina'], ['de caramelo', 'de chocolate', 'de paletas', 'de gomitas', 'de algodón de azúcar', 'de galleta', 'de malvavisco', 'de miel', 'de turrón']],
+  [['Jungla', 'Templo', 'Cascada', 'Cueva', 'Río', 'Claro', 'Ruinas', 'Puente'], ['de neón', 'fosforescente', 'eléctrica', 'brillante', 'de luces', 'nocturno', 'mágico', 'radiante', 'de colores']],
+  [['Fosa', 'Grieta', 'Volcán', 'Cueva', 'Corriente', 'Abismo', 'Chimenea', 'Arrecife'], ['ardiente', 'submarina', 'de magma', 'del tiburón', 'hirviente', 'de lava', 'oscura', 'de fuego', 'profunda']],
+  [['Torre', 'Muralla', 'Salón', 'Patio', 'Mazmorra', 'Puente', 'Biblioteca', 'Jardín'], ['de niebla', 'embrujado', 'del espectro', 'olvidado', 'de cristal oscuro', 'silencioso', 'de los ecos', 'gris', 'antiguo']],
+  [['Valle', 'Pantano', 'Volcán', 'Selva', 'Lago', 'Llanura', 'Cueva', 'Nido'], ['del rex', 'jurásico', 'de helechos', 'prehistórico', 'del saurio', 'de fósiles', 'del ámbar', 'gigante', 'de huevos']],
+  [['Horizonte', 'Órbita', 'Remolino', 'Vacío', 'Pozo', 'Espiral', 'Borde', 'Eco'], ['oscuro', 'sin luz', 'del devorador', 'infinito', 'de estrellas perdidas', 'silencioso', 'gravitacional', 'profundo', 'final']],
+  [['Raíz', 'Corazón', 'Tronco', 'Copa', 'Bosque', 'Manantial', 'Santuario', 'Senda'], ['eterna', 'del gran árbol', 'sagrada', 'milenaria', 'de la vida', 'dorada', 'del guardián', 'viva', 'verde']],
+);
 const tdRng = (seed) => { let s = seed | 0; return () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
 /* caminos de distintas formas: zigzag, serpentina, espiral; volteados y en espejo */
 function tdGenShape(seed, style, two) {
@@ -210,7 +271,7 @@ const TD_TWISTS = {
   cofres: { e: '🎁', n: 'Cofres', d: 'Aparecen cofres con semillas: tócalos antes de que desaparezcan.' },
   solo: { e: '🔒', n: 'Cuatro torres', d: 'Solo puedes construir 4 tipos de torre en este mapa.' },
   raices: { e: '🌱', n: 'Raíces jóvenes', d: 'No puedes mejorar torres hasta la oleada 6.' },
-  espacio: { e: '📦', n: 'Espacio escaso', d: 'Máximo 9 torres a la vez: elige bien.' },
+  espacio: { e: '📦', n: 'Espacio escaso', d: 'Pocas torres a la vez (9; en los mundos nuevos, 12): elige bien.' },
   emboscada: { e: '🗡️', n: 'Emboscadas', d: 'Cada 3 oleadas, un grupo aparece a mitad del camino.' },
   resbalon: { e: '🧊', n: 'Hielo resbaloso', d: 'Hay un tramo donde las plagas corren 70 % más rápido.' },
   bendito: { e: '🌳', n: 'Árbol bendito', d: 'Recuperas 1 vida cada 3 oleadas superadas.' },
@@ -223,7 +284,9 @@ const TD_TW_KEYS = Object.keys(TD_TWISTS);
   for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) pairs.push([K[a], K[b]]);
   for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) for (let c = b + 1; c < n; c++) trip.push([K[a], K[b], K[c]]);
   const r = tdRng(4242); const shuf = (A) => { for (let i = A.length - 1; i > 0; i--) { const j = (r() * (i + 1)) | 0; [A[i], A[j]] = [A[j], A[i]]; } return A; };
-  const order = [[], ...sets, ...shuf(pairs), ...shuf(trip)];
+  const quad = []; for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) for (let c = b + 1; c < n; c++) for (let d = c + 1; d < n; d++) quad.push([K[a], K[b], K[c], K[d]]);
+  // v5: los mundos nuevos mezclan otra vez parejas y tríos (con mapas distintos) y de vez en cuando cuatro reglas
+  const order = [[], ...sets, ...shuf(pairs), ...shuf(trip), ...shuf(pairs.concat(trip, shuf(quad).slice(0, 150))), ...shuf(trip.concat(pairs))];
   TD_MAPS.forEach((M, i) => { M.tw = order[i] || ['lodo', 'portal', 'cofres', 'lluvia']; });
   TD_MAPS[TD_MAPS.length - 1].tw = ['portal', 'meteoros', 'cofres', 'bendito'];
 })();
@@ -265,7 +328,7 @@ Object.assign(TD_EN, {
   cometa: { n: 'Cometa errante', hp: 5200, sp: 0.5, rew: 500, r: 0.5, c: '#7ad0ff', fly: 1, armor: 0.3, boss: 1, lives: 10, pow: 'cura', d: 'Jefe del Cosmos: cura a todas las plagas.' },
 });
 const TD_BOSSES = TD_WORLDS.map((w) => w.boss);
-const tdDiff = (lvl) => 1 + Math.min(lvl, 60) * 0.032 + Math.max(0, lvl - 60) * 0.011;
+const tdDiff = (lvl) => 1 + Math.min(lvl, 60) * 0.032 + Math.max(0, Math.min(lvl, 300) - 60) * 0.011 + Math.max(0, lvl - 300) * 0.0035;
 /* tienda (se paga con hojas doradas 🍂 que ganas al superar niveles) */
 const TD_UPC = [25, 50, 90, 140, 200];
 const TD_POWERS = {
@@ -308,10 +371,216 @@ const TD_ACH = [
 ];
 function tdCheckAch() { const d = tdData(); const got = []; for (const a of TD_ACH) if (!d.ach[a.id] && a.t(d)) { d.ach[a.id] = 1; d.gold += a.g; got.push(a); } return got; }
 
+/* ---------- v5 · gran evolución: 48 plagas nuevas, 28 jefes, 22 torres, oleadas, bendiciones, poderes y aspectos ---------- */
+const TD_EN5 = [];
+const tdEnDesc = (o) => [o.fly && 'Vuela', o.armor && `armadura ${Math.round(o.armor * 100)} %`, o.shield && 'burbuja protectora', o.heal && 'cura a los cercanos', o.regen && 'se cura sola', o.burrow && 'se esconde bajo tierra', o.split && `al morir se divide en ${o.split}`, o.charge && 'embiste', o.ghost && 'invisible (solo la ven torres cercanas y las de rayo en cadena)', o.steal && 'roba semillas', o.blink && 'da saltos hacia adelante', o.rage && 'corre más cuando está herida', o.aura && 'protege a sus vecinos con burbujas', o.tough && 'no la frenan el frío ni el lodo de tus torres', o.spawn && 'deja crías en el camino'].filter(Boolean).join(' · ');
+const en5 = (k, em, n, hp, sp, rew, c, o = {}, d = '') => { TD_EN[k] = { n, hp, sp, rew, r: 0.3, c, em, ...o, d: d || (tdEnDesc(o) ? tdEnDesc(o).charAt(0).toUpperCase() + tdEnDesc(o).slice(1) + '.' : 'Plaga común de este mundo.') }; if (!o.hide) TD_EN5.push(k); };
+en5('mosca', '🪰', 'Mosca zumbadora', 16, 2.3, 3, '#5a5a5a', { fly: 1 }, 'Voladora muy rápida: llega en nubes.');
+en5('cucaracha', '🪳', 'Cucaracha', 46, 1.5, 5, '#7a3a1a', { regen: 0.05 });
+en5('grillo', '🦗', 'Grillo saltarín', 36, 1.2, 5, '#5aa83a', { blink: 1 });
+en5('arana', '🕷️', 'Araña tejedora', 70, 1.0, 8, '#3a2a3a', { spawn: 'aranita' });
+en5('aranita', '🕷️', 'Arañita', 12, 1.8, 1, '#6a5a6a', { hide: 1 });
+en5('raton', '🐁', 'Ratón', 26, 2.2, 3, '#a8a8b0', {}, 'Pequeño y rapidísimo.');
+en5('mariposa', '🦋', 'Mariposa curandera', 40, 1.3, 7, '#5ab0f0', { fly: 1, heal: 1 });
+en5('alacran', '🦂', 'Alacrán', 80, 1.1, 8, '#a86a2a', { armor: 0.3, rage: 1 });
+en5('lombriz', '🪱', 'Lombriz', 55, 0.9, 6, '#e88a8a', { burrow: 1, split: 2 });
+en5('rata', '🐀', 'Rata ladrona', 60, 1.6, 8, '#6a6a72', { steal: 1 });
+en5('caracolgig', '🐌', 'Caracol de piedra', 150, 0.5, 11, '#8a7a6a', { armor: 0.5, tough: 1 });
+en5('ardillaloca', '🐿️', 'Ardilla traviesa', 44, 1.9, 6, '#c87a3a', { blink: 1 });
+en5('puercoespin', '🦔', 'Puercoespín', 100, 0.85, 9, '#8a6a4a', { armor: 0.4 });
+en5('vampiro', '🦇', 'Murciélago vampiro', 40, 1.9, 7, '#4a3a5a', { fly: 1, regen: 0.04 });
+en5('caramelo', '🍬', 'Caramelo saltón', 20, 2.2, 2, '#ff6ab0', {}, 'Dulce, pequeño y veloz.');
+en5('lobo', '🐺', 'Lobo gris', 85, 1.5, 9, '#7a7a88', { rage: 1 });
+en5('zorro', '🦊', 'Zorro astuto', 64, 1.7, 8, '#e07a2a', { blink: 1 });
+en5('bandido', '🦝', 'Mapache bandido', 90, 1.4, 10, '#6a6a6a', { steal: 1, shield: 0.4 });
+en5('jabali', '🐗', 'Jabalí', 140, 0.9, 12, '#6a4a3a', { charge: 1, armor: 0.15 });
+en5('zorrillo', '🦨', 'Zorrillo', 80, 1.1, 10, '#2a2a2a', { aura: 1 });
+en5('tejon', '🦡', 'Tejón tozudo', 160, 0.8, 12, '#5a5a5a', { tough: 1, armor: 0.3 });
+en5('castor', '🦫', 'Castor constructor', 130, 0.9, 11, '#8a5a3a', { regen: 0.04, tough: 1 });
+en5('nutria', '🦦', 'Nutria', 70, 1.8, 9, '#7a5a42', { regen: 0.05 });
+en5('sapito', '🐸', 'Sapo brincador', 60, 1.3, 7, '#5aaa3a', { blink: 1, regen: 0.03 });
+en5('camaron', '🦐', 'Camarón veloz', 34, 2.4, 4, '#ff8a6a', {}, 'Corre muchísimo.');
+en5('cangrejito', '🦀', 'Cangrejo blindado', 120, 1.0, 11, '#e0503a', { armor: 0.45, shield: 0.4 });
+en5('perezoso', '🦥', 'Perezoso gigante', 420, 0.38, 22, '#9a8a6a', { tough: 1, armor: 0.2 }, 'Lentísimo, pero aguanta muchísimo y no se deja frenar.');
+en5('langosta', '🦞', 'Langosta furiosa', 140, 1.0, 12, '#c83a2a', { armor: 0.3, rage: 1 });
+en5('caiman', '🐊', 'Caimán', 190, 0.9, 15, '#4a7a3a', { armor: 0.35, charge: 1 });
+en5('calamar', '🦑', 'Calamar fantasma', 70, 1.4, 10, '#d0a0e8', { ghost: 1, blink: 1 });
+en5('pulpito', '🐙', 'Pulpito', 110, 1.0, 11, '#c85a8a', { split: 3, splitK: 'camaron' });
+en5('medusita', '🪼', 'Medusa', 60, 1.1, 9, '#c8a8f0', { fly: 1, ghost: 1, heal: 1 });
+en5('pezglobo', '🐡', 'Pez globo', 130, 0.9, 12, '#e8c85a', { shield: 0.8 });
+en5('tiburoncito', '🦈', 'Tiburón', 160, 1.2, 14, '#7a8aa0', { charge: 1, rage: 1 });
+en5('flamenco', '🦩', 'Flamenco', 80, 1.6, 10, '#ff8ab8', { fly: 1 });
+en5('pinguino', '🐧', 'Pingüino', 90, 1.5, 9, '#2a2a3a', { tough: 1 });
+en5('foca', '🦭', 'Foca', 170, 0.9, 13, '#8a9aa8', { armor: 0.3, regen: 0.04 });
+en5('cabra', '🐐', 'Cabra montés', 100, 1.4, 10, '#d8d0c0', { blink: 1, armor: 0.15 });
+en5('dodo', '🦤', 'Dodo despistado', 90, 1.6, 9, '#8a8aa0', { rage: 1 });
+en5('pavo', '🦚', 'Pavo real', 120, 1.1, 12, '#3a8ae8', { aura: 1, heal: 1 });
+en5('calabacin', '🎃', 'Calabaza traviesa', 140, 1.0, 12, '#e8762a', { split: 3, splitK: 'raton' });
+en5('fantasmita', '👻', 'Fantasmita', 70, 1.4, 10, '#f0f0ff', { fly: 1, ghost: 1, blink: 1 });
+en5('alien', '👾', 'Invasor', 110, 1.3, 12, '#9a6ae8', { blink: 1, regen: 0.04 });
+en5('robotito', '🤖', 'Robot', 180, 1.0, 15, '#9aa8b8', { armor: 0.4, shield: 0.5, tough: 1 });
+en5('dinito', '🦖', 'Dinosaurio', 260, 0.9, 18, '#5a9a4a', { rage: 1, armor: 0.2 });
+en5('dragoncito', '🐉', 'Dragón joven', 200, 1.1, 16, '#3aa86a', { fly: 1, armor: 0.3 });
+en5('golemito', '🗿', 'Golem de piedra', 300, 0.6, 20, '#8a8a8a', { armor: 0.55, tough: 1 });
+en5('bisonte', '🦬', 'Bisonte', 300, 0.8, 20, '#5a3a2a', { charge: 1, armor: 0.25 });
+en5('saurio', '🦕', 'Saurio cuellilargo', 520, 0.45, 26, '#7aa86a', { armor: 0.3, tough: 1 });
+en5('mamut', '🦣', 'Mamut', 600, 0.5, 30, '#8a5a3a', { armor: 0.4, charge: 1, tough: 1 });
+TD_EN5.forEach((k, i) => { const E = TD_EN[k]; E.lv ??= 300 + i * 14; E.w0 ??= 3 + (i % 4); E.wt ??= 2.4; });
+
+/* jefes de los mundos nuevos */
+const TD_POW_D = { tinta: 'su tinta apaga las torres de alrededor', hielo: 'congela las torres cercanas', fuego: 'quema una torre a la vez', corte: 'corta y aturde las 3 torres más cercanas', invoca: 'llama a su manada', escudo: 'se vuelve invencible por ratos', muro: 'pone burbujas a todas las plagas cercanas', cura: 'cura a todas las plagas', rayo: 'sus rayos paralizan torres', excava: 'se esconde bajo tierra', tele: 'se teletransporta hacia adelante', acelera: 'hace que todas las plagas corran', aullido: 'su aullido enfurece a todas las plagas', salto: 'da saltos enormes', clon: 'llama refuerzos de todas las plagas', bombas: 'tira bombas sobre tus torres', tiempo: 'detiene un momento a todas tus torres', apaga: 'un grito apaga las torres cercanas', sombra: 'se vuelve sombra y no recibe daño', todo: 'usa los poderes de todos los jefes' };
+const TD_TODO = ['hielo', 'fuego', 'cura', 'invoca', 'apaga', 'escudo', 'acelera', 'tele', 'muro', 'bombas', 'corte', 'tiempo'];
+[
+  ['kraken', '🐙', 'Kraken abisal', 'tinta', '#c85a8a', {}],
+  ['osopolar', '🐻‍❄️', 'Oso de la aurora', 'hielo', '#e8f4ff', { armor: 0.3 }],
+  ['aguila', '🦅', 'Águila de fuego', 'fuego', '#c8702a', { fly: 1 }],
+  ['mantis', '🦗', 'Mantis gigante', 'corte', '#7ac83a', {}],
+  ['reinahorm', '🐜', 'Hormiga reina', 'invoca', '#a83a2a', { minion: 'hormiga' }],
+  ['morsa', '🦭', 'Morsa colosal', 'escudo', '#8a9aa8', { armor: 0.4 }],
+  ['tortumagma', '🐢', 'Tortuga de magma', 'muro', '#d8502a', { armor: 0.5 }],
+  ['hidra', '🐲', 'Hidra del pantano', 'cura', '#4a9a3a', { split: 3, splitK: 'dinito' }],
+  ['tronador', '🦬', 'Bisonte del trueno', 'rayo', '#5a4a3a', { charge: 1 }],
+  ['topazo', '🦡', 'Tejón de las gemas', 'excava', '#7a6a9a', { armor: 0.3 }],
+  ['bufon', '🃏', 'Bufón sombrío', 'tele', '#8a3ab8', {}],
+  ['quetzal', '🐍', 'Serpiente emplumada', 'acelera', '#2aa86a', {}],
+  ['leopardo', '🐆', 'Leopardo veloz', 'aullido', '#e8b84a', { sp: 0.62 }],
+  ['lobolunar', '🐺', 'Lobo lunar', 'invoca', '#8a9ab8', { minion: 'lobo' }],
+  ['cocodrilo', '🐊', 'Cocodrilo anciano', 'salto', '#4a7a3a', { armor: 0.45 }],
+  ['robot', '🤖', 'Robot de cuerda', 'clon', '#9aa8b8', { armor: 0.35 }],
+  ['zepelin', '🎈', 'Globo pirata', 'bombas', '#e83a4a', { fly: 1 }],
+  ['ballena', '🐋', 'Ballena de hielo', 'muro', '#5a9ac8', { armor: 0.3 }],
+  ['escarasol', '🪲', 'Escarabajo del sol', 'cura', '#e8a82a', { armor: 0.3 }],
+  ['relojero', '⏰', 'Reloj encantado', 'tiempo', '#c8a050', {}],
+  ['medusa', '🪼', 'Medusa estelar', 'apaga', '#e88ac8', { fly: 1 }],
+  ['osogomita', '🧸', 'Oso de gomita', 'cura', '#ff8ab0', { split: 3, splitK: 'caramelo' }],
+  ['pavoneon', '🦚', 'Pavo real de neón', 'muro', '#3ae8c8', {}],
+  ['tiburonlava', '🦈', 'Tiburón de lava', 'fuego', '#ff6a2a', { charge: 1 }],
+  ['espectro', '👻', 'Espectro del castillo', 'sombra', '#c8c8e0', { fly: 1 }],
+  ['rex', '🦖', 'Rex de piedra', 'salto', '#6a8a4a', { armor: 0.4, rage: 1 }],
+  ['devorador', '🌑', 'Devorador de estrellas', 'tele', '#5a4a98', { armor: 0.3 }],
+  ['arbolmaldito', '🌳', 'Árbol maldito', 'todo', '#2a5a2a', { armor: 0.35 }],
+].forEach(([k, em, n, pow, c, o], i) => {
+  const W = TD_WORLDS.find((w) => w.boss === k);
+  TD_EN[k] = { n, em, hp: 5600 + i * 420, sp: 0.45, rew: 520 + i * 20, r: 0.5, c, boss: 1, lives: 10 + Math.floor(i / 6), pow, ...o, d: `Jefe de ${W ? W.n : 'un mundo'}: ${TD_POW_D[pow]}.` };
+});
+
+/* torres nuevas: cada una usa el estilo de ataque de una torre base (beh) con efectos propios (fx) */
+const TD_SPEC_A = (a, b) => [[a, 'Dispara a 3 enemigos a la vez'], [b, '+50 % alcance y golpes críticos']];
+Object.assign(TD_TW, {
+  cactus: { n: 'Cactus espinero', em: '🌵', beh: 'ardilla', d: 'Lanza púas muy rápido que frenan un poco.', cost: [60, 70, 130, 250], dmg: [6, 10, 17, 29], rng: [2.2, 2.5, 2.8, 3.1], rate: [0.4, 0.36, 0.32, 0.28], air: 1, c: '#4a9a4a', pc: '#9ad86a', un: 40, fx: { slow: 0.15 }, spec: TD_SPEC_A('Erizo de púas', 'Púa de acero') },
+  girasol: { n: 'Girasol solar', em: '🌻', beh: 'rayo', d: 'Rayo de sol que quema y se carga sobre el mismo enemigo.', cost: [110, 130, 220, 400], dps: [11, 19, 32, 55], rng: [2.3, 2.5, 2.7, 2.9], air: 1, c: '#f0c020', un: 70, fx: { burn: 4 }, spec: [['Prisma solar', 'El rayo se divide en 3'], ['Mediodía', 'Se carga hasta ×7']] },
+  rana: { n: 'Rana lengüetazo', em: '🐸', beh: 'ardilla', d: 'Su lengua empuja hacia atrás y a veces aturde.', cost: [80, 90, 160, 300], dmg: [16, 26, 42, 70], rng: [2.0, 2.2, 2.4, 2.6], rate: [1.0, 0.95, 0.9, 0.8], air: 1, c: '#4aa83a', pc: '#ff7a9a', un: 110, fx: { knock: 0.35, stun: 0.12 }, spec: TD_SPEC_A('Lengua múltiple', 'Lengua larga') },
+  calabaza: { n: 'Calabaza bomba', em: '🎃', beh: 'tortuga', d: 'Explota en área y deja a las plagas ardiendo.', cost: [100, 110, 200, 360], dmg: [28, 48, 80, 140], rng: [2.8, 3.0, 3.3, 3.6], rate: [1.7, 1.6, 1.5, 1.35], area: [1.0, 1.1, 1.2, 1.35], air: 0, c: '#e8762a', pc: '#e8762a', un: 160, fx: { burn: 6 }, spec: [['Gran estallido', 'Explosión enorme'], ['Semillas de fuego', 'Lanza 3 calabazas']] },
+  erizo: { n: 'Erizo de púas', em: '🦔', beh: 'pino', d: 'Lanza púas a todas las plagas que tiene cerca.', cost: [90, 100, 180, 320], dmg: [14, 22, 36, 58], frz: [0.25, 0.3, 0.35, 0.45], rng: [1.6, 1.7, 1.9, 2.1], rate: [1.6, 1.5, 1.35, 1.2], air: 1, c: '#a87a4a', un: 210, spec: [['Púas heladas', 'Además congela 2.5 s'], ['Espinas eternas', 'Frena siempre 40 %']] },
+  colibri: { n: 'Colibrí veloz', em: '🐦', beh: 'abejas', d: 'Colibríes que persiguen; terribles contra voladores.', cost: [90, 100, 180, 330], dmg: [6, 10, 16, 26], nb: [2, 3, 3, 4], rng: [3.2, 3.4, 3.6, 3.9], rate: [1.4, 1.3, 1.2, 1.1], air: 2, c: '#3ad8a8', pc: '#3ad8a8', un: 260, fx: { fly: 1.5 }, spec: [['Bandada', '+3 colibríes por disparo'], ['Pico de acero', 'Atraviesan armaduras y pegan más']] },
+  enredadera: { n: 'Enredadera', em: '🍃', beh: 'trampa', path: 1, d: 'Va SOBRE el camino y frena muchísimo a quien pase.', cost: [50, 60, 110, 200], dps: [8, 14, 22, 38], rng: [0.6, 0.6, 0.6, 0.6], air: 0, c: '#5aa83a', un: 300, fx: { slow: 0.45 }, spec: [['Raíces profundas', 'También frena 45 %'], ['Espinas', 'Daño al doble']] },
+  cuarzo: { n: 'Cristal resonante', em: '💎', beh: 'buho', d: 'Rayo de cristal que salta entre plagas e ignora armaduras.', cost: [130, 140, 240, 430], dmg: [18, 30, 50, 84], ch: [2, 3, 4, 5], rng: [2.8, 3.0, 3.2, 3.5], rate: [1.25, 1.2, 1.1, 1.0], air: 1, c: '#8ad8f0', un: 320, fx: { pierce: 1 }, spec: [['Resonancia', 'Salta entre 9 enemigos'], ['Cristal puro', 'Daño ×1.8 y frena']] },
+  lluvia: { n: 'Nube de lluvia', em: '🌧️', beh: 'hongo', d: 'Lluvia que frena muchísimo a todos en un área.', cost: [80, 90, 160, 290], dot: [3, 6, 10, 17], slow: [0.45, 0.5, 0.55, 0.65], rng: [2.2, 2.4, 2.6, 2.8], rate: [1.2, 1.1, 1.0, 0.9], area: [1.0, 1.15, 1.3, 1.45], air: 1, c: '#7ab0e0', un: 360, spec: [['Tormenta', 'Daño al doble'], ['Diluvio', 'Frena 70 %']] },
+  volcan: { n: 'Volcancito', em: '🌋', beh: 'tortuga', d: 'Lanza rocas de lava enormes que queman.', cost: [140, 150, 260, 460], dmg: [55, 90, 150, 250], rng: [2.6, 2.8, 3.1, 3.4], rate: [2.4, 2.3, 2.1, 1.9], area: [1.1, 1.25, 1.4, 1.6], air: 0, c: '#d8502a', pc: '#ff5a1f', un: 400, fx: { burn: 12 }, spec: [['Erupción', 'Explosión enorme'], ['Lluvia de lava', 'Lanza 3 rocas']] },
+  pulpo: { n: 'Pulpo tintero', em: '🐙', beh: 'hongo', d: 'Tinta venenosa que frena y envenena en área.', cost: [100, 110, 200, 350], dot: [6, 10, 17, 28], slow: [0.4, 0.45, 0.5, 0.6], rng: [2.0, 2.2, 2.4, 2.6], rate: [1.3, 1.2, 1.1, 1.0], area: [1.0, 1.1, 1.25, 1.4], air: 1, c: '#c85a8a', un: 440, spec: [['Tinta tóxica', 'Veneno al doble'], ['Tinta espesa', 'Frena 70 %']] },
+  dragonito: { n: 'Dragoncito', em: '🐲', beh: 'rayo', d: 'Aliento de fuego que quema y se intensifica.', cost: [150, 160, 280, 480], dps: [16, 27, 45, 76], rng: [2.4, 2.6, 2.8, 3.0], air: 1, c: '#3aa86a', un: 480, fx: { burn: 10 }, spec: [['Tres cabezas', 'El fuego se divide en 3'], ['Aliento eterno', 'Se carga hasta ×7']] },
+  tiburon: { n: 'Tiburón cazador', em: '🦈', beh: 'ardilla', d: 'Mordidas brutales: remata a plagas débiles y pega más a jefes.', cost: [140, 150, 260, 460], dmg: [45, 75, 125, 210], rng: [2.4, 2.6, 2.8, 3.1], rate: [1.6, 1.5, 1.4, 1.25], air: 0, c: '#5a7a9a', pc: '#cfe6ff', un: 520, fx: { exe: 0.15, boss: 1.3 }, spec: TD_SPEC_A('Frenesí', 'Mandíbula') },
+  hada: { n: 'Hada luminosa', em: '🧚', beh: 'arbol', support: 1, d: 'Las torres cercanas pegan mucho más y te da semillas cada oleada.', cost: [140, 160, 260, 440], buff: [0.2, 0.28, 0.38, 0.5], seeds: [8, 13, 20, 30], rng: [1.8, 1.8, 2.0, 2.2], air: 0, c: '#f0a8e8', un: 560, spec: [['Bendición', '+60 % de daño cerca'], ['Polvo de hada', 'Muchas más semillas']] },
+  reloj: { n: 'Reloj del tiempo', em: '⏳', beh: 'pino', d: 'Detiene el tiempo de todas las plagas cercanas.', cost: [130, 140, 240, 420], dmg: [8, 14, 22, 36], frz: [1.2, 1.5, 1.9, 2.4], rng: [1.7, 1.9, 2.1, 2.3], rate: [3.4, 3.2, 3.0, 2.7], air: 1, c: '#c8a050', un: 600, spec: [['Pausa total', 'Congela 2.5 s'], ['Cámara lenta', 'Frena siempre 40 %']] },
+  iman: { n: 'Imán dorado', em: '🧲', beh: 'ardilla', d: 'Cada plaga que vence te da 2 semillas extra.', cost: [100, 110, 190, 340], dmg: [10, 16, 26, 42], rng: [2.4, 2.6, 2.8, 3.0], rate: [0.7, 0.65, 0.6, 0.55], air: 1, c: '#e04a4a', pc: '#ffd23c', un: 640, fx: { cash: 2 }, spec: TD_SPEC_A('Atracción', 'Gran imán') },
+  mago: { n: 'Mago del roble', em: '🧙', beh: 'buho', d: 'Hechizos en cadena que además frenan.', cost: [160, 170, 290, 500], dmg: [22, 36, 60, 100], ch: [3, 4, 5, 6], rng: [3.0, 3.2, 3.4, 3.7], rate: [1.2, 1.1, 1.0, 0.95], air: 1, c: '#6a5ad0', un: 680, fx: { slow: 0.3 }, spec: [['Tormenta arcana', 'Salta entre 9 enemigos'], ['Archimago', 'Daño ×1.8 y frena']] },
+  ballesta: { n: 'Ballesta real', em: '🏹', beh: 'ardilla', d: 'Alcance enorme: atraviesa armaduras y destroza jefes.', cost: [170, 180, 300, 520], dmg: [70, 115, 190, 320], rng: [3.6, 3.9, 4.2, 4.6], rate: [2.0, 1.9, 1.75, 1.6], air: 1, c: '#8a6a3a', pc: '#e8e8e8', un: 720, fx: { pierce: 1, boss: 1.5 }, spec: TD_SPEC_A('Doble virote', 'Ojo real') },
+  carnivora: { n: 'Planta carnívora', em: '🪴', beh: 'trampa', path: 1, d: 'Va SOBRE el camino y se come a las plagas débiles.', cost: [90, 100, 180, 320], dps: [24, 40, 66, 110], rng: [0.6, 0.6, 0.6, 0.6], air: 0, c: '#c83a5a', un: 760, fx: { exe: 0.2 }, spec: [['Mandíbulas', 'También frena 45 %'], ['Hambre voraz', 'Daño al doble']] },
+  cometat: { n: 'Torre cometa', em: '☄️', beh: 'tortuga', d: 'Cometas que explotan en área y sí alcanzan a los voladores.', cost: [180, 190, 320, 560], dmg: [60, 100, 170, 290], rng: [3.2, 3.4, 3.7, 4.0], rate: [2.2, 2.1, 1.95, 1.8], area: [1.2, 1.35, 1.5, 1.7], air: 1, c: '#7ad0ff', pc: '#bfe8ff', un: 820, spec: [['Supernova', 'Explosión enorme'], ['Lluvia de cometas', 'Lanza 3 cometas']] },
+  fenix: { n: 'Fénix eterno', em: '🔥', beh: 'buho', d: 'Llamas en cadena que dejan a todos ardiendo.', cost: [200, 210, 360, 620], dmg: [34, 56, 92, 155], ch: [3, 4, 5, 6], rng: [3.0, 3.2, 3.5, 3.8], rate: [1.1, 1.05, 1.0, 0.9], air: 1, c: '#ff6a2a', un: 880, fx: { burn: 16 }, spec: [['Renacer', 'Salta entre 9 enemigos'], ['Sol de fuego', 'Daño ×1.8 y frena']] },
+  arcoiris: { n: 'Arcoíris', em: '🌈', beh: 'rayo', d: 'Un rayo de todos los colores: ignora armaduras y castiga a los voladores.', cost: [220, 240, 400, 680], dps: [26, 44, 72, 120], rng: [2.6, 2.8, 3.0, 3.3], air: 1, c: '#ff7ab8', un: 940, fx: { pierce: 1, fly: 1.5 }, spec: [['Prisma total', 'El rayo se divide en 3'], ['Luz pura', 'Se carga hasta ×7']] },
+});
+const tdFxTxt = (X) => { if (!X) return ''; const L = [X.burn && '🔥 quema', X.slow && `🐌 frena ${Math.round(X.slow * 100)} %`, X.stun && '💫 a veces aturde', X.knock && '↩️ empuja hacia atrás', X.exe && `💀 remata bajo ${Math.round(X.exe * 100)} %`, X.boss && `👑 ×${X.boss} a jefes`, X.fly && `🦅 ×${X.fly} a voladores`, X.pierce && '🛡️ ignora armaduras', X.cash && `🧲 +${X.cash} 🌰 por plaga`].filter(Boolean); return L.length ? `<span class="td-fx">${L.join(' · ')}</span>` : ''; };
+
+/* más tipos de oleada, bendiciones, poderes, aspectos y logros */
+TD_THEMES.push(
+  { id: 'bichos', n: 'Plaga de bichos', k: ['mosca', 'cucaracha', 'grillo', 'arana', 'alacran'], nm: 1.2, hm: 0.85, gm: 0.75 },
+  { id: 'fauna', n: 'Fauna salvaje', k: ['lobo', 'zorro', 'jabali', 'tejon', 'bandido'], nm: 0.8, hm: 1.15, gm: 1 },
+  { id: 'marea', n: 'Marea viva', k: ['cangrejito', 'langosta', 'camaron', 'pulpito', 'pezglobo', 'tiburoncito'], nm: 0.9, hm: 1.05, gm: 0.9 },
+  { id: 'dinos', n: 'Era de los dinosaurios', k: ['dinito', 'saurio', 'dragoncito', 'caiman'], nm: 0.55, hm: 1.4, gm: 1.3 },
+  { id: 'espectral', n: 'Noche espectral', k: ['fantasmita', 'calamar', 'medusita', 'vampiro'], nm: 0.9, hm: 1, gm: 0.9 },
+  { id: 'muralla', n: 'Muralla viviente', k: ['caracolgig', 'perezoso', 'golemito', 'mamut', 'robotito', 'tejon'], nm: 0.5, hm: 1.5, gm: 1.4 },
+  { id: 'saltos', n: 'Saltarines', k: ['grillo', 'sapito', 'ardillaloca', 'zorro', 'cabra', 'alien'], nm: 0.95, hm: 0.95, gm: 0.8 },
+  { id: 'curan', n: 'Curanderos', k: ['mariposa', 'pavo', 'cucaracha', 'castor', 'nutria', 'zorrillo'], nm: 0.85, hm: 1.1, gm: 1 },
+  { id: 'estampida', n: 'Estampida', k: ['raton', 'camaron', 'caramelo', 'dodo', 'flamenco', 'mosca'], nm: 1.6, hm: 0.6, gm: 0.45 },
+);
+TD_PERKS.push(
+  { id: 'fur', e: '🔥', n: 'Furia', d: '+25 % de daño, pero las torres cuestan 5 % más', f: (p) => { p.dmg += 0.25; p.bar -= 0.05; } },
+  { id: 'tor', e: '🌀', n: 'Torbellino', d: 'Las torres disparan 18 % más rápido', f: (p) => { p.rate += 0.18; } },
+  { id: 'gig', e: '🌳', n: 'Raíz gigante', d: '+6 vidas', f: (p, s, l) => { s.lives = Math.min(l + 12, s.lives + 6); } },
+  { id: 'gem', e: '💎', n: 'Mina de gemas', d: '+250 semillas ahora mismo', f: (p, s) => { s.seeds += 250; } },
+  { id: 'inv', e: '🧊', n: 'Invierno', d: 'Todas las plagas van 14 % más lentas', f: (p) => { p.esc += 0.14; } },
+  { id: 'lup', e: '🔍', n: 'Lupa', d: '+15 % de alcance en todas las torres', f: (p) => { p.rng += 0.15; } },
+);
+Object.assign(TD_POWERS, {
+  veneno: { e: '🍄', n: 'Esporas tóxicas', d: 'Envenena a todas las plagas del mapa.', cost: 180, cd: 45 },
+  tornado: { e: '🌪️', n: 'Tornado', d: 'Empuja hacia atrás a todas las plagas (no a los jefes).', cost: 200, cd: 50 },
+  vida: { e: '💚', n: 'Savia curativa', d: 'Recuperas 3 vidas.', cost: 220, cd: 90 },
+  oro: { e: '✨', n: 'Lluvia dorada', d: 'Durante 12 s cada plaga da el triple de semillas.', cost: 240, cd: 60 },
+});
+const tdPwEq = () => { const d = tdData(); const own = Object.keys(TD_POWERS).filter((k) => d.pw[k]); const eq = (d.pwEq || []).filter((k) => d.pw[k]); return (eq.length ? eq : own).slice(0, 3); };
+Object.assign(TD_SKINS, {
+  menta: { n: 'Menta fresca', cost: 150, c: ['#3ac8a0', '#8af0d0', '#5a4232'], f: '#ffffff' },
+  lavanda: { n: 'Lavanda', cost: 180, c: ['#9a7ad8', '#c8b0f0', '#5a4232'], f: '#ffe066' },
+  noche: { n: 'Árbol nocturno', cost: 240, c: ['#2a3a6a', '#4a5a9a', '#3a2a22'], f: '#ffe066' },
+  fuego: { n: 'Árbol de fuego', cost: 300, c: ['#e83a2a', '#ff9a3a', '#4a2a1a'], f: '#ffe066' },
+  coral: { n: 'Árbol coral', cost: 320, c: ['#ff7a8a', '#ffb0a0', '#6a4a3a'], f: '#7ad0ff' },
+  esmeralda: { n: 'Esmeralda', cost: 400, c: ['#0a8a5a', '#3ae8a0', '#3a3a3a'], f: '#ffffff' },
+  galaxia: { n: 'Árbol galaxia', cost: 500, c: ['#3a2a8a', '#c88ae8', '#2a1a4a'], f: '#ffffff' },
+  solar: { n: 'Árbol solar', cost: 650, c: ['#ffb000', '#fff08a', '#a8601a'], f: '#ff5a1f' },
+});
+{ const pw = TD_ACH.find((a) => a.id === 'pw'); if (pw) { pw.d = 'Ten los 3 primeros poderes de la tienda'; pw.t = (d) => ['trueno', 'helada', 'cosecha'].every((k) => d.pw[k]); } }
+TD_ACH.push(
+  { id: 'w500', n: 'Medio millar', d: 'Supera 500 niveles', g: 300, t: () => tdLvlsWon() >= 500 },
+  { id: 'w750', n: 'Explorador incansable', d: 'Supera 750 niveles', g: 450, t: () => tdLvlsWon() >= 750 },
+  { id: 'w1000', n: 'El bosque eterno', d: 'Supera los 1,000 niveles', g: 1000, t: () => tdLvlsWon() >= 1000 },
+  { id: 's3x150', n: 'Constelación', d: '3 estrellas en 150 niveles', g: 160, t: (d) => Object.values(d.st).filter((v) => v >= 3).length >= 150 },
+  { id: 's3x400', n: 'Galaxia de estrellas', d: '3 estrellas en 400 niveles', g: 400, t: (d) => Object.values(d.st).filter((v) => v >= 3).length >= 400 },
+  { id: 'k100k', n: 'Escudo del bosque', d: 'Vence 100,000 plagas', g: 250, t: (d) => d.kills >= 100000 },
+  { id: 'k250k', n: 'Leyenda viviente', d: 'Vence 250,000 plagas', g: 500, t: (d) => d.kills >= 250000 },
+  { id: 'b20', n: 'Domador de jefes', d: 'Vence a 20 jefes distintos', g: 200, t: (d) => Object.keys(d.bossK).length >= 20 },
+  { id: 'b40', n: 'Señor de los 40', d: 'Vence a los 40 jefes', g: 600, t: (d) => Object.keys(d.bossK).length >= 40 },
+  { id: 'i100', n: 'Infinito y más allá', d: 'Aguanta 100 oleadas en el modo infinito', g: 300, t: (d) => d.inf >= 100 },
+  { id: 'd30', n: 'Un mes de retos', d: 'Gana 30 retos del día', g: 200, t: (d) => d.dayStars >= 30 },
+  { id: 'tw', n: 'Arsenal completo', d: 'Desbloquea las 31 torres', g: 300, t: () => Object.keys(TD_TW).every((k) => tdTowerOpen(k)) },
+  { id: 'pw7', n: 'Maestro de poderes', d: 'Ten los 7 poderes de la tienda', g: 250, t: (d) => Object.keys(TD_POWERS).every((k) => d.pw[k]) },
+  { id: 'sk8', n: 'Diseñador de bosques', d: 'Ten 8 aspectos del Gran Árbol', g: 150, t: (d) => Object.keys(d.skins).length >= 8 },
+);
+
+/* dibujos de las torres y plagas nuevas (emoji sobre su base, en caché) */
+const TD_EMF = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",sans-serif';
+function tdEm(g, em, sz, x, y) { g.font = `${sz}px ${TD_EMF}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(em, x, y); }
+function tdDrawEmTower(g, k, lvl, t, spec) {
+  const K = TD_TW[k];
+  g.fillStyle = K.c; g.globalAlpha = 0.92; g.beginPath(); g.ellipse(0, -3, 12 + lvl, 11 + lvl, 0, 0, 7); g.fill(); g.globalAlpha = 1;
+  g.lineWidth = 2.5; g.strokeStyle = spec ? (spec === 1 ? 'rgba(255,140,210,.9)' : 'rgba(140,210,255,.9)') : lvl >= 2 ? 'rgba(255,215,90,.9)' : 'rgba(255,255,255,.55)'; g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.ellipse(-5, -10, 5, 2.6, -0.4, 0, 7); g.fill();
+  tdEm(g, K.em, 18 + lvl * 1.5, 0, -4 + Math.sin(t * 6) * 0.9);
+  if (spec) tdEm(g, spec === 1 ? '✨' : '💠', 9, 12, -16);
+}
+function tdDrawEmTrap(g, k, lvl, spec) {
+  const K = TD_TW[k];
+  g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(0, 6, 16, 6, 0, 0, 7); g.fill();
+  g.fillStyle = K.c; for (let i = 0; i < 8; i++) { const a = i * 0.785; g.beginPath(); g.ellipse(Math.cos(a) * 9, 2 + Math.sin(a) * 4.5, 6, 3.2, a, 0, 7); g.fill(); }
+  tdEm(g, K.em, 15 + lvl * 1.4, 0, 0);
+  if (spec) tdEm(g, spec === 1 ? '✨' : '💠', 8, 11, -9);
+  for (let i = 0; i <= lvl; i++) { g.fillStyle = spec ? '#ff8fcf' : '#ffd23c'; g.beginPath(); g.arc(-(lvl * 4) / 2 + i * 4, 13, 1.8, 0, 7); g.fill(); }
+}
+function tdDrawEmEnemy(g, E, e, t, wob) {
+  if (E.fly) g.translate(0, -9 + Math.sin(t * 3 + (e.id || 0)) * 2);
+  if (E.ghost) g.globalAlpha = 0.7;
+  if (E.boss) { g.strokeStyle = 'rgba(255,215,90,.9)'; g.lineWidth = 2; g.beginPath(); g.arc(0, 0, 13, 0, 7); g.stroke(); }
+  g.fillStyle = E.c; g.globalAlpha *= 0.55; g.beginPath(); g.ellipse(0, 1, 10, 8.5, 0, 0, 7); g.fill(); g.globalAlpha = E.ghost ? 0.7 : 1;
+  tdEm(g, E.em, E.boss ? 19 : 16, 0, wob * 0.25 - 1);
+  if (E.boss) tdEm(g, '👑', 8, 0, -13);
+  g.globalAlpha = 1;
+}
+
 /* ---------- dibujos (se guardan en caché como imágenes) ---------- */
 function tdDrawTower(g, k, lvl, x, y, T, t = 0, aim = 0, spec = 0) {
   const s = T / 40; g.save(); g.translate(x, y); g.scale(s, s);
   const C = TD_TW[k].c;
+  if (TD_TW[k].em && TD_TW[k].path) { tdDrawEmTrap(g, k, lvl, spec); g.restore(); return; }
   if (k === 'trampa') {
     g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(0, 6, 16, 6, 0, 0, 7); g.fill();
     g.fillStyle = spec === 2 ? '#6a6f78' : '#4a7a2a'; for (let i = 0; i < 7; i++) { const a = i * 0.9; g.beginPath(); g.ellipse(Math.cos(a) * 8, 2 + Math.sin(a) * 4, 6, 3.5, a, 0, 7); g.fill(); }
@@ -371,6 +640,7 @@ function tdDrawTower(g, k, lvl, x, y, T, t = 0, aim = 0, spec = 0) {
     for (let i = 0; i < 3; i++) { g.fillStyle = spec === 2 ? '#7ab8e0' : C; g.beginPath(); g.moveTo(0, -24 + i * 7); g.lineTo(-11 + i * 1.5, -6 + i * 6); g.lineTo(11 - i * 1.5, -6 + i * 6); g.fill(); g.fillStyle = '#f4fbff'; g.beginPath(); g.moveTo(0, -24 + i * 7); g.lineTo(-5, -15 + i * 7); g.lineTo(5, -15 + i * 7); g.fill(); }
     g.fillStyle = spec === 1 ? '#bff4ff' : '#e8f8ff'; g.beginPath(); for (let i = 0; i < 12; i++) { const r = i % 2 ? 2 : 5, a = i * Math.PI / 6; g.lineTo(Math.cos(a) * r, -26 + Math.sin(a) * r); } g.fill();
   }
+  if (TD_TW[k].em) tdDrawEmTower(g, k, lvl, t, spec);
   for (let i = 0; i <= lvl; i++) { g.fillStyle = spec ? '#ff8fcf' : '#ffd23c'; g.strokeStyle = '#8a6a00'; g.lineWidth = 0.8; g.beginPath(); const px = -(lvl * 4) / 2 + i * 4; g.arc(px, 15, 1.8, 0, 7); g.fill(); g.stroke(); }
   g.restore();
 }
@@ -380,6 +650,7 @@ function tdDrawEnemy(g, e, x, y, T, t) {
   if (!E.fly) { g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(0, 8, 9, 3, 0, 0, 7); g.fill(); }
   g.scale(e.dir || 1, 1);
   const k = e.k;
+  if (E.em) { tdDrawEmEnemy(g, E, e, t, wob); g.restore(); return; }
   if (k === 'escarabajo' || k === 'escudo' || k === 'rino') {
     g.fillStyle = E.c; g.beginPath(); g.ellipse(0, 0, k === 'rino' ? 11 : 9, k === 'rino' ? 8 : 7, 0, 0, 7); g.fill(); g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(-1, -7); g.lineTo(-1, 7); g.stroke();
     g.fillStyle = '#1a2a1a'; g.beginPath(); g.arc(k === 'rino' ? 10 : 8, 0, 4, 0, 7); g.fill(); g.strokeStyle = '#1a2a1a'; g.lineWidth = 1.4; for (const k2 of [-4, 0, 4]) { g.beginPath(); g.moveTo(k2, 6); g.lineTo(k2 + wob, 9); g.stroke(); }
@@ -453,27 +724,27 @@ function viewTorres() {
       <div class="td-ranks"><div id="jgRank-torresn">${jgRankHTML('torresn')}</div><div id="jgRank-torres">${jgRankHTML('torres')}</div></div>`;
   } else if (TD.tab === 'tienda') {
     const upRow = Object.entries(TD_TW).map(([k, w]) => { const l = d.up[k] || 0, max = l >= 5, c = TD_UPC[l]; const open = tdTowerOpen(k); return `<li class="td-shop-it"><canvas width="80" height="80" data-tdtw="${k}"></canvas><div><b>${w.n}</b><span class="td-pips">${[0, 1, 2, 3, 4].map((i) => `<i class="${i < l ? 'on' : ''}"></i>`).join('')}</span><small>+${l * 7} % daño · +${l * 2} % alcance</small></div>${max ? '<span class="mz-ok">Máximo</span>' : `<button type="button" class="btn${d.gold >= c && open ? ' primary' : ''}" data-act="td-buy" data-t="up" data-k="${k}" ${d.gold >= c && open ? '' : 'disabled'}>${open ? `🍂 ${c}` : '🔒'}</button>`}</li>`; }).join('');
-    const pwRow = Object.entries(TD_POWERS).map(([k, p]) => `<li class="td-shop-it"><span class="td-em">${p.e}</span><div><b>${p.n}</b><small>${p.d} Se recarga en ${p.cd} s.</small></div>${d.pw[k] ? '<span class="mz-ok">Tuyo</span>' : `<button type="button" class="btn${d.gold >= p.cost ? ' primary' : ''}" data-act="td-buy" data-t="pw" data-k="${k}" ${d.gold >= p.cost ? '' : 'disabled'}>🍂 ${p.cost}</button>`}</li>`).join('');
+    const pwRow = Object.entries(TD_POWERS).map(([k, p]) => `<li class="td-shop-it"><span class="td-em">${p.e}</span><div><b>${p.n}</b><small>${p.d} Se recarga en ${p.cd} s.</small></div>${d.pw[k] ? `<button type="button" class="btn${tdPwEq().includes(k) ? ' primary' : ''}" data-act="td-buy" data-t="pweq" data-k="${k}">${tdPwEq().includes(k) ? '✓ Llevando' : 'Llevar'}</button>` : `<button type="button" class="btn${d.gold >= p.cost ? ' primary' : ''}" data-act="td-buy" data-t="pw" data-k="${k}" ${d.gold >= p.cost ? '' : 'disabled'}>🍂 ${p.cost}</button>`}</li>`).join('');
     const skRow = Object.entries(TD_SKINS).map(([k, sk]) => { const own = d.skins[k], on = d.skin === k; return `<button type="button" class="td-skin${on ? ' on' : ''}" data-act="td-buy" data-t="skin" data-k="${k}" ${!own && d.gold < sk.cost ? 'disabled' : ''}><svg viewBox="0 0 60 60" aria-hidden="true"><rect x="26" y="34" width="8" height="20" rx="2" fill="${sk.c[2]}"/><circle cx="30" cy="24" r="16" fill="${sk.rb ? 'url(#tdRb)' : sk.c[0]}"/><circle cx="19" cy="31" r="10" fill="${sk.rb ? '#ffd23c' : sk.c[1]}"/><circle cx="41" cy="31" r="10" fill="${sk.rb ? '#4dabf7' : sk.c[1]}"/><circle cx="24" cy="20" r="2.6" fill="${sk.f}"/><circle cx="36" cy="28" r="2.6" fill="${sk.f}"/><defs><linearGradient id="tdRb"><stop offset="0" stop-color="#ff6b6b"/><stop offset=".5" stop-color="#69db7c"/><stop offset="1" stop-color="#9775fa"/></linearGradient></defs></svg><b>${sk.n}</b><span>${on ? 'Puesto' : own ? 'Poner' : `🍂 ${sk.cost}`}</span></button>`; }).join('');
     const bRow = Object.entries(TD_BOOST).map(([k, b]) => { const l = d[k] || 0, max = l >= 3; return `<li class="td-shop-it"><span class="td-em">${k === 'sb' ? '🎒' : '🛡️'}</span><div><b>${b.n} · ${l}/3</b><small>${b.d}</small></div>${max ? '<span class="mz-ok">Máximo</span>' : `<button type="button" class="btn${d.gold >= b.cost[l] ? ' primary' : ''}" data-act="td-buy" data-t="boost" data-k="${k}" ${d.gold >= b.cost[l] ? '' : 'disabled'}>🍂 ${b.cost[l]}</button>`}</li>`; }).join('');
     body = `<div class="td-wallet"><span>🍂</span><div><b>${d.gold}</b><small>hojas doradas · las ganas al superar niveles, retos y logros</small></div></div>
       <h2 class="sec">Mejoras de torres</h2><ul class="td-shop">${upRow}</ul>
-      <h2 class="sec">Poderes nuevos</h2><ul class="td-shop">${pwRow}</ul>
+      <h2 class="sec">Poderes nuevos</h2><p class="small muted">Llevas hasta 3 poderes a cada nivel: elige cuáles con «Llevar».</p><ul class="td-shop">${pwRow}</ul>
       <h2 class="sec">Aspecto del Gran Árbol</h2><div class="td-skins">${skRow}</div>
       <h2 class="sec">Ayudas para cada nivel</h2><ul class="td-shop">${bRow}</ul>`;
     setTimeout(tdPaintGuide, 0);
   } else if (TD.tab === 'logros') {
     const n = TD_ACH.filter((a) => d.ach[a.id]).length;
     body = `<p class="page-sub" style="margin-top:12px">Logros: <b>${n}</b> de ${TD_ACH.length}. Cada uno te regala hojas doradas.</p><ul class="td-achs">${TD_ACH.map((a) => `<li class="${d.ach[a.id] ? 'on' : ''}"><span>${d.ach[a.id] ? '🏆' : '🔒'}</span><div><b>${a.n}</b><small>${a.d}</small></div><em>+${a.g} 🍂</em></li>`).join('')}</ul>
-      <p class="small muted" style="text-align:center">Plagas vencidas: <b>${(d.kills || 0).toLocaleString('es-MX')}</b> · Jefes distintos: <b>${Object.keys(d.bossK).length}</b>/12 · Victorias: <b>${d.wins || 0}</b></p>`;
+      <p class="small muted" style="text-align:center">Plagas vencidas: <b>${(d.kills || 0).toLocaleString('es-MX')}</b> · Jefes distintos: <b>${Object.keys(d.bossK).length}</b>/${TD_BOSSES.length} · Victorias: <b>${d.wins || 0}</b></p>`;
   } else if (TD.tab === 'raices') {
     body = `<p class="page-sub" style="margin-top:12px">Cada estrella que ganas hace crecer las raíces de tu bosque: mejoras que duran para siempre.</p>
       <p class="small" style="text-align:center">Estrellas: <b>${tot}</b>${d.dayStars ? ` (${d.dayStars} doradas)` : ''} · disponibles: <b>⭐ ${free}</b></p>
       <ul class="mz-list">${TD_META.map((m) => { const l = tdMeta(m.id), max = l >= m.max, c = tdMetaCost(l); return `<li><div><b>${m.n} · ${l}/${m.max}</b><span class="small muted">${m.d}</span></div>${max ? '<span class="mz-ok">Máximo</span>' : `<button type="button" class="btn${free >= c ? ' primary' : ''}" data-act="td-meta" data-id="${m.id}" ${free >= c ? '' : 'disabled'}>⭐ ${c}</button>`}</li>`; }).join('')}</ul>
       ${tdMetaSpent() ? '<p style="text-align:center"><button class="link-btn" data-act="td-meta-reset">Reiniciar raíces (te devuelve las estrellas)</button></p>' : ''}`;
   } else {
-    body = `<h2 class="sec">Torres</h2><ul class="td-guide">${Object.entries(TD_TW).map(([k, w]) => `<li><canvas width="80" height="80" data-tdtw="${k}"></canvas><div><b>${w.n}${tdTowerOpen(k) ? '' : ' 🔒'}</b><span class="small muted">${w.d}${tdTowerOpen(k) ? '' : ` Se abre al superar el mapa ${w.un}.`}</span><span class="small">🌰 ${w.cost[0]} · Especialidades: ${w.spec.map((s) => `<b>${s[0]}</b> (${s[1].toLowerCase()})`).join(' o ')}</span></div></li>`).join('')}</ul>
-      <h2 class="sec">Plagas y jefes</h2><ul class="td-guide">${Object.entries(TD_EN).filter(([k]) => k !== 'gusito').map(([k, e]) => `<li><canvas width="80" height="80" data-tden="${k}"></canvas><div><b>${e.n}</b><span class="small muted">${e.d}</span></div></li>`).join('')}</ul>
+    body = `<h2 class="sec">Torres</h2><ul class="td-guide">${Object.entries(TD_TW).map(([k, w]) => `<li><canvas width="80" height="80" data-tdtw="${k}"></canvas><div><b>${w.n}${tdTowerOpen(k) ? '' : ' 🔒'}</b><span class="small muted">${w.d}${tdTowerOpen(k) ? '' : ` Se abre al superar el mapa ${w.un}.`}</span>${tdFxTxt(w.fx)}<span class="small">🌰 ${w.cost[0]} · Especialidades: ${w.spec.map((s) => `<b>${s[0]}</b> (${s[1].toLowerCase()})`).join(' o ')}</span></div></li>`).join('')}</ul>
+      <h2 class="sec">Plagas y jefes</h2><ul class="td-guide">${Object.entries(TD_EN).filter(([k, e]) => k !== 'gusito' && !e.hide).map(([k, e]) => `<li><canvas width="80" height="80" data-tden="${k}"></canvas><div><b>${e.n}</b><span class="small muted">${e.d}</span></div></li>`).join('')}</ul>
       <h2 class="sec">Giros de los mapas</h2><ul class="td-guide">${TD_TW_KEYS.map((k) => `<li><span class="td-em">${TD_TWISTS[k].e}</span><div><b>${TD_TWISTS[k].n}</b><span class="small muted">${TD_TWISTS[k].d}</span></div></li>`).join('')}</ul>
       <h2 class="sec">Tipos de oleada</h2><ul class="td-guide">${TD_THEMES.map((t) => `<li><span class="td-em">🌊</span><div><b>${t.n}</b><span class="small muted">${t.k ? t.k.map((x) => TD_EN[x].n).join(', ') : 'De todo un poco.'}</span></div></li>`).join('')}</ul>
       <h2 class="sec">Bendiciones</h2><p class="small muted">Cada 5 oleadas eliges 1 de 3 bendiciones al azar que duran toda la partida.</p><ul class="td-guide">${TD_PERKS.map((p) => `<li><span class="td-em">${p.e}</span><div><b>${p.n}</b><span class="small muted">${p.d}</span></div></li>`).join('')}</ul>
@@ -516,6 +787,7 @@ Object.assign(VIDA_ACTS, {
   'td-lvl': (el) => { const mi = +el.dataset.m; if (!tdUnlocked(mi)) { toast('Supera el nivel anterior para abrir este.'); return; } tdLevelSheet(mi); },
   'td-buy': (el) => {
     const d = tdData(), t = el.dataset.t, k = el.dataset.k; let cost = 0;
+    if (t === 'pweq') { const eq = tdPwEq(); const i = eq.indexOf(k); if (i >= 0) eq.splice(i, 1); else { if (eq.length >= 3) eq.shift(); eq.push(k); } d.pwEq = eq.length ? eq : ['__']; jpSave(); TDS.init(); TDS.tone(880, 0.08, 'triangle', 0.04); render(); return; }
     if (t === 'up') { const l = d.up[k] || 0; if (l >= 5) return; cost = TD_UPC[l]; if (d.gold < cost) return; d.gold -= cost; d.up[k] = l + 1; }
     else if (t === 'pw') { if (d.pw[k]) return; cost = TD_POWERS[k].cost; if (d.gold < cost) return; d.gold -= cost; d.pw[k] = 1; }
     else if (t === 'skin') { if (d.skins[k]) { d.skin = k; jpSave(); TDS.init(); TDS.tone(880, 0.08, 'triangle', 0.04); render(); return; } cost = TD_SKINS[k].cost; if (d.gold < cost) return; d.gold -= cost; d.skins[k] = 1; d.skin = k; }
@@ -562,8 +834,9 @@ const TDS = {
 /* ---------- la partida ---------- */
 function tdStart(mi, daily) {
   if (TD.run) return; TDS.init();
+  const tb = (t) => TD_TW[t.k].beh || t.k;
   const D = tdData(); const INF = mi === 'inf'; const MI = INF ? (new Date().getDate() % TD_WORLDS.length) * TD_PER_WORLD + 10 : mi; const M = INF ? { ...TD_MAPS[MI], tw: [], kind: 'normal' } : TD_MAPS[MI], W = TD_WORLDS[M.w];
-  const PW = Object.keys(TD_POWERS).filter((k) => D.pw[k]); const SKIN = TD_SKINS[D.skin] || TD_SKINS.roble;
+  const PW = tdPwEq(); const SKIN = TD_SKINS[D.skin] || TD_SKINS.roble;
   const MOD = daily ? tdDaily().mod : null; const mk = MOD ? MOD.k : '';
   const WAVES = INF ? Infinity : tdWaves(MI);
   const wrap = document.createElement('div'); wrap.className = 'gl-stage td-stage';
@@ -600,7 +873,7 @@ function tdStart(mi, daily) {
   const PORT = TW.has('portal') ? (() => { const a = 0.26 + rnd() * 0.1; return { a, b: a + 0.2 }; })() : null;
   const ZON = TW.has('resbalon') ? (() => { const a = 0.4 + rnd() * 0.12; return { a, b: a + 0.2 }; })() : null;
   const SOLO = TW.has('solo') ? (() => { const open = Object.keys(TD_TW).filter((k) => k !== 'ardilla' && tdTowerOpen(k)); return new Set(['ardilla', ...pickN(open, 3)]); })() : null;
-  const NOUP = TW.has('raices'), MAXT = TW.has('espacio') ? 9 : 0;
+  const NOUP = TW.has('raices'), MAXT = TW.has('espacio') ? (MI >= 300 && !INF ? 12 : 9) : 0;
   const COACH = (MI === 0 && !INF && !(D.wins > 0)) ? (() => { for (let y = 2; y < TD_ROWS; y++) for (let x = 0; x < TD_COLS; x++) { if (blocked.has(key(x, y)) || pathCells.has(key(x, y))) continue; let n = 0; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if (pathCells.has(key(x + dx, y + dy))) n++; if (n >= 3) return [x, y]; } return null; })() : null;
   const twDesc = () => (M.tw || []).map((k) => `${TD_TWISTS[k].e} ${TD_TWISTS[k].n}: ${TD_TWISTS[k].d}`).join('  ');
   const size = () => {
@@ -644,8 +917,9 @@ function tdStart(mi, daily) {
 
   /* --- estado --- */
   const LMAX = 20 + tdMeta('vidas') * 2 + D.lf * 2;
-  const st = { lives: LMAX, seeds: Math.round((140 + tdMeta('semillas') * 25 + D.sb * 40 + (INF ? 0 : Math.min(MI, 150) * 1.2)) * (mk === 'pobre' ? 0.55 : 1)), wave: 0, phase: 'build', countdown: 0, queue: [], spawnT: 0, en: [], tw: [], pr: [], parts: [], floats: [], rings: [], bolts: [], fly: [], wx: [], t: 0, speed: 1, sel: null, build: null, aim: null, cd: { a: 0, r: 0, trueno: 0, helada: 0, cosecha: 0 }, rush: 0, treeHit: 0, hurt: 0, eid: 0, killed: 0, t0: Date.now(), over: false, last: performance.now(), id: 0, spawned: 0, banner: null, shake: 0, pk: { dmg: 0, rate: 0, rng: 0, int: 0, bot: 0, pw: 0, cri: 0, bar: 0, esp: 0, esc: 0, bel: 0, ven: 0 }, picked: [], chests: [], ev: [], ct: 6, et: 7, mt: 9, choosing: false };
-  const dmgMul = () => 1 + tdMeta('dano') * 0.06 + st.pk.dmg;
+  const st = { lives: LMAX, seeds: Math.round((140 + tdMeta('semillas') * 25 + D.sb * 40 + (INF ? 0 : Math.min(MI, 150) * 1.2 + Math.max(0, MI - 300) * 0.5)) * (mk === 'pobre' ? 0.55 : 1)), wave: 0, phase: 'build', countdown: 0, queue: [], spawnT: 0, en: [], tw: [], pr: [], parts: [], floats: [], rings: [], bolts: [], fly: [], wx: [], t: 0, speed: 1, sel: null, build: null, aim: null, cd: { a: 0, r: 0, trueno: 0, helada: 0, cosecha: 0 }, rush: 0, treeHit: 0, hurt: 0, eid: 0, killed: 0, t0: Date.now(), over: false, last: performance.now(), id: 0, spawned: 0, banner: null, shake: 0, pk: { dmg: 0, rate: 0, rng: 0, int: 0, bot: 0, pw: 0, cri: 0, bar: 0, esp: 0, esc: 0, bel: 0, ven: 0 }, picked: [], chests: [], ev: [], ct: 6, et: 7, mt: 9, choosing: false };
+  for (const k of PW) st.cd[k] ||= 0;
+  const dmgMul = () => 1 + tdMeta('dano') * 0.06 + st.pk.dmg + (INF ? 0 : Math.max(0, MI - 300) * 0.0012); // v5: savia de los mundos nuevos
   const rngMul = mk === 'niebla' ? 0.85 : 1;
   const costOf = (k, l) => Math.round(TD_TW[k].cost[l] * (1 - tdMeta('barato') * 0.05 - st.pk.bar));
   const specCost = (k) => Math.round(costOf(k, 3) * 1.3);
@@ -653,8 +927,8 @@ function tdStart(mi, daily) {
   const sellOf = (t) => Math.round(spentOf(t) * (st.pk.ven ? 1 : tdMeta('venta') ? 0.85 : 0.7));
   const pwF = () => 1 - Math.min(0.7, tdMeta('poder') * 0.12 + st.pk.pw); const cdA = () => 25 * pwF(), cdR = () => 35 * pwF();
   const towerAt = (x, y) => st.tw.find((t) => t.x === x && t.y === y);
-  const RNG = (t) => TD_TW[t.k].rng[t.lvl] * rngMul * (1 + (D.up[t.k] || 0) * 0.02) * (1 + st.pk.rng) * (fert.has(key(t.x, t.y)) ? 1.1 : 1) * (t.k === 'ardilla' && t.spec === 2 ? 1.5 : 1);
-  const recalcBuff = () => { for (const t of st.tw) { t.bm = 1; for (const a of st.tw) { if (a.k !== 'arbol' || a === t) continue; if (Math.hypot(a.x - t.x, a.y - t.y) <= TD_TW.arbol.rng[a.lvl] + 0.01) t.bm += TD_TW.arbol.buff[a.lvl] + (a.spec === 1 ? 0.6 : 0); } if (fert.has(key(t.x, t.y))) t.bm += 0.3; } };
+  const RNG = (t) => TD_TW[t.k].rng[t.lvl] * rngMul * (1 + (D.up[t.k] || 0) * 0.02) * (1 + st.pk.rng) * (fert.has(key(t.x, t.y)) ? 1.1 : 1) * (tb(t) === 'ardilla' && t.spec === 2 ? 1.5 : 1);
+  const recalcBuff = () => { for (const t of st.tw) { t.bm = 1; for (const a of st.tw) { if (tb(a) !== 'arbol' || a === t) continue; if (Math.hypot(a.x - t.x, a.y - t.y) <= TD_TW[a.k].rng[a.lvl] + 0.01) t.bm += TD_TW[a.k].buff[a.lvl] + (a.spec === 1 ? 0.6 : 0); } if (fert.has(key(t.x, t.y))) t.bm += 0.3; } };
   const float = (text, x, y, col, big) => { if (st.floats.length < 40) st.floats.push({ text, x, y, t: 0, col: col || '#fff', big }); };
   const puff = (x, y, col, n, sp = 2) => { const cap = low() ? 70 : 180; for (let i = 0; i < n && st.parts.length < cap; i++) { const a = Math.random() * 6.28, v = sp * (0.3 + Math.random()); st.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, l: 0.4 + Math.random() * 0.4, c: col, r: 1.5 + Math.random() * 2.5 }); } };
   const ring = (x, y, r1, col, T2 = 0.4) => { if (st.rings.length < 20) st.rings.push({ x, y, r1, col, t: 0, T: T2 }); };
@@ -680,6 +954,7 @@ function tdStart(mi, daily) {
     if (lvl >= 12 && w >= 4) pool.push(['cuervo', 2]);
     if (lvl >= 15 && w >= 6) pool.push(['rino', 1.6]);
     if (lvl >= 18 && w >= 7) pool.push(['fantasma', 1.6]);
+    const lvE = INF ? 300 + w * 8 : lvl; if (lvE >= 300) { for (const p of pool) p[1] *= 0.3; for (const k of TD_EN5) { const E = TD_EN[k]; if (lvE >= E.lv && w >= E.w0) pool.push([k, E.wt]); } }
     return pool;
   }
   const viable = (th, w) => !th.k || th.k.filter((k) => poolAt(w).some((p) => p[0] === k)).length >= 2;
@@ -719,27 +994,32 @@ function tdStart(mi, daily) {
     const E = TD_EN[k]; const pi = st.spawned++ % PATHS.length; const hp = Math.round(E.hp * (WV ? WV.hpMul : 1)); const d0 = mid ? PATHS[pi].L * 0.55 : 0;
     st.en.push({ id: ++st.eid, k, hp, max: hp, pi, d: d0, pj: !!(PORT && d0 / PATHS[pi].L > PORT.a), slowT: 0, slowK: 0, dotT: 0, dotD: 0, rootT: 0, frz: 0, under: false, burT: 2 + Math.random() * 2, healT: 2, powT: 3 + Math.random() * 2, chT: 3 + Math.random() * 2, chg: 0, sh: E.shield ? hp * E.shield : 0, x: 0, y: 0, dir: 1, dead: false, hit: 0, rev: false });
   }
+  function spawnAt(k, e, n, f) { for (let i = 0; i < n; i++) { spawn(k); const m = st.en[st.en.length - 1]; m.pi = e.pi; m.d = Math.max(0, e.d - 0.3 * i); m.hp = m.max = Math.max(1, Math.round(TD_EN[k].hp * (WV ? WV.hpMul : 1) * f)); } }
   const armorOf = (E) => Math.max(E.armor || 0, mk === 'blindados' && !E.boss ? 0.2 : 0);
   function damage(e, amt, pierce, t) {
     if (e.dead || e.under) return; const E = TD_EN[e.k]; if (e.inv > 0) { if (Math.random() < 0.08 && !low()) float('🛡️', e.x, e.y - 0.6, '#ffe066'); return; }
-    const cc = tdMeta('critico') * 0.05 + st.pk.cri + (t && t.k === 'ardilla' && t.spec === 2 ? 0.25 : 0);
-    if (cc && Math.random() < cc) { amt *= t && t.spec === 2 && t.k === 'ardilla' ? 3 : 2; if (!low()) float('¡Crítico!', e.x, e.y - 0.5, '#ffd23c'); TDS.crit(); }
+    const X5 = t ? TD_TW[t.k].fx : null; if (X5) { if (X5.pierce) pierce = true; if (X5.boss && E.boss) amt *= X5.boss; if (X5.fly && E.fly) amt *= X5.fly; } if (t) e.lastT = t;
+    const cc = tdMeta('critico') * 0.05 + st.pk.cri + (t && tb(t) === 'ardilla' && t.spec === 2 ? 0.25 : 0);
+    if (cc && Math.random() < cc) { amt *= t && t.spec === 2 && tb(t) === 'ardilla' ? 3 : 2; if (!low()) float('¡Crítico!', e.x, e.y - 0.5, '#ffd23c'); TDS.crit(); }
     const ar = armorOf(E); if (ar && !pierce) amt *= 1 - ar;
     if (e.sh > 0) { const a = Math.min(e.sh, amt); e.sh -= a; amt -= a; if (e.sh <= 0) { ring(e.x, e.y, 0.6, '#9fd0ff', 0.3); puff(e.x, e.y, '#bfe3ff', 8, 2); } }
-    e.hp -= amt; e.hit = 0.1; if (e.hp <= 0) kill(e);
+    e.hp -= amt; e.hit = 0.1;
+    if (X5 && e.hp > 0) { const lm = 1 + t.lvl * 0.5; if (X5.burn) { e.dotT = Math.max(e.dotT, 2); e.dotD = Math.max(e.dotD, X5.burn * lm * dmgMul()); } if (X5.slow) { e.slowT = Math.max(e.slowT, 1); e.slowK = Math.max(e.slowK, X5.slow); } if (X5.stun && !E.boss && Math.random() < X5.stun) e.frz = Math.max(e.frz, 0.7); if (X5.knock && !E.boss) e.d = Math.max(0, e.d - X5.knock); if (X5.exe && !E.boss && e.hp < e.max * X5.exe) { if (!low()) float('¡Remate!', e.x, e.y - 0.5, '#ff8a8a'); e.hp = 0; } }
+    if (e.hp <= 0) kill(e);
   }
   function kill(e) {
-    if (e.dead) return; e.dead = true; const E = TD_EN[e.k]; const rew = Math.round(E.rew * (1 + (INF ? 0.3 : MI * 0.004)) * (1 + tdMeta('botin') * 0.1 + st.pk.bot) * (mk === 'pobre' ? 1.4 : 1)); st.seeds += rew; st.killed++;
+    if (e.dead) return; e.dead = true; const E = TD_EN[e.k]; const rew = Math.round(E.rew * (1 + (INF ? 0.3 : MI * 0.004)) * (1 + tdMeta('botin') * 0.1 + st.pk.bot) * (mk === 'pobre' ? 1.4 : 1) * (st.goldT > 0 ? 3 : 1)); st.seeds += rew; st.killed++;
+    { const XT = e.lastT && TD_TW[e.lastT.k] && TD_TW[e.lastT.k].fx; if (XT && XT.cash) { st.seeds += XT.cash; if (!low() && Math.random() < 0.25) float(`+${XT.cash} 🧲`, e.x, e.y - 0.3, '#ffd23c'); } }
     puff(e.x, e.y, E.c, E.boss ? 50 : 9, E.boss ? 4.5 : 2.2); ring(e.x, e.y, E.boss ? 2.5 : 0.7, E.boss ? '#ffd23c' : 'rgba(255,255,255,.8)', E.boss ? 0.7 : 0.3); TDS.pop(E.boss);
     if (E.boss) { D.bossK[e.k] = 1; float(`¡${E.n} vencido! +${rew} 🌰`, e.x, e.y - 0.6, '#ffe066', true); st.shake = 0.8; st.flash = 0.5; vib([40, 40, 80]); }
     if (st.fly.length < 14) { const p = { x: V.ox + e.x * V.T, y: V.oy + e.y * V.T }; st.fly.push({ ...p, sx: p.x, sy: p.y, t: 0 }); }
-    if (E.split) for (const o of (E.split === 3 ? [-0.35, 0, 0.35] : [-0.25, 0.25])) { const hp = Math.round(TD_EN.gusito.hp * (WV ? WV.hpMul : 1)); st.en.push({ id: ++st.eid, k: 'gusito', hp, max: hp, pi: e.pi, d: Math.max(0, e.d + o), slowT: 0, slowK: 0, dotT: 0, dotD: 0, rootT: 0, frz: 0, under: false, burT: 9, healT: 9, powT: 9, chT: 9, chg: 0, sh: 0, x: e.x, y: e.y, dir: e.dir, dead: false, hit: 0 }); }
+    if (E.split) for (const o of (E.split === 3 ? [-0.35, 0, 0.35] : [-0.25, 0.25])) { const hp = Math.round(TD_EN[E.splitK || 'gusito'].hp * (WV ? WV.hpMul : 1) * (E.boss ? 0.6 : 1)); st.en.push({ id: ++st.eid, k: E.splitK || 'gusito', hp, max: hp, pi: e.pi, d: Math.max(0, e.d + o), slowT: 0, slowK: 0, dotT: 0, dotD: 0, rootT: 0, frz: 0, under: false, burT: 9, healT: 9, powT: 9, chT: 9, chg: 0, sh: 0, x: e.x, y: e.y, dir: e.dir, dead: false, hit: 0 }); }
     TDS.coin();
   }
 
   /* --- torres --- */
   const dist = (t, e) => Math.hypot(e.x - (t.x + 0.5), e.y - (t.y + 0.5));
-  function canSee(t, e) { const E = TD_EN[e.k]; if (!E.ghost) return true; return t.k === 'buho' || dist(t, e) <= 1.3; }
+  function canSee(t, e) { const E = TD_EN[e.k]; if (!E.ghost) return true; return tb(t) === 'buho' || dist(t, e) <= 1.3; }
   function targets(t, rng, air, n) {
     const arr = [];
     for (const e of st.en) { if (e.dead || e.under) continue; if (TD_EN[e.k].fly && !air) continue; if (dist(t, e) > rng || !canSee(t, e)) continue; const rem = PATHS[e.pi].L - e.d; arr.push({ e, v: t.mode === 'fuerte' ? e.hp : t.mode === 'ultimo' ? rem : -rem }); }
@@ -750,9 +1030,9 @@ function tdStart(mi, daily) {
     if (t.stun > 0) { t.stun -= dt; return; }
     const K = TD_TW[t.k], L = t.lvl, mul = dmgMul() * (t.bm || 1) * (1 + (D.up[t.k] || 0) * 0.07), rng = RNG(t);
     if (K.support) return;
-    if (t.k === 'trampa') { const cx = t.x + 0.5, cy = t.y + 0.5; for (const e of st.en) { if (e.dead || e.under || TD_EN[e.k].fly) continue; if (Math.hypot(e.x - cx, e.y - cy) <= 0.6) { damage(e, K.dps[L] * (t.spec === 2 ? 2 : 1) * mul * dt, false, t); if (t.spec === 1) { e.slowT = 0.3; e.slowK = Math.max(e.slowK, 0.45); } if (Math.random() < dt * 6 && !low()) puff(e.x, e.y, '#7aa83a', 1, 1); } } return; }
-    if (t.k === 'pino' && t.spec === 2) { for (const e of st.en) if (!e.dead && dist(t, e) <= rng) { e.slowT = 0.25; e.slowK = Math.max(e.slowK, 0.4); } }
-    if (t.k === 'rayo') {
+    if (tb(t) === 'trampa') { const cx = t.x + 0.5, cy = t.y + 0.5; for (const e of st.en) { if (e.dead || e.under || TD_EN[e.k].fly) continue; if (Math.hypot(e.x - cx, e.y - cy) <= 0.6) { damage(e, K.dps[L] * (t.spec === 2 ? 2 : 1) * mul * dt, false, t); if (t.spec === 1) { e.slowT = 0.3; e.slowK = Math.max(e.slowK, 0.45); } if (Math.random() < dt * 6 && !low()) puff(e.x, e.y, '#7aa83a', 1, 1); } } return; }
+    if (tb(t) === 'pino' && t.spec === 2) { for (const e of st.en) if (!e.dead && dist(t, e) <= rng) { e.slowT = 0.25; e.slowK = Math.max(e.slowK, 0.4); } }
+    if (tb(t) === 'rayo') {
       let e = t.target && !t.target.dead && !t.target.under && dist(t, t.target) <= rng && canSee(t, t.target) ? t.target : null;
       if (!e) { e = targets(t, rng, 1)[0] || null; if (e !== t.target) t.ramp = 0; t.target = e; }
       const maxR = t.spec === 2 ? 6 : 3;
@@ -760,23 +1040,23 @@ function tdStart(mi, daily) {
       return;
     }
     t.cd -= dt; if (t.cd > 0) return;
-    if (t.k === 'pino') {
+    if (tb(t) === 'pino') {
       const hit = st.en.filter((e) => !e.dead && !e.under && dist(t, e) <= rng); if (!hit.length) return;
       t.cd = K.rate[L] * (1 - Math.min(0.5, st.pk.rate)); t.kick = 0.15; TDS.shot('pino'); ring(t.x + 0.5, t.y + 0.5, rng, 'rgba(180,230,255,.9)', 0.45);
       for (const e of hit) { e.frz = Math.max(e.frz, t.spec === 1 ? 2.5 : K.frz[L]); damage(e, K.dmg[L] * mul, false, t); }
       if (!low()) puff(t.x + 0.5, t.y + 0.5, '#e8f8ff', 10, rng * 2);
       return;
     }
-    const nT = t.k === 'ardilla' && t.spec === 1 ? 3 : t.k === 'tortuga' && t.spec === 2 ? 3 : 1;
+    const nT = tb(t) === 'ardilla' && t.spec === 1 ? 3 : tb(t) === 'tortuga' && t.spec === 2 ? 3 : 1;
     const ts = targets(t, rng, K.air, nT); if (!ts.length) return;
     const e = ts[0];
-    t.cd = K.rate[L] * (1 - Math.min(0.5, st.pk.rate)) * (t.k === 'tortuga' && t.spec === 1 ? 1.3 : 1); t.kick = 0.12; TDS.shot(t.k);
+    t.cd = K.rate[L] * (1 - Math.min(0.5, st.pk.rate)) * (tb(t) === 'tortuga' && t.spec === 1 ? 1.3 : 1); t.kick = 0.12; TDS.shot(tb(t));
     const sx = t.x + 0.5, sy = t.y + 0.25;
-    if (t.k === 'ardilla') for (const o of ts) st.pr.push({ k: 'flecha', x: sx, y: sy, e: o, dmg: K.dmg[L] * mul, sp: 13, t });
-    else if (t.k === 'tortuga') for (const o of ts) st.pr.push({ k: 'bala', x0: sx, y0: sy, x1: o.x, y1: o.y, t: 0, T: 0.55, dmg: K.dmg[L] * mul * (t.spec === 1 ? 1.3 : 1), area: K.area[L] * (t.spec === 1 ? 1.8 : 1), tw: t });
-    else if (t.k === 'abejas') { const nb = K.nb[L] + (t.spec === 1 ? 3 : 0); for (let i = 0; i < nb; i++) st.pr.push({ k: 'abeja', x: sx + (Math.random() - 0.5) * 0.4, y: sy, e, dmg: K.dmg[L] * mul * (t.spec === 2 ? 1.6 : 1), pierce: t.spec === 2, sp: 6 + Math.random(), life: 3, ph: Math.random() * 6, t }); }
-    else if (t.k === 'hongo') { const ax = e.x, ay = e.y; for (const o of st.en) { if (o.dead || o.under) continue; if (Math.hypot(o.x - ax, o.y - ay) <= K.area[L]) { o.dotT = 2.5; o.dotD = Math.max(o.dotD, K.dot[L] * mul * (t.spec === 1 ? 2 : 1)); o.slowT = 1.6; o.slowK = Math.max(o.slowK, t.spec === 2 ? 0.7 : K.slow[L]); } } st.pr.push({ k: 'nube', x: ax, y: ay, t: 0, r: K.area[L], c: t.spec === 1 ? '120,220,80' : t.spec === 2 ? '140,110,60' : '200,120,220' }); }
-    else if (t.k === 'buho') {
+    if (tb(t) === 'ardilla') for (const o of ts) st.pr.push({ k: 'flecha', x: sx, y: sy, e: o, dmg: K.dmg[L] * mul, sp: 13, t, pc: K.pc });
+    else if (tb(t) === 'tortuga') for (const o of ts) st.pr.push({ k: 'bala', x0: sx, y0: sy, x1: o.x, y1: o.y, t: 0, T: 0.55, dmg: K.dmg[L] * mul * (t.spec === 1 ? 1.3 : 1), area: K.area[L] * (t.spec === 1 ? 1.8 : 1), tw: t, pc: K.pc });
+    else if (tb(t) === 'abejas') { const nb = K.nb[L] + (t.spec === 1 ? 3 : 0); for (let i = 0; i < nb; i++) st.pr.push({ k: 'abeja', x: sx + (Math.random() - 0.5) * 0.4, y: sy, e, dmg: K.dmg[L] * mul * (t.spec === 2 ? 1.6 : 1), pierce: t.spec === 2, sp: 6 + Math.random(), life: 3, ph: Math.random() * 6, t, pc: K.pc }); }
+    else if (tb(t) === 'hongo') { const ax = e.x, ay = e.y; for (const o of st.en) { if (o.dead || o.under) continue; if (Math.hypot(o.x - ax, o.y - ay) <= K.area[L]) { o.dotT = 2.5; o.dotD = Math.max(o.dotD, K.dot[L] * mul * (t.spec === 1 ? 2 : 1)); o.slowT = 1.6; o.slowK = Math.max(o.slowK, t.spec === 2 ? 0.7 : K.slow[L]); } } st.pr.push({ k: 'nube', x: ax, y: ay, t: 0, r: K.area[L], c: t.spec === 1 ? '120,220,80' : t.spec === 2 ? '140,110,60' : '200,120,220' }); }
+    else if (tb(t) === 'buho') {
       const n = t.spec === 1 ? 9 : K.ch[L]; let cur = e; const hitS = new Set([e]); const pts = [[sx, sy - 0.2], [e.x, e.y]]; let dmg = K.dmg[L] * mul * (t.spec === 2 ? 1.8 : 1);
       damage(e, dmg, true, t); if (t.spec === 2) { e.slowT = 1; e.slowK = Math.max(e.slowK, 0.3); }
       for (let i = 1; i < n; i++) { let nx = null, bd = 1.8; for (const o of st.en) { if (o.dead || o.under || hitS.has(o)) continue; const dd = Math.hypot(o.x - cur.x, o.y - cur.y); if (dd < bd) { bd = dd; nx = o; } } if (!nx) break; hitS.add(nx); pts.push([nx.x, nx.y]); dmg *= 0.85; damage(nx, dmg, true, t); cur = nx; }
@@ -786,18 +1066,29 @@ function tdStart(mi, daily) {
 
   /* --- jefes --- */
   function bossPower(e, dt) {
-    const E = TD_EN[e.k]; if (!E.pow) return; if (e.inv > 0) e.inv -= dt; e.powT -= dt; if (e.powT > 0) return;
-    if (E.pow === 'salto') { e.powT = 4; e.d += 1.6; ring(e.x, e.y, 1.6, 'rgba(120,200,80,.9)', 0.5); st.shake = 0.3; TDS.bpow(); }
-    else if (E.pow === 'hielo') { e.powT = 5; let n = 0; for (const t of st.tw) if (Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y) <= 2) { t.stun = 2.2; t.stunK = 'hielo'; n++; } ring(e.x, e.y, 2, 'rgba(180,230,255,.95)', 0.6); TDS.bpow(); if (n) float('¡Congeló tus torres!', e.x, e.y - 0.8, '#bfe3ff'); }
-    else if (E.pow === 'fuego') { e.powT = 4; let b = null, bd = 3; for (const t of st.tw) { const dd = Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y); if (dd < bd) { bd = dd; b = t; } } if (b) { b.stun = 3; b.stunK = 'fuego'; st.bolts.push({ pts: [[e.x, e.y], [b.x + 0.5, b.y + 0.5]], t: 0, c: '#ff7a1f', w: 5 }); puff(b.x + 0.5, b.y + 0.5, '#ff7a1f', 14, 2.5); TDS.bpow(); } }
-    else if (E.pow === 'cria') { e.powT = 3; for (let i = 0; i < 2; i++) { spawn('polilla'); const n = st.en[st.en.length - 1]; n.pi = e.pi; n.d = Math.max(0, e.d - 0.3 * i); n.hp = n.max = Math.round(TD_EN.polilla.hp * (WV ? WV.hpMul : 1) * 0.6); } TDS.bpow(); }
-    else if (E.pow === 'veneno') { e.powT = 5; const ts = st.tw.filter((t) => t.k !== 'trampa').sort((a, b) => Math.hypot(a.x + 0.5 - e.x, a.y + 0.5 - e.y) - Math.hypot(b.x + 0.5 - e.x, b.y + 0.5 - e.y)).slice(0, 2); for (const t of ts) { t.stun = 2; t.stunK = 'veneno'; st.bolts.push({ pts: [[e.x, e.y], [t.x + 0.5, t.y + 0.5]], t: 0, c: '#8ad83a', w: 3 }); } if (ts.length) TDS.bpow(); }
-    else if (E.pow === 'escudo') { e.powT = 6; e.inv = 1.8; ring(e.x, e.y, 1, 'rgba(255,220,90,.95)', 0.4); TDS.bpow(); }
-    else if (E.pow === 'acelera') { e.powT = 7; st.rush = 3; ring(e.x, e.y, 2.5, 'rgba(120,230,140,.9)', 0.6); float('¡Corran!', e.x, e.y - 0.8, '#9dff9d'); TDS.bpow(); }
-    else if (E.pow === 'cura') { e.powT = 6; for (const o of st.en) if (!o.dead) { o.hp = Math.min(o.max, o.hp + o.max * 0.12); } ring(e.x, e.y, 3, 'rgba(150,255,170,.9)', 0.6); puff(e.x, e.y, '#9dff9d', 14, 3); TDS.bpow(); }
-    else if (E.pow === 'invoca') { e.powT = 5; for (let i = 0; i < 3; i++) { spawn('cuervo'); const n = st.en[st.en.length - 1]; n.pi = e.pi; n.d = Math.max(0, e.d - 0.3 * i); n.hp = n.max = Math.round(TD_EN.cuervo.hp * (WV ? WV.hpMul : 1) * 0.5); } TDS.bpow(); }
-    else if (E.pow === 'apaga') { e.powT = 5.5; let n = 0; for (const t of st.tw) if (Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y) <= 2.2) { t.stun = 1.6; t.stunK = 'rayo'; n++; } ring(e.x, e.y, 2.2, 'rgba(170,120,255,.95)', 0.5); st.flash = 0.2; if (n) TDS.bpow(); }
-    else if (E.pow === 'rayo') { e.powT = 4.5; const near = st.tw.filter((t) => Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y) <= 3); if (near.length) { const b = near[(Math.random() * near.length) | 0]; b.stun = 2.5; b.stunK = 'rayo'; st.bolts.push({ pts: [[e.x, e.y - 0.5], [(e.x + b.x + 0.5) / 2 + 0.3, (e.y + b.y) / 2], [b.x + 0.5, b.y + 0.5]], t: 0, c: '#ffe066', w: 4 }); st.flash = 0.3; TDS.bpow(); } }
+    const E = TD_EN[e.k]; if (!E.pow) return; if (e.inv > 0) e.inv -= dt; if (e.undT > 0) { e.undT -= dt; if (e.undT <= 0) { e.under = false; puff(e.x, e.y, '#8a6a4a', 12, 2); } } e.powT -= dt; if (e.powT > 0) return;
+    let P = E.pow; if (P === 'todo') P = TD_TODO[(Math.floor(st.t * 3) + e.id) % TD_TODO.length];
+    if (P === 'salto') { e.powT = 4; e.d += 1.6; ring(e.x, e.y, 1.6, 'rgba(120,200,80,.9)', 0.5); st.shake = 0.3; TDS.bpow(); }
+    else if (P === 'hielo') { e.powT = 5; let n = 0; for (const t of st.tw) if (Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y) <= 2) { t.stun = 2.2; t.stunK = 'hielo'; n++; } ring(e.x, e.y, 2, 'rgba(180,230,255,.95)', 0.6); TDS.bpow(); if (n) float('¡Congeló tus torres!', e.x, e.y - 0.8, '#bfe3ff'); }
+    else if (P === 'fuego') { e.powT = 4; let b = null, bd = 3; for (const t of st.tw) { const dd = Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y); if (dd < bd) { bd = dd; b = t; } } if (b) { b.stun = 3; b.stunK = 'fuego'; st.bolts.push({ pts: [[e.x, e.y], [b.x + 0.5, b.y + 0.5]], t: 0, c: '#ff7a1f', w: 5 }); puff(b.x + 0.5, b.y + 0.5, '#ff7a1f', 14, 2.5); TDS.bpow(); } }
+    else if (P === 'cria') { e.powT = 3; for (let i = 0; i < 2; i++) { spawn('polilla'); const n = st.en[st.en.length - 1]; n.pi = e.pi; n.d = Math.max(0, e.d - 0.3 * i); n.hp = n.max = Math.round(TD_EN.polilla.hp * (WV ? WV.hpMul : 1) * 0.6); } TDS.bpow(); }
+    else if (P === 'veneno') { e.powT = 5; const ts = st.tw.filter((t) => tb(t) !== 'trampa').sort((a, b) => Math.hypot(a.x + 0.5 - e.x, a.y + 0.5 - e.y) - Math.hypot(b.x + 0.5 - e.x, b.y + 0.5 - e.y)).slice(0, 2); for (const t of ts) { t.stun = 2; t.stunK = 'veneno'; st.bolts.push({ pts: [[e.x, e.y], [t.x + 0.5, t.y + 0.5]], t: 0, c: '#8ad83a', w: 3 }); } if (ts.length) TDS.bpow(); }
+    else if (P === 'escudo') { e.powT = 6; e.inv = 1.8; ring(e.x, e.y, 1, 'rgba(255,220,90,.95)', 0.4); TDS.bpow(); }
+    else if (P === 'acelera') { e.powT = 7; st.rush = 3; ring(e.x, e.y, 2.5, 'rgba(120,230,140,.9)', 0.6); float('¡Corran!', e.x, e.y - 0.8, '#9dff9d'); TDS.bpow(); }
+    else if (P === 'cura') { e.powT = 6; for (const o of st.en) if (!o.dead) { o.hp = Math.min(o.max, o.hp + o.max * 0.12); } ring(e.x, e.y, 3, 'rgba(150,255,170,.9)', 0.6); puff(e.x, e.y, '#9dff9d', 14, 3); TDS.bpow(); }
+    else if (P === 'invoca') { e.powT = 5; for (let i = 0; i < 3; i++) { const mk2 = E.minion || 'cuervo'; spawn(mk2); const n = st.en[st.en.length - 1]; n.pi = e.pi; n.d = Math.max(0, e.d - 0.3 * i); n.hp = n.max = Math.round(TD_EN[mk2].hp * (WV ? WV.hpMul : 1) * 0.5); } TDS.bpow(); }
+    else if (P === 'apaga') { e.powT = 5.5; let n = 0; for (const t of st.tw) if (Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y) <= 2.2) { t.stun = 1.6; t.stunK = 'rayo'; n++; } ring(e.x, e.y, 2.2, 'rgba(170,120,255,.95)', 0.5); st.flash = 0.2; if (n) TDS.bpow(); }
+    else if (P === 'rayo') { e.powT = 4.5; const near = st.tw.filter((t) => Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y) <= 3); if (near.length) { const b = near[(Math.random() * near.length) | 0]; b.stun = 2.5; b.stunK = 'rayo'; st.bolts.push({ pts: [[e.x, e.y - 0.5], [(e.x + b.x + 0.5) / 2 + 0.3, (e.y + b.y) / 2], [b.x + 0.5, b.y + 0.5]], t: 0, c: '#ffe066', w: 4 }); st.flash = 0.3; TDS.bpow(); } }
+    else if (P === 'tinta') { e.powT = 5.5; let n = 0; for (const t of st.tw) if (Math.hypot(t.x + 0.5 - e.x, t.y + 0.5 - e.y) <= 2.6) { t.stun = 1.6; t.stunK = 'rayo'; n++; } ring(e.x, e.y, 2.6, 'rgba(60,30,80,.9)', 0.6); puff(e.x, e.y, '#3a2a4a', 18, 3); if (n) { float('¡Tinta!', e.x, e.y - 0.8, '#c8a0ff'); TDS.bpow(); } }
+    else if (P === 'corte') { e.powT = 5; const ts = st.tw.filter((t) => tb(t) !== 'trampa').sort((a, b) => Math.hypot(a.x + 0.5 - e.x, a.y + 0.5 - e.y) - Math.hypot(b.x + 0.5 - e.x, b.y + 0.5 - e.y)).slice(0, 3); for (const t of ts) { t.stun = 2; t.stunK = 'veneno'; st.bolts.push({ pts: [[e.x, e.y], [t.x + 0.5, t.y + 0.5]], t: 0, c: '#b8ff6a', w: 3 }); } if (ts.length) TDS.bpow(); }
+    else if (P === 'muro') { e.powT = 6; for (const o of st.en) if (!o.dead && o !== e && Math.hypot(o.x - e.x, o.y - e.y) <= 2.5) o.sh = Math.max(o.sh, o.max * 0.35); ring(e.x, e.y, 2.5, 'rgba(150,200,255,.9)', 0.6); TDS.bpow(); }
+    else if (P === 'tele') { e.powT = 5; ring(e.x, e.y, 1, 'rgba(190,120,255,.95)', 0.4); puff(e.x, e.y, '#c8a0ff', 12, 2.5); e.d = Math.min(PATHS[e.pi].L - 1, e.d + 2.2); e.inv = 0.6; TDS.bpow(); }
+    else if (P === 'aullido') { e.powT = 7; st.rush = 3.5; ring(e.x, e.y, 3, 'rgba(255,170,80,.9)', 0.6); float('¡Auuuu!', e.x, e.y - 0.8, '#ffc078'); TDS.bpow(); }
+    else if (P === 'clon') { e.powT = 6; const pl = poolAt(Math.max(st.wave, 6)).map((p) => p[0]); for (let i = 0; i < 4; i++) spawnAt(pl[(Math.random() * pl.length) | 0], e, 1, 0.7); ring(e.x, e.y, 1.2, 'rgba(200,200,220,.9)', 0.4); TDS.bpow(); }
+    else if (P === 'bombas') { e.powT = 6; const ts = st.tw.filter((t) => tb(t) !== 'trampa').sort(() => Math.random() - 0.5).slice(0, 3); for (const t of ts) st.ev.push({ k: 'met', x: t.x + 0.5, y: t.y + 0.5, t: 0, T: 1.4 }); if (ts.length) TDS.bpow(); }
+    else if (P === 'tiempo') { e.powT = 8; for (const t of st.tw) { t.stun = Math.max(t.stun || 0, 1.2); t.stunK = 'hielo'; } st.flash = 0.3; ring(e.x, e.y, 6, 'rgba(255,230,150,.9)', 0.7); float('¡Tiempo detenido!', e.x, e.y - 0.8, '#ffe066'); TDS.bpow(); }
+    else if (P === 'excava') { e.powT = 6; e.under = true; e.undT = 1.6; puff(e.x, e.y, '#8a6a4a', 14, 2); TDS.bpow(); }
+    else if (P === 'sombra') { e.powT = 6; e.inv = 1.5; ring(e.x, e.y, 1.2, 'rgba(40,30,60,.9)', 0.5); puff(e.x, e.y, '#4a3a6a', 12, 2); TDS.bpow(); }
   }
 
   /* --- poderes --- */
@@ -813,7 +1104,7 @@ function tdStart(mi, daily) {
     if (!TW.size) return;
     const wave = st.phase === 'wave';
     if (TW.has('lluvia') && wave) { st.et -= dt; if (st.et <= 0) { st.et = 6 + Math.random() * 3; const c = st.en.filter((e) => !e.dead && !e.under); if (c.length) { const e = c[(Math.random() * c.length) | 0]; st.ev.push({ k: 'star', x: e.x, y: e.y, t: 0, T: 0.9 }); } } }
-    if (TW.has('meteoros') && wave) { st.mt -= dt; if (st.mt <= 0) { st.mt = 11 + Math.random() * 4; const ts = st.tw.filter((t) => t.k !== 'trampa'); if (ts.length) { const t = ts[(Math.random() * ts.length) | 0]; st.ev.push({ k: 'met', x: t.x + 0.5, y: t.y + 0.5, t: 0, T: 1.8 }); TDS.bpow(); } } }
+    if (TW.has('meteoros') && wave) { st.mt -= dt; if (st.mt <= 0) { st.mt = 11 + Math.random() * 4; const ts = st.tw.filter((t) => tb(t) !== 'trampa'); if (ts.length) { const t = ts[(Math.random() * ts.length) | 0]; st.ev.push({ k: 'met', x: t.x + 0.5, y: t.y + 0.5, t: 0, T: 1.8 }); TDS.bpow(); } } }
     if (TW.has('cofres')) { st.ct -= dt; if (st.ct <= 0 && st.chests.length < 2) { st.ct = 8 + Math.random() * 4; const c = freeCell(); if (c) st.chests.push({ x: c[0], y: c[1], life: 7, v: 22 + st.wave * 4 }); } }
     for (const c of st.chests) c.life -= dt; st.chests = st.chests.filter((c) => c.life > 0);
     for (const v of st.ev) {
@@ -839,7 +1130,7 @@ function tdStart(mi, daily) {
   /* --- paso de simulación --- */
   function step(dt) {
     st.t += dt; if (st.treeHit > 0) st.treeHit -= dt; if (st.hurt > 0) st.hurt -= dt; if (st.flash > 0) st.flash -= dt;
-    st.cd.a = Math.max(0, st.cd.a - dt); st.cd.r = Math.max(0, st.cd.r - dt); for (const k of PW) st.cd[k] = Math.max(0, st.cd[k] - dt);
+    st.cd.a = Math.max(0, st.cd.a - dt); st.cd.r = Math.max(0, st.cd.r - dt); for (const k of PW) st.cd[k] = Math.max(0, st.cd[k] - dt); if (st.goldT > 0) st.goldT -= dt;
     if (st.banner) { st.banner.t += dt; if (st.banner.t > 2.4) st.banner = null; }
     if (st.over) return;
     if (st.phase === 'build' && st.wave > 0) { st.countdown -= dt; if (st.countdown <= 0) startWave(); }
@@ -855,7 +1146,12 @@ function tdStart(mi, daily) {
       if (E.heal) { e.healT -= dt; if (e.healT <= 0) { e.healT = 2.2; for (const o of st.en) if (!o.dead && o !== e && Math.hypot(o.x - e.x, o.y - e.y) < 1.3) o.hp = Math.min(o.max, o.hp + o.max * 0.12); ring(e.x, e.y, 1.3, 'rgba(160,255,160,.8)', 0.4); } }
       if (E.charge) { if (e.chg > 0) { e.chg -= dt; if (!low() && Math.random() < dt * 20) puff(e.x, e.y + 0.2, '#c8b89a', 1, 1); } else { e.chT -= dt; if (e.chT <= 0) { e.chg = 0.8; e.chT = 3 + Math.random() * 2.5; } } }
       if (E.boss) bossPower(e, dt);
-      let sp = E.sp * spMod * (st.rush > 0 && !E.boss ? 1.6 : 1) * (1 - e.slowK) * (e.chg > 0 ? 3 : 1) * (1 - st.pk.esc);
+      if (E.regen && e.hp < e.max) e.hp = Math.min(e.max, e.hp + e.max * E.regen * dt);
+      if (E.tough) { e.slowK = 0; e.frz = 0; }
+      if (E.blink) { e.blT = (e.blT ?? 2 + Math.random() * 2) - dt; if (e.blT <= 0) { e.blT = 3 + Math.random() * 2; ring(e.x, e.y, 0.6, 'rgba(200,160,255,.9)', 0.3); if (!low()) puff(e.x, e.y, '#d8c0ff', 6, 1.5); e.d = Math.min(PATHS[e.pi].L - 0.5, e.d + 1.3); } }
+      if (E.aura) { e.auT = (e.auT ?? 2) - dt; if (e.auT <= 0) { e.auT = 3.2; for (const o of st.en) if (!o.dead && o !== e && Math.hypot(o.x - e.x, o.y - e.y) < 1.4) o.sh = Math.max(o.sh, o.max * 0.25); ring(e.x, e.y, 1.4, 'rgba(150,200,255,.8)', 0.4); } }
+      if (E.spawn) { e.spT = (e.spT ?? 3) - dt; if (e.spT <= 0) { e.spT = 3.6; spawnAt(E.spawn, e, 1, 1); } }
+      let sp = E.sp * spMod * (st.rush > 0 && !E.boss ? 1.6 : 1) * (1 - e.slowK) * (e.chg > 0 ? 3 : 1) * (1 - Math.min(0.6, st.pk.esc)) * (E.rage && e.hp < e.max * 0.5 ? 1.7 : 1);
       if (mud.size && mud.has(key(Math.floor(e.x), Math.floor(e.y)))) sp *= 0.55;
       if (ZON && !E.fly) { const f = e.d / PATHS[e.pi].L; if (f > ZON.a && f < ZON.b) sp *= 1.7; }
       if (e.rootT > 0) { e.rootT -= dt; sp = 0; }
@@ -876,7 +1172,7 @@ function tdStart(mi, daily) {
         if (q.k === 'abeja') { q.life -= dt; q.ph += dt * 20; if (q.life <= 0) { q.done = true; continue; } }
         if (dd < 0.22) { const air = TD_EN[q.e.k].fly; damage(q.e, q.dmg * (q.k === 'abeja' && air ? 2 : 1), q.pierce, q.t); q.done = true; continue; }
         q.x += dx / dd * q.sp * dt; q.y += dy / dd * q.sp * dt; q.ang = Math.atan2(dy, dx);
-      } else if (q.k === 'bala') { q.t += dt; if (q.t >= q.T) { q.done = true; TDS.boom(); puff(q.x1, q.y1, '#a89a8a', low() ? 5 : 10, 2.5); ring(q.x1, q.y1, q.area, 'rgba(255,230,180,.85)', 0.3); for (const e of st.en) if (!e.dead && !TD_EN[e.k].fly && Math.hypot(e.x - q.x1, e.y - q.y1) <= q.area) damage(e, q.dmg, false, q.tw); } }
+      } else if (q.k === 'bala') { q.t += dt; if (q.t >= q.T) { q.done = true; TDS.boom(); puff(q.x1, q.y1, '#a89a8a', low() ? 5 : 10, 2.5); ring(q.x1, q.y1, q.area, 'rgba(255,230,180,.85)', 0.3); for (const e of st.en) if (!e.dead && (!TD_EN[e.k].fly || (q.tw && TD_TW[q.tw.k].air)) && Math.hypot(e.x - q.x1, e.y - q.y1) <= q.area) damage(e, q.dmg, false, q.tw); } }
       else if (q.k === 'nube') { q.t += dt; if (q.t > 0.8) q.done = true; }
       else if (q.k === 'bellotas') { q.t += dt; if (q.t >= 0.6 && !q.hit) { q.hit = true; st.shake = 0.5; vib(40); puff(q.x, q.y, '#8a5a2c', low() ? 14 : 30, 4); ring(q.x, q.y, 1.9, 'rgba(255,200,90,.95)', 0.5); const dmg = (60 + st.wave * 14) * dmgMul() * (1 + st.pk.bel); for (const e of st.en) if (!e.dead && Math.hypot(e.x - q.x, e.y - q.y) <= 1.7) damage(e, dmg, true); } if (q.t > 1) q.done = true; }
       else if (q.k === 'raiz') { q.t += dt; if (q.t > 3) q.done = true; }
@@ -888,7 +1184,7 @@ function tdStart(mi, daily) {
     for (const b of st.bolts) b.t += dt; st.bolts = st.bolts.filter((b) => b.t < 0.22);
     if (st.shake > 0) st.shake -= dt;
     if (st.phase === 'wave' && !st.queue.length && !st.en.length) {
-      const bonus = 15 + st.wave * 2 + st.tw.filter((t) => t.k === 'arbol').reduce((a, t) => a + Math.round(TD_TW.arbol.seeds[t.lvl] * (t.spec === 2 ? 2.5 : 1)), 0);
+      const bonus = 15 + st.wave * 2 + st.tw.filter((t) => tb(t) === 'arbol').reduce((a, t) => a + Math.round(TD_TW[t.k].seeds[t.lvl] * (t.spec === 2 ? 2.5 : 1)), 0);
       st.seeds += bonus; float(`Oleada superada · +${bonus} 🌰`, TD_COLS / 2, 2, '#ffe066', true); TDS.up();
       if (st.pk.int) { const ig = Math.min(40, Math.floor(st.seeds * st.pk.int)); if (ig > 0) { st.seeds += ig; float(`+${ig} 🌰 intereses`, TD_COLS / 2, 2.8, '#b8f08a'); } }
       if (TW.has('bendito') && st.wave % 3 === 0 && st.lives < LMAX) { st.lives++; float('+1 ❤️ bendición', tree[0] + 0.5, tree[1] - 0.5, '#ff9ab0', true); ring(tree[0] + 0.5, tree[1] + 0.5, 1.6, 'rgba(255,200,220,.95)', 0.6); }
@@ -906,7 +1202,7 @@ function tdStart(mi, daily) {
 
   /* --- dibujo --- */
   const SX = (x) => V.ox + x * V.T, SY = (y) => V.oy + y * V.T;
-  const ANIM = { abejas: 1, rayo: 1, pino: 1, hongo: 1 };
+  const ANIM = { abejas: 1, rayo: 1, pino: 1, hongo: 1 }; for (const k in TD_TW) if (TD_TW[k].em) ANIM[k] = 1;
   function drawTowerSpr(t, x, y, sc) {
     const T = V.T, B = 1.6 * T; const aimB = t.k === 'tortuga' ? Math.round(((t.aim || 0) + Math.PI) / (Math.PI / 8)) % 16 : 0; const fr = ANIM[t.k] ? Math.floor(st.t * 5) % 4 : 0;
     const cv = tdSpr(`t${t.k}|${t.lvl}|${t.spec || 0}|${aimB}|${fr}`, B, B, (q) => tdDrawTower(q, t.k, t.lvl, B / 2, B * 0.55, T, fr * 0.2, aimB * Math.PI / 8 - Math.PI, t.spec || 0));
@@ -940,24 +1236,24 @@ function tdStart(mi, daily) {
     if (st.shake > 0) g.translate((Math.random() - 0.5) * st.shake * 12, (Math.random() - 0.5) * st.shake * 12);
     if (st.build) { const { x, y } = st.build; g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(SX(x), SY(y), T, T); g.strokeStyle = '#fff'; g.lineWidth = 2; g.strokeRect(SX(x) + 1, SY(y) + 1, T - 2, T - 2); }
     if (st.sel) { const t = st.sel; const r = RNG(t) * T; g.fillStyle = 'rgba(255,255,255,.13)'; g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 1.5; g.setLineDash([6, 5]); g.beginPath(); g.arc(SX(t.x + 0.5), SY(t.y + 0.5), r, 0, 7); g.fill(); g.stroke(); g.setLineDash([]); }
-    for (const t of st.tw) if (t.k === 'pino' && t.spec === 2) { g.fillStyle = 'rgba(200,240,255,.12)'; g.beginPath(); g.arc(SX(t.x + 0.5), SY(t.y + 0.5), RNG(t) * T, 0, 7); g.fill(); }
+    for (const t of st.tw) if (tb(t) === 'pino' && t.spec === 2) { g.fillStyle = 'rgba(200,240,255,.12)'; g.beginPath(); g.arc(SX(t.x + 0.5), SY(t.y + 0.5), RNG(t) * T, 0, 7); g.fill(); }
     for (const q of st.pr) if (q.k === 'raiz') { const a = Math.min(1, (3 - q.t) * 2); g.strokeStyle = `rgba(90,60,30,${0.8 * a})`; g.lineWidth = 3; for (let i = 0; i < 8; i++) { const an = i * 0.785; g.beginPath(); g.moveTo(SX(q.x), SY(q.y)); g.quadraticCurveTo(SX(q.x + Math.cos(an) * 0.8), SY(q.y + Math.sin(an + 0.5) * 0.8), SX(q.x + Math.cos(an) * 1.5), SY(q.y + Math.sin(an) * 1.5)); g.stroke(); } }
     // guía para quien juega por primera vez: un dedo señala dónde poner la primera torre
     if (COACH && !st.tw.length) { const [cx, cy] = COACH; const X = SX(cx + 0.5), Y = SY(cy + 0.5), k = (Math.sin(st.t * 5) + 1) / 2; g.strokeStyle = `rgba(255,255,255,${0.5 + 0.5 * k})`; g.lineWidth = 3; g.beginPath(); g.arc(X, Y, T * (0.4 + 0.12 * k), 0, 7); g.stroke(); g.font = `${Math.round(T * 0.7)}px system-ui`; g.textAlign = 'center'; g.fillText('👆', X + T * 0.15, Y + T * (0.85 + 0.1 * k)); }
     // trampas (debajo de los enemigos)
-    for (const t of st.tw) if (t.k === 'trampa') drawTowerSpr(t, SX(t.x + 0.5), SY(t.y + 0.5), 1);
+    for (const t of st.tw) if (tb(t) === 'trampa') drawTowerSpr(t, SX(t.x + 0.5), SY(t.y + 0.5), 1);
     // el Gran Árbol
     { const X = SX(tree[0] + 0.5), Y = SY(tree[1] + 0.5); const sh = st.treeHit > 0 ? Math.sin(st.t * 60) * 3 : 0; g.save(); g.translate(X + sh, Y); if (TW.has('bendito')) { g.fillStyle = 'rgba(255,240,150,.2)'; g.beginPath(); g.arc(0, -T * 0.2, T * 0.9 + Math.sin(st.t * 2) * 3, 0, 7); g.fill(); } g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(0, T * 0.42, T * 0.6, T * 0.15, 0, 0, 7); g.fill(); g.fillStyle = SKIN.c[2]; g.fillRect(-T * 0.12, -T * 0.1, T * 0.24, T * 0.52); const sw = Math.sin(st.t * 1.2) * T * 0.03; const hp = st.lives / LMAX; const RB = ['#ff6b6b', '#ffa94d', '#ffd43b', '#69db7c', '#4dabf7', '#9775fa']; [[0, -0.42, 0.42], [-0.3, -0.2, 0.3], [0.3, -0.2, 0.3]].forEach(([a, b, r], i) => { g.fillStyle = st.treeHit > 0 ? '#c84a3a' : SKIN.rb ? RB[(i * 2 + Math.floor(st.t * 2)) % 6] : hp > 0.25 ? (i ? SKIN.c[1] : SKIN.c[0]) : '#a8702a'; g.beginPath(); g.arc(a * T + sw, b * T, r * T, 0, 7); g.fill(); }); g.fillStyle = 'rgba(255,255,255,.25)'; g.beginPath(); g.arc(-T * 0.12 + sw, -T * 0.55, T * 0.12, 0, 7); g.fill(); if (hp > 0.5) { g.fillStyle = SKIN.f; for (const [a, b] of [[-0.2, -0.5], [0.15, -0.3], [0.3, -0.15]]) { g.beginPath(); g.arc(a * T + sw, b * T, T * 0.05, 0, 7); g.fill(); } } g.restore(); }
     // torres
     for (const t of st.tw) {
-      if (t.k === 'trampa') { if (t === st.sel) { g.strokeStyle = '#ffd23c'; g.lineWidth = 2; g.strokeRect(SX(t.x) + 1, SY(t.y) + 1, T - 2, T - 2); } continue; }
+      if (tb(t) === 'trampa') { if (t === st.sel) { g.strokeStyle = '#ffd23c'; g.lineWidth = 2; g.strokeRect(SX(t.x) + 1, SY(t.y) + 1, T - 2, T - 2); } continue; }
       const kick = t.kick > 0 ? -t.kick * 8 : 0; const sc = t.born > 0 ? 1 + Math.sin((0.35 - t.born) / 0.35 * Math.PI) * 0.25 : 1;
       drawTowerSpr(t, SX(t.x + 0.5), SY(t.y + 0.5) + kick, sc);
       if (t.stun > 0) { const X = SX(t.x + 0.5), Y = SY(t.y + 0.5); if (t.stunK === 'veneno') { g.fillStyle = 'rgba(140,220,60,.45)'; g.beginPath(); g.roundRect(X - T * 0.42, Y - T * 0.5, T * 0.84, T * 0.9, 6); g.fill(); for (let i = 0; i < 3; i++) { g.fillStyle = 'rgba(180,255,90,.8)'; g.beginPath(); g.arc(X + (i - 1) * T * 0.2, Y - T * 0.3 - ((st.t * 1.5 + i * 0.3) % 1) * T * 0.4, 3, 0, 7); g.fill(); } } else if (t.stunK === 'hielo') { g.fillStyle = 'rgba(190,235,255,.55)'; g.beginPath(); g.roundRect(X - T * 0.42, Y - T * 0.5, T * 0.84, T * 0.9, 6); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); } else if (t.stunK === 'fuego') { for (let i = 0; i < 3; i++) { const fx = X + (i - 1) * T * 0.22, f = Math.sin(st.t * 15 + i) * 3; g.fillStyle = 'rgba(255,120,30,.85)'; g.beginPath(); g.ellipse(fx, Y - T * 0.15 + f, T * 0.1, T * 0.22, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(255,220,80,.9)'; g.beginPath(); g.ellipse(fx, Y - T * 0.08 + f, T * 0.05, T * 0.11, 0, 0, 7); g.fill(); } } else { g.strokeStyle = '#ffe066'; g.lineWidth = 2; g.beginPath(); for (let i = 0; i < 5; i++) { const a = st.t * 20 + i; g.lineTo(X + Math.cos(a) * T * 0.35, Y - T * 0.1 + Math.sin(a * 1.7) * T * 0.35); } g.stroke(); } }
       if (t === st.sel) { g.strokeStyle = '#ffd23c'; g.lineWidth = 2; g.strokeRect(SX(t.x) + 1, SY(t.y) + 1, T - 2, T - 2); }
     }
     // rayos de luciérnaga
-    for (const t of st.tw) if (t.k === 'rayo' && t.target && !t.target.dead && !(t.stun > 0)) { const mx = t.spec === 2 ? 6 : 3; const k = (t.ramp || 0) / mx; const col = t.spec === 2 ? '255,220,90' : '120,240,255'; const beam = (e, w) => { g.strokeStyle = `rgba(${col},${0.5 + 0.4 * k})`; g.lineWidth = w; g.beginPath(); g.moveTo(SX(t.x + 0.5), SY(t.y + 0.15)); g.lineTo(SX(e.x), SY(e.y)); g.stroke(); g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 1; g.stroke(); }; beam(t.target, 2 + k * 5); if (t.extra) for (const o of t.extra) if (!o.dead) beam(o, 1.5 + k * 2); }
+    for (const t of st.tw) if (tb(t) === 'rayo' && t.target && !t.target.dead && !(t.stun > 0)) { const mx = t.spec === 2 ? 6 : 3; const k = (t.ramp || 0) / mx; const col = t.spec === 2 ? '255,220,90' : '120,240,255'; const beam = (e, w) => { g.strokeStyle = `rgba(${col},${0.5 + 0.4 * k})`; g.lineWidth = w; g.beginPath(); g.moveTo(SX(t.x + 0.5), SY(t.y + 0.15)); g.lineTo(SX(e.x), SY(e.y)); g.stroke(); g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 1; g.stroke(); }; beam(t.target, 2 + k * 5); if (t.extra) for (const o of t.extra) if (!o.dead) beam(o, 1.5 + k * 2); }
     // portales
     if (PORT) PATHS.forEach((p, pi) => { [[PORT.a, '190,120,255'], [PORT.b, '120,200,255']].forEach(([f, col], j) => { const o = posAt(pi, f * p.L); const X = SX(o.x), Y = SY(o.y); g.save(); g.translate(X, Y); g.fillStyle = `rgba(${col},.25)`; g.beginPath(); g.arc(0, 0, T * 0.42, 0, 7); g.fill(); g.strokeStyle = `rgba(${col},.95)`; g.lineWidth = 3; for (let i = 0; i < 3; i++) { const a = st.t * (j ? -3 : 3) + i * 2.09; g.beginPath(); g.arc(0, 0, T * (0.2 + i * 0.07), a, a + 1.6); g.stroke(); } g.restore(); }); });
     // cofres
@@ -967,7 +1263,7 @@ function tdStart(mi, daily) {
     for (const e of en) {
       const E = TD_EN[e.k]; const X = SX(e.x), Y = SY(e.y);
       if (e.under) { g.fillStyle = '#7a5a3a'; g.beginPath(); g.ellipse(X, Y + T * 0.12, T * 0.28, T * 0.12, 0, 0, 7); g.fill(); g.fillStyle = '#9a7a5a'; g.beginPath(); g.ellipse(X - T * 0.05, Y + T * 0.08, T * 0.14, T * 0.06, 0, 0, 7); g.fill(); continue; }
-      const ghost = E.ghost && !st.tw.some((t) => t.k === 'buho' && dist(t, e) <= RNG(t)) && !st.tw.some((t) => dist(t, e) <= 1.3);
+      const ghost = E.ghost && !st.tw.some((t) => tb(t) === 'buho' && dist(t, e) <= RNG(t)) && !st.tw.some((t) => dist(t, e) <= 1.3);
       if (ghost) g.globalAlpha = 0.3;
       drawEnemySpr(e);
       g.globalAlpha = 1;
@@ -984,9 +1280,10 @@ function tdStart(mi, daily) {
     }
     // proyectiles
     for (const q of st.pr) {
-      if (q.k === 'flecha') { g.save(); g.translate(SX(q.x), SY(q.y)); g.rotate(q.ang || 0); g.strokeStyle = '#6b3a1a'; g.lineWidth = 2; g.beginPath(); g.moveTo(-T * 0.18, 0); g.lineTo(T * 0.12, 0); g.stroke(); g.fillStyle = '#ddd'; g.beginPath(); g.moveTo(T * 0.16, 0); g.lineTo(T * 0.08, -3); g.lineTo(T * 0.08, 3); g.fill(); g.restore(); }
-      else if (q.k === 'abeja') { const x = SX(q.x) + Math.sin(q.ph) * 2, y = SY(q.y) + Math.cos(q.ph * 1.3) * 2; g.fillStyle = q.pierce ? '#ff9a3c' : '#ffd23c'; g.beginPath(); g.ellipse(x, y, 3.2, 2.4, 0, 0, 7); g.fill(); g.fillStyle = '#3a2a10'; g.fillRect(x - 0.8, y - 2.4, 1.6, 4.8); g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.ellipse(x, y - 3, 2, 1.2, 0, 0, 7); g.fill(); }
-      else if (q.k === 'bala') { const k = q.t / q.T; const x = q.x0 + (q.x1 - q.x0) * k, y = q.y0 + (q.y1 - q.y0) * k - Math.sin(k * Math.PI) * 1.2; g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(SX(q.x0 + (q.x1 - q.x0) * k), SY(q.y0 + (q.y1 - q.y0) * k), 4, 2, 0, 0, 7); g.fill(); g.fillStyle = '#3a3a40'; g.beginPath(); g.arc(SX(x), SY(y), T * 0.12, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.arc(SX(x) - 2, SY(y) - 2, T * 0.04, 0, 7); g.fill(); }
+      if (q.k === 'flecha' && q.pc) { g.fillStyle = q.pc; g.beginPath(); g.arc(SX(q.x), SY(q.y), T * 0.09, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.arc(SX(q.x) - 1, SY(q.y) - 1, T * 0.035, 0, 7); g.fill(); }
+      else if (q.k === 'flecha') { g.save(); g.translate(SX(q.x), SY(q.y)); g.rotate(q.ang || 0); g.strokeStyle = '#6b3a1a'; g.lineWidth = 2; g.beginPath(); g.moveTo(-T * 0.18, 0); g.lineTo(T * 0.12, 0); g.stroke(); g.fillStyle = '#ddd'; g.beginPath(); g.moveTo(T * 0.16, 0); g.lineTo(T * 0.08, -3); g.lineTo(T * 0.08, 3); g.fill(); g.restore(); }
+      else if (q.k === 'abeja') { const x = SX(q.x) + Math.sin(q.ph) * 2, y = SY(q.y) + Math.cos(q.ph * 1.3) * 2; g.fillStyle = q.pc || (q.pierce ? '#ff9a3c' : '#ffd23c'); g.beginPath(); g.ellipse(x, y, 3.2, 2.4, 0, 0, 7); g.fill(); g.fillStyle = '#3a2a10'; g.fillRect(x - 0.8, y - 2.4, 1.6, 4.8); g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.ellipse(x, y - 3, 2, 1.2, 0, 0, 7); g.fill(); }
+      else if (q.k === 'bala') { const k = q.t / q.T; const x = q.x0 + (q.x1 - q.x0) * k, y = q.y0 + (q.y1 - q.y0) * k - Math.sin(k * Math.PI) * 1.2; g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(SX(q.x0 + (q.x1 - q.x0) * k), SY(q.y0 + (q.y1 - q.y0) * k), 4, 2, 0, 0, 7); g.fill(); g.fillStyle = q.pc || '#3a3a40'; g.beginPath(); g.arc(SX(x), SY(y), T * 0.12, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.arc(SX(x) - 2, SY(y) - 2, T * 0.04, 0, 7); g.fill(); }
       else if (q.k === 'nube') { const a = 1 - q.t / 0.8; g.fillStyle = `rgba(${q.c},${0.35 * a})`; g.beginPath(); g.arc(SX(q.x), SY(q.y), q.r * T * (0.6 + q.t * 0.5), 0, 7); g.fill(); }
       else if (q.k === 'bellotas') { if (q.t < 0.6) { for (let i = 0; i < 6; i++) { const a = i * 1.05; const r = 1.3 * (1 - q.t / 0.6); g.fillStyle = '#8a5a2c'; g.beginPath(); g.ellipse(SX(q.x + Math.cos(a) * 0.9), SY(q.y + Math.sin(a) * 0.9 - r * 3), 5, 6, 0, 0, 7); g.fill(); } g.strokeStyle = 'rgba(255,80,40,.6)'; g.lineWidth = 2; g.beginPath(); g.arc(SX(q.x), SY(q.y), 1.7 * T, 0, 7); g.stroke(); } else { g.fillStyle = `rgba(255,200,80,${0.5 * (1 - (q.t - 0.6) / 0.4)})`; g.beginPath(); g.arc(SX(q.x), SY(q.y), 1.7 * T, 0, 7); g.fill(); } }
     }
@@ -1025,26 +1322,26 @@ function tdStart(mi, daily) {
   const paintMini = () => panel.querySelectorAll('canvas[data-k]').forEach((cv) => { const q = cv.getContext('2d'); tdDrawTower(q, cv.dataset.k, +(cv.dataset.l || 0), 32, 36, 46, 1, -0.6, +(cv.dataset.s || 0)); });
   function openBuild(x, y, onPath) {
     st.sel = null; st.build = { x, y };
-    const ks = Object.keys(TD_TW).filter((k) => (onPath ? !!TD_TW[k].path : !TD_TW[k].path));
+    const ks0 = Object.keys(TD_TW).filter((k) => (onPath ? !!TD_TW[k].path : !TD_TW[k].path)); const ks = ks0.filter((k) => tdTowerOpen(k)).concat(ks0.filter((k) => !tdTowerOpen(k)).sort((a, b) => TD_TW[a].un - TD_TW[b].un).slice(0, 2));
     panel.innerHTML = `<div class="td-ph"><b>${onPath ? 'Trampa en el camino' : 'Construir aquí'}</b><button class="td-close" data-a="close" aria-label="Cerrar">✕</button></div><div class="td-tws">${ks.map((k) => { const K = TD_TW[k]; const open = tdTowerOpen(k) && (!SOLO || SOLO.has(k)); return `<button type="button" class="td-tw" data-a="build" data-k="${k}" ${open ? '' : 'disabled'}><canvas width="64" height="64" data-k="${k}"></canvas><b>${tdTowerOpen(k) ? K.n.split(' ')[0] : '🔒'}</b><span>${!tdTowerOpen(k) ? `Mapa ${K.un + 1}` : open ? `🌰 ${costOf(k, 0)}` : 'No aquí'}</span></button>`; }).join('')}</div>`;
     panel.hidden = false; paintMini(); refreshPanel();
   }
   function info(t) {
     const K = TD_TW[t.k], L = t.lvl, r = RNG(t).toFixed(1); const bm = t.bm > 1 ? ` · +${Math.round((t.bm - 1) * 100)} % por árbol` : '';
     if (K.support) return `+${Math.round((K.buff[L] + (t.spec === 1 ? 0.6 : 0)) * 100)} % de daño a torres cercanas · +${Math.round(K.seeds[L] * (t.spec === 2 ? 2.5 : 1))} 🌰 por oleada`;
-    if (t.k === 'rayo') return `${K.dps[L]} daño/s, sube hasta ×${t.spec === 2 ? 7 : 4} · alcance ${r}${bm}`;
-    if (t.k === 'hongo') return `Veneno ${K.dot[L] * (t.spec === 1 ? 2 : 1)}/s · frena ${Math.round((t.spec === 2 ? 0.7 : K.slow[L]) * 100)} % · alcance ${r}${bm}`;
-    if (t.k === 'buho') return `${Math.round(K.dmg[L] * (t.spec === 2 ? 1.8 : 1))} de daño · salta a ${t.spec === 1 ? 9 : K.ch[L]} enemigos · alcance ${r}${bm}`;
-    if (t.k === 'pino') return `Congela ${t.spec === 1 ? 2.5 : K.frz[L]} s cada ${K.rate[L]} s · alcance ${r}${bm}`;
-    if (t.k === 'trampa') return `${Math.round(K.dps[L] * (t.spec === 2 ? 2 : 1))} daño/s a quien la pise${t.spec === 1 ? ' · frena 45 %' : ''}${bm}`;
-    return `${K.dmg[L]}${t.k === 'abejas' ? ` × ${K.nb[L] + (t.spec === 1 ? 3 : 0)} abejas` : ''}${t.k === 'ardilla' && t.spec === 1 ? ' × 3 blancos' : ''} de daño · alcance ${r}${bm}`;
+    if (tb(t) === 'rayo') return `${K.dps[L]} daño/s, sube hasta ×${t.spec === 2 ? 7 : 4} · alcance ${r}${bm}`;
+    if (tb(t) === 'hongo') return `Veneno ${K.dot[L] * (t.spec === 1 ? 2 : 1)}/s · frena ${Math.round((t.spec === 2 ? 0.7 : K.slow[L]) * 100)} % · alcance ${r}${bm}`;
+    if (tb(t) === 'buho') return `${Math.round(K.dmg[L] * (t.spec === 2 ? 1.8 : 1))} de daño · salta a ${t.spec === 1 ? 9 : K.ch[L]} enemigos · alcance ${r}${bm}`;
+    if (tb(t) === 'pino') return `Congela ${t.spec === 1 ? 2.5 : K.frz[L]} s cada ${K.rate[L]} s · alcance ${r}${bm}`;
+    if (tb(t) === 'trampa') return `${Math.round(K.dps[L] * (t.spec === 2 ? 2 : 1))} daño/s a quien la pise${t.spec === 1 ? ' · frena 45 %' : ''}${bm}`;
+    return `${K.dmg[L]}${tb(t) === 'abejas' ? ` × ${K.nb[L] + (t.spec === 1 ? 3 : 0)} abejas` : ''}${tb(t) === 'ardilla' && t.spec === 1 ? ' × 3 blancos' : ''} de daño · alcance ${r}${bm}`;
   }
   function openTower(t) {
     st.build = null; st.sel = t; const K = TD_TW[t.k];
     const specs = t.lvl === 3 && !t.spec ? `<div class="td-specs"><b class="small">✨ Maestría · elige un camino (🌰 ${specCost(t.k)})</b><div class="td-spec-row">${K.spec.map(([n, d], i) => `<button type="button" class="td-spec" data-a="spec" data-s="${i + 1}"><canvas width="64" height="64" data-k="${t.k}" data-l="3" data-s="${i + 1}"></canvas><b>${n}</b><span>${d}</span></button>`).join('')}</div></div>` : '';
     const title = t.spec ? `${K.n} · ✨ ${K.spec[t.spec - 1][0]}` : `${K.n} · nivel ${t.lvl + 1}`;
-    panel.innerHTML = `<div class="td-ph"><b>${title}</b><button class="td-close" data-a="close" aria-label="Cerrar">✕</button></div><p class="td-inf2">${info(t)}</p>${specs}
-      <div class="td-acts">${t.lvl < 3 ? '<button type="button" class="btn primary" data-a="up"></button>' : ''}${K.support || t.k === 'trampa' || t.k === 'pino' ? '' : `<button type="button" class="btn" data-a="mode">🎯 ${({ primero: 'Al primero', fuerte: 'Al más fuerte', ultimo: 'Al último' })[t.mode]}</button>`}<button type="button" class="btn" data-a="sell">Vender · +${sellOf(t)} 🌰</button></div>`;
+    panel.innerHTML = `<div class="td-ph"><b>${title}</b><button class="td-close" data-a="close" aria-label="Cerrar">✕</button></div><p class="td-inf2">${info(t)}${tdFxTxt(K.fx)}</p>${specs}
+      <div class="td-acts">${t.lvl < 3 ? '<button type="button" class="btn primary" data-a="up"></button>' : ''}${K.support || tb(t) === 'trampa' || tb(t) === 'pino' ? '' : `<button type="button" class="btn" data-a="mode">🎯 ${({ primero: 'Al primero', fuerte: 'Al más fuerte', ultimo: 'Al último' })[t.mode]}</button>`}<button type="button" class="btn" data-a="sell">Vender · +${sellOf(t)} 🌰</button></div>`;
     panel.hidden = false; paintMini(); refreshPanel();
   }
   function refreshPanel() {
@@ -1055,7 +1352,7 @@ function tdStart(mi, daily) {
   panel.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-a]'); if (!b || b.disabled) return; TDS.init(); const a = b.dataset.a;
     if (a === 'close') { closePanel(); return; }
-    if (a === 'build' && st.build) { const k = b.dataset.k, cst = costOf(k, 0); if (st.seeds < cst) { TDS.no(); return; } if (MAXT && k !== 'trampa' && st.tw.filter((x) => x.k !== 'trampa').length >= MAXT) { TDS.no(); hint(`📦 Espacio escaso: máximo ${MAXT} torres. Vende una para cambiar.`, 2600); return; } st.seeds -= cst; const t = { k, lvl: 0, x: st.build.x, y: st.build.y, cd: 0, aim: -Math.PI / 2, mode: 'primero', bm: 1, spec: 0, born: 0.35, stun: 0 }; st.tw.push(t); recalcBuff(); TDS.build(); puff(t.x + 0.5, t.y + 0.5, '#fff', 10, 2); ring(t.x + 0.5, t.y + 0.5, 0.8, 'rgba(255,255,255,.9)', 0.35); closePanel(); hud(); return; }
+    if (a === 'build' && st.build) { const k = b.dataset.k, cst = costOf(k, 0); if (st.seeds < cst) { TDS.no(); return; } if (MAXT && k !== 'trampa' && st.tw.filter((x) => tb(x) !== 'trampa').length >= MAXT) { TDS.no(); hint(`📦 Espacio escaso: máximo ${MAXT} torres. Vende una para cambiar.`, 2600); return; } st.seeds -= cst; const t = { k, lvl: 0, x: st.build.x, y: st.build.y, cd: 0, aim: -Math.PI / 2, mode: 'primero', bm: 1, spec: 0, born: 0.35, stun: 0 }; st.tw.push(t); recalcBuff(); TDS.build(); puff(t.x + 0.5, t.y + 0.5, '#fff', 10, 2); ring(t.x + 0.5, t.y + 0.5, 0.8, 'rgba(255,255,255,.9)', 0.35); closePanel(); hud(); return; }
     const t = st.sel; if (!t) return;
     if (a === 'up') { if (t.lvl >= 3) return; const cst = costOf(t.k, t.lvl + 1); if (st.seeds < cst) { TDS.no(); return; } st.seeds -= cst; t.lvl++; t.born = 0.35; recalcBuff(); TDS.up(); puff(t.x + 0.5, t.y + 0.5, '#ffd23c', 14, 2.5); ring(t.x + 0.5, t.y + 0.5, 1, 'rgba(255,210,60,.95)', 0.45); openTower(t); hud(); }
     else if (a === 'spec') { if (t.spec || t.lvl < 3) return; const cst = specCost(t.k); if (st.seeds < cst) { TDS.no(); return; } st.seeds -= cst; t.spec = +b.dataset.s; t.born = 0.35; t.ramp = 0; recalcBuff(); TDS.spec(); puff(t.x + 0.5, t.y + 0.5, '#ff8fcf', 24, 3); ring(t.x + 0.5, t.y + 0.5, 1.4, 'rgba(255,143,207,.95)', 0.6); float(`✨ ${TD_TW[t.k].spec[t.spec - 1][0]}`, t.x + 0.5, t.y, '#ffb0e0', true); openTower(t); hud(); }
@@ -1075,7 +1372,7 @@ function tdStart(mi, daily) {
     if (x < 0 || y < 0 || x >= TD_COLS || y >= TD_ROWS) { closePanel(); return; }
     const t = towerAt(x, y); if (t) { openTower(t); TDS.tone(700, 0.05, 'sine', 0.03); return; }
     if (blocked.has(key(x, y))) { closePanel(); hint('Ahí no se puede construir: elige pasto libre', 1600); return; }
-    if (pathCells.has(key(x, y))) { if (!tdTowerOpen('trampa')) { closePanel(); hint(`El camino es para el Cardo espinoso (se abre en el mapa ${TD_TW.trampa.un + 1})`, 2200); return; } openBuild(x, y, true); TDS.tone(500, 0.05, 'sine', 0.03); return; }
+    if (pathCells.has(key(x, y))) { if (!Object.keys(TD_TW).some((k) => TD_TW[k].path && tdTowerOpen(k))) { closePanel(); hint(`El camino es para el Cardo espinoso (se abre en el mapa ${TD_TW.trampa.un + 1})`, 2200); return; } openBuild(x, y, true); TDS.tone(500, 0.05, 'sine', 0.03); return; }
     openBuild(x, y, false); TDS.tone(600, 0.05, 'sine', 0.03);
   });
   $w('#tdP1').addEventListener('click', () => { TDS.init(); if (st.cd.a > 0) return; st.aim = st.aim === 'a' ? null : 'a'; closePanel(); hint(st.aim ? '🌰 Toca el lugar donde caerán las bellotas' : ''); paintPow(); });
@@ -1084,7 +1381,11 @@ function tdStart(mi, daily) {
     TDS.init(); const k = b.dataset.pw; if (st.cd[k] > 0 || st.over) return; st.cd[k] = TD_POWERS[k].cd * pwF(); vib(30);
     if (k === 'trueno') { const c = st.en.filter((e) => !e.dead && !e.under).sort(() => Math.random() - 0.5).slice(0, 12); for (const e of c) { st.bolts.push({ pts: [[e.x + (Math.random() - 0.5), -0.5], [e.x + 0.3, e.y * 0.5], [e.x, e.y]], t: 0, c: '#ffe066', w: 3 }); damage(e, (90 + st.wave * 16) * dmgMul(), true); } st.flash = 0.35; st.shake = 0.4; TDS.bpow(); TDS.crit(); if (!c.length) float('No había plagas', TD_COLS / 2, 4, '#fff'); }
     else if (k === 'helada') { for (const e of st.en) if (!e.dead) e.frz = Math.max(e.frz, TD_EN[e.k].boss ? 1.5 : 3); st.flash = 0.25; ring(TD_COLS / 2, TD_ROWS / 2, 7, 'rgba(190,235,255,.95)', 0.7); TDS.shot('pino'); }
-    else { const n = 80 + st.wave * 10; st.seeds += n; float(`+${n} 🌰 cosecha`, TD_COLS / 2, 3, '#ffe066', true); TDS.up(); }
+    else if (k === 'cosecha') { const n = 80 + st.wave * 10; st.seeds += n; float(`+${n} 🌰 cosecha`, TD_COLS / 2, 3, '#ffe066', true); TDS.up(); }
+    else if (k === 'veneno') { for (const e of st.en) if (!e.dead) { e.dotT = Math.max(e.dotT, 5); e.dotD = Math.max(e.dotD, (12 + st.wave * 3) * dmgMul()); puff(e.x, e.y, '#9ad83a', 3, 1.2); } ring(TD_COLS / 2, TD_ROWS / 2, 7, 'rgba(150,220,80,.9)', 0.7); TDS.shot('hongo'); }
+    else if (k === 'tornado') { for (const e of st.en) if (!e.dead && !TD_EN[e.k].boss) e.d = Math.max(0, e.d - 1.6); st.shake = 0.5; ring(TD_COLS / 2, TD_ROWS / 2, 7, 'rgba(220,230,240,.9)', 0.7); TDS.boom(); float('🌪️ ¡Tornado!', TD_COLS / 2, 3, '#e8f0ff', true); }
+    else if (k === 'vida') { st.lives = Math.min(LMAX + 5, st.lives + 3); ring(tree[0] + 0.5, tree[1] + 0.5, 1.6, 'rgba(150,255,170,.95)', 0.6); float('+3 ❤️', tree[0] + 0.5, tree[1] - 0.5, '#9dff9d', true); TDS.up(); }
+    else if (k === 'oro') { st.goldT = 12; st.flash = 0.2; float('✨ ¡Lluvia dorada! Semillas ×3', TD_COLS / 2, 3, '#ffe066', true); TDS.spec(); }
     paintPow(); hud();
   }));
   $w('#tdNext').addEventListener('click', () => { TDS.init(); startWave(); });

@@ -4309,3 +4309,8 @@ body.lb-open .pu-top, body.gm-on .pu-top { display: none; }
 .es-blk b { font-size: 10px; word-break: normal; overflow-wrap: break-word; letter-spacing: -.01em; }
 .es-cd small, .es-boxes b, .es-hz-h b.td { color: var(--pen-ink); opacity: .9; }
 .es-blk small { color: rgba(255,255,255,.9); }
+
+/* ===== 8.4 · Defensa del Bosque 5 ===== */
+.td-fx { display: block; margin-top: 4px; font-size: 12px; font-weight: 700; color: #6a4a00; line-height: 1.35; }
+:root[data-theme="dark"] .td-guide .td-fx { color: #f0c860; }
+.td-tws { max-height: 44vh; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 2px; }
