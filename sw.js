@@ -88,7 +88,7 @@ const SHELL = [
   './a/mono.js' + V,
   './a/mono-tienda.js' + V,
   './a/cielo.js' + V,
-  './a/mina.js' + V,
+  './a/torres.js' + V,
   './a/sugerencias.js' + V,
   './a/naturaleza.js' + V,
   './icons/cinnavia.svg',

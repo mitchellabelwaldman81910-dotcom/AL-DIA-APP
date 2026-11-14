@@ -302,7 +302,7 @@ export default async (req, context) => {
       if (kindQ === "gamerank") {
         const now = Date.now(); const as = url.searchParams.get("as") || "";
         const read = async (prefix, key = "score") => { const { blobs } = await store.list({ prefix }); const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean); return all.sort((x, y) => (y[key] || 0) - (x[key] || 0) || (x.at || 0) - (y.at || 0)).slice(0, 20); };
-        const P = ({ galope: "gg", peloton: "gp", mente: "gv", enlaza: "gn", gusano: "gw", mono: "gk", cielo: "gc", mina: "gz" })[url.searchParams.get("game") || ""] || "gs";
+        const P = ({ galope: "gg", peloton: "gp", mente: "gv", enlaza: "gn", gusano: "gw", mono: "gk", cielo: "gc", mina: "gz", torres: "gf" })[url.searchParams.get("game") || ""] || "gs";
         const out = { ok: true, dia: await read(`${W}${P}/d/${dayOf(now)}/`), semana: await read(`${W}${P}/w/${weekOf(now)}/`), record: await read(`${W}${P}/a/`), manzanas: await read(`${W}${P}/t/`, "apples") };
         if (USER_RE.test(as)) { const a1 = await store.get(`${W}${P}/a/${as}`, { type: "json" }); const t1 = await store.get(`${W}${P}/t/${as}`, { type: "json" }); out.me = { best: a1?.score || 0, total: t1?.apples || 0, games: t1?.games || 0 }; }
         return json(out);
@@ -886,8 +886,8 @@ export default async (req, context) => {
           const day = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean).sort((x, y) => y.score - x.score);
           return json({ ok: true, best, newBest: newBest && score > 0, rankDay: day.findIndex((x) => x.id === as) + 1 });
         }
-        if (body.game === "galope" || body.game === "mono" || body.game === "cielo" || body.game === "mina") {
-          const GP = body.game === "mono" ? "gk" : body.game === "cielo" ? "gc" : body.game === "mina" ? "gz" : "gg";
+        if (body.game === "galope" || body.game === "mono" || body.game === "cielo" || body.game === "mina" || body.game === "torres") {
+          const GP = body.game === "mono" ? "gk" : body.game === "cielo" ? "gc" : body.game === "mina" ? "gz" : body.game === "torres" ? "gf" : "gg";
           // Galope: su propio ranking. Puntos = distancia; no hay manzanas, así que "partidas" cuenta las partidas.
           const score = Math.max(0, Math.floor(+body.score || 0)); const dur = Math.max(1, Math.floor(+body.dur || 0));
           if (score < 1 || score > (body.game === "mina" ? 60000 : dur * 35 + 40) || dur > 36000) return json({ error: "Partida inválida" }, 400);

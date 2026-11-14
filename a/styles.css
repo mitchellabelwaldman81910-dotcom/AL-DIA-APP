@@ -3905,3 +3905,51 @@ html[data-theme="dark"] .eye-pill .eye3 .e3-lash, html[data-theme="dark"] .eye-p
 .mz-rel b { font-size: 13px; }
 .mz-rel small { font-size: 11px; color: var(--ink-3); }
 .mz-big { font-weight: 900; color: #8A5A00; }
+
+/* ---------- 7.64 — Defensa del Bosque ---------- */
+.td-stage { background: #2a3a22; }
+.td-stage canvas { touch-action: manipulation; }
+.td-top { position: absolute; left: 0; right: 0; top: 0; padding: calc(8px + env(safe-area-inset-top)) 10px 0; display: flex; gap: 6px; align-items: center; z-index: 3; }
+.td-pill { padding: 7px 10px; border-radius: 99px; background: rgba(255,255,255,.9); font: 700 14px/1 var(--sans); color: #2b2b2b; white-space: nowrap; }
+.td-pill.td-w { margin-right: auto; }
+.td-btn { min-width: 42px; height: 38px; border: 0; border-radius: 12px; background: rgba(255,255,255,.9); font: 800 15px/1 var(--sans); color: #2b2b2b; }
+.td-bot { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 10px calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; z-index: 3; }
+.td-pow { position: relative; width: 52px; height: 52px; border-radius: 50%; border: 3px solid #fff; background: #ffe8a8; font-size: 24px; overflow: hidden; flex: none; box-shadow: 0 4px 12px -4px rgba(0,0,0,.5); }
+.td-pow i { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.45); pointer-events: none; }
+.td-pow.on { border-color: #ffd23c; box-shadow: 0 0 0 4px rgba(255,210,60,.6); }
+.td-pow:disabled { filter: grayscale(.6); }
+.td-hint { flex: 1; min-width: 0; color: #fff; font: 700 13px/1.25 var(--sans); text-shadow: 0 1px 3px rgba(0,0,0,.7); }
+.td-next { flex: none; white-space: nowrap; }
+.td-next[hidden] { display: none; }
+.td-panel { position: absolute; left: 8px; right: 8px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 4; max-width: 520px; margin: 0 auto; padding: 10px 12px 12px; border-radius: 18px; background: rgba(255,255,255,.97); box-shadow: 0 10px 30px -10px rgba(0,0,0,.6); color: #2b2b2b; animation: glIn .2s ease-out; }
+.td-panel[hidden] { display: none; }
+.td-ph { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.td-close { border: 0; background: #f1f3f5; border-radius: 50%; width: 32px; height: 32px; font-size: 15px; }
+.td-tws { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+.td-tw { display: grid; justify-items: center; gap: 1px; padding: 6px 2px; border: 1.5px solid #e9ecef; border-radius: 12px; background: #fff; min-height: 96px; }
+.td-tw canvas { width: 44px; height: 44px; }
+.td-tw b { font-size: 11px; }
+.td-tw span { font-size: 11px; color: #8a5a00; font-weight: 800; }
+.td-tw:disabled { opacity: .4; }
+.td-inf2 { margin: 0 0 8px; font-size: 13px; color: #495057; }
+.td-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.td-acts .btn { font-size: 13px; padding: 9px 12px; min-height: 0; }
+.td-stage .gl-over { min-width: min(320px, 90vw); text-align: center; z-index: 6; }
+.td-bigst { font-size: 40px; letter-spacing: 4px; }
+.td-bigst i, .td-st i { font-style: normal; color: #ced4da; }
+.td-bigst i.on, .td-st i.on { color: #fab005; }
+.td-maps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.td-map { display: grid; justify-items: center; gap: 3px; padding: 8px 6px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--sheet); color: var(--ink); text-align: center; }
+.td-map canvas { width: 72px; height: 104px; border-radius: 10px; }
+.td-map b { font-size: 12px; line-height: 1.2; }
+.td-map small { font-size: 11px; color: var(--ink-3); }
+.td-map.lock { opacity: .5; }
+.td-st { font-size: 16px; }
+.td-inf { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 16px; background: var(--sheet); border: 1px solid var(--line); }
+.td-inf > div { flex: 1; display: grid; gap: 2px; }
+.td-guide { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.td-guide li { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 14px; background: var(--sheet); border: 1px solid var(--line); }
+.td-guide li > div { display: grid; gap: 2px; }
+.td-guide canvas { width: 54px; height: 54px; flex: none; }
+@media (max-width: 360px) { .td-tws { grid-template-columns: repeat(3, 1fr); } }
+.td-panel canvas, .td-map canvas, .td-guide canvas { position: static; inset: auto; }

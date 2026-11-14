@@ -20,7 +20,7 @@
   let tier = base;
   try { const s = localStorage.getItem(KEY); if (s != null && !isNaN(+s)) tier = Math.max(0, Math.min(3, +s)); } catch { /* */ }
 
-  const GAME_RE = /^#\/(juego|galope|peloton|memoria|enlaza|gusano|mono|granbosque|cielo|mina|navidad|mente)(?:$|[/?])/;
+  const GAME_RE = /^#\/(juego|galope|peloton|memoria|enlaza|gusano|mono|granbosque|cielo|mina|torres|navidad|mente)(?:$|[/?])/;
   const gaming = () => {
     try { return document.body && (document.body.classList.contains('gm-on') || !!document.getElementById('czGame') || GAME_RE.test(location.hash)); }
     catch { return false; }
