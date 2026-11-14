@@ -302,7 +302,7 @@ export default async (req, context) => {
       if (kindQ === "gamerank") {
         const now = Date.now(); const as = url.searchParams.get("as") || "";
         const read = async (prefix, key = "score") => { const { blobs } = await store.list({ prefix }); const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean); return all.sort((x, y) => (y[key] || 0) - (x[key] || 0) || (x.at || 0) - (y.at || 0)).slice(0, 20); };
-        const P = ({ galope: "gg", peloton: "gp", mente: "gv", enlaza: "gn", gusano: "gw", mono: "gk" })[url.searchParams.get("game") || ""] || "gs";
+        const P = ({ galope: "gg", peloton: "gp", mente: "gv", enlaza: "gn", gusano: "gw", mono: "gk", cielo: "gc" })[url.searchParams.get("game") || ""] || "gs";
         const out = { ok: true, dia: await read(`${W}${P}/d/${dayOf(now)}/`), semana: await read(`${W}${P}/w/${weekOf(now)}/`), record: await read(`${W}${P}/a/`), manzanas: await read(`${W}${P}/t/`, "apples") };
         if (USER_RE.test(as)) { const a1 = await store.get(`${W}${P}/a/${as}`, { type: "json" }); const t1 = await store.get(`${W}${P}/t/${as}`, { type: "json" }); out.me = { best: a1?.score || 0, total: t1?.apples || 0, games: t1?.games || 0 }; }
         return json(out);
@@ -871,7 +871,7 @@ export default async (req, context) => {
         }
         if (body.game === "mente" || body.game === "enlaza" || body.game === "gusano") {
           // Juegos por niveles: puntos y nivel alcanzado. Se revisa que el avance sea posible (puntos por nivel y tiempo mínimo por nivel).
-          const CFG = { mente: { P: "gv", maxL: 200, perLvl: 330, minT: 4 }, enlaza: { P: "gn", maxL: 200, perLvl: 300, minT: 3 }, gusano: { P: "gw", maxL: 1000, perLvl: 300, minT: 2 } }[body.game];
+          const CFG = { mente: { P: "gv", maxL: 500, perLvl: 330, minT: 4 }, enlaza: { P: "gn", maxL: 500, perLvl: 300, minT: 3 }, gusano: { P: "gw", maxL: 1000, perLvl: 300, minT: 2 } }[body.game];
           const level = Math.floor(+body.level); const cleared = Math.floor(+body.cleared); const score = Math.floor(+body.score); const dur = Math.floor(+body.dur || 0);
           if (!(level >= 1 && level <= CFG.maxL) || !(cleared >= 1 && cleared <= 5000) || score < 1 || score > cleared * CFG.perLvl + 20 || dur < cleared * CFG.minT || dur > 86400) return json({ error: "Partida inválida" }, 400);
           const now = Date.now(); const who = { id: as, name: auth[as].name, color: auth[as].color, av: auth[as].av || 0 };
@@ -886,8 +886,8 @@ export default async (req, context) => {
           const day = (await Promise.all(blobs.map((b) => store.get(b.key, { type: "json" })))).filter(Boolean).sort((x, y) => y.score - x.score);
           return json({ ok: true, best, newBest: newBest && score > 0, rankDay: day.findIndex((x) => x.id === as) + 1 });
         }
-        if (body.game === "galope" || body.game === "mono") {
-          const GP = body.game === "mono" ? "gk" : "gg";
+        if (body.game === "galope" || body.game === "mono" || body.game === "cielo") {
+          const GP = body.game === "mono" ? "gk" : body.game === "cielo" ? "gc" : "gg";
           // Galope: su propio ranking. Puntos = distancia; no hay manzanas, así que "partidas" cuenta las partidas.
           const score = Math.max(0, Math.floor(+body.score || 0)); const dur = Math.max(1, Math.floor(+body.dur || 0));
           if (score < 1 || score > dur * 35 + 40 || dur > 36000) return json({ error: "Partida inválida" }, 400);

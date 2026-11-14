@@ -38,7 +38,7 @@ function mnHero() {
 function viewMono() {
   const best = mnBest();
   return `<section class="gm-home"><div class="gm-hero">${mnHero()}</div><h1 class="page-title gm-title">Monito Saltarín</h1>
-    <p class="page-sub">Ayuda al monito a cruzar sin parar. <b>Toca la pantalla</b> para saltar adelante y <b>desliza</b> para ir a los lados o hacia atrás (también sirven las flechas). Los <b>elefantes</b> cruzan los caminos, así que espera el hueco. En el agua salta de <b>cocodrilo en cocodrilo</b> y no te quedes quieto: si tardas demasiado, aparece un águila. Cada tramo cambia el bioma y las <b>bananas</b> se vuelven monedas para tu árbol.</p>
+    <p class="page-sub">Ayuda al monito a cruzar sin parar. <b>Toca la pantalla</b> para saltar adelante y <b>desliza</b> para ir a los lados o hacia atrás (también sirven las flechas). Los <b>elefantes</b> cruzan los caminos, así que espera el hueco. En el agua salta de <b>cocodrilo en cocodrilo</b> y no te quedes quieto: si tardas demasiado, aparece un águila. Cada tramo cambia el bioma y las <b>bananas</b> se vuelven monedas para tu árbol. Las <b>bananas doradas</b> te dan un escudo contra un elefante o el águila.</p>
     <button class="btn primary block gm-play" data-act="mn-start">${icon('play')}Jugar</button>
     <a class="btn block" href="#/monotienda" style="margin-top:10px">Tienda del monito · ${mnWallet()} bananas</a>
     <p class="small muted" style="text-align:center;margin-top:12px">${best ? `Tu mejor en este dispositivo: <b>${best}</b> saltos` : 'Todavía no tienes récord. ¡Haz tu primer cruce!'}</p>
@@ -119,7 +119,7 @@ function mnStart() {
       const p = row.clear || r <= 0 ? 0 : [0.16, 0.2, 0.22, 0.2, 0.24, 0.26][b] + 0.06 * lvl; let cnt = 0;
       for (let i = 0; i < MN_COLS; i++) { const ob = i !== fc && i !== fc2 && cnt < 4 && Math.random() < p; row.obs[i] = ob; if (ob) cnt++; }
       gs.fc = fc2;
-      if (r > 2 && Math.random() < 0.3) { const free = []; for (let i = 0; i < MN_COLS; i++) if (!row.obs[i]) free.push(i); row.coin = mnPick(free); }
+      if (r > 2 && Math.random() < 0.3) { const free = []; for (let i = 0; i < MN_COLS; i++) if (!row.obs[i]) free.push(i); row.coin = mnPick(free); if (r > 12 && Math.random() < 0.12) row.gold = true; }
       gs.grassRun++; gs.run = 0;
     } else {
       const dir = gs.last === type ? -gs.dir : (Math.random() < 0.5 ? -1 : 1);
@@ -130,7 +130,7 @@ function mnStart() {
   const ensure = (r) => { while (st.genR < r) { st.genR++; st.rows.set(st.genR, genRow(st.genR)); } return st.rows.get(r); };
   const reset = () => {
     st.rows = new Map(); st.gs = { last: 'start', run: 0, grassRun: 0, fc: 3, dir: 1 }; st.genR = -4;
-    Object.assign(st, { state: 'idle', t: 0, playT: 0, maxR: 0, cam: 0, p: p0(), bananas: 0, coins: 0, idle: 0, parts: [], floats: [], shake: 0, flash: 0, banner: { name: MN_BIOMES[0].name, t: 0 }, curB: 0, dead: null, eagle: null, over: false });
+    Object.assign(st, { shield: 0, invU: 0, state: 'idle', t: 0, playT: 0, maxR: 0, cam: 0, p: p0(), bananas: 0, coins: 0, idle: 0, parts: [], floats: [], shake: 0, flash: 0, banner: { name: MN_BIOMES[0].name, t: 0 }, curB: 0, dead: null, eagle: null, over: false });
     ensure(28); over.hidden = true; over.classList.remove('show'); hint.hidden = false;
   };
   const initAmb = () => { st.amb = Array.from({ length: 34 }, () => ({ x: Math.random(), y: Math.random(), s: 0.5 + Math.random(), ph: Math.random() * 6.28 })); };
@@ -145,6 +145,8 @@ function mnStart() {
   const CAUSE = { ele: 'Te pisó un elefante', agua: 'Caíste al agua', arrastrado: 'El cocodrilo te llevó muy lejos', aguila: 'Te atrapó el águila' };
   const die = (kind) => {
     if (st.state === 'dead' || st.state === 'over') return;
+    if ((kind === 'ele' || kind === 'aguila') && st.t < (st.invU || 0)) return;
+    if ((kind === 'ele' || kind === 'aguila') && st.shield) { st.shield = 0; st.invU = st.t + 1.3; st.idle = 0; st.flash = 0.6; st.shake = 0.2; const q0 = pos(st.p.r, st.p.x); spawn(q0.x, q0.y - V.U * 0.5, '#fff3a8', 20, 300, { up: true }); float(q0.x, q0.y - V.U * 1.6, '¡La banana dorada te salvó!', '#fff3a8'); JG_TONE(330, 0.25, 'triangle', 0.07, 990); JG_VIB([30, 40, 30]); return; }
     st.state = 'dead'; st.dead = { kind, t: 0 }; st.p.hop = null; st.p.buf = null; st.shake = 0.4; st.flash = 0.8; MN.lastEnd = Date.now();
     const q = pos(st.p.r, st.p.x);
     if (kind === 'ele') { spawn(q.x, q.y - V.U * 0.5, '#ffd93a', 14, 260, { up: true }); JG_TONE(200, 0.3, 'sawtooth', 0.08, 70); JG_VIB([160, 60, 160]); }
@@ -202,7 +204,7 @@ function mnStart() {
       p.ride = null; const q = pos(p.r, p.x); spawn(q.x, q.y, MN_BIOMES[row.b].tuft, 5, 90, { up: true, grav: 260, r: 2.2 }); trailAt(q.x, q.y);
     }
     if (row.type === 'grass' && row.coin >= 0 && !row.coinTaken && Math.floor(p.x) === row.coin) {
-      row.coinTaken = true; st.bananas++; const q = pos(p.r, p.x); spawn(q.x, q.y - V.U * 0.5, '#ffe066', 10, 220, { up: true, r: 3 }); float(q.x, q.y - V.U * 1.2, '+1', '#ffe066');
+      row.coinTaken = true; st.bananas++; const q = pos(p.r, p.x); if (row.gold) { st.shield = 1; st.bananas += 4; float(q.x, q.y - V.U * 1.8, '¡Banana dorada! Escudo', '#fff3a8'); spawn(q.x, q.y - V.U * 0.5, '#fff3a8', 18, 300, { up: true, r: 3 }); [0, 4, 7, 12].forEach((k, i) => setTimeout(() => JG_TONE(784 * Math.pow(2, k / 12), 0.12, 'triangle', 0.05), i * 70)); } spawn(q.x, q.y - V.U * 0.5, '#ffe066', 10, 220, { up: true, r: 3 }); float(q.x, q.y - V.U * 1.2, '+1', '#ffe066');
       if (st.coins < MN_COIN_CAP) { st.coins++; jgCoins(1); }
       JG_TONE(1318, 0.07, 'triangle', 0.05); setTimeout(() => JG_TONE(1975, 0.09, 'triangle', 0.045), 60); JG_VIB(10);
     }
@@ -286,7 +288,7 @@ function mnStart() {
       const sideN = Math.ceil(V.offX / U) + 1;
       for (let k = 1; k <= sideN; k++) for (const sgn of [-1, 1]) { const col = sgn < 0 ? -k : MN_COLS - 1 + k; if (mnHash(r, col + 99) < 0.6) { const x = V.offX + (col + 0.5) * U; if (x > -U && x < W + U) { if (mnHash(r, col + 7) > 0.75) mnDrawRock(g, x, foot, U, B); else mnDrawTree(g, x, foot, U, B.tree, mnHash(r, col), st.t); } } }
       for (let i = 0; i < MN_COLS; i++) if (row.obs[i]) { const x = V.offX + (i + 0.5) * U; if (mnHash(r, i + 5) > 0.78 && B.tree !== 'roca') mnDrawRock(g, x, foot, U, B); else mnDrawTree(g, x, foot, U, B.tree, mnHash(r, i), st.t); }
-      if (row.coin >= 0 && !row.coinTaken) mnDrawBanana(g, V.offX + (row.coin + 0.5) * U, foot, U, st.t + r);
+      if (row.coin >= 0 && !row.coinTaken) { if (row.gold) { const gx = V.offX + (row.coin + 0.5) * U; g.fillStyle = `rgba(255,230,90,${0.35 + 0.2 * Math.sin(st.t * 6)})`; g.beginPath(); g.arc(gx, foot - U * 0.35, U * 0.5, 0, 7); g.fill(); } mnDrawBanana(g, V.offX + (row.coin + 0.5) * U, foot, U * (row.gold ? 1.2 : 1), st.t + r); }
     } else if (row.type === 'road') {
       g.fillStyle = B.road; g.fillRect(0, top, W, RH + 1); g.fillStyle = 'rgba(255,255,255,.07)'; g.fillRect(0, top, W, 2); g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, top + RH - 2, W, 2);
       const below = st.rows.get(r - 1); if (below && below.type === 'road') { g.fillStyle = B.line; const dw = U * 0.5; for (let x = -((st.t * 0) % 1); x < W; x += dw * 2) g.fillRect(x, top + RH - 2, dw, 3); }
@@ -310,6 +312,7 @@ function mnStart() {
       else { const e = mnClamp(d.t / 0.5, 0, 1); g.save(); g.beginPath(); g.rect(0, 0, V.w, q.y + V.U * 0.05); g.clip(); q.y += e * V.U * 0.8; g.globalAlpha = 1 - e * 0.5; o = { ...o, dead: true, h: 0 }; mnDrawMonkey(g, q.x, q.y, U, o); g.restore(); return; }
     }
     mnDrawMonkey(g, q.x, q.y, U, o);
+    if (st.shield || st.t < (st.invU || 0)) { g.strokeStyle = st.shield ? `rgba(255,220,80,${0.55 + 0.25 * Math.sin(st.t * 5)})` : `rgba(255,255,255,${Math.abs(Math.sin(st.t * 20)) * 0.7})`; g.lineWidth = 3; g.beginPath(); g.arc(q.x, q.y - U * 0.55 - h, U * 0.62, 0, 7); g.stroke(); }
     if (d && d.kind === 'ele') { g.fillStyle = '#ffd93a'; for (let i = 0; i < 3; i++) { const a = d.t * 7 + i * 2.1; g.beginPath(); g.arc(q.x + Math.cos(a) * U * 0.3, q.y - U * 0.95 + Math.sin(a) * U * 0.08, U * 0.045, 0, 7); g.fill(); } }
     if (d && d.kind === 'aguila') mnDrawEagle(g, q.x, q.y - U * 0.9, U * 1.1, st.t);
   };

@@ -1,4 +1,4 @@
-/* Cinnavia 7.41 — Mente Viva (seguir la carta que se baraja, 300 niveles), Enlaza (desenredar la red, 300 niveles)
+/* Cinnavia 7.41 — Mente Viva (seguir la carta que se baraja, 500 niveles), Enlaza (desenredar la red, 500 niveles)
    y skins para los dos. Comparten ranking, monedas y el avance por cuenta. */
 'use strict';
 
@@ -121,7 +121,7 @@ function pmDrawRunnerStatic(g, K) {
 /* ======================================================================
    Mente Viva — sigue la carta
    ====================================================================== */
-const MC_MAX = 300;
+const MC_MAX = 500; /* 7.61: 200 niveles nuevos después del 300, con la misma subida suave */
 const mcCfg = (L0) => { const L = L0 * 2 / 3; /* 300 niveles con la misma subida suave de antes */ return {
   n: Math.min(7, 3 + Math.floor(L / 30)),
   swaps: Math.round(4 + L * 0.27),
@@ -271,7 +271,7 @@ function mcStart(from) {
 /* ======================================================================
    Enlaza — desenreda la red moviendo los puntos
    ====================================================================== */
-const EN_MAX = 300;
+const EN_MAX = 500; /* 7.61: niveles 301–500, redes más grandes */
 const EN = { run: null };
 const enLvl = () => Math.min(EN_MAX, Math.max(1, jpData('enlaza').lvl || 1));
 const enRng = (seed) => () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
@@ -281,7 +281,7 @@ function enCross(p1, p2, p3, p4) {
   return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
 }
 function enMake(level) {
-  const n = 5 + Math.floor(((level - 1) * 23) / (EN_MAX - 1)); const m0 = Math.round(n * (1.2 + 0.7 * (level / EN_MAX)));
+  const n = level <= 300 ? 5 + Math.floor(((level - 1) * 23) / 299) : Math.min(36, 28 + Math.floor((level - 300) / 25)); const m0 = Math.round(n * (1.2 + 0.7 * Math.min(1.2, level / 300)));
   const r = enRng(level * 977 + 13); const sol = [];
   for (let i = 0; i < n; i++) { let p, g = 0; do { p = [60 + r() * 880, 60 + r() * 880]; g++; } while (g < 40 && sol.some((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) < 900 / Math.sqrt(n) * 0.62)); sol.push(p); }
   const cand = []; for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) cand.push([i, j, Math.hypot(sol[i][0] - sol[j][0], sol[i][1] - sol[j][1])]);

@@ -7,7 +7,7 @@ const GAME = { run: null, raf: 0, rank: null, tab: 'dia' };
 function viewJuego() {
   const nm = !REG.me || !tokens()[REG.me];
   return `<section class="gm-home"><div class="gm-hero">${gmHeroArt()}</div>
-    <h1 class="page-title gm-title">Cosecha <span class="gm-star" title="Nuestro juego estrella">${gmTrophy()}<em>Juego estrella</em></span></h1><p class="page-sub">Atrapa las manzanas que caen del gran manzano. La normal vale <b>1</b>, la dorada vale <b>5</b>. Cada vez caen más rápido; si se te caen 3, se acaba. Si pierdes vidas, a veces cae una manzana verde curativa que te devuelve una. Cada 100 manzanas el paisaje cambia: pradera, jungla, desierto y montaña nevada.</p>
+    <h1 class="page-title gm-title">Cosecha <span class="gm-star" title="Nuestro juego estrella">${gmTrophy()}<em>Juego estrella</em></span></h1><p class="page-sub">Atrapa las manzanas que caen del gran manzano. La normal vale <b>1</b>, la dorada vale <b>5</b>. Cada vez caen más rápido; si se te caen 3, se acaba. Si pierdes vidas, a veces cae una manzana verde curativa que te devuelve una. Cada 100 manzanas el paisaje cambia: pradera, jungla, desierto y montaña nevada. Ahora también caen <b>poderes</b>: canasta gigante 🧺, cámara lenta 🐢, imán 🧲 y escudo de hojas 🍃.</p>
     <button class="btn primary block gm-play" data-act="gm-start">${icon('play')}Jugar</button>
     ${nm ? '<p class="small muted" style="text-align:center">Entra con tu usuario para aparecer en el ranking.</p>' : ''}
     <div id="gmRank">${gmRankHTML()}</div></section>`;
@@ -64,7 +64,7 @@ function gmStart() {
   const c = wrap.querySelector('canvas'); const g = c.getContext('2d');
   const R = { w: 0, h: 0, dpr: Math.min(2, devicePixelRatio || 1) };
   const size = () => { if (innerWidth === R.w && innerHeight === R.h && bg) return; R.w = innerWidth; R.h = innerHeight; c.width = R.w * R.dpr; c.height = R.h * R.dpr; c.style.width = R.w + 'px'; c.style.height = R.h + 'px'; g.setTransform(R.dpr, 0, 0, R.dpr, 0, 0); scene(); };
-  const st = { coinsF: [], coinT: 18 + Math.random() * 14, coinGot: 0, score: 0, apples: 0, golden: 0, lives: 3, apples_: [], parts: [], floats: [], t0: performance.now(), last: performance.now(), spawn: 0, combo: 0, over: false, bx: innerWidth / 2, tx: innerWidth / 2, squash: 0, shake: 0, sunA: 0, clouds: [], hang: [], biome: 0, fade: 0, lastHeal: -30 };
+  const st = { pw: [], pwT: 14 + Math.random() * 10, fx: { big: 0, slow: 0, mag: 0, shield: 0 }, coinsF: [], coinT: 18 + Math.random() * 14, coinGot: 0, score: 0, apples: 0, golden: 0, lives: 3, apples_: [], parts: [], floats: [], t0: performance.now(), last: performance.now(), spawn: 0, combo: 0, over: false, bx: innerWidth / 2, tx: innerWidth / 2, squash: 0, shake: 0, sunA: 0, clouds: [], hang: [], biome: 0, fade: 0, lastHeal: -30 };
   GAME.run = st;
   // fondo pre-dibujado
   let bg = null, bgOld = null; const scene = (keep) => {
@@ -158,10 +158,11 @@ function gmStart() {
     for (const a of st.hang.filter((a) => a.t >= a.wob)) st.apples_.push({ x: a.x, y: a.y, vx: (Math.random() - 0.5) * 20 * Math.min(3, lv / 2), vy: 110, gold: a.gold, heal: a.heal, r: a.gold ? 15 : 14, rot: 0, vr: (Math.random() - 0.5) * 4 });
     st.hang = st.hang.filter((a) => a.t < a.wob);
     st.bx += (st.tx - st.bx) * Math.min(1, dt * 18);
-    const by = H * 0.86, bw = Math.min(120, W * 0.28);
-    const grav = 600 + lv * 70;
+    const by = H * 0.86, bw = Math.min(120, W * 0.28) * (st.fx.big > 0 ? 1.65 : 1);
+    for (const k in st.fx) if (k !== 'shield') st.fx[k] = Math.max(0, st.fx[k] - dt);
+    const grav = (600 + lv * 70) * (st.fx.slow > 0 ? 0.5 : 1);
     for (const a of st.apples_) {
-      a.vy += grav * dt; a.y += a.vy * dt; a.x += a.vx * dt; a.rot += a.vr * dt; if (a.x < 16 || a.x > W - 16) a.vx *= -1;
+      if (st.fx.mag > 0 && !a.done) { a.vx += (st.bx - a.x) * dt * 5; a.vx *= 0.96; } if (st.fx.slow > 0) a.vy = Math.min(a.vy, 260 + lv * 12); a.vy += grav * dt; a.y += a.vy * dt; a.x += a.vx * dt; a.rot += a.vr * dt; if (a.x < 16 || a.x > W - 16) a.vx *= -1;
       if (!a.done && a.y + a.r >= by - 6 && (a.y + a.r) - a.vy * dt <= by + 14 && Math.abs(a.x - st.bx) < bw / 2 + 4) {
         a.done = 'catch'; const pts = a.heal ? 0 : a.gold ? 5 : 1; st.score += pts; if (!a.heal) st.apples++; if (a.gold) st.golden++; st.combo++; st.squash = 1;
         st.floats.push({ x: a.x, y: by - 30, t: 0, txt: a.heal ? '+1 ♥' : `+${pts}`, gold: a.gold, heal: a.heal });
@@ -176,6 +177,7 @@ function gmStart() {
         document.getElementById('gmScore').textContent = st.score; document.getElementById('gmScore').classList.remove('bump'); void document.getElementById('gmScore').offsetWidth; document.getElementById('gmScore').classList.add('bump');
       }
       if (!a.done && a.y - a.r > H && a.heal) a.done = 'gone';
+      if (!a.done && a.y - a.r > H && st.fx.shield) { a.done = 'gone'; st.fx.shield = 0; st.combo = 0; msg('¡El escudo de hojas te salvó!', 1300); gmSound('heal'); flash('gm-ok'); }
       if (!a.done && a.y - a.r > H) { a.done = 'miss'; st.lives--; st.combo = 0; st.shake = 0.35; vib([220, 90, 220]); flash('gm-miss'); gmSound('miss'); lives(); if (st.lives <= 0) { st.over = true; setTimeout(() => end(false), 700); } else msg(st.lives === 1 ? '¡Cuidado, última!' : 'Se cayó una…', 900); }
     }
     st.apples_ = st.apples_.filter((a) => !a.done);
@@ -187,6 +189,18 @@ function gmStart() {
       else if (c.y > H + 20) c.done = 1;
     }
     st.coinsF = st.coinsF.filter((c) => !c.done);
+    // poderes: caen despacio y no cuestan vida si se escapan
+    if (!st.over && st.apples >= 8) { st.pwT -= dt; if (st.pwT <= 0) { st.pwT = 18 + Math.random() * 18; const ks = ['big', 'slow', 'mag', 'shield']; st.pw.push({ k: ks[(Math.random() * ks.length) | 0], x: 30 + Math.random() * (W - 60), y: -20, vy: 40, ph: Math.random() * 6 }); } }
+    for (const q of st.pw) {
+      q.vy = Math.min(170, q.vy + 90 * dt); q.y += q.vy * dt; q.ph += dt * 4; q.x += Math.sin(q.ph) * 30 * dt;
+      if (!q.done && q.y + 16 >= by - 6 && q.y < by + 14 && Math.abs(q.x - st.bx) < bw / 2 + 10) {
+        q.done = 1; const N = { big: ['¡Canasta gigante!', 10], slow: ['¡Cámara lenta!', 8], mag: ['¡Imán de manzanas!', 9], shield: ['¡Escudo de hojas! Te salva una vez', 0] }[q.k];
+        if (q.k === 'shield') st.fx.shield = 1; else st.fx[q.k] = N[1];
+        msg(N[0], 1400); gmSound('gold'); vib([20, 30, 20]); flash('gm-gold');
+        for (let i = 0; i < 18; i++) st.parts.push({ x: q.x, y: by - 10, vx: (Math.random() - 0.5) * 300, vy: -100 - Math.random() * 260, t: 0, life: 0.8 + Math.random() * 0.4, gold: true, leaf: Math.random() < 0.3 });
+      } else if (q.y > H + 30) q.done = 1;
+    }
+    st.pw = st.pw.filter((q) => !q.done);
     for (const p of st.parts) { p.t += dt; p.vy += 520 * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
     st.parts = st.parts.filter((p) => p.t < p.life);
     for (const f of st.floats) f.t += dt; st.floats = st.floats.filter((f) => f.t < 0.9);
@@ -218,6 +232,11 @@ function gmStart() {
     for (const a of st.hang) { const wob = Math.sin(a.t * 40) * 3 * (a.t / a.wob); gmApple(g, a.x + wob, a.y, a.gold ? 15 : 14, a.gold, 0, now, a.heal); }
     for (const a of st.apples_) gmApple(g, a.x, a.y, a.r, a.gold, a.rot, now, a.heal);
     for (const c of st.coinsF) { const k = Math.abs(Math.cos(c.ph)); const hl = g.createRadialGradient(c.x, c.y, 2, c.x, c.y, 26); hl.addColorStop(0, 'rgba(255,225,120,.55)'); hl.addColorStop(1, 'rgba(255,225,120,0)'); g.fillStyle = hl; g.beginPath(); g.arc(c.x, c.y, 26, 0, Math.PI * 2); g.fill(); g.fillStyle = '#E8B23A'; g.strokeStyle = '#A8761A'; g.lineWidth = 2; g.beginPath(); g.ellipse(c.x, c.y, 3 + 9 * k, 12, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.fillStyle = '#FFE9A0'; g.beginPath(); g.ellipse(c.x, c.y, 1.5 + 5 * k, 8, 0, 0, Math.PI * 2); g.fill(); }
+    const PWI = { big: ['🧺', '#ffd166'], slow: ['🐢', '#8ecae6'], mag: ['🧲', '#ff8fab'], shield: ['🍃', '#9be27a'] };
+    for (const q of st.pw) { const [ic, col] = PWI[q.k]; const pulse = 1 + Math.sin(q.ph * 2) * 0.06; g.fillStyle = col; g.globalAlpha = 0.35; g.beginPath(); g.arc(q.x, q.y, 26 * pulse, 0, Math.PI * 2); g.fill(); g.globalAlpha = 1; g.fillStyle = '#fff'; g.beginPath(); g.arc(q.x, q.y, 18, 0, Math.PI * 2); g.fill(); g.strokeStyle = col; g.lineWidth = 3; g.stroke(); g.font = '20px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ic, q.x, q.y + 1); g.textBaseline = 'alphabetic'; }
+    if (st.fx.mag > 0) { g.strokeStyle = `rgba(255,120,160,${0.25 + 0.15 * Math.sin(now / 120)})`; g.lineWidth = 2; g.setLineDash([6, 6]); g.beginPath(); g.arc(st.bx, by, bw * 0.9, Math.PI, 0); g.stroke(); g.setLineDash([]); }
+    if (st.fx.shield) { g.fillStyle = 'rgba(120,200,90,.18)'; g.fillRect(0, H - 10, W, 10); }
+    { let ix = 14; const iy = H - 26; for (const [k, ic] of [['big', '🧺'], ['slow', '🐢'], ['mag', '🧲'], ['shield', '🍃']]) { const v = st.fx[k]; if (!v) continue; g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.roundRect(ix, iy - 14, k === 'shield' ? 34 : 60, 28, 14); g.fill(); g.font = '16px system-ui'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillStyle = '#333'; g.fillText(ic, ix + 8, iy + 1); if (k !== 'shield') { g.font = '700 13px system-ui'; g.fillText(Math.ceil(v) + 's', ix + 30, iy + 1); } g.textBaseline = 'alphabetic'; ix += (k === 'shield' ? 40 : 66); } }
     // canasta
     gmBasket(g, st.bx, by, bw, st.squash);
     // partículas

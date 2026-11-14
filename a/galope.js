@@ -124,7 +124,7 @@ function viewGalope() {
   const best = glBest();
   return `<section class="gm-home"><div class="gm-hero gl-hero">${glHero() ? `<img src="${glHero()}" alt="" style="width:100%;height:auto;border-radius:18px;display:block">` : ''}</div>
     <h1 class="page-title gm-title">Galope</h1>
-    <p class="page-sub">Un caballo corre por la pradera. <b>Toca la pantalla</b> (o presiona espacio) para saltar los manzanos; mantén el toque para saltar más alto. Cada vez corre más rápido y, de vez en cuando, cae la noche.</p>
+    <p class="page-sub">Un caballo corre por la pradera. <b>Toca la pantalla</b> (o presiona espacio) para saltar los manzanos; mantén el toque para saltar más alto. Cada vez corre más rápido y, de vez en cuando, cae la noche. Cuidado con los <b>pájaros</b>: a los que vuelan bajito sáltalos y a los que vuelan alto déjalos pasar. La <b>herradura dorada</b> te salva de un choque y las <b>alas</b> te dan doble salto.</p>
     <button class="btn primary block gm-play" data-act="gl-start">${icon('play')}Galopar</button>
     <p class="small muted" style="text-align:center;margin-top:12px">${best ? `Tu récord en este dispositivo: <b>${best}</b> puntos` : 'Todavía no tienes récord. ¡Sé la primera marca!'}</p>
     <div id="glRank">${glRankHTML()}</div></section>`;
@@ -162,7 +162,7 @@ function glStart() {
   const size = () => { const W = innerWidth, H = innerHeight; V.s = Math.min(W / 480, H / 300); V.w = W / V.s; V.h = H / V.s; V.gy = V.h * 0.66; c.width = W * V.dpr; c.height = H * V.dpr; c.style.width = W + 'px'; c.style.height = H + 'px'; };
   size();
   const hx = () => Math.max(60, V.w * 0.16);
-  const st = { coinsF: [], got: 0, nextBonus: 500, state: 'idle', score: 0, speed: 0, y: 0, vy: 0, air: false, hold: false, dist: 0, trees: [], next: 360, hi: glBest(), flash: 0, night: 0, nightT: 0, nightGoal: 0, phase: 0, clouds: [], deco: [], last: performance.now(), id: 0, lastBlip: 0, hills: 0, over: 0, t0: performance.now() };
+  const st = { feath: [], pw: [], birds: [], shield: 0, wings: 0, dj: 0, coinsF: [], got: 0, nextBonus: 500, state: 'idle', score: 0, speed: 0, y: 0, vy: 0, air: false, hold: false, dist: 0, trees: [], next: 360, hi: glBest(), flash: 0, night: 0, nightT: 0, nightGoal: 0, phase: 0, clouds: [], deco: [], last: performance.now(), id: 0, lastBlip: 0, hills: 0, over: 0, t0: performance.now() };
   GL.run = st;
   for (let i = 0; i < 5; i++) st.clouds.push({ x: Math.random() * V.w, y: 20 + Math.random() * V.h * 0.22, k: 0.6 + Math.random() * 0.8 });
   const stars = Array.from({ length: 50 }, () => ({ x: Math.random(), y: Math.random() * 0.45, r: 0.5 + Math.random() * 1.2 }));
@@ -173,6 +173,7 @@ function glStart() {
     if (st.state === 'over') return;
     if (st.state === 'idle') { st.state = 'run'; st.speed = 270; hint.hidden = true; }
     if (!st.air) { st.vy = -640; st.air = true; st.hold = true; glTone(520, 0.12, 'square', 0.04, 880); vib(8); }
+    else if (st.wings > 0 && !st.dj) { st.dj = 1; st.vy = -560; st.hold = true; glTone(700, 0.14, 'triangle', 0.05, 1200); vib(8); for (let i = 0; i < 8; i++) st.feath.push({ x: hx() - 10, y: V.gy + st.y - 30, vx: -60 - Math.random() * 80, vy: (Math.random() - 0.5) * 80, t: 0 }); }
   };
   const release = () => { st.hold = false; if (st.air && st.vy < -230) st.vy = -230; };
   const down = () => { if (st.air) st.vy = Math.max(st.vy, 520); };
@@ -201,6 +202,10 @@ function glStart() {
     for (let i = 0; i < n; i++) st.trees.push({ x: V.w + 40 + i * gap, h: h - i * 5 + (Math.random() * 8 - 4), seed: 'gt' + Math.random() });
     if (Math.random() < 0.3) { const cxm = V.w + 40 + ((n - 1) * gap) / 2; st.coinsF.push({ x: cxm, y: Math.min(112, Math.max(h + 48, 96)) + Math.random() * 6, ph: Math.random() * 6 }); }
     else if (Math.random() < 0.14) st.coinsF.push({ x: V.w + 40 + n * gap + 60, y: 22, ph: Math.random() * 6 });
+    // pájaros: unos vuelan bajito (sáltalos) y otros alto (no saltes)
+    if (sc > 220 && Math.random() < Math.min(0.32, 0.12 + sc / 4000)) { const hi = Math.random() < 0.5; st.birds.push({ x: V.w + 40 + n * gap + 150 + Math.random() * 60, y: hi ? 92 + Math.random() * 8 : 26 + Math.random() * 6, ph: Math.random() * 6, hi }); }
+    // poderes: herradura (te salva de un choque) y alas (doble salto)
+    if (sc > 80 && Math.random() < 0.075) st.pw.push({ k: Math.random() < 0.5 ? 'shield' : 'wings', x: V.w + 40 + n * gap + 90, y: 70, ph: Math.random() * 6 });
     st.next = st.dist + Math.max(300, st.speed * (0.95 + Math.random() * 0.7)) + n * gap;
   };
 
@@ -222,7 +227,7 @@ function glStart() {
     }
   };
   const again = () => {
-    Object.assign(st, { coinsF: [], got: 0, nextBonus: 500, state: 'run', score: 0, speed: 270, y: 0, vy: 0, air: false, dist: 0, trees: [], next: 360, flash: 0, night: 0, nightGoal: 0, nightT: 0, lastBlip: 0 });
+    Object.assign(st, { feath: [], pw: [], birds: [], shield: 0, wings: 0, dj: 0, coinsF: [], got: 0, nextBonus: 500, state: 'run', score: 0, speed: 270, y: 0, vy: 0, air: false, dist: 0, trees: [], next: 360, flash: 0, night: 0, nightGoal: 0, nightT: 0, lastBlip: 0 });
     over.hidden = true; hint.hidden = true; st.last = performance.now(); st.t0 = performance.now();
   };
   wrap.querySelector('#glAgain').addEventListener('click', again);
@@ -255,8 +260,12 @@ function glStart() {
     g.strokeStyle = rgb(mix([108, 150, 100], [52, 84, 76], n)); g.lineWidth = 1.4; g.beginPath(); g.moveTo(0, gy + 0.5); g.lineTo(V.w, gy + 0.5); g.stroke();
     // matas y flores que corren con el suelo
     for (const d of st.deco) { g.strokeStyle = d.f ? '#E9C0D0' : 'rgba(80,130,80,.85)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(d.x, gy + d.y); g.lineTo(d.x - 2, gy + d.y - 6); g.moveTo(d.x, gy + d.y); g.lineTo(d.x + 2, gy + d.y - 7); g.stroke(); if (d.f) { g.fillStyle = '#F4D36B'; g.beginPath(); g.arc(d.x + 2, gy + d.y - 7, 1.6, 0, 7); g.fill(); } }
-    for (const t of st.trees) glDrawTree(g, t.x, gy, t.h, t.seed);
+    for (const t of st.trees) { if (t.broken) { g.save(); g.globalAlpha = 0.35; glDrawTree(g, t.x, gy, t.h, t.seed); g.restore(); } else glDrawTree(g, t.x, gy, t.h, t.seed); }
     for (const c of st.coinsF) { const k = Math.abs(Math.cos(c.ph)), cy = gy - c.y; g.fillStyle = 'rgba(255,225,120,.28)'; g.beginPath(); g.arc(c.x, cy, 14, 0, Math.PI * 2); g.fill(); g.fillStyle = '#E8B23A'; g.strokeStyle = '#A8761A'; g.lineWidth = 1.5; g.beginPath(); g.ellipse(c.x, cy, 2 + 7 * k, 8.5, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.fillStyle = '#FFE9A0'; g.beginPath(); g.ellipse(c.x, cy, 1 + 3.4 * k, 5.4, 0, 0, Math.PI * 2); g.fill(); }
+    for (const b of st.birds) { const by = gy - b.y, fl = Math.sin(b.ph); g.fillStyle = n > 0.5 ? '#2b2440' : '#3d4a6b'; g.beginPath(); g.ellipse(b.x, by, 11, 6, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(b.x - 3, by - 2); g.quadraticCurveTo(b.x + 2, by - 14 * fl - 4, b.x + 10, by - 2); g.fill(); g.beginPath(); g.moveTo(b.x - 3, by); g.quadraticCurveTo(b.x - 6, by - 12 * fl - 4, b.x - 14, by - 1); g.fill(); g.fillStyle = '#ffb703'; g.beginPath(); g.moveTo(b.x - 11, by - 1); g.lineTo(b.x - 17, by + 1); g.lineTo(b.x - 11, by + 2); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(b.x - 7, by - 2, 1.6, 0, 7); g.fill(); }
+    for (const q of st.pw) { const qy = gy - q.y + Math.sin(q.ph * 2) * 4; g.fillStyle = q.k === 'shield' ? 'rgba(255,214,90,.35)' : 'rgba(170,220,255,.4)'; g.beginPath(); g.arc(q.x, qy, 17, 0, 7); g.fill(); if (q.k === 'shield') { g.strokeStyle = '#d9a400'; g.lineWidth = 5; g.lineCap = 'round'; g.beginPath(); g.arc(q.x, qy - 1, 8, Math.PI * 0.85, Math.PI * 2.15, false); g.stroke(); g.lineCap = 'butt'; } else { g.fillStyle = '#fff'; for (const sgn of [-1, 1]) { g.beginPath(); g.ellipse(q.x + sgn * 6, qy, 8, 4, sgn * -0.5, 0, 7); g.fill(); } g.strokeStyle = '#7ab8ff'; g.lineWidth = 1; g.stroke(); } }
+    for (const f of st.feath) { g.globalAlpha = 1 - f.t / 0.9; g.fillStyle = '#fff'; g.beginPath(); g.ellipse(f.x, f.y, 5, 2, f.t * 6, 0, 7); g.fill(); } g.globalAlpha = 1;
+    if (st.shield || st.wings > 0) { let ix = 14; g.font = '700 12px system-ui, sans-serif'; g.textAlign = 'left'; if (st.shield) { g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.roundRect(ix, V.h - 30, 96, 20, 10); g.fill(); g.fillStyle = '#8a6a00'; g.fillText('Herradura ✓', ix + 10, V.h - 16); ix += 104; } if (st.wings > 0) { g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.roundRect(ix, V.h - 30, 76, 20, 10); g.fill(); g.fillStyle = '#2a6ab0'; g.fillText(`Alas ${Math.ceil(st.wings)}s`, ix + 10, V.h - 16); } }
     if (st.pop && st.pop.t > 0) { st.pop.t = Math.max(0, st.pop.t - 0.016); g.save(); g.globalAlpha = Math.min(1, st.pop.t * 2); g.font = '700 14px system-ui, sans-serif'; g.textAlign = 'center'; g.fillStyle = '#C98E1C'; g.fillText(st.pop.txt, st.pop.x, st.pop.y - (1 - st.pop.t) * 26 - 12); g.restore(); }
     glDrawHorse(g, hx(), gy + st.y, st.phase, st.air, st.vy, false);
     // noche encima, sutil
@@ -287,7 +296,7 @@ function glStart() {
       const goal = Math.floor(st.score / 600) % 2 === 1 ? 1 : 0; st.nightGoal = goal;
       st.phase += dt * (1.6 + st.speed / 330);
       // salto
-      if (st.air) { st.vy += (st.hold ? 1750 : 2600) * dt; st.y += st.vy * dt; if (st.y >= 0) { st.y = 0; st.vy = 0; st.air = false; } }
+      if (st.air) { st.vy += (st.hold ? 1750 : 2600) * dt; st.y += st.vy * dt; if (st.y >= 0) { st.y = 0; st.vy = 0; st.air = false; st.dj = 0; } }
       // árboles
       for (const t of st.trees) t.x -= st.speed * dt; st.trees = st.trees.filter((t) => t.x > -90);
       for (const c of st.coinsF) { c.x -= st.speed * dt; c.ph += dt * 7; }
@@ -296,12 +305,21 @@ function glStart() {
       st.coinsF = st.coinsF.filter((c) => !c.done && c.x > -30);
       if (st.score >= st.nextBonus) { st.nextBonus += 500; coinGet(1, hx(), V.gy - 70, true); }
       if (st.dist >= st.next) spawn();
+      st.wings = Math.max(0, st.wings - dt);
+      for (const b of st.birds) { b.x -= (st.speed + 70) * dt; b.ph += dt * 14; }
+      for (const q of st.pw) { q.x -= st.speed * dt; q.ph += dt * 4; }
+      for (const f of st.feath) { f.t += dt; f.x += f.vx * dt; f.y += f.vy * dt; f.vy += 60 * dt; }
+      st.feath = st.feath.filter((f) => f.t < 0.9);
+      { const px1 = hx(), py1 = V.gy + st.y;
+        for (const q of st.pw) if (!q.done && Math.abs(q.x - px1) < 28 && Math.abs((V.gy - q.y) - (py1 - 26)) < 36) { q.done = 1; if (q.k === 'shield') { st.shield = 1; st.pop = { t: 1, txt: '¡Herradura dorada! Te salva de un choque', x: Math.max(120, Math.min(V.w - 120, q.x)), y: V.gy - 110 }; } else { st.wings = 12; st.pop = { t: 1, txt: '¡Alas! Toca otra vez en el aire', x: Math.max(110, Math.min(V.w - 110, q.x)), y: V.gy - 110 }; } [0, 4, 7, 12].forEach((k, i) => setTimeout(() => glTone(660 * Math.pow(2, k / 12), 0.12, 'triangle', 0.05), i * 60)); vib([15, 30, 15]); }
+        for (const b of st.birds) { if (b.done) continue; const by = V.gy - b.y; if (Math.abs(b.x - px1) < 26 && by > py1 - 50 && by < py1 + 2) { if (st.shield) { st.shield = 0; b.done = 1; st.flash = 0.5; glTone(300, 0.2, 'triangle', 0.06, 900); } else { end(); break; } } } }
+      st.birds = st.birds.filter((b) => !b.done && b.x > -40); st.pw = st.pw.filter((q) => !q.done && q.x > -40);
       // colisión: el caballo es un rectángulo un poco más pequeño que su dibujo
       const px = hx(), py = V.gy + st.y;
       for (const t of st.trees) {
         const tw = t.h * 0.3, top = V.gy - t.h * 0.86;
         const hxL = px - 18, hxR = px + 20, hyT = py - 46, hyB = py - 5;
-        if (hxR > t.x - tw && hxL < t.x + tw && hyB > top && hyT < V.gy) { end(); break; }
+        if (!t.broken && hxR > t.x - tw && hxL < t.x + tw && hyB > top && hyT < V.gy) { if (st.shield) { st.shield = 0; t.broken = 1; st.flash = 0.6; glTone(240, 0.25, 'square', 0.06, 900); vib(40); st.pop = { t: 1, txt: '¡La herradura te salvó!', x: Math.max(100, Math.min(V.w - 100, px)), y: V.gy - 110 }; continue; } end(); break; }
       }
     } else if (st.state === 'idle') st.phase += dt * 0.6;
     if (st.flash > 0) st.flash = Math.max(0, st.flash - dt);

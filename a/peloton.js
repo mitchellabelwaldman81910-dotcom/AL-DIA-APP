@@ -24,7 +24,7 @@ function pmHero() {
 function viewPeloton() {
   const best = pmBest();
   return `<section class="gm-home"><div class="gm-hero">${pmHero()}</div><h1 class="page-title gm-title">Pelotón de Tareas</h1>
-    <p class="page-sub">Corre por la ciudad. <b>Toca la mitad izquierda o derecha</b> de la pantalla (o usa las flechas) para cambiar de carril. Esquiva las <b>alarmas de tareas</b>, junta <b>libros</b> seguidos para subir el combo y recoge <b>monedas</b> para tu árbol. El <b>escudo</b> te salva de un golpe.</p>
+    <p class="page-sub">Corre por la ciudad. <b>Toca la mitad izquierda o derecha</b> de la pantalla (o usa las flechas) para cambiar de carril. Esquiva las <b>alarmas de tareas</b>; el <b>imán</b> rojo atrae todos los libros y monedas por unos segundos, junta <b>libros</b> seguidos para subir el combo y recoge <b>monedas</b> para tu árbol. El <b>escudo</b> te salva de un golpe.</p>
     <button class="btn primary block gm-play" data-act="pm-start">${icon('play')}Correr</button>
     <p class="small muted" style="text-align:center;margin-top:12px">${best ? `Tu mejor recorrido en este dispositivo: <b>${best}</b> puntos` : 'Todavía no tienes récord. ¡Haz tu primer recorrido!'}</p>
     <p class="small muted" style="text-align:center;margin-top:6px">Puedes salir cuando quieras. Tu récord y tus monedas se guardan igual.</p>
@@ -76,7 +76,7 @@ function pmStart() {
   const proj = (z) => { const s = 1 / (1 + z / ZK); return { s, y: V.hz + (V.py - V.hz) * s }; };
   const laneX = (i) => (i - 1) * V.laneW;
 
-  const st = { lane: 1, x: 0, objs: [], rowAcc: 0, gap: 16, dist: 0, sc: 0, speed: 16, books: 0, coins: 0, bonus: 0, score: 0, combo: 0, state: 'idle', last: performance.now(), id: 0, runT: 0, free: null, shield: false, inv: 0, shake: 0, flash: 0, parts: [], floats: [], dustT: 0, t: 0, comboPulse: 0, nearMiss: 0, clouds: [], stars: [], sky: [], hit: false };
+  const st = { lane: 1, x: 0, objs: [], rowAcc: 0, gap: 16, dist: 0, sc: 0, speed: 16, books: 0, coins: 0, bonus: 0, score: 0, combo: 0, state: 'idle', last: performance.now(), id: 0, runT: 0, free: null, shield: false, mag: 0, inv: 0, shake: 0, flash: 0, parts: [], floats: [], dustT: 0, t: 0, comboPulse: 0, nearMiss: 0, clouds: [], stars: [], sky: [], hit: false };
   const mult = () => Math.min(5, 1 + Math.floor(st.combo / 5));
   const initScene = () => {
     st.clouds = Array.from({ length: 6 }, (_, i) => ({ x: Math.random() * 1.4, y: 0.06 + Math.random() * 0.2, s: 0.7 + Math.random() * 0.9, v: 0.004 + Math.random() * 0.006 }));
@@ -85,7 +85,7 @@ function pmStart() {
   };
   initScene();
   const reset = () => {
-    Object.assign(st, { lane: 1, x: 0, objs: [], rowAcc: 0, gap: 16, dist: 0, sc: 0, t: 0, speed: 16, books: 0, coins: 0, bonus: 0, score: 0, combo: 0, state: 'idle', runT: 0, free: null, shield: false, inv: 0, shake: 0, flash: 0, parts: [], floats: [], hit: false });
+    Object.assign(st, { lane: 1, x: 0, objs: [], rowAcc: 0, gap: 16, dist: 0, sc: 0, t: 0, speed: 16, books: 0, coins: 0, bonus: 0, score: 0, combo: 0, state: 'idle', runT: 0, free: null, shield: false, mag: 0, inv: 0, shake: 0, flash: 0, parts: [], floats: [], hit: false });
     over.hidden = true; over.classList.remove('show'); hint.hidden = false;
   };
   reset(); PM.run = st;
@@ -105,6 +105,7 @@ function pmStart() {
     if (!free.length) return;
     const r = Math.random(), fl = free[Math.floor(Math.random() * free.length)];
     if (st.dist > 300 && !st.shield && r < 0.035) st.objs.push({ kind: 'shield', lane: fl, z: ZF, zp: ZF, ph: Math.random() * 6 });
+    else if (st.dist > 500 && !(st.mag > 0) && r < 0.06) st.objs.push({ kind: 'mag', lane: fl, z: ZF, zp: ZF, ph: Math.random() * 6 });
     else if (r < 0.62) st.objs.push({ kind: 'book', lane: fl, z: ZF, zp: ZF, ph: Math.random() * 6 });
     else if (r < 0.72 && st.coins + st.objs.filter((o) => o.kind === 'coin').length < PM_COIN_CAP) for (let i = 0; i < 3; i++) st.objs.push({ kind: 'coin', lane: fl, z: ZF + i * 3, zp: ZF + i * 3, ph: Math.random() * 6 });
   };
@@ -171,6 +172,7 @@ function pmStart() {
     JG_TONE(1318, 0.07, 'triangle', 0.05); setTimeout(() => JG_TONE(1975, 0.09, 'triangle', 0.045), 60); JG_VIB(12);
   };
   const takeShield = (o) => { o.taken = true; st.shield = true; const s = objScreen(o); burst(s.x, s.y - 40, '#9FD8FF', 14, 220); float(s.x, s.y - 80, '¡Escudo!', '#BFE6FF'); JG_TONE(660, 0.12, 'sine', 0.06, 990); JG_VIB(18); };
+  const takeMag = (o) => { o.taken = true; st.mag = 9; const s = objScreen(o); burst(s.x, s.y - 40, '#FF8FA3', 14, 220); float(s.x, s.y - 80, '¡Imán de libros!', '#FFC2CD'); [0, 4, 7].forEach((k, i) => setTimeout(() => JG_TONE(660 * Math.pow(2, k / 12), 0.1, 'triangle', 0.05), i * 60)); JG_VIB(18); };
   const hitTask = (o) => {
     if (st.inv > 0) return;
     if (st.shield) {
@@ -192,6 +194,7 @@ function pmStart() {
     if (st.state === 'over') { for (const o of st.objs) o.ph += dt; return; }
     /* corriendo */
     st.speed = 16 + 24 * (1 - Math.exp(-st.dist / 1500));
+    st.mag = Math.max(0, (st.mag || 0) - dt);
     const dz = st.speed * dt; st.dist += dz; st.sc += dz; st.runT += dt * (7 + st.speed * 0.2);
     st.rowAcc += dz;
     if (st.rowAcc >= st.gap) { st.rowAcc -= st.gap; st.gap = Math.max(12.5, 22 - (st.speed - 16) * 0.32) + Math.random() * 5; spawnRow(); }
@@ -202,7 +205,8 @@ function pmStart() {
       if (!(o.zp > -0.7 && o.z < 0.7)) continue;
       const dx = Math.abs(laneX(o.lane) - st.x);
       if (o.kind === 'task') { if (dx < V.laneW * 0.4) { hitTask(o); if (st.state === 'over') return; } }
-      else if (dx < V.laneW * 0.55) { if (o.kind === 'book') takeBook(o); else if (o.kind === 'coin') takeCoin(o); else takeShield(o); }
+      else if (dx < V.laneW * 0.55) { if (o.kind === 'book') takeBook(o); else if (o.kind === 'coin') takeCoin(o); else if (o.kind === 'mag') takeMag(o); else takeShield(o); }
+      else if (st.mag > 0 && (o.kind === 'book' || o.kind === 'coin')) { if (o.kind === 'book') takeBook(o); else takeCoin(o); }
     }
     st.objs = st.objs.filter((o) => o.z > -3 && !o.taken);
     st.dustT -= dt; if (st.dustT <= 0) { st.dustT = 0.05; const p = playerScreen(); st.parts.push({ x: p.x + (Math.random() - 0.5) * 18, y: p.y - 2, vx: (Math.random() - 0.5) * 40, vy: -20 - Math.random() * 30, life: 0.4, t: 0, col: 'rgba(235,225,205,.55)', r: 2 + Math.random() * 2.5, grav: 40 }); }
@@ -288,6 +292,15 @@ function pmStart() {
     g.fillStyle = '#E8B23A'; g.strokeStyle = '#A8761A'; g.lineWidth = 2; g.beginPath(); g.ellipse(0, -30 + bob, 3 + 11 * k, 14, 0, 0, 6.3); g.fill(); g.stroke();
     g.fillStyle = '#FFE9A0'; g.beginPath(); g.ellipse(0, -30 + bob, 1.4 + 6 * k, 9, 0, 0, 6.3); g.fill();
   };
+  const drawMagItem = (o) => {
+    const bob = Math.sin(o.ph * 3) * 4, pl = (Math.sin(o.ph * 4) + 1) / 2;
+    g.fillStyle = 'rgba(10,15,25,.2)'; g.beginPath(); g.ellipse(0, 0, 14, 4, 0, 0, 6.3); g.fill();
+    g.save(); g.translate(0, -44 + bob); g.rotate(Math.sin(o.ph * 2) * 0.2);
+    g.strokeStyle = `rgba(255,160,180,${0.35 + pl * 0.4})`; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 26 + pl * 3, 0, 6.3); g.stroke();
+    g.lineWidth = 9; g.strokeStyle = '#E8384F'; g.beginPath(); g.arc(0, -2, 12, Math.PI, 0); g.stroke();
+    g.fillStyle = '#E4E9F0'; g.fillRect(-16.5, -3, 9, 12); g.fillRect(7.5, -3, 9, 12);
+    g.restore();
+  };
   const drawShieldItem = (o) => {
     const bob = Math.sin(o.ph * 3) * 4, pl = (Math.sin(o.ph * 4) + 1) / 2;
     g.fillStyle = 'rgba(10,15,25,.2)'; g.beginPath(); g.ellipse(0, 0, 14, 4, 0, 0, 6.3); g.fill();
@@ -337,6 +350,7 @@ function pmStart() {
     g.fillStyle = 'rgba(10,18,32,.55)'; pmRR(g, cx, top + 8, cw, 38, 19); g.fill();
     g.fillStyle = '#E8B23A'; g.strokeStyle = '#A8761A'; g.lineWidth = 1.6; g.beginPath(); g.arc(cx + 21, top + 27, 9.5, 0, 6.3); g.fill(); g.stroke(); g.fillStyle = '#FFE9A0'; g.beginPath(); g.arc(cx + 21, top + 27, 5.5, 0, 6.3); g.fill();
     g.fillStyle = '#fff'; g.textAlign = 'left'; g.fillText(ct, cx + 37, top + 33);
+    if (st.mag > 0) { g.fillStyle = 'rgba(232,56,79,.9)'; pmRR(g, W - 14 - 72, top + 86, 72, 26, 13); g.fill(); g.fillStyle = '#fff'; g.font = '800 13px system-ui,sans-serif'; g.textAlign = 'center'; g.fillText(`Imán ${Math.ceil(st.mag)}s`, W - 14 - 36, top + 104); }
     if (st.shield) { g.fillStyle = 'rgba(76,155,224,.9)'; pmRR(g, W - 14 - 38, top + 54, 38, 26, 13); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(W - 33, top + 61); g.lineTo(W - 25, top + 64); g.lineTo(W - 26, top + 71); g.quadraticCurveTo(W - 29, top + 76, W - 33, top + 77); g.quadraticCurveTo(W - 37, top + 76, W - 40, top + 71); g.lineTo(W - 41, top + 64); g.closePath(); g.fill(); }
   };
   const draw = () => {
@@ -358,7 +372,7 @@ function pmStart() {
       const { s, y } = proj(it.z); if (s < 0.05) continue;
       const fade = Math.min(1, (ZF - it.z) / 12); g.globalAlpha = Math.max(0, fade);
       if (it.kind === 'sc') { const x = cx + (it.wx - cam) * s; withObj(x, y, s * V.S, () => { if (it.type === 2) drawLamp(P, it.side); else if (it.type === 3) drawBuild(P, it.h, it.k); else drawTree(P, it.h); }); }
-      else { const x = cx + (laneX(it.lane) - cam) * s; withObj(x, y, s * V.S, () => (it.kind === 'task' ? drawTask(it) : it.kind === 'book' ? drawBook(it) : it.kind === 'coin' ? drawCoin(it) : drawShieldItem(it))); }
+      else { const x = cx + (laneX(it.lane) - cam) * s; withObj(x, y, s * V.S, () => (it.kind === 'task' ? drawTask(it) : it.kind === 'book' ? drawBook(it) : it.kind === 'coin' ? drawCoin(it) : it.kind === 'mag' ? drawMagItem(it) : drawShieldItem(it))); }
       g.globalAlpha = 1;
     }
     if (!playerDone) drawPlayer();

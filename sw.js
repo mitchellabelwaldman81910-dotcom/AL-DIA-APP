@@ -1,10 +1,11 @@
 /* Cinnavia — service worker: funciona sin internet y manda avisos. */
-const VERSION = 'aldia-v7.60.5';
-const V = '?v=7.60.5';
+const VERSION = 'aldia-v7.61.0';
+const V = '?v=7.61.0';
 const SHELL = [
   './',
   './index.html',
   './a/styles.css' + V,
+  './a/rendimiento.js' + V,
   './a/app.js' + V,
   './a/glifos.js' + V,
   './a/linea.js' + V,
@@ -83,6 +84,8 @@ const SHELL = [
   './a/mono-arte.js' + V,
   './a/mono.js' + V,
   './a/mono-tienda.js' + V,
+  './a/cielo.js' + V,
+  './a/tycoon.js' + V,
   './a/sugerencias.js' + V,
   './a/naturaleza.js' + V,
   './icons/cinnavia.svg',
