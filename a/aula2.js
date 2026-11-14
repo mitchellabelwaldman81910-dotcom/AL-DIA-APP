@@ -7,7 +7,7 @@ const A2 = { rub: null, seat: null, msg: { al: '', tp: 'faltas' }, ex: null };
 const a2G = () => auGroup();
 const a2Edit = (fn) => { const g = a2G(); if (g) aupEdit(g.id, (gg) => { a2Ext(gg); fn(gg); }); };
 const a2Ext = (g) => { aupG(g); g.rub ||= { list: [], ev: {} }; g.diario ||= []; g.banco ||= []; g.seats ||= { r: 5, c: 6, map: {} }; g.foco ||= {}; g.fechas ||= []; return g; };
-const a2Id = (p) => p + uid().replace(/[^a-z0-9]/gi, '').slice(0, 8);
+const a2Id = (p) => p + uid().replace(/[^a-z0-9]/gi, '').slice(-9);
 const a2First = (n) => String(n || '').trim().split(/\s+/)[0] || '';
 const a2Shuf = (a) => { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; };
 const a2Copy = async (t, ok = 'Copiado.') => { try { await navigator.clipboard.writeText(t); toast(ok); } catch { toast('No se pudo copiar.'); } };
