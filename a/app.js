@@ -1750,9 +1750,9 @@ function mergeDocs(local, remote, base, trustDeletes = false) {
 const viewOnlyNow = () => !!(REG.current && REG.adminView && REG.adminView[REG.current]);
 async function cloudFetch(method, body, query = '') {
   if (method !== 'GET' && viewOnlyNow() && !['presence', 'adminenter'].includes(body?.kind) && (body?.profile === REG.current || body?.as === REG.current || body?.kind === 'letter')) throw new Error('Estás mirando una cuenta en vista de administración: solo se puede ver. No se guardó nada.');
-  const r = await fetch(`/api/sync${query ? `?${query}` : ''}`, {
+  let r; try { r = await fetch(`/api/sync${query ? `?${query}` : ''}`, {
     method, headers: { ...(body ? { 'content-type': 'application/json' } : {}), 'x-aldia-tokens': JSON.stringify(tokens()), ...(viewOnlyNow() ? { 'x-aldia-view': REG.current } : {}) }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store',
-  });
+  }); } catch { const e = new Error(navigator.onLine ? 'No se pudo conectar con la nube. Intenta en un momento.' : 'Sin internet. Se intentará de nuevo al reconectar.'); e.status = 0; throw e; }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) { const e = new Error(j.error || `error ${r.status}`); e.status = r.status; throw e; }
   return j;
