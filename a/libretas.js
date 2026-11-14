@@ -57,7 +57,8 @@ function hydrateUF() { document.querySelectorAll('img[data-uf]:not([src])').forE
 /* ---------- Vistas ---------- */
 function coverHTML(s, big) {
   const c = lbCover(s.id); const n = lbPages(s.id).length + lbNotes(s.id).length;
-  return `<span class="lb-cover cv-${c} ${big ? 'big' : ''}" style="--c:${safeColor(s.color)}"><span class="lb-spine"></span>${coverArt(c)}<span class="lb-label"><b>${esc(s.name)}</b><em>${plural(n, 'página', 'páginas')}</em></span></span>`;
+  const ini = (s.name || '?').trim().charAt(0).toUpperCase(); const pend = (S.tasks || []).filter((t) => !t.done && (t.subjectId || '_gen') === s.id).length;
+  return `<span class="lb-cover cv-${c} ${big ? 'big' : ''}" style="--c:${safeColor(s.color)}"><span class="lb-edge"></span><span class="lb-spine"></span>${coverArt(c)}<span class="lb-ini">${esc(ini)}</span><span class="lb-band"></span><span class="lb-ribbon"></span>${pend && !big ? `<span class="lb-pend" title="Tareas pendientes">${pend}</span>` : ''}<span class="lb-label"><b>${esc(s.name)}</b><em>${plural(n, 'página', 'páginas')}</em></span></span>`;
 }
 function coverArt(c) {
   if (c === 'botanico') return `<svg class="lb-art" viewBox="0 0 100 130" aria-hidden="true"><path d="M70 130C70 90 60 60 40 40"/><path d="M58 80c-12-2-20-10-20-22 12 2 20 10 20 22zM64 98c10-6 20-6 26 0-8 6-18 6-26 0zM50 60c8-8 18-10 24-6-6 8-16 10-24 6z"/><circle cx="30" cy="30" r="3"/><circle cx="22" cy="40" r="2"/></svg>`;
@@ -73,7 +74,7 @@ function viewLibretas(arg) {
   return `<a class="back" href="#/mas">${icon('back')}Más</a><h1 class="page-title">Libretas</h1>
     <p class="page-sub">Una libreta por materia. Escribe apuntes, guarda información, pega fotos y pegatinas, y manda lo que quieras a tu Bosque.</p>
     ${S.subjects.length ? '' : '<div class="banner">Agrega tus materias en <a href="#/materias">Materias</a> y cada una tendrá su libreta. Mientras, usa la libreta General.</div>'}
-    <div class="lb-shelf">${subs.map((s) => `<a class="lb-book" href="#/libretas/${s.id}">${coverHTML(s)}</a>`).join('')}</div>`;
+    <div class="lb-shelf">${subs.map((s, i) => `<a class="lb-book" href="#/libretas/${s.id}" style="--d:${i * 45}ms">${coverHTML(s)}</a>`).join('')}</div>`;
 }
 function pageHTML(p) {
   const tone = LB_TONES[p.tone] ? p.tone : 'papel';
@@ -103,7 +104,7 @@ function viewLibreta(sid) {
   else body = feed.length ? `<div class="lb-feed">${feed.map((x) => (x.k === 'p' ? pageHTML(x.p) : `<article class="lb-page t-papel k-nota lb-tap" data-nid="${x.n.id}"><header><span class="lb-kind">Apunte</span><h3>${esc(x.n.title || 'Sin título')}</h3></header><p class="lb-clip">${esc(htmlText(x.n.body).slice(0, 260))}</p><footer><span class="tiny faint">${x.n.updated ? esc(relDay(toISO(new Date(x.n.updated)))) : ''}</span><span class="grow"></span><button class="icon-btn ghost" data-act="lb-send-note" data-id="${x.n.id}" aria-label="Mandar">${icon('share', 'sm')}</button><button class="icon-btn ghost" data-act="lb-open-note" data-id="${x.n.id}" aria-label="Abrir">${icon('edit', 'sm')}</button></footer></article>`)).join('')}</div>`
     : `<div class="empty"><h3>Tu libreta está en blanco</h3><p>Empieza con un apunte, una tarjeta de información o una foto. Todo lo que escribas aquí también alimenta tu Quiz inteligente.</p></div>`;
   return `<a class="back" href="#/libretas">${icon('back')}Libretas</a>
-    <section class="lb-head">${coverHTML(s, true)}<div><h1 class="page-title">${esc(s.name)}</h1><button class="link-btn" data-act="lb-cover" data-id="${sid}">Cambiar portada</button></div></section>
+    <section class="lb-head" style="--c:${safeColor(s.color)}">${coverHTML(s, true)}<div class="lb-head-tx"><h1 class="page-title">${esc(s.name)}</h1><div class="lb-stats"><span><b>${feed.length}</b> ${feed.length === 1 ? 'página' : 'páginas'}</span><span><b>${tasks.filter((t) => !t.done).length}</b> por hacer</span><span><b>${photos.length}</b> ${photos.length === 1 ? 'foto' : 'fotos'}</span></div><button class="link-btn" data-act="lb-cover" data-id="${sid}">Cambiar portada</button></div></section>
     <div class="lb-add">${[['nota', 'note', 'Apunte'], ['info', 'spark', 'Información'], ['lista', 'list', 'Lista'], ['foto', 'cam', 'Fotos'], ['pegatina', 'leaf', 'Pegatina'], ['enlace', 'link', 'Enlace']].map(([k, ic, l]) => `<button type="button" class="lb-addb" data-act="lb-new" data-k="${k}" data-sid="${sid}">${icon(ic)}<span>${l}</span></button>`).join('')}</div>
     ${tabs}${body}
     <div class="btn-row" style="margin-top:16px"><button class="btn" data-act="qz-go" data-v="${lbSid(sid) || ''}">${icon('spark', 'sm')}Quiz de esta libreta</button><button class="btn quiet" data-act="help-open">${icon('help', 'sm')}Pedir ayuda</button></div>`;
