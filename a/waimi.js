@@ -28,7 +28,9 @@ const WMI = (() => {
   const gente = WM_GENTE.map((g) => ({ g, k: keys(g, 1) }));
   const obras = WM_OBRAS.map((g) => ({ g, k: keys(g, 1) }));
   const rec = WM_RECORD.map((r) => ({ r, k: r[0].split('|').map(wn) }));
-  return { pais, cap, el, glos, gente, obras, rec };
+  const edo = (typeof WM_ESTADOS !== 'undefined' ? WM_ESTADOS : []).map(([e, c]) => [wn(e), { e, c }]).sort((a, b) => b[0].length - a[0].length);
+  const en = {}, es = {}; for (const [a, b] of (typeof WM_EN !== 'undefined' ? WM_EN : [])) { const k = wn(a.replace(/\s*\(.*\)/, '')); en[k] = [a, b]; for (const x of b.split('/')) { const y = wn(x.replace(/\(.*\)/, '')); if (y && !es[y]) es[y] = [a, b]; } }
+  return { pais, cap, el, glos, gente, obras, rec, edo, en, es };
 })();
 const wmIn = (q, k) => k.length > 2 && (` ${q} `).includes(` ${k} `);
 const wmFindPais = (q) => (WMI.pais.find(([k]) => wmIn(q, k)) || [])[1];
@@ -87,6 +89,12 @@ function wmMath(q, raw) {
   try { const v = clEval(e, true, 0); const r = typeof v === 'object' && v ? v.v : v; if (typeof r !== 'number' || !isFinite(r)) return null; return wmR(`${e.replace(/\*/g, '×').replace(/\b(sqrt|raiz)\s*/g, '√')} = ${wmNum(r)}`, { calc: true }); } catch (err) { return null; }
 }
 function wmGeo(q) {
+  const info = typeof WM_PAISINFO !== 'undefined' ? WM_PAISINFO : {};
+  if (/\b(moneda|divisa|dinero|idioma|idiomas|lengua|lenguas|se habla|hablan)\b/.test(q)) { const p = wmFindPais(q); const I = p && info[p.p];
+    if (p && I) return /moneda|divisa|dinero/.test(q) ? wmR(`La moneda de ${p.p} es el ${I[0]}.`) : wmR(`En ${p.p} se habla ${I[1]}.`);
+    if (p) return wmR(`No tengo la moneda ni el idioma de ${p.p} en mi base sin conexión; su capital es ${p.c}.`); }
+  if (wmHas(q, /\bcapital\b/)) { const e = WMI.edo.find(([k]) => wmIn(q, k)); const p = wmFindPais(q); if (e && !(p && wn(p.p).length > e[0].length && !/estado/.test(q))) return wmR(e[1].e === 'Ciudad de México' ? 'La Ciudad de México es la capital del país y sede de los Poderes de la Unión; no es un estado, es una entidad federativa.' : `La capital ${/^Estado/.test(e[1].e) ? 'del' : 'de'} ${e[1].e} es ${e[1].c}.`, { note: [`Capital de ${e[1].e}`, e[1].c] }); }
+  if (/^(estados de mexico y sus capitales|capitales de mexico|estados y capitales)$/.test(q)) return wmR(`Las 32 entidades de México y sus capitales:\n${WM_ESTADOS.map(([e, c]) => `• ${e}: ${e === 'Ciudad de México' ? 'capital del país' : c}`).join('\n')}`);
   if (wmHas(q, /\bcapital\b/) || wmHas(q, /\bdonde (esta|queda)\b/)) {
     if (wmHas(q, /(de que pais|que pais tiene|es la capital de que|es capital de que)/)) { const c = wmFindCap(q); if (c) return wmR(`${c.c.split(/[;(]/)[0].trim()} es la capital de ${c.p} (${c.cont}).`); }
     const p = wmFindPais(q); if (p) return wmR(`La capital de ${p.p} es ${p.c}. Está en ${p.cont}.`, { note: [`Capital de ${p.p}`, p.c] });
@@ -95,6 +103,13 @@ function wmGeo(q) {
   const m = q.match(/\b(paises|cuantos paises)\b.*\b(america|europa|asia|africa|oceania)\b/);
   if (m) { const k = Object.keys(WM_PAISES).find((x) => wn(x) === m[2]); const L = WM_PAISES[k]; return wmR(`En mi base hay ${L.length} países de ${k}:\n${L.map((x) => x[0]).join(', ')}.`); }
   if (/^(capitales|paises)$/.test(q)) return wmR(`Sé las capitales de ${Object.values(WM_PAISES).flat().length} países. Pregúntame, por ejemplo: «¿Cuál es la capital de Australia?»`);
+  return null;
+}
+function wmEng(q) {
+  let m = q.match(/^(?:como se dice|como digo|traduce|traducir|traduccion de)\s+(?:la palabra\s+)?(.+?)\s+(?:en|al)\s+ingles$/) || q.match(/^(.+?)\s+en ingles$/);
+  if (m) { const w = m[1].replace(/^(el|la|los|las|un|una) /, ''); const hit = WMI.es[w]; return hit ? wmR(`«${w}» en inglés se dice: ${hit[0]}.`, { note: [hit[0], hit[1]] }) : null; }
+  m = q.match(/^(?:que significa|que quiere decir|traduce|traducir|significado de)\s+(.+?)(?:\s+(?:en|al) (?:espanol|ingles))?$/) || q.match(/^(.+?)\s+en espanol$/);
+  if (m) { const hit = WMI.en[m[1]]; if (hit) return wmR(`«${hit[0]}» significa: ${hit[1]}.`, { note: [hit[0], hit[1]] }); }
   return null;
 }
 function wmChem(q, raw) {
@@ -133,6 +148,8 @@ function wmForm(q) {
 function wmKnow(q) {
   const term = wmTerm(q);
   const r = WMI.rec.find((x) => x.k.some((k) => wmIn(q, k) || q === k)); if (r) return wmR(r.r[1]);
+  const fm = q.match(/^(?:quien|quienes) (?:fundo|fundaron|creo|crearon|invento|inventaron|descubrio|descubrieron|pinto|compuso) (?:la |el |los |las |a )?(.+)$/);
+  if (fm) { const w = fm[1].split(' ').filter((x) => x.length > 2); const g = WM_GENTE.find((x) => { const n = wn(x[2]); return w.length && w.every((y) => n.includes(y)); }); if (g) return wmR(`${g[0]}: ${g[2]}`, { note: [g[0], g[2]] }); }
   const gl = wmBest(WMI.glos, term, q);
   if (/^(quien|quienes) (fue|es|era|fueron|escribio|pinto|invento|descubrio)|^(hablame|dime) de/.test(q) || term.split(' ').length <= 4) {
     const g = wmBest(WMI.gente, term, q); if (g && !(gl && gl.sc >= g.sc)) return wmR(`${g.g[0]}: ${g.g[2]}`, { note: [g.g[0], g.g[2]] });
@@ -144,7 +161,7 @@ function wmKnow(q) {
 function wmSmall(q) {
   if (/^(hola|buenas|buenos dias|buenas tardes|buenas noches|hey|que tal|holi|ola)\b/.test(q) && q.split(' ').length <= 4) { const n = (S.settings.name || profile()?.name || '').split(' ')[0]; return wmR(`Hola${n ? `, ${n}` : ''}. Soy Waimi. Pregúntame lo que quieras: un concepto, una capital, un elemento, una fecha de historia, una operación o qué te conviene estudiar ahora.`); }
   if (/^(gracias|muchas gracias|grax|ok gracias|perfecto|genial)\b/.test(q)) return wmR(wmPick(['Para eso estoy. Sigue así.', 'Con gusto. ¿Algo más?', 'De nada. Un paso más cerca de los honores.']));
-  if (/(quien eres|que eres|como te llamas|que puedes hacer|que sabes hacer|ayuda|que sabes)$/.test(q)) return wmR(`Soy Waimi, tu asistente de estudio. Funciono sin internet y sé:\n• ${Object.values(WM_PAISES).flat().length} países con su capital\n• los 118 elementos químicos\n• planetas y datos del universo\n• historia de México y del mundo\n• ${WM_GENTE.length} personajes y ${WM_OBRAS.length} obras famosas\n• ${WM_GLOS.length} conceptos de mercadotecnia, economía, biología, química, física, matemáticas, historia, lengua, filosofía y tecnología\n• fórmulas, conversiones y operaciones\n• tus pendientes, promedio, exámenes y racha\nY si hay internet, busco en Wikipedia lo que no sepa.`);
+  if (/(quien eres|que eres|como te llamas|que puedes hacer|que sabes hacer|ayuda|que sabes)$/.test(q)) return wmR(`Soy Waimi, tu asistente de estudio. Funciono sin internet y sé:\n• ${Object.values(WM_PAISES).flat().length} países con su capital, moneda e idioma, y los 32 estados de México\n• los 118 elementos químicos\n• planetas y datos del universo\n• historia de México y del mundo\n• ${WM_GENTE.length} personajes y ${WM_OBRAS.length} obras famosas\n• ${WM_GLOS.length} conceptos de mercadotecnia, economía, biología, química, física, matemáticas, historia, lengua, filosofía y tecnología\n• ${WM_EN.length} palabras de inglés-español y gramática inglesa\n• fórmulas, conversiones y operaciones\n• tus pendientes, promedio, exámenes y racha\nY con internet consulto Wikipedia en español e inglés, que juntas tienen millones de artículos.`);
   if (/^(dato curioso|cuentame algo|sorprendeme|dime algo interesante|un dato)/.test(q)) {
     const f = wmPick([() => { const r = wmPick(WM_RECORD); return r[1]; }, () => { const e = wmPick(WM_ELEM); return `El elemento número ${e.z} es el ${e.n.toLowerCase()} y su símbolo es ${e.s}.`; }, () => { const [a, t] = wmPick(WM_MX); return `${a}: ${t}`; }, () => { const g = wmPick(WM_GENTE); return `${g[0]}: ${g[2]}`; }, () => { const p = wmPick(WM_PLAN); return `${p[0]}: ${p[1]}.`; }]);
     return wmR(f());
@@ -168,40 +185,53 @@ function wmQuizCheck(q) {
 }
 
 /* ---------- Wikipedia (solo con internet) ---------- */
-async function wmWiki(term) {
+async function wmJSON(url, ctl) { const r = await fetch(url, { signal: ctl.signal }); if (!r.ok) throw new Error('http'); return r.json(); }
+async function wmWiki(term, lang = 'es') {
   if (!navigator.onLine) return null;
-  const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 8000);
+  const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 9000);
   try {
-    const s = await (await fetch(`https://es.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(term)}&srlimit=1&format=json&origin=*`, { signal: ctl.signal })).json();
-    const hit = s?.query?.search?.[0]; if (!hit) return { none: true };
-    const r = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(hit.title.replace(/ /g, '_'))}`, { signal: ctl.signal }); if (!r.ok) return null;
-    const j = await r.json(); let x = String(j.extract || '').trim(); if (!x) return { none: true };
-    if (x.length > 900) { const cut = x.slice(0, 900); x = `${cut.slice(0, Math.max(cut.lastIndexOf('. '), 400) + 1)}`; }
-    return { title: j.title || hit.title, text: x, url: j.content_urls?.desktop?.page || `https://es.wikipedia.org/wiki/${encodeURIComponent(hit.title.replace(/ /g, '_'))}` };
+    const base = `https://${lang}.wikipedia.org`;
+    const s = await wmJSON(`${base}/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(term)}&srlimit=4&format=json&origin=*`, ctl);
+    const hits = s?.query?.search || []; if (!hits.length) return { none: true };
+    const j = await wmJSON(`${base}/api/rest_v1/page/summary/${encodeURIComponent(hits[0].title.replace(/ /g, '_'))}`, ctl);
+    let x = String(j.extract || '').trim(); if (!x) return { none: true };
+    if (x.length > 900) { const cut = x.slice(0, 900); x = cut.slice(0, Math.max(cut.lastIndexOf('. '), 400) + 1); }
+    return { lang, title: j.title || hits[0].title, text: x, url: j.content_urls?.desktop?.page || `${base}/wiki/${encodeURIComponent(hits[0].title.replace(/ /g, '_'))}`, rel: hits.slice(1).map((h) => h.title).filter((t) => !/\(desambiguaci/i.test(t)) };
+  } catch { return null; } finally { clearTimeout(to); }
+}
+/* artículo más completo: la introducción entera y las primeras secciones */
+async function wmWikiMore(title, lang = 'es') {
+  if (!navigator.onLine) return null;
+  const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 9000);
+  try {
+    const j = await wmJSON(`https://${lang}.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&exsectionformat=plain&exchars=2800&redirects=1&titles=${encodeURIComponent(title)}&format=json&origin=*`, ctl);
+    const pg = Object.values(j?.query?.pages || {})[0]; const t = String(pg?.extract || '').replace(/\n{2,}/g, '\n').trim(); return t || null;
   } catch { return null; } finally { clearTimeout(to); }
 }
 
 async function wmAnswer(raw) {
   const q = wn(raw); if (!q) return wmR('Escribe tu pregunta.');
   if (WM.quiz) return wmQuizCheck(q);
-  const loc = wmSmall(q) || wmPersonal(q) || wmMath(q, raw) || wmGeo(q) || wmChem(q, raw) || wmSpace(q) || wmForm(q) || wmHist2(q) || wmKnow(q);
+  const loc = wmSmall(q) || wmPersonal(q) || wmMath(q, raw) || wmEng(q) || wmGeo(q) || wmChem(q, raw) || wmSpace(q) || wmForm(q) || wmHist2(q) || wmKnow(q);
   if (loc) return loc;
   const term = wmTerm(q) || q;
-  const w = await wmWiki(term);
-  if (w && w.text) return wmR(w.text, { src: [w.url, `Wikipedia: ${w.title}`], note: [w.title, w.text] });
+  let w = await wmWiki(term);
+  if (w && w.none) { const w2 = await wmWiki(term, 'en'); if (w2 && w2.text) w = w2; }
+  if (w && w.text) return wmR(w.lang === 'en' ? `${w.text}\n\n(Encontré esto solo en la Wikipedia en inglés.)` : w.text, { src: [w.url, `Wikipedia: ${w.title}`], note: [w.title, w.text], wt: [w.title, w.lang], rel: w.rel });
   if (w && w.none) return wmR(`No encontré «${term}» ni en mi base ni en Wikipedia. Prueba con otras palabras o con el nombre exacto del concepto.`);
   return wmR(`No tengo «${term}» en mi base sin conexión${navigator.onLine ? ' y no pude consultar Wikipedia ahora' : ', y ahora no hay internet para buscarlo'}. Prueba con un concepto escolar, un país, un elemento, un personaje o una fecha histórica.`);
 }
 
 /* ---------- vista ---------- */
-const WM_CHIPS = ['¿Qué tengo pendiente?', '¿Qué estudio ahora?', '¿Qué es la segmentación de mercado?', 'Capital de Australia', 'Símbolo del oro', '¿Cuándo fue la expropiación petrolera?', '15% de 380', 'Fórmulas de trigonometría', '¿Quién fue Mario Molina?', 'Pregúntame', 'Dato curioso', '100 km a millas'];
+const WM_CHIPS = ['¿Qué tengo pendiente?', '¿Qué estudio ahora?', '¿Qué es la segmentación de mercado?', 'Capital de Australia', 'Símbolo del oro', '¿Cuándo fue la expropiación petrolera?', '15% de 380', 'Fórmulas de trigonometría', '¿Quién fue Mario Molina?', 'Pregúntame', 'Dato curioso', '100 km a millas', 'Capital de Quintana Roo', '¿Cómo se dice estrategia en inglés?', 'Moneda de Japón', 'Matriz BCG', '¿Qué es el punto de equilibrio?'];
 const wmFmt = (t) => esc(t).replace(/\n/g, '<br>');
 function wmMsgHTML(m, i) {
   if (m.r === 'u') return `<div class="wm-m u"><p>${wmFmt(m.t)}</p></div>`;
   const acts = [];
   if (m.link && /^#\/[a-z]/.test(m.link[0])) acts.push(`<a class="btn quiet" href="${esc(m.link[0])}">${esc(m.link[1])}</a>`);
+  if (m.wt && !m.more) acts.push(`<button type="button" class="btn quiet" data-act="wm-more" data-i="${i}">Ampliar</button>`);
   if (m.note) acts.push(`<button type="button" class="btn quiet" data-act="wm-note" data-i="${i}">Guardar nota</button><button type="button" class="btn quiet" data-act="wm-card" data-i="${i}">Hacer tarjeta</button>`);
-  return `<div class="wm-m w"><p>${wmFmt(m.t)}</p>${m.src && /^https:\/\/es\.wikipedia\.org\//.test(m.src[0]) ? `<a class="wm-src" href="${esc(m.src[0])}" target="_blank" rel="noopener">Fuente: ${esc(m.src[1])}</a>` : ''}${acts.length ? `<div class="wm-acts">${acts.join('')}</div>` : ''}</div>`;
+  return `<div class="wm-m w"><p>${wmFmt(m.t)}</p>${m.src && /^https:\/\/(es|en)\.wikipedia\.org\//.test(m.src[0]) ? `<a class="wm-src" href="${esc(m.src[0])}" target="_blank" rel="noopener">Fuente: ${esc(m.src[1])}</a>` : ''}${acts.length ? `<div class="wm-acts">${acts.join('')}</div>` : ''}${m.rel && m.rel.length ? `<div class="wm-rel"><small>Relacionado:</small>${m.rel.slice(0, 3).map((t) => `<button type="button" data-act="wm-ask" data-q="${esc(t)}">${esc(t)}</button>`).join('')}</div>` : ''}</div>`;
 }
 function viewWaimi() {
   if (!honCan()) return '<div class="empty"><h3>Waimi está disponible en el modo Honores de la cuenta de administración</h3></div>';
@@ -224,6 +254,7 @@ Object.assign(EXTRA_VIEWS, { waimi: viewWaimi }); EXTRA_NAV.waimi = 'honores';
 HN_TOOLS.unshift(['waimi', 'help', 'Waimi']);
 Object.assign(VIDA_ACTS, {
   'wm-ask': (el) => wmAsk(el.dataset.q),
+  'wm-more': async (el) => { const h = wmHist(); const m = h[+el.dataset.i]; if (!m || !m.wt || WM.busy) return; m.more = true; WM.busy = true; render(); setTimeout(wmScroll, 0); const t = await wmWikiMore(m.wt[0], m.wt[1]); WM.busy = false; h.push(t ? { r: 'w', t, src: m.src, note: [m.wt[0], t], at: Date.now() } : { r: 'w', t: 'No pude traer más ahora. Revisa tu conexión e intenta otra vez.', at: Date.now() }); if (!t) m.more = false; wmStore(); render(); setTimeout(wmScroll, 0); },
   'wm-clear': async () => { if (!(await ask({ title: '¿Borrar la conversación con Waimi?', ok: 'Borrar', danger: true }))) return; WM.h = []; WM.quiz = null; wmStore(); render(); },
   'wm-note': (el) => { const m = wmHist()[+el.dataset.i]; if (!m || !m.note) return; const t = String(m.note[0]).slice(0, 60); const ex = hnZK().find((x) => hnNorm(x.t) === hnNorm(t)); if (ex) { toast('Esa nota ya está en tu segundo cerebro.'); return; } hnZK().push({ id: 'zk' + uid().replace(/[^a-z0-9]/gi, '').slice(-9), t, b: String(m.note[1]).slice(0, 4000) + (m.src ? `\n\nFuente: ${m.src[0]}` : ''), sid: '', at: Date.now(), up: Date.now() }); hnSave(); toast('Guardada en tu segundo cerebro.'); },
   'wm-card': (el) => { const m = wmHist()[+el.dataset.i]; if (!m || !m.note) return; let n = 0; try { n = esAddCards([{ q: String(m.note[0]).slice(0, 120), a: String(m.note[1]).slice(0, 600), sid: '' }]); } catch { /* */ } toast(n === 0 ? 'Esa tarjeta ya existe.' : 'Tarjeta de repaso creada.'); },

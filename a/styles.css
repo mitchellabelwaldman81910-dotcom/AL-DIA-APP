@@ -4442,3 +4442,5 @@ body.lb-open .pu-top, body.gm-on .pu-top { display: none; }
 .wm-chips button:hover { border-color: var(--pen); }
 .wm-form { position: sticky; bottom: calc(var(--nav-h, 64px) + 8px + env(safe-area-inset-bottom)); display: flex; gap: 8px; padding: 8px; border-radius: 16px; background: var(--sheet); border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(0,0,0,.08); z-index: 3; }
 .wm-form .input { flex: 1; min-width: 0; } .wm-form .btn { flex: none; }
+.wm-rel { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; } .wm-rel small { color: var(--ink-3); font-size: 12px; }
+.wm-rel button { border: 1px solid var(--line); background: transparent; color: inherit; border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 12.5px; cursor: pointer; } .wm-rel button:hover { border-color: var(--pen); }
