@@ -45,7 +45,7 @@ function honApply() {
 const hnSeed = (s) => { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
 const hnRng = (seed) => () => { seed = (seed + 0x6d2b79f5) >>> 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 const hnMonday = (iso) => { const d = fromISO(iso); const w = (d.getDay() + 6) % 7; return addDays(iso, -w); };
-const hnDay = (iso = today()) => { const d = HND(); return (d.days[iso] ||= { plan: {}, hab: {}, reto: {}, score: 0 }); };
+const hnDay = (iso = today()) => { const d = HND(); if (!d.days[iso]) { d.days[iso] = { plan: {}, hab: {}, reto: {}, score: 0 }; const ks = Object.keys(d.days).sort(); if (ks.length > 420) for (const k of ks.slice(0, ks.length - 400)) delete d.days[k]; } return d.days[iso]; };
 
 const HN_WORDS = [['Efímero', 'Que dura muy poco tiempo.'], ['Resiliencia', 'Capacidad de adaptarse y recuperarse ante la adversidad.'], ['Ubicuo', 'Que está presente en todas partes.'], ['Perspicaz', 'Que percibe o entiende las cosas con agudeza.'], ['Elocuente', 'Que habla o escribe de forma clara y convincente.'], ['Pragmático', 'Que se centra en lo práctico y útil.'], ['Inefable', 'Que no se puede explicar con palabras.'], ['Meticuloso', 'Que hace las cosas con mucho cuidado y detalle.'], ['Sinergia', 'Acción conjunta que logra más que la suma de las partes.'], ['Ecuánime', 'Que mantiene la calma y el equilibrio.'], ['Paradigma', 'Modelo o patrón que sirve de ejemplo.'], ['Empatía', 'Capacidad de ponerse en el lugar del otro.'], ['Ambiguo', 'Que puede entenderse de varias maneras.'], ['Exhaustivo', 'Que trata algo de forma completa, sin dejar nada.'], ['Inherente', 'Que es parte esencial de algo y no se puede separar.'], ['Altruista', 'Que procura el bien de los demás sin buscar beneficio propio.'], ['Sagaz', 'Astuto y prudente; que prevé las cosas.'], ['Prolífico', 'Que produce mucho.'], ['Tenaz', 'Firme y constante en lo que se propone.'], ['Sintetizar', 'Resumir lo esencial de algo.'], ['Hipótesis', 'Suposición que se plantea para comprobarla.'], ['Analogía', 'Relación de semejanza entre cosas distintas.'], ['Coherente', 'Que tiene relación lógica entre sus partes.'], ['Escéptico', 'Que duda de lo que no está comprobado.'], ['Ímpetu', 'Fuerza o energía con que se hace algo.'], ['Lúcido', 'Que piensa con claridad.'], ['Óptimo', 'Lo mejor posible.'], ['Plausible', 'Que es creíble o aceptable.'], ['Procrastinar', 'Aplazar lo que se debe hacer.'], ['Holístico', 'Que considera el todo y no solo las partes.'], ['Disciplina', 'Constancia para hacer lo necesario aunque no haya ganas.'], ['Metacognición', 'Pensar sobre cómo piensas y aprendes, para mejorar.']];
 const HN_FACTS = ['El cerebro usa cerca del 20 % de la energía del cuerpo, aunque pesa alrededor del 2 %.', 'Dormir bien ayuda al cerebro a consolidar lo que aprendiste durante el día.', 'Explicar un tema con tus propias palabras es una de las mejores formas de aprenderlo (técnica Feynman).', 'Repasar en días espaciados ayuda a recordar por más tiempo que estudiar todo de golpe.', 'Intentar recordar sin ver tus apuntes fortalece la memoria más que solo releerlos.', 'El ejercicio aumenta el flujo de sangre al cerebro y ayuda a la concentración.', 'La luz del Sol tarda unos 8 minutos en llegar a la Tierra.', 'El corazón humano late unas 100,000 veces al día.', 'Los pulpos tienen tres corazones.', 'El agua cubre alrededor del 71 % de la superficie de la Tierra.', 'El monte Everest mide unos 8,849 metros.', 'Un año en Mercurio dura 88 días terrestres.', 'El sonido viaja a unos 343 metros por segundo en el aire.', 'La luz viaja a casi 300,000 kilómetros por segundo.', 'Un adulto tiene 206 huesos.', 'La fotosíntesis convierte luz, agua y dióxido de carbono en glucosa y oxígeno.', 'La Independencia de México se consumó en 1821.', 'La Revolución Mexicana inició en 1910.', 'México tiene 32 entidades federativas.', 'Chichén Itzá es una de las siete maravillas del mundo moderno.', 'El número π empieza 3.14159…', 'Las abejas indican dónde están las flores con una especie de danza.', 'La Vía Láctea tiene cientos de miles de millones de estrellas.', 'Tener el celular a la vista, aunque esté apagado, puede bajar tu concentración: guárdalo lejos al estudiar.', 'Estudiar varias materias o tipos de ejercicio mezclados (intercalado) mejora la capacidad de resolver problemas nuevos.', 'Escribir a mano tus apuntes te obliga a resumir, y eso ayuda a entender mejor.', 'Hacer exámenes de práctica es una de las técnicas de estudio con más evidencia a favor.', 'La curiosidad prepara al cerebro para recordar mejor lo que aprende después.'];
@@ -119,12 +119,14 @@ function hnNext() {
   if (late.length) return { t: `Termina «${late[0].title}»`, d: 'Está atrasada. Sácala primero y te quitas un peso de encima.', href: '#/tareas', b: 'Ir a tareas' };
   try { const ex = ESD().exams.filter((e) => esDays(e.date) >= 0 && esDays(e.date) <= 3).sort((a, b) => a.date.localeCompare(b.date))[0]; const tp = ex && (ex.topics || []).find((x) => !x.done); if (tp) return { t: `Repasa «${tp.n}»`, d: `Tu examen «${ex.title}» es ${relDay(ex.date)}. Recuerdo activo: escribe lo que sepas del tema y luego compara.`, act: 'hn-ses', b: 'Sesión guiada' }; } catch { /* */ }
   { const done = new Set((HND().auto || []).map((a) => a.tid).filter(Boolean)); const lowT = S.tasks.filter((x) => x.done && x.grade != null && x.grade !== '' && +x.grade < hnGoal() && x.doneAt && Date.now() - x.doneAt < 14 * 864e5 && !done.has(x.id)).sort((a, b) => b.doneAt - a.doneAt)[0]; if (lowT) return { t: `Haz la autopsia de «${lowT.title}»`, d: `Sacaste ${fmtGrade(lowT.grade)}. Dos minutos para saber por qué y no repetirlo.`, act: 'hn-auto-new', b: 'Diagnosticar' }; }
+  try { const ex = ESD().exams.filter((e) => esDays(e.date) >= 0 && esDays(e.date) <= 7)[0]; const simToday = (HND().sim || []).some((x) => x.d === t); if (ex && !simToday && hnSimPool(ex.sid || '').length >= 4) return { t: `Simulacro para «${ex.title}»`, d: `Faltan ${esDays(ex.date)} días. Contesta bajo tiempo como en el examen real y repasa lo que falles.`, tab: 'mente', b: 'Ir al simulacro' }; } catch { /* */ }
   const todayT = S.tasks.filter((x) => !x.done && x.due === t).sort(sortPending);
   if (todayT.length) return { t: `Entrega de hoy: «${todayT[0].title}»`, d: 'Termínala antes de cualquier otra cosa.', href: '#/tareas', b: 'Ir a tareas' };
   if (by.repaso && !by.repaso.done && /tarjetas por repasar/.test(by.repaso.s)) return { t: 'Repasa tus tarjetas', d: `${by.repaso.s}. Son pocos minutos y fijan lo que ya estudiaste.`, href: '#/tarjetas', b: 'Repasar' };
   if (!by.enfoque.done) { const G = hnGrades(); const low = G.below[0]; return { t: `Bloque de 25 minutos${low ? ` de ${low.s.name}` : ''}`, d: low ? 'Es la materia que más te acerca a la meta de honores.' : 'Un bloque sin celular. Después, 5 minutos de descanso.', href: '#/enfoque', b: 'Empezar enfoque' }; }
   const tom = S.tasks.filter((x) => !x.done && x.due && x.due > t).sort(sortPending)[0];
   if (tom) return { t: `Adelanta «${tom.title}»`, d: `Vence ${relDay(tom.due)}. Adelantar es lo que separa a los buenos de los excelentes.`, href: '#/tareas', b: 'Ir a tareas' };
+  if (hnUngraded().length) return { t: 'Anota tus calificaciones', d: `Tienes ${hnUngraded().length} entregas sin calificación. Sin ellas no sé si vas en camino a los honores.`, b: '' };
   if (!by.reto.done) return { t: 'Gimnasio mental', d: 'Tres retos rápidos para mantener la mente ágil.', tab: 'mente', b: 'Resolver' };
   if (!by.lectura.done) return { t: 'Lee 20 minutos', d: 'Leer a diario es lo que más amplía tu forma de pensar.', tab: 'mente', b: 'Ver lectura' };
   return { t: 'Todo listo por hoy', d: 'Hiciste lo importante. Descansa bien: dormir también es estudiar.', b: '' };
@@ -250,6 +252,58 @@ function hnAutoSheet(pre = {}) {
   </div><div class="sheet-foot"><button class="btn" data-act="sheet-close">Cancelar</button><span class="grow"></span><button class="btn primary" data-act="hn-auto-save">Diagnosticar</button></div>`);
 }
 
+/* ================= Simulacro de examen con cronómetro ================= */
+function hnSimPool(sid) { let c = []; try { c = ESD().cards.filter((x) => !sid || (x.sid || '') === sid); } catch { /* */ } return c.filter((x) => x.q && x.a); }
+function hnSimCard() {
+  const subs = S.subjects.filter((s) => !s.nb); const H = (HND().sim || []).slice(-3).reverse();
+  return `<h2 class="sec">Simulacro de examen</h2>
+  <section class="hn-card"><p class="small muted" style="margin-top:0">Preguntas de opción múltiple con tus propias tarjetas y tiempo límite, como en un examen real. Practicar bajo presión es de lo que más funciona.</p>
+    <div class="hn-dbb"><select id="smS" class="input"><option value="">Todas las materias</option>${subs.map((s) => `<option value="${s.id}">${esc(s.name)} (${hnSimPool(s.id).length})</option>`).join('')}</select><select id="smN" class="input"><option value="5">5 preguntas</option><option value="10" selected>10 preguntas</option><option value="20">20 preguntas</option></select></div>
+    <div class="btn-row" style="margin-top:8px"><button class="btn primary" data-act="hn-sim">${icon('timer', 'sm')}Empezar simulacro</button></div>
+    ${H.length ? `<ul class="hn-log">${H.map((x) => `<li><time>${esc(relDay(x.d))} · ${esc(x.sid ? hnSubjName(x.sid) : 'Todas')}</time><p><b>${x.ok}/${x.n}</b> correctas · ${Math.round(x.secs / 60 * 10) / 10} min</p></li>`).join('')}</ul>` : ''}</section>`;
+}
+function hnSimPaint() {
+  const M = HN.sim; if (!M) return; const box = document.getElementById('hnSim'); if (!box) return;
+  if (M.i >= M.q.length || M.over) {
+    clearInterval(M.iv); const ok = M.q.filter((x) => x.ok).length; const pct = Math.round((ok / M.q.length) * 100);
+    if (!M.saved) { M.saved = 1; const d = HND(); (d.sim ||= []).push({ d: today(), sid: M.sid, n: M.q.length, ok, secs: Math.round((Date.now() - M.t0) / 1000) }); if (d.sim.length > 200) d.sim = d.sim.slice(-200); hnSave(); }
+    const bad = M.q.filter((x) => !x.ok);
+    box.innerHTML = `<div class="hn-done-ses"><div class="lq-ring" style="--p:${pct};margin:0 auto 8px"><b>${pct}%</b></div><b>${M.over ? 'Se acabó el tiempo' : pct >= 90 ? 'Nivel honores' : pct >= 70 ? 'Bien, casi listo' : 'Hay que repasar'}</b><p class="small muted">${ok} de ${M.q.length} correctas en ${Math.round((Date.now() - M.t0) / 6000) / 10} min.</p></div>
+      ${bad.length ? `<p class="hn-kicker">Para repasar</p><ul class="hn-adjl">${bad.map((x) => `<li><b>${esc(x.c.q)}</b><br><span class="small">${esc(x.c.a)}</span></li>`).join('')}</ul><div class="btn-row" style="margin-top:10px"><button class="btn primary" data-act="hn-sim-review">Mandar las falladas a repaso</button><button class="btn" data-act="hn-auto-new">Hacer autopsia</button></div>` : ''}`;
+    return;
+  }
+  const it = M.q[M.i]; const left = Math.max(0, Math.round((M.end - Date.now()) / 1000));
+  box.innerHTML = `<div class="hn-sim-top"><span>Pregunta ${M.i + 1} de ${M.q.length}</span><b id="hnSimT" class="${left < 20 ? 'low' : ''}">${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}</b></div><div class="lq-bar"><i style="width:${Math.round((M.i / M.q.length) * 100)}%"></i></div>
+    <p class="hn-sim-q">${esc(it.c.q)}</p><div class="hn-sim-o">${it.o.map((o, j) => `<button type="button" data-act="hn-sim-a" data-j="${j}">${esc(o.slice(0, 220))}</button>`).join('')}</div>`;
+}
+function hnSimStart(sid, n) {
+  const pool = hnSimPool(sid); const all = hnSimPool('');
+  if (pool.length < 4 && all.length < 4) { toast('Necesitas al menos 4 tarjetas para hacer un simulacro.'); return; }
+  const src = pool.length >= 1 ? pool : all; const pick = src.slice().sort(() => Math.random() - 0.5).slice(0, Math.min(n, src.length));
+  const q = pick.map((c) => { const others = (pool.length >= 4 ? pool : all).filter((x) => x.id !== c.id && x.a !== c.a).sort(() => Math.random() - 0.5).slice(0, 3).map((x) => x.a); const o = [c.a, ...others].sort(() => Math.random() - 0.5); return { c, o, k: o.indexOf(c.a), ok: false }; }).filter((x) => x.o.length >= 2);
+  HN.sim = { sid, q, i: 0, t0: Date.now(), end: Date.now() + q.length * 45000, iv: 0 };
+  openSheet(`${sheetHead('Simulacro de examen')}<div class="sheet-body"><div id="hnSim"></div></div><div class="sheet-foot"><span class="grow"></span><button class="btn" data-act="sheet-close">Salir</button></div>`, () => { if (HN.sim) clearInterval(HN.sim.iv); render(); });
+  hnSimPaint();
+  HN.sim.iv = setInterval(() => { const M = HN.sim; if (!M || !document.getElementById('hnSim')) { clearInterval(M && M.iv); return; } const left = Math.round((M.end - Date.now()) / 1000); if (left <= 0) { M.over = true; hnSimPaint(); return; } const t = document.getElementById('hnSimT'); if (t) { t.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`; t.classList.toggle('low', left < 20); } }, 1000);
+}
+
+/* ================= Calificaciones por anotar e informe del mes ================= */
+const hnUngraded = () => S.tasks.filter((t) => t.done && (t.grade == null || t.grade === '') && t.doneAt && Date.now() - t.doneAt < 30 * 864e5 && !t.noGrade).sort((a, b) => b.doneAt - a.doneAt);
+function hnGradesBox() {
+  const L = hnUngraded().slice(0, 4); if (!L.length) return '';
+  return `<h2 class="sec">Calificaciones por anotar</h2><section class="hn-card"><p class="small muted" style="margin-top:0">Anótalas en cuanto te las den: así tu promedio y tu meta de honores son exactos.</p><ul class="hn-gr">${L.map((t) => `<li><span><b>${esc(t.title)}</b><small>${esc(hnSubjName(t.subjectId))}</small></span><form class="hn-grf" data-id="${t.id}"><input class="input" inputmode="decimal" placeholder="0–${S.settings.gradeMax}" aria-label="Calificación de ${esc(t.title)}"><button class="btn" type="submit">Anotar</button></form><button type="button" class="icon-btn ghost" data-act="hn-nograde" data-id="${t.id}" aria-label="No lleva calificación" title="No lleva calificación">${icon('x', 'sm')}</button></li>`).join('')}</ul></section>`;
+}
+function hnReport() {
+  const A = hnStats(); const G = hnGrades(); const au = hnAutoStats(); const d = HND();
+  const good = A.days.filter((x) => x.s >= 70).length; const sims = (d.sim || []).filter((x) => diffDays(x.d, today()) < 30);
+  const L = [`Informe de los últimos 30 días · Modo Honores`, ``, `Enfoque: ${Math.round(A.total / 6) / 10} horas${A.bestH != null ? ` (mejor hora: ${A.bestH}:00)` : ''}`, `Días de honores (70 % o más): ${good} de 30`, `Entregas hechas: ${A.done30}${A.done30 ? ` · a tiempo: ${Math.round((A.onTime / A.done30) * 100)} %` : ''}`, `Promedio: ${G.avg == null ? 'sin calificaciones' : fmtGrade(Math.round(G.avg * 10) / 10)} · meta ${fmtGrade(hnGoal())}`];
+  if (G.below.length) L.push(`Materias por subir: ${G.below.map((r) => `${r.s.name} (${fmtGrade(Math.round(r.st.avg * 10) / 10)})`).join(', ')}`);
+  if (sims.length) L.push(`Simulacros: ${sims.length} · promedio ${Math.round(sims.reduce((a, x) => a + x.ok / x.n, 0) / sims.length * 100)} %`);
+  if (au.top) L.push(`Causa de error más común: ${HN_CAUSES[au.top][0]} → ${HN_CAUSES[au.top][2][0]}`);
+  if (d.book) L.push(`Lectura: «${d.book.t}», página ${d.book.page} de ${d.book.total}`);
+  return L.join('\n');
+}
+
 /* agenda ideal: clases + bloques de enfoque + lectura + descanso */
 function hnAgenda() {
   const wd = new Date().getDay(); const cls = classesOn(wd); const tm = (s) => { const [h, m] = String(s).split(':').map(Number); return h * 60 + (m || 0); }; const fm = (m) => fmtTime(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
@@ -296,6 +350,7 @@ function viewHonores() {
     body = `<section class="hn-top">${ring(P.score, `${P.score}%`, 'día de honores')}<div class="hn-kpis"><span><b>${st}</b>${st === 1 ? 'día de racha' : 'días de racha'}</span><span><b>${Math.round(wkMin / 6) / 10} h</b>de enfoque en 7 días</span><span><b>${G.avg == null ? '—' : fmtGrade(Math.round(G.avg * 10) / 10)}</b>promedio · meta ${fmtGrade(goal)}</span></div></section>
     <div class="hn-week" aria-label="Últimos 7 días">${week.map((x) => `<i title="${esc(x.iso)}: ${x.s}%" class="${x.iso === today() ? 'td' : ''}" style="--s:${x.s}"><u></u><small>${['D', 'L', 'M', 'M', 'J', 'V', 'S'][fromISO(x.iso).getDay()]}</small></i>`).join('')}</div>
     <section class="hn-next"><p class="hn-kicker">Tu siguiente mejor acción</p><b>${esc(N.t)}</b><p>${esc(N.d)}</p>${N.b ? (N.href ? `<a class="btn primary" href="${N.href}">${esc(N.b)}</a>` : N.act ? `<button class="btn primary" data-act="${N.act}">${esc(N.b)}</button>` : `<button class="btn primary" data-act="hn-tab" data-v="${N.tab}">${esc(N.b)}</button>`) : ''}<button class="btn" data-act="hn-ses">${icon('spark', 'sm')}Sesión de estudio guiada</button></section>
+    ${hnGradesBox()}
     <h2 class="sec">Plan de hoy</h2>
     <ul class="hn-plan">${P.items.map((x) => `<li class="${x.done ? 'done' : ''}">${x.act ? `<button type="button" class="hn-ck" data-act="${x.act}" data-k="${x.k}" aria-pressed="${x.done}" aria-label="Marcar ${esc(x.l)}">${icon('check', 'sm')}</button>` : `<span class="hn-ck" aria-hidden="true">${x.done ? icon('check', 'sm') : ''}</span>`}<span class="hn-tx"><b>${esc(x.l)}</b><small>${esc(x.s)}</small>${x.p != null && !x.done ? `<i class="hn-bar"><u style="width:${Math.round(x.p * 100)}%"></u></i>` : ''}</span>${x.href ? `<a class="hn-go" href="${x.href}" aria-label="Ir">${icon('chev', 'sm')}</a>` : x.k === 'reto' || x.k === 'lectura' ? `<button type="button" class="hn-go" data-act="hn-tab" data-v="mente" aria-label="Ir">${icon('chev', 'sm')}</button>` : x.k === 'semana' ? `<button type="button" class="hn-go" data-act="hn-tab" data-v="metas" aria-label="Ir">${icon('chev', 'sm')}</button>` : ''}</li>`).join('')}</ul>
     <h2 class="sec">Agenda ideal de hoy</h2>
@@ -306,7 +361,7 @@ function viewHonores() {
   } else if (HN.tab === 'cerebro') { body = hnCerebroTab();
   } else if (HN.tab === 'mente') {
     const R = hnRetos(); const [w, wd] = hnWord(); const [ew, es, ex] = hnEn(); const bk = HND().book; const log = (HND().log || []).slice(-5).reverse();
-    body = hnFeynCard() + `<h2 class="sec" id="hnReto">Gimnasio mental</h2>
+    body = hnFeynCard() + hnSimCard() + `<h2 class="sec" id="hnReto">Gimnasio mental</h2>
     <section class="hn-card hn-reto">${R.map((q, i) => { const s = D.reto[i]; return `<div class="hn-q ${s === true ? 'ok' : s === false ? 'no' : ''}"><p>${esc(q.q)}</p>${s === true ? `<span class="hn-res">Correcto: ${q.a}</span>` : `<form class="hn-ans" data-i="${i}"><input class="input" inputmode="decimal" autocomplete="off" aria-label="Tu respuesta" placeholder="Tu respuesta"><button class="btn" type="submit">Revisar</button></form>${s === false ? '<span class="hn-res">Casi. Inténtalo otra vez.</span>' : ''}`}</div>`; }).join('')}<p class="tiny faint">Retos nuevos cada día.</p></section>
     <div class="hn-two"><section class="hn-card"><p class="hn-kicker">Palabra del día</p><b class="hn-word">${esc(w)}</b><p class="small">${esc(wd)}</p><p class="tiny faint">Úsala hoy en una conversación o en un apunte.</p></section>
     <section class="hn-card"><p class="hn-kicker">Inglés del día</p><b class="hn-word">${esc(ew)}</b><p class="small"><b>${esc(es)}</b> · <i>${esc(ex)}</i></p></section></div>
@@ -324,7 +379,7 @@ function viewHonores() {
       ${G.avg == null ? '<p class="small muted">Anota la calificación de cada entrega al terminarla (y cuánto vale, si lo sabes) para ver tu promedio real y qué necesitas en cada materia.</p>' : `<ul class="hn-subs">${G.rows.filter((r) => r.st.avg != null).sort((a, b) => a.st.avg - b.st.avg).map((r) => `<li><a href="#/materia/${r.s.id}"><i style="background:${safeColor(r.s.color)}"></i><span><b>${esc(r.s.name)}</b><small>${r.st.avg < goal ? esc(neededText(r.st.avg, r.st.evaluated, goal)) : 'En la meta. Mantén el ritmo.'}</small></span><em class="${r.st.avg < goal ? '' : 'ok'}">${fmtGrade(Math.round(r.st.avg * 10) / 10)}</em></a></li>`).join('')}</ul>`}
     </section>
     ${hnAutopsiaCard()}
-    <h2 class="sec">Últimos 30 días</h2>
+    <h2 class="sec">Últimos 30 días</h2><div class="btn-row" style="margin:-4px 0 10px"><button class="btn" data-act="hn-report">Compartir informe del mes</button></div>
     <div class="hn-kgrid"><span><b>${Math.round(A.total / 6) / 10} h</b>de enfoque</span><span><b>${A.done30}</b>entregas hechas</span><span><b>${A.done30 ? Math.round((A.onTime / A.done30) * 100) + '%' : '—'}</b>a tiempo</span><span><b>${A.bestH == null ? '—' : `${A.bestH}:00`}</b>tu mejor hora</span></div>
     <section class="hn-card"><p class="hn-kicker">Constancia</p><div class="hn-heat">${A.days.map((x) => `<i title="${esc(x.iso)} · ${x.s}% · ${x.m} min" style="--s:${Math.max(x.s, Math.min(100, x.m))}" class="${x.iso === today() ? 'td' : ''}"></i>`).join('')}</div><p class="tiny faint" style="margin-bottom:0">Cada cuadro es un día: más oscuro, mejor día.</p></section>
     <section class="hn-card"><p class="hn-kicker">Horas por materia</p>${Object.keys(A.byS).length ? `<ul class="hn-bars">${Object.entries(A.byS).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<li><span>${esc(sn(k))}</span><i><u style="width:${Math.round((v / mx) * 100)}%;background:${sc(k)}"></u></i><b>${Math.round(v / 6) / 10} h</b></li>`).join('')}</ul>` : '<p class="small muted" style="margin:0">Usa el temporizador de Enfoque eligiendo la tarea o materia y aquí verás a qué le dedicas tu tiempo.</p>'}</section>
@@ -380,6 +435,11 @@ function hnSesSheet() {
 /* ---------- acciones ---------- */
 Object.assign(EXTRA_VIEWS, { honores: viewHonores }); EXTRA_NAV.honores = 'honores';
 Object.assign(VIDA_ACTS, {
+  'hn-sim': () => { hnSimStart($('#smS')?.value || '', +($('#smN')?.value || 10)); },
+  'hn-sim-a': (el) => { const M = HN.sim; if (!M || M.lock) return; const it = M.q[M.i]; const j = +el.dataset.j; it.ok = j === it.k; M.lock = true; const bs = document.querySelectorAll('.hn-sim-o button'); bs.forEach((b, i) => { b.disabled = true; if (i === it.k) b.classList.add('ok'); else if (i === j) b.classList.add('no'); }); try { it.ok ? Snd.tick?.() : null; } catch { /* */ } setTimeout(() => { M.lock = false; M.i++; hnSimPaint(); }, it.ok ? 450 : 1100); },
+  'hn-sim-review': () => { const M = HN.sim; if (!M) return; const ids = new Set(M.q.filter((x) => !x.ok).map((x) => x.c.id)); try { const d = ESD(); for (const c of d.cards) if (ids.has(c.id)) { c.box = 1; c.due = today(); } esSave(); } catch { /* */ } toast('Listas para repasar hoy en Tarjetas.'); },
+  'hn-nograde': (el) => { commit((s) => { const t = s.tasks.find((x) => x.id === el.dataset.id); if (t) t.noGrade = true; }); },
+  'hn-report': async () => { const t = hnReport(); try { if (navigator.share) { await navigator.share({ text: t }); return; } } catch { return; } try { await navigator.clipboard.writeText(t); toast('Informe copiado.'); } catch { toast('No se pudo copiar.'); } },
   'hn-ib': (el) => {
     const d = HND(); const it = (d.inbox || []).find((x) => x.id === el.dataset.id); if (!it) return; const v = el.dataset.v;
     if (v === 'task') { commit((s) => { s.tasks.push({ id: uid(), title: it.t.slice(0, 120), subjectId: null, type: 'tarea', due: null, time: '', priority: 2, value: null, estimate: 0, desc: '', steps: [], delivery: '', links: '', done: false, doneAt: null, grade: null, created: Date.now() }); }); toast('Ahora es una tarea.'); }
@@ -441,6 +501,7 @@ Object.assign(VIDA_ACTS, {
   'hn-week-save': () => { HND().week[hnMonday(today())] = { a: $('#hnW1').value.trim(), b: $('#hnW2').value.trim(), c: $('#hnW3').value.trim(), at: Date.now() }; hnSave(); toast('Revisión guardada.'); render(); },
 });
 document.addEventListener('submit', (e) => {
+  const gf = e.target.closest && e.target.closest('.hn-grf'); if (gf) { e.preventDefault(); const v = +String(gf.querySelector('input').value || '').replace(',', '.'); const max = S.settings.gradeMax; if (!(v >= 0 && v <= max) || gf.querySelector('input').value.trim() === '') { toast(`Escribe una calificación de 0 a ${max}.`); return; } commit((s) => { const t = s.tasks.find((x) => x.id === gf.dataset.id); if (t) t.grade = v; }); toast('Calificación anotada.'); return; }
   const cp = e.target.closest && e.target.closest('.hn-cap'); if (cp) { e.preventDefault(); const i = cp.querySelector('input'); const v = (i.value || '').trim(); if (!v) return; const d = HND(); (d.inbox ||= []).push({ id: uid(), t: v.slice(0, 300), at: Date.now() }); hnSave(); i.value = ''; render(); setTimeout(() => $('#hnCap')?.focus(), 30); return; }
   const f = e.target.closest && e.target.closest('.hn-ans'); if (!f) return; e.preventDefault();
   const i = +f.dataset.i; const v = (f.querySelector('input').value || '').trim().replace(',', '.'); if (!v) return;
