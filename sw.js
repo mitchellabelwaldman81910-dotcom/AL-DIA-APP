@@ -94,6 +94,7 @@ const SHELL = [
   './a/arcade2.js' + V,
   './a/estudio.js' + V,
   './a/honores.js' + V,
+  './a/honores-uni.js' + V,
   './a/pulido.js' + V,
   './a/libretas2.js' + V,
   './a/sugerencias.js' + V,

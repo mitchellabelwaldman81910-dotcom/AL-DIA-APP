@@ -341,7 +341,7 @@ function viewHonores() {
   if (!honCan()) return `<div class="empty"><h3>Esta sección es solo para la cuenta de administración</h3></div>`;
   const P = hnPlan(); const G = hnGrades(); const goal = hnGoal(); const D = hnDay(); const st = hnStreak(); const name = (S.settings.name || profile()?.name || '').split(' ')[0];
   const ring = (p, big, sub) => `<div class="hn-ring" style="--p:${Math.max(0, Math.min(100, p))}"><b>${big}</b><small>${sub}</small></div>`;
-  const tabs = `<div class="seg full hn-tabs" role="group">${[['hoy', 'Hoy'], ['cerebro', 'Cerebro'], ['mente', 'Mente'], ['analisis', 'Análisis'], ['metas', 'Metas']].map(([k, l]) => `<button type="button" data-act="hn-tab" data-v="${k}" aria-pressed="${HN.tab === k}">${l}</button>`).join('')}</div>`;
+  const tabs = `<div class="seg full hn-tabs" role="group">${[['hoy', 'Hoy'], ['cerebro', 'Cerebro'], ['mente', 'Mente'], ['uni', 'Uni'], ['analisis', 'Análisis'], ['metas', 'Metas']].map(([k, l]) => `<button type="button" data-act="hn-tab" data-v="${k}" aria-pressed="${HN.tab === k}">${l}</button>`).join('')}</div>`;
   const head = `<header class="hn-head"><p class="hn-kicker">Modo Honores</p><h1 class="page-title">${name ? `${esc(name)}, ` : ''}hoy cuenta</h1><p class="page-sub">${esc(cap(longDate(today())))}</p></header>`;
   let body = '';
   if (HN.tab === 'hoy') {
@@ -359,6 +359,7 @@ function viewHonores() {
     <h2 class="sec">Hábitos de alto rendimiento</h2>
     <div class="hn-habs">${HN_HAB.map(([k, l]) => `<button type="button" class="hn-hab" data-act="hn-hab" data-k="${k}" aria-pressed="${!!D.hab[k]}">${icon('check', 'sm')}<span>${l}</span></button>`).join('')}</div>`;
   } else if (HN.tab === 'cerebro') { body = hnCerebroTab();
+  } else if (HN.tab === 'uni') { body = typeof hnUniTab === 'function' ? hnUniTab() : '';
   } else if (HN.tab === 'mente') {
     const R = hnRetos(); const [w, wd] = hnWord(); const [ew, es, ex] = hnEn(); const bk = HND().book; const log = (HND().log || []).slice(-5).reverse();
     body = hnFeynCard() + hnSimCard() + `<h2 class="sec" id="hnReto">Gimnasio mental</h2>
